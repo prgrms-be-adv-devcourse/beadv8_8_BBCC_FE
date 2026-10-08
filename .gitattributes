@@ -1,0 +1,12 @@
+# 모든 텍스트 파일을 LF로 통일한다
+* text=auto eol=lf
+
+# 바이너리
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
