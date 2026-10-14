@@ -42,7 +42,7 @@ function who(req) {
   return JSON.parse(Buffer.from(t.split('.')[1], 'base64url'))
 }
 const detailOf = ({ memberId: _m, ...o }) => ({ ...o, orderId: String(o.orderId) })
-const childOf = ({ memberId: _m, ...c }) => c
+const childOf = ({ memberId: _m, deleted: _d, growth: _g, ...c }) => c
 const lineOf = ({ memberId: _m, ...l }) => ({ ...l, lineAmount: l.unitPrice * l.quantity })
 const myAppOf = (a) => ({
   id: a.id,
@@ -91,15 +91,69 @@ http
     if (r('GET', /^\/members\/me$/))
       return problem(res, 404, '찾을 수 없습니다', '회원을 찾을 수 없습니다.', req.url)
     if (r('GET', /^\/children$/))
-      return send(res, 200, children.filter((c) => c.memberId === me).map(childOf))
+      return send(res, 200, children.filter((c) => c.memberId === me && !c.deleted).map(childOf))
     if ((x = r('GET', /^\/children\/(\d+)$/))) {
-      const c = children.find((c) => c.id === +x[1])
+      const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
       return c
         ? send(res, 200, childOf(c))
         : problem(res, 404, '찾을 수 없습니다', '자녀 없음', req.url)
     }
+    if ((x = r('PATCH', /^\/children\/(\d+)$/))) {
+      const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
+      if (!c) return problem(res, 404, '찾을 수 없습니다', '자녀 없음', req.url)
+      // 키 · 체형이 바뀌면 성장 이력 1건 (기획서 2.1)
+      if (c.heightCm !== body.heightCm || c.bodyType !== body.bodyType)
+        c.growth.push({
+          id: nid(),
+          heightCm: body.heightCm,
+          bodyType: body.bodyType,
+          recordedAt: now(),
+        })
+      Object.assign(c, body, {
+        growthRecordCount: c.growth.length,
+        lastRecordedAt: c.growth.at(-1).recordedAt,
+      })
+      return send(res, 200, childOf(c))
+    }
+    if ((x = r('DELETE', /^\/children\/(\d+)$/))) {
+      const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
+      if (!c) return problem(res, 404, '찾을 수 없습니다', '자녀 없음', req.url)
+      c.deleted = true
+      return send(res, 204)
+    }
+    if ((x = r('GET', /^\/children\/(\d+)\/growth-records$/))) {
+      const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
+      if (!c) return problem(res, 404, '찾을 수 없습니다', '자녀 없음', req.url)
+      return send(res, 200, c.growth)
+    }
+    if (r('PATCH', /^\/members\/me$/))
+      return send(res, 200, {
+        id: me,
+        nickname: body.nickname.trim(),
+        roles: u.roles,
+        sellerStatus: null,
+        providers: [],
+      })
+    if ((x = r('PATCH', /^\/members\/me\/addresses\/(\d+)$/))) {
+      const a = addresses.find((a) => a.id === +x[1])
+      if (!a) return problem(res, 404, '찾을 수 없습니다', '배송지 없음', req.url)
+      if (body.isDefault) addresses.forEach((o) => (o.isDefault = false))
+      Object.assign(a, body, { isDefault: body.isDefault || a.isDefault })
+      return send(res, 200, a)
+    }
     if (r('POST', /^\/children$/)) {
-      const c = { id: nid(), memberId: me, ...body, growthRecordCount: 1, lastRecordedAt: now() }
+      const t = now()
+      const growth = [
+        { id: nid(), heightCm: body.heightCm, bodyType: body.bodyType, recordedAt: t },
+      ]
+      const c = {
+        id: nid(),
+        memberId: me,
+        ...body,
+        growth,
+        growthRecordCount: 1,
+        lastRecordedAt: t,
+      }
       children.push(c)
       return send(res, 201, childOf(c))
     }

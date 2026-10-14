@@ -1,0 +1,27 @@
+import { getErrorMessage } from '@/shared/api'
+import { Button } from '@/shared/ui/button'
+import { StateMessage } from '@/shared/ui/page-header'
+import { useWithdraw } from '../model/use-edit-profile'
+
+/** 탈퇴 (기획서 8장 보완, 조건 보류 · 목) */
+export function WithdrawButton({ onDone }: { onDone: () => void }) {
+  const withdraw = useWithdraw({ onDone })
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="destructive"
+        size="sm"
+        disabled={withdraw.isPending}
+        onClick={() => {
+          if (window.confirm('탈퇴할까요? 탈퇴 조건은 아직 정해지지 않아 시연용(목)이에요.'))
+            withdraw.mutate()
+        }}
+      >
+        탈퇴하기
+      </Button>
+      {withdraw.isError && (
+        <StateMessage tone="error">{getErrorMessage(withdraw.error)}</StateMessage>
+      )}
+    </div>
+  )
+}

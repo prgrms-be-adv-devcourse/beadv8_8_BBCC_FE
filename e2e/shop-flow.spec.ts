@@ -51,6 +51,29 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('기본', { exact: true }).first()).toBeVisible()
   })
 
+  await test.step('마이페이지: 자녀 수정 → 성장 이력 · 이력 수정(목) · 배송지 수정', async () => {
+    await page.goto('/my/children')
+    await page
+      .getByRole('link', { name: /테스트 상세/ })
+      .first()
+      .click()
+    await expect(page.getByRole('heading', { name: '테스트 프로필' })).toBeVisible()
+    await page.getByLabel('키 (cm)').fill('118')
+    await page.getByRole('button', { name: '저장하기' }).click()
+    await expect(page.getByText(/저장했어요/)).toBeVisible()
+    await expect(page.getByText(/처음보다 \+3\.0cm/)).toBeVisible()
+    await page.getByRole('listitem').getByRole('button', { name: '수정' }).first().click()
+    await page.getByLabel('기록 키').fill('117')
+    await page.getByRole('button', { name: '저장', exact: true }).click()
+    await expect(page.getByText(/117\.0cm/)).toBeVisible()
+
+    await page.goto('/my/addresses')
+    await page.getByRole('button', { name: '수정' }).first().click()
+    await expect(page.getByText('배송지 수정')).toBeVisible()
+    await page.getByRole('button', { name: '저장하기' }).click()
+    await expect(page.getByText('배송지 수정')).toHaveCount(0)
+  })
+
   await test.step('쇼핑: 자녀 맞춤 상품 → 상세 추천 → 담기', async () => {
     await page.getByRole('link', { name: 'Kidly', exact: true }).click()
     await page
@@ -109,6 +132,15 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('결제 완료').first()).toBeVisible()
     await page.getByRole('link', { name: '주문 내역' }).first().click()
     await expect(page.getByText(/주문번호/).first()).toBeVisible()
+  })
+
+  await test.step('내 정보: 닉네임 수정 → 토큰 다시 받기 → 탈퇴(목)', async () => {
+    await page.goto('/my/profile')
+    await page.getByLabel(/닉네임/).fill('보호자맘')
+    await page.getByRole('button', { name: '닉네임 바꾸기' }).click()
+    await expect(page.getByText('보호자맘 · 회원 1').first()).toBeVisible()
+    await page.getByRole('button', { name: '탈퇴하기' }).click()
+    await expect(page.getByText('로그인 전')).toBeVisible()
   })
 
   expect(pageErrors).toEqual([])

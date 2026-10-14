@@ -13,6 +13,7 @@ export const DEMO_STEPS: {
     links: [
       { to: paths.console.children, label: '자녀', role: 'BUYER' },
       { to: paths.console.addresses, label: '배송지', role: 'BUYER' },
+      { to: paths.console.profile, label: '내 정보', role: 'BUYER' },
     ],
   },
   {

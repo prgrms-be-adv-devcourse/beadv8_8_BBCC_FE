@@ -1,4 +1,5 @@
 import { registerMockHandlers } from '@/shared/api'
+import { memberHandlers } from './member-handlers'
 import { paymentHandlers } from './payment-handlers'
 import { productHandlers } from './product-handlers'
 import { recommendationHandlers } from './recommendation-handlers'
@@ -13,4 +14,5 @@ export function setupMocks() {
   registerMockHandlers('추천', recommendationHandlers)
   registerMockHandlers('정산', settlementHandlers)
   registerMockHandlers('충전 취소', paymentHandlers)
+  registerMockHandlers('탈퇴 · 성장 이력 수정', memberHandlers)
 }

@@ -50,6 +50,7 @@ export function ShopMyPage() {
       hint: '충전 · 충전 취소',
     },
     { to: paths.shop.orders, title: '주문 내역', value: '보기', hint: '배송 조회 · 구매확정' },
+    { to: paths.shop.profile, title: '내 정보', value: user.nickname, hint: '닉네임 수정 · 탈퇴' },
   ]
 
   return (
@@ -58,7 +59,7 @@ export function ShopMyPage() {
         <h1 className="text-2xl font-bold">마이페이지</h1>
         <p className="text-muted-foreground text-sm">{describeUser(user)}</p>
       </div>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         {tiles.map((tile) => (
           <Link key={tile.to} to={tile.to}>
             <Card className="hover:border-primary h-full space-y-1 transition-colors">
