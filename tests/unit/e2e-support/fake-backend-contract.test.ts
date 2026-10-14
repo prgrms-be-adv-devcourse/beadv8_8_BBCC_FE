@@ -8,6 +8,7 @@ import { cartShape } from '@/entities/cart/api/cart.shape'
 import { toChildRequest } from '@/entities/child'
 import { childShape } from '@/entities/child/api/child.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
+import { paymentDetailShape, paymentPageShape } from '@/entities/payment/api/payment.shape'
 import { sellerOrderPageShape } from '@/entities/seller-order/api/seller-order.shape'
 import { toSellerApplicationRequest } from '@/entities/seller'
 import {
@@ -130,6 +131,17 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect(order.data.status).toBe('PAID')
     expectContract(order.data, orderDetailShape)
     expectContract((await call('GET', '/orders', 1)).data, orderPageShape)
+
+    const payments = await call('GET', '/payments', 1)
+    expectContract(payments.data, paymentPageShape)
+    expect(payments.data.content[0]).toMatchObject({
+      orderId: Number(orderId),
+      status: 'COMPLETED',
+    })
+    expectContract(
+      (await call('GET', `/payments/${payments.data.content[0].paymentId}`, 1)).data,
+      paymentDetailShape,
+    )
 
     const sellerOrders = await call('GET', '/seller/orders', 2)
     expectContract(sellerOrders.data, sellerOrderPageShape)

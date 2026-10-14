@@ -71,6 +71,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page).toHaveURL(/\/orders\/\d+$/)
     await expect(page.getByRole('list', { name: '주문 진행' })).toBeVisible()
     await expect(page.locator('[aria-current="step"]')).toHaveText('2')
+    await expect(page.getByRole('status', { name: '결제 확인' })).toContainText('일치')
   })
   const orderUrl = page.url()
 
@@ -102,6 +103,8 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
   await test.step('마이페이지 · 주문 내역', async () => {
     await page.getByRole('link', { name: '마이페이지' }).click()
     await expect(page.getByText('예치금').first()).toBeVisible()
+    await expect(page.getByText('최근 결제 내역')).toBeVisible()
+    await expect(page.getByText('결제 완료').first()).toBeVisible()
     await page.getByRole('link', { name: '주문 내역' }).first().click()
     await expect(page.getByText(/주문번호/).first()).toBeVisible()
   })

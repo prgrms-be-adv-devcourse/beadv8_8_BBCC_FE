@@ -139,7 +139,7 @@ React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui · TanStack Query
 ### 백엔드 확인 도구 (통합 테스트용)
 
 - **계약 검사:** 요청 함수는 응답을 `.then(expectShape(xxxShape))`로 받는다. 모양(`api/*.shape.ts`)은 DTO와 같이 고친다. 다르면 흐름 패널 "계약" 탭에 필드 경로 · 기대 · 실제가 쌓인다 (화면은 매퍼가 흡수해 그대로 동작). 백엔드가 더한 필드(extra)는 불일치로 세지 않는다.
-- **상태 변화:** 흐름 패널이 응답에서 서버 상태(주문 · 배송 · 주문상품 · 잔액 · 충전 · 판매자 신청 · 상품)를 읽어, 바뀐 순간과 걸린 시간을 보여 준다. 새 상태를 보이게 하려면 `widgets/api-flow-panel/model/state-changes.ts`에 추가한다.
+- **상태 변화:** 흐름 패널이 응답에서 서버 상태(주문 · 배송 · 주문상품 · 결제 · 잔액 · 충전 · 판매자 신청 · 상품)를 읽어, 바뀐 순간과 걸린 시간을 보여 준다. 새 상태를 보이게 하려면 `widgets/api-flow-panel/model/state-changes.ts`에 추가한다.
 - **목 설정:** 목은 도메인 단위로 등록하고(`registerMockHandlers('상품', …)`), 흐름 패널 "목 설정"에서 실행 중에 끈다.
 - **흐름 확인(`/verify`):** 기획서 7장 완료 기준을 호출 결과로 자동 판정한다. 체크는 `widgets/verification-checklist/config/checks.ts`에 둔다.
 - **기록 내보내기:** 흐름 기록 · 상태 변화 · 실패 · 계약 불일치를 마크다운으로 내려받는다. 백엔드 담당자에게 넘길 때 쓴다.

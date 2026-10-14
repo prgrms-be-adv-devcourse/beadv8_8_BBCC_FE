@@ -11,7 +11,8 @@ const children = [],
   addresses = [],
   cart = [],
   orders = [],
-  apps = []
+  apps = [],
+  payments = []
 const wallets = { 1: 100000, 2: 0, 3: 0 }
 const replica = {
   1: { productId: 1, name: '데일리 맨투맨 (상품 A)', size: '110', price: 25000, sellerId: 2 },
@@ -126,6 +127,24 @@ http
         status: 'DONE',
         approvedAt: now(),
       })
+    if (r('GET', /^\/payments$/))
+      return send(
+        res,
+        200,
+        page(
+          payments
+            .filter((x) => x.memberId === me)
+            .slice()
+            .reverse()
+            .map(({ memberId: _m, items: _i, ...x }) => x),
+        ),
+      )
+    if ((x = r('GET', /^\/payments\/(\d+)$/))) {
+      const pm = payments.find((x2) => x2.paymentId === +x[1] && x2.memberId === me)
+      if (!pm) return problem(res, 404, '찾을 수 없습니다', '결제를 찾을 수 없습니다.', req.url)
+      const { memberId: _m, ...detail } = pm
+      return send(res, 200, detail)
+    }
     if (r('GET', /^\/wallets\/me$/)) return send(res, 200, { balance: wallets[me] ?? 0 })
     if (r('POST', /^\/cart\/items$/)) {
       const rp = replica[body.optionId]
@@ -224,9 +243,38 @@ http
         if ((wallets[me] ?? 0) < o.totalAmount) {
           o.status = 'CANCELLED'
           o.cancelReason = 'PAYMENT_FAILED'
+          // 백엔드: 잔액 부족만 실패 결제를 저장한다
+          payments.push({
+            paymentId: nid(),
+            memberId: me,
+            orderId: o.orderId,
+            amount: o.totalAmount,
+            refundedAmount: 0,
+            status: 'FAILED',
+            failureCode: 'INSUFFICIENT_BALANCE',
+            paidAt: null,
+            createdAt: now(),
+            items: [],
+          })
           return
         }
         wallets[me] -= o.totalAmount
+        payments.push({
+          paymentId: nid(),
+          memberId: me,
+          orderId: o.orderId,
+          amount: o.totalAmount,
+          refundedAmount: 0,
+          status: 'COMPLETED',
+          failureCode: null,
+          paidAt: now(),
+          createdAt: now(),
+          items: o.items.map((i) => ({
+            orderItemId: Number(i.orderItemId),
+            amount: i.amount,
+            refundedAmount: 0,
+          })),
+        })
         o.status = 'PAID'
         o.deliveries = [
           {
