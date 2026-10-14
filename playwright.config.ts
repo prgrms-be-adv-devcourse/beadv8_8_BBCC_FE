@@ -9,8 +9,11 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 120_000,
   expect: { timeout: 15_000 },
+  // 모든 테스트가 가짜 백엔드 하나(메모리 상태)를 같이 쓴다.
+  // 병렬로 돌면 서로의 데이터가 섞이고, 재시도는 앞 시도가 남긴 상태 때문에 통과할 수 없다
   fullyParallel: false,
-  retries: process.env.CI ? 1 : 0,
+  workers: 1,
+  retries: 0,
   // CI: 실패 메시지를 PR 주석(annotation)으로도 남긴다 (로그 · 리포트를 못 받는 환경에서도 원인 확인)
   reporter: process.env.CI ? [['list'], ['github'], ['html', { open: 'never' }]] : 'list',
   use: {
