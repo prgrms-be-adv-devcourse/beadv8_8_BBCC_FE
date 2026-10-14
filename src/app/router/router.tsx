@@ -49,6 +49,15 @@ const adminSellerApplications = page(() =>
     Component: m.AdminSellerApplicationsPage,
   })),
 )
+const adminMembers = page(() =>
+  import('@/pages/admin-members').then((m) => ({ Component: m.AdminMembersPage })),
+)
+const adminOrders = page(() =>
+  import('@/pages/admin-orders').then((m) => ({ Component: m.AdminOrdersPage })),
+)
+const adminPayments = page(() =>
+  import('@/pages/admin-payments').then((m) => ({ Component: m.AdminPaymentsPage })),
+)
 const adminSettlements = page(() =>
   import('@/pages/admin-settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
 )
@@ -141,14 +150,20 @@ export const router = createBrowserRouter([
         title="Kidly 관리자"
         role="ADMIN"
         items={[
+          { to: paths.admin.members, label: '회원 관리' },
           { to: paths.admin.sellerApplications, label: '판매자 신청 심사' },
-          { to: paths.admin.settlements, label: '정산 실행' },
+          { to: paths.admin.orders, label: '전체 주문' },
+          { to: paths.admin.payments, label: '전체 결제' },
+          { to: paths.admin.settlements, label: '정산' },
         ]}
       />
     ),
     HydrateFallback: RouteFallback,
     children: [
-      { index: true, element: <Navigate to={paths.admin.sellerApplications} replace /> },
+      { index: true, element: <Navigate to={paths.admin.members} replace /> },
+      { path: rel(paths.admin.home, paths.admin.members), ...adminMembers },
+      { path: rel(paths.admin.home, paths.admin.orders), ...adminOrders },
+      { path: rel(paths.admin.home, paths.admin.payments), ...adminPayments },
       { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
       { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
       { path: '*', element: <NotFoundPage /> },
@@ -207,6 +222,9 @@ export const router = createBrowserRouter([
         ...adminSellerApplications,
       },
       { path: rel(paths.console.home, paths.console.adminSettlements), ...adminSettlements },
+      { path: rel(paths.console.home, paths.console.adminMembers), ...adminMembers },
+      { path: rel(paths.console.home, paths.console.adminOrders), ...adminOrders },
+      { path: rel(paths.console.home, paths.console.adminPayments), ...adminPayments },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

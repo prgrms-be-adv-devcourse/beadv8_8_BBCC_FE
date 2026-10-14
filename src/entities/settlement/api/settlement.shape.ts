@@ -23,7 +23,8 @@ export const settlementTargetsShape = arr(
     settled: bool,
   }),
 )
-export const settlementPageShape = pageOf(obj(settlementFields))
+export const settlementShape = obj(settlementFields)
+export const settlementPageShape = pageOf(settlementShape)
 export const settlementDetailShape = obj({
   ...settlementFields,
   items: arr(obj({ orderItemId: str, productName: str, amount: num, confirmedAt: str })),

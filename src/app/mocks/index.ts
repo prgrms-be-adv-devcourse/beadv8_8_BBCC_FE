@@ -1,4 +1,5 @@
 import { registerMockHandlers } from '@/shared/api'
+import { adminHandlers } from './admin-handlers'
 import { memberHandlers } from './member-handlers'
 import { paymentHandlers } from './payment-handlers'
 import { productHandlers } from './product-handlers'
@@ -15,4 +16,5 @@ export function setupMocks() {
   registerMockHandlers('정산', settlementHandlers)
   registerMockHandlers('충전 취소', paymentHandlers)
   registerMockHandlers('탈퇴 · 성장 이력 수정', memberHandlers)
+  registerMockHandlers('관리자 전체 조회', adminHandlers)
 }

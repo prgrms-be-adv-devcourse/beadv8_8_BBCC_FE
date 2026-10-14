@@ -134,6 +134,32 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText(/주문번호/).first()).toBeVisible()
   })
 
+  await test.step('관리자: 회원 관리 · 판매자 자격 정지 · 전체 주문 · 결제 · 정산 재처리', async () => {
+    await switchRole(page, '관리자')
+    await page.goto('/admin')
+    await expect(page.getByRole('heading', { name: '회원 관리' })).toBeVisible()
+    await page.getByRole('button', { name: '판매자', exact: true }).nth(1).click()
+    await page.getByRole('textbox', { name: '회원 검색' }).fill('테스트')
+    await page.getByRole('button', { name: '검색' }).click()
+    await page.getByRole('button', { name: '판매자 자격 정지' }).click()
+    await page.getByRole('textbox', { name: '판매자 정지 사유' }).fill('정책 위반 상품 반복 등록')
+    await page.getByRole('button', { name: '자격 정지하기' }).click()
+    await expect(page.getByText('판매자 자격 정지', { exact: true })).toBeVisible()
+
+    await page.getByRole('link', { name: '전체 주문' }).click()
+    await expect(page.getByText(/^주문 \d+$/).first()).toBeVisible()
+    await page.getByRole('link', { name: '전체 결제' }).click()
+    await expect(page.getByText('결제 완료').first()).toBeVisible()
+
+    await page.getByRole('link', { name: '정산', exact: true }).click()
+    await page.getByLabel(/적립 실패를 흉내/).check()
+    await page.getByRole('button', { name: '정산 실행' }).click()
+    await expect(page.getByText('적립 실패')).toBeVisible()
+    await page.getByRole('button', { name: '재처리' }).click()
+    await expect(page.getByText('정산 완료', { exact: true })).toBeVisible()
+    await switchRole(page, '보호자')
+  })
+
   await test.step('내 정보: 닉네임 수정 → 토큰 다시 받기 → 탈퇴(목)', async () => {
     await page.goto('/my/profile')
     await page.getByLabel(/닉네임/).fill('보호자맘')

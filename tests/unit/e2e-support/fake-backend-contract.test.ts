@@ -7,6 +7,7 @@ import { toAddCartItemRequest } from '@/entities/cart'
 import { cartShape } from '@/entities/cart/api/cart.shape'
 import { toChildRequest } from '@/entities/child'
 import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
+import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
 import { paymentDetailShape, paymentPageShape } from '@/entities/payment/api/payment.shape'
 import { sellerOrderPageShape } from '@/entities/seller-order/api/seller-order.shape'
@@ -207,6 +208,25 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('POST', `/orders/${orderId}/items/${itemId}/confirm`, 1)).status).toBe(200)
     expectContract((await call('GET', `/orders/${orderId}`, 1)).data, orderDetailShape)
   }, 15_000)
+
+  it('관리자 회원 목록 · 이용 정지 · 판매자 자격 정지', async () => {
+    expectContract(
+      (await call('GET', '/admin/members?filter=SELLER', 3)).data,
+      adminMemberPageShape,
+    )
+    const suspended = await call('POST', '/admin/sellers/2/suspend', 3, { reason: '정책 위반' })
+    expectContract(suspended.data, sellerShape)
+    expect((await call('POST', '/admin/members/1/suspend', 3, { reason: '테스트' })).status).toBe(
+      204,
+    )
+    const list = await call('GET', '/admin/members?filter=SUSPENDED', 3)
+    expectContract(list.data, adminMemberPageShape)
+    expect(list.data.content[0]).toMatchObject({
+      id: 1,
+      status: 'SUSPENDED',
+      suspendReason: '테스트',
+    })
+  })
 
   it('충전 승인 · 충전 조회', async () => {
     const confirmed = await call('POST', '/wallets/me/charges/confirm', 1, {

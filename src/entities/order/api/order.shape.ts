@@ -54,3 +54,15 @@ export const orderDetailShape = obj({
 export const orderPageShape = pageOf(
   obj({ orderId: str, status: oneOf(ORDER_STATUS), totalAmount: num, orderedAt: str }),
 )
+
+export const adminOrderPageShape = pageOf(
+  obj({
+    orderId: str,
+    memberId: num,
+    status: oneOf(ORDER_STATUS),
+    cancelReason: nullable(oneOf(['OUT_OF_STOCK', 'PAYMENT_FAILED', 'PAYMENT_EXPIRED'])),
+    totalAmount: num,
+    orderedAt: str,
+    itemCount: num,
+  }),
+)

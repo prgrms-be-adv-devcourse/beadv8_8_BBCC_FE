@@ -6,9 +6,15 @@ import { runWithAction } from '@/shared/api'
 export function useRunSettlement() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (periodEnd: string) =>
+    mutationFn: ({
+      periodEnd,
+      simulatePayoutFailure = false,
+    }: {
+      periodEnd: string
+      simulatePayoutFailure?: boolean
+    }) =>
       runWithAction('정산 실행', async () =>
-        toSettlementRunResult(await settlementApi.run({ periodEnd })),
+        toSettlementRunResult(await settlementApi.run({ periodEnd, simulatePayoutFailure })),
       ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: settlementKeys.all }),
   })

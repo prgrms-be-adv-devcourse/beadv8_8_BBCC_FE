@@ -57,3 +57,14 @@ export type PlaceOrderRequestDto = {
   items: { optionId: number; childId: number | null; quantity: number; unitPrice: number }[]
   shippingAddress: { recipientName: string; phone: string; zipCode: string; address: string }
 }
+
+/** GET /admin/orders 한 줄 (기획서 8장 보완 · BE 미구현 → 목) */
+export type AdminOrderDto = {
+  orderId: string
+  memberId: number
+  status: string
+  cancelReason: string | null
+  totalAmount: number
+  orderedAt: string
+  itemCount: number
+}

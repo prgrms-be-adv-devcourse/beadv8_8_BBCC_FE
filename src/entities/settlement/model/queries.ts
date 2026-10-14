@@ -33,3 +33,11 @@ export function useSettlementQuery(settlementId: string | null) {
     enabled: settlementId !== null,
   })
 }
+
+export function useAdminSettlementsQuery() {
+  return useQuery({
+    queryKey: ['settlement', 'admin'] as const,
+    queryFn: settlementApi.adminList,
+    select: (page) => page.content.map(toSettlement),
+  })
+}

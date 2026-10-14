@@ -14,6 +14,23 @@ const children = [],
   apps = [],
   payments = []
 const wallets = { 1: 100000, 2: 0, 3: 0 }
+// 관리자 회원 목록용 (기획서 7.1: 회원 1 보호자 · 2 판매자, 관리자는 목록에서 빠짐)
+const members = {
+  1: {
+    nickname: '보호자',
+    status: 'ACTIVE',
+    sellerStatus: null,
+    suspendReason: null,
+    suspendedAt: null,
+  },
+  2: {
+    nickname: '테스트상점',
+    status: 'ACTIVE',
+    sellerStatus: 'ACTIVE',
+    suspendReason: null,
+    suspendedAt: null,
+  },
+}
 const replica = {
   1: { productId: 1, name: '데일리 맨투맨 (상품 A)', size: '110', price: 25000, sellerId: 2 },
   2: { productId: 1, name: '데일리 맨투맨 (상품 A)', size: '120', price: 25000, sellerId: 2 },
@@ -429,6 +446,49 @@ http
       }
       apps.push(a)
       return send(res, 201, myAppOf(a))
+    }
+    if (r('GET', /^\/admin\/members$/)) {
+      const filter = url.searchParams.get('filter') || 'ALL'
+      const keyword = (url.searchParams.get('keyword') || '').trim()
+      const rows = Object.entries(members)
+        .map(([id, m]) => ({ id: +id, ...m, createdAt: '2026-10-01T10:00:00' }))
+        .filter((m) =>
+          filter === 'SUSPENDED'
+            ? m.status === 'SUSPENDED'
+            : filter === 'SELLER'
+              ? m.sellerStatus !== null
+              : filter === 'BUYER'
+                ? m.sellerStatus === null
+                : true,
+        )
+        .filter((m) => !keyword || String(m.id) === keyword || m.nickname.includes(keyword))
+      return send(res, 200, page(rows))
+    }
+    if ((x = r('POST', /^\/admin\/members\/(\d+)\/suspend$/))) {
+      const m = members[x[1]]
+      if (!m || m.status !== 'ACTIVE')
+        return problem(
+          res,
+          409,
+          '정지할 수 없는 회원입니다',
+          '이미 정지 · 탈퇴했거나 관리자인 회원입니다.',
+          req.url,
+        )
+      Object.assign(m, { status: 'SUSPENDED', suspendReason: body.reason, suspendedAt: now() })
+      return send(res, 204)
+    }
+    if ((x = r('POST', /^\/admin\/sellers\/(\d+)\/suspend$/))) {
+      const m = members[x[1]]
+      if (!m || m.sellerStatus !== 'ACTIVE')
+        return problem(
+          res,
+          409,
+          '이미 정지된 판매자입니다',
+          '자격이 이미 정지된 판매자입니다.',
+          req.url,
+        )
+      m.sellerStatus = 'SUSPENDED'
+      return send(res, 200, { sellerId: +x[1], businessName: m.nickname, status: 'SUSPENDED' })
     }
     if (r('GET', /^\/admin\/seller-applications$/))
       return send(res, 200, page(apps.map(appSummaryOf)))

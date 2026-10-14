@@ -58,3 +58,19 @@ describe('회원 · 자녀 보완 화면 주소', () => {
     expect(memberPathsOf('admin').child('1')).toBe('/my/children/1')
   })
 })
+
+describe('관리자 보완 화면 주소', () => {
+  it('관리자 영역과 콘솔에 회원 · 주문 · 결제 조회가 있다', () => {
+    expect([paths.admin.members, paths.admin.orders, paths.admin.payments]).toEqual([
+      '/admin/members',
+      '/admin/orders',
+      '/admin/payments',
+    ])
+    expect([
+      paths.console.adminMembers,
+      paths.console.adminOrders,
+      paths.console.adminPayments,
+    ]).toEqual(['/console/admin/members', '/console/admin/orders', '/console/admin/payments'])
+    expect(areaOf(paths.admin.members)).toBe('admin')
+  })
+})

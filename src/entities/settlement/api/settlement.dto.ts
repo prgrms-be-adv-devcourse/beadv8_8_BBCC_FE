@@ -30,7 +30,11 @@ export type SettlementDetailDto = SettlementDto & {
 }
 
 /** POST /admin/settlements/run */
-export type SettlementRunRequestDto = { periodEnd: string }
+export type SettlementRunRequestDto = {
+  periodEnd: string
+  /** 목 전용: 판매자 지갑 적립 실패를 흉내 낸다 (재처리 시연용, 실제 서버는 무시) */
+  simulatePayoutFailure?: boolean
+}
 export type SettlementRunResultDto = {
   periodEnd: string
   settlementCount: number

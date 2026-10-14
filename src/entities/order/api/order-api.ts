@@ -1,6 +1,11 @@
 import { apiClient, expectShape, type Page } from '@/shared/api'
-import type { OrderDetailDto, OrderSummaryDto, PlaceOrderRequestDto } from './order.dto'
-import { orderDetailShape, orderPageShape } from './order.shape'
+import type {
+  AdminOrderDto,
+  OrderDetailDto,
+  OrderSummaryDto,
+  PlaceOrderRequestDto,
+} from './order.dto'
+import { adminOrderPageShape, orderDetailShape, orderPageShape } from './order.shape'
 
 export const orderApi = {
   list: () =>
@@ -15,4 +20,11 @@ export const orderApi = {
   /** 이미 확정이어도 200, 배송 완료 전이면 409 */
   confirmItem: (orderId: string, orderItemId: string) =>
     apiClient.post(`/orders/${orderId}/items/${orderItemId}/confirm`),
+  /** 관리자 전체 주문 (기획서 8장 보완). 백엔드에 아직 없어 목 응답이다 */
+  adminList: (status: string | null) =>
+    apiClient
+      .get<Page<AdminOrderDto>>('/admin/orders', {
+        params: { status: status ?? undefined, page: 0, size: 50 },
+      })
+      .then(expectShape(adminOrderPageShape)),
 }

@@ -56,4 +56,13 @@ export const DEMO_STEPS: {
       { to: paths.console.sellerSettlements, label: '정산서', role: 'SELLER' },
     ],
   },
+  {
+    step: '관리',
+    title: '관리자 보완',
+    links: [
+      { to: paths.console.adminMembers, label: '회원', role: 'ADMIN' },
+      { to: paths.console.adminOrders, label: '주문', role: 'ADMIN' },
+      { to: paths.console.adminPayments, label: '결제', role: 'ADMIN' },
+    ],
+  },
 ]
