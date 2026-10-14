@@ -2,3 +2,8 @@ dist
 node_modules
 package-lock.json
 .github
+playwright-report
+test-results
+
+# 로컬 전용 작업 폴더 (커밋 안 함, .git/info/exclude)
+Claude outputs
