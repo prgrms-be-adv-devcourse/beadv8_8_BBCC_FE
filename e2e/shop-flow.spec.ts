@@ -86,6 +86,8 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await switchRole(page, '판매자')
     await page.goto('/center')
     await expect(page.getByText('발송할 주문')).toBeVisible()
+    await expect(page.getByText('테스트상점').first()).toBeVisible()
+    await expect(page.getByText('판매 가능')).toBeVisible()
     await page.getByRole('link', { name: '주문 · 배송' }).click()
     await page.getByRole('button', { name: '발송' }).first().click()
     await page.getByRole('button', { name: '배송 완료 처리' }).first().click()

@@ -1,5 +1,6 @@
 import { ApplicationStatusBadge, canApprove, useSellerApplicationsQuery } from '@/entities/seller'
 import { ApproveSellerButton } from '@/features/approve-seller'
+import { RejectSellerForm } from '@/features/reject-seller'
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
@@ -21,7 +22,7 @@ export function AdminSellerApplicationsPage() {
       )}
       {applications.data?.content.length === 0 && <StateMessage>신청이 없어요.</StateMessage>}
       {applications.data?.content.map((application) => (
-        <Card key={application.id} className="flex items-center justify-between">
+        <Card key={application.id} className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="font-medium">
               {application.businessName} <ApplicationStatusBadge status={application.status} />
@@ -32,7 +33,12 @@ export function AdminSellerApplicationsPage() {
               {formatDateTime(application.createdAt)}
             </p>
           </div>
-          {canApprove(application) && <ApproveSellerButton applicationId={application.id} />}
+          {canApprove(application) && (
+            <div className="flex items-start gap-2">
+              <ApproveSellerButton applicationId={application.id} />
+              <RejectSellerForm applicationId={application.id} />
+            </div>
+          )}
         </Card>
       ))}
     </div>

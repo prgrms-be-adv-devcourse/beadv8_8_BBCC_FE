@@ -14,6 +14,7 @@ import { toSellerApplicationRequest } from '@/entities/seller'
 import {
   sellerApplicationPageShape,
   sellerApplicationShape,
+  sellerShape,
 } from '@/entities/seller/api/seller.shape'
 import { tokenShape } from '@/entities/session/api/session.shape'
 import { chargeConfirmShape, chargeShape, walletShape } from '@/entities/wallet/api/wallet.shape'
@@ -100,6 +101,25 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       (await call('GET', '/admin/seller-applications', 3)).data,
       sellerApplicationPageShape,
     )
+    const rejected = await call('POST', `/admin/seller-applications/${mine.data.id}/reject`, 3, {
+      reason: '서류 미비',
+    })
+    expect(rejected.status).toBe(200)
+    // 거절 응답은 심사 목록 한 줄과 같은 모양
+    expectContract(
+      {
+        content: [rejected.data],
+        page: 0,
+        size: 1,
+        totalElements: 1,
+        totalPages: 1,
+        hasNext: false,
+      },
+      sellerApplicationPageShape,
+    )
+    const latest = await call('GET', '/members/me/seller-application', 2)
+    expect(latest.data).toMatchObject({ status: 'REJECTED', rejectReason: '서류 미비' })
+    expectContract((await call('GET', '/seller/me', 2)).data, sellerShape)
   })
 
   it('장바구니 → 주문 → 결제 완료 → 발송 · 배송 완료 → 구매확정', async () => {
