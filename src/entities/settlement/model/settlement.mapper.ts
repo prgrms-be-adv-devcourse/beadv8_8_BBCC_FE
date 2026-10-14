@@ -8,6 +8,7 @@ import type {
   Settlement,
   SettlementDetail,
   SettlementRunResult,
+  SettlementStatus,
   SettlementTarget,
 } from './settlement'
 
@@ -25,6 +26,7 @@ export function toSettlement(dto: SettlementDto): Settlement {
   return {
     id: dto.settlementId,
     sellerId: dto.sellerId,
+    status: dto.status as SettlementStatus,
     periodEnd: dto.period.periodEnd,
     itemCount: dto.itemCount,
     totalAmount: dto.totalAmount,

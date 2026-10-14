@@ -82,3 +82,14 @@ export type PlaceOrderInput = {
   items: { optionId: string; childId: string | null; quantity: number; unitPrice: number }[]
   shippingAddress: { recipientName: string; phone: string; zipCode: string; address: string }
 }
+
+/** 관리자 전체 주문 한 줄 */
+export type AdminOrder = {
+  id: string
+  memberId: string
+  status: OrderStatus
+  cancelReason: CancelReason | null
+  totalAmount: number
+  orderedAt: string
+  itemCount: number
+}

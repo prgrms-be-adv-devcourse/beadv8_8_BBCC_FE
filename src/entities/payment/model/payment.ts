@@ -37,3 +37,6 @@ export const PAYMENT_FAILURE_LABEL: Record<PaymentFailureCode, string> = {
   WALLET_NOT_FOUND: '지갑 없음',
   AMOUNT_MISMATCH: '주문 금액 불일치',
 }
+
+/** 관리자 전체 결제 한 줄 */
+export type AdminPayment = Payment & { memberId: string }

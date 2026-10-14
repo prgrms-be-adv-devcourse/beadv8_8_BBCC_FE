@@ -1,0 +1,14 @@
+import type { AdminMemberDto } from '../api/member.dto'
+import type { AdminMember, MemberStatus } from './member'
+
+export function toAdminMember(dto: AdminMemberDto): AdminMember {
+  return {
+    id: String(dto.id),
+    nickname: dto.nickname,
+    status: dto.status as MemberStatus,
+    sellerStatus: dto.sellerStatus as AdminMember['sellerStatus'],
+    suspendReason: dto.suspendReason,
+    suspendedAt: dto.suspendedAt,
+    createdAt: dto.createdAt,
+  }
+}

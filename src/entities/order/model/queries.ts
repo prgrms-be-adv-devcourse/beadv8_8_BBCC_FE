@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { orderApi } from '../api/order-api'
-import { toOrder, toOrderSummary } from './order.mapper'
+import { toAdminOrder, toOrder, toOrderSummary } from './order.mapper'
 import { isAwaitingPayment, paymentPollInterval } from './order.rules'
 
 export const orderKeys = {
@@ -43,5 +43,13 @@ export function useOrderQuery(orderId: string) {
       if (!pendingSince.has(orderId)) pendingSince.set(orderId, dataUpdatedAt)
       return paymentPollInterval(paymentPendingMs(orderId, dataUpdatedAt))
     },
+  })
+}
+
+export function useAdminOrdersQuery(status: string | null) {
+  return useQuery({
+    queryKey: ['orders', 'admin', status] as const,
+    queryFn: () => orderApi.adminList(status),
+    select: (page) => ({ ...page, content: page.content.map(toAdminOrder) }),
   })
 }

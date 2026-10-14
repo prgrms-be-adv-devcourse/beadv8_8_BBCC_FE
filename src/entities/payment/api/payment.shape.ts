@@ -12,6 +12,7 @@ const fields = {
 }
 
 export const paymentPageShape = pageOf(obj(fields))
+export const adminPaymentPageShape = pageOf(obj({ ...fields, memberId: num }))
 export const paymentDetailShape = obj({
   ...fields,
   items: arr(obj({ orderItemId: num, amount: num, refundedAmount: num })),

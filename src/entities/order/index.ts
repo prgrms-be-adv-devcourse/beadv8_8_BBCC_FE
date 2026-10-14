@@ -1,6 +1,8 @@
 export { orderApi } from './api/order-api'
+export type { AdminOrderDto } from './api/order.dto'
 export {
   CANCEL_REASON_LABEL,
+  type AdminOrder,
   ORDER_STATUS_LABEL,
   type CancelReason,
   type Order,
@@ -10,7 +12,7 @@ export {
   type OrderSummary,
   type PlaceOrderInput,
 } from './model/order'
-export { toOrder, toPlaceOrderRequest } from './model/order.mapper'
+export { toAdminOrder, toOrder, toPlaceOrderRequest } from './model/order.mapper'
 export {
   buildOrderTimeline,
   canConfirmItem,
@@ -22,7 +24,13 @@ export {
   PAYMENT_DELAY_MS,
   paymentPollInterval,
 } from './model/order.rules'
-export { orderKeys, paymentPendingMs, useOrderQuery, useOrdersQuery } from './model/queries'
+export {
+  orderKeys,
+  paymentPendingMs,
+  useAdminOrdersQuery,
+  useOrderQuery,
+  useOrdersQuery,
+} from './model/queries'
 export { OrderDeliveryList } from './ui/OrderDeliveryList'
 export { OrderItemRow } from './ui/OrderItemRow'
 export { OrderProgressBar } from './ui/OrderProgressBar'

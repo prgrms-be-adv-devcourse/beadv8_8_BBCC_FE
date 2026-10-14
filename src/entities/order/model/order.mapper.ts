@@ -1,6 +1,12 @@
 import type { DeliveryStatus } from '@/shared/config'
-import type { OrderDetailDto, OrderSummaryDto, PlaceOrderRequestDto } from '../api/order.dto'
 import type {
+  AdminOrderDto,
+  OrderDetailDto,
+  OrderSummaryDto,
+  PlaceOrderRequestDto,
+} from '../api/order.dto'
+import type {
+  AdminOrder,
   CancelReason,
   ConfirmType,
   Order,
@@ -70,5 +76,17 @@ export function toPlaceOrderRequest(input: PlaceOrderInput): PlaceOrderRequestDt
       unitPrice: item.unitPrice,
     })),
     shippingAddress: input.shippingAddress,
+  }
+}
+
+export function toAdminOrder(dto: AdminOrderDto): AdminOrder {
+  return {
+    id: dto.orderId,
+    memberId: String(dto.memberId),
+    status: dto.status as OrderStatus,
+    cancelReason: dto.cancelReason as CancelReason | null,
+    totalAmount: dto.totalAmount,
+    orderedAt: dto.orderedAt,
+    itemCount: dto.itemCount,
   }
 }

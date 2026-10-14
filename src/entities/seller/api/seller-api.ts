@@ -33,5 +33,10 @@ export const sellerApi = {
   /** 사유는 신청한 회원에게 그대로 보인다 */
   reject: (applicationId: string, request: RejectSellerApplicationRequestDto) =>
     apiClient.post(`/admin/seller-applications/${applicationId}/reject`, request),
+  /** 판매자 자격 정지 (정지된 판매자를 돌려준다) */
+  suspend: (sellerId: string, request: { reason: string }) =>
+    apiClient
+      .post<SellerDto>(`/admin/sellers/${sellerId}/suspend`, request)
+      .then(expectShape(sellerShape)),
   getMine: () => apiClient.get<SellerDto>('/seller/me').then(expectShape(sellerShape)),
 }

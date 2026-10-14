@@ -18,3 +18,6 @@ export type PaymentDetailDto = PaymentSummaryDto & {
   /** 실패 결제는 빈 목록 */
   items: { orderItemId: number; amount: number; refundedAmount: number }[]
 }
+
+/** GET /admin/payments 한 줄 (기획서 8장 보완 · BE 미구현 → 목) */
+export type AdminPaymentDto = PaymentSummaryDto & { memberId: number }
