@@ -1,0 +1,42 @@
+import { defineConfig, devices } from '@playwright/test'
+
+// E2E: 가짜 백엔드 + Vite 개발 서버를 띄워 시연 흐름을 브라우저로 끝까지 따라간다.
+// 로컬 개발 서버(5173) · 실제 백엔드(8080)와 겹치지 않는 포트를 쓴다
+const FAKE_BACKEND_PORT = 18080
+const APP_PORT = 5174
+
+export default defineConfig({
+  testDir: './e2e',
+  timeout: 120_000,
+  expect: { timeout: 15_000 },
+  fullyParallel: false,
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  use: {
+    baseURL: `http://localhost:${APP_PORT}`,
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    // 브라우저를 따로 설치해 둔 환경이면 경로를 지정한다 (없으면 npx playwright install chromium으로 받은 것 사용)
+    launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined },
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+    },
+  ],
+  webServer: [
+    {
+      command: `node e2e/fake-backend/server.mjs`,
+      env: { PORT: String(FAKE_BACKEND_PORT) },
+      port: FAKE_BACKEND_PORT,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: `npx vite --port ${APP_PORT} --strictPort`,
+      env: { VITE_API_BASE_URL: `http://localhost:${FAKE_BACKEND_PORT}`, VITE_USE_MOCK: 'true' },
+      port: APP_PORT,
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
+})
