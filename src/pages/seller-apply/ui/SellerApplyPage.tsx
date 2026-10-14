@@ -1,4 +1,4 @@
-import { ApplicationStatusBadge, useMySellerApplicationQuery } from '@/entities/seller'
+import { ApplicationStatusBadge, canReapply, useMySellerApplicationQuery } from '@/entities/seller'
 import { ApplySellerForm, RefreshSellerRoleButton } from '@/features/apply-seller'
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime } from '@/shared/lib'
@@ -20,7 +20,6 @@ export function SellerApplyPage() {
       {application.isError && (
         <StateMessage tone="error">{getErrorMessage(application.error)}</StateMessage>
       )}
-      {application.data === null && <ApplySellerForm />}
       {application.data && (
         <Card className="space-y-2">
           <p className="font-medium">
@@ -37,6 +36,12 @@ export function SellerApplyPage() {
           )}
           {application.data.status === 'APPROVED' && <RefreshSellerRoleButton />}
         </Card>
+      )}
+      {application.isSuccess && canReapply(application.data) && (
+        <>
+          {application.data && <p className="text-sm font-medium">다시 신청하기</p>}
+          <ApplySellerForm />
+        </>
       )}
     </div>
   )

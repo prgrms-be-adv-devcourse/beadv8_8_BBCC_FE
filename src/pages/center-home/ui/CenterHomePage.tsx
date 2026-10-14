@@ -1,14 +1,18 @@
 import { Link } from 'react-router'
 import { isOnSale, useSellerProductsQuery } from '@/entities/product'
+import { SELLER_STATUS_LABEL, useMySellerQuery } from '@/entities/seller'
 import { summarizeSellerOrders, useSellerOrdersQuery } from '@/entities/seller-order'
+import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
+import { Badge } from '@/shared/ui/badge'
 import { Card } from '@/shared/ui/card'
-import { PageHeader } from '@/shared/ui/page-header'
+import { PageHeader, StateMessage } from '@/shared/ui/page-header'
 
 /** 판매자 센터 첫 화면: 오늘 할 일 */
 export function CenterHomePage() {
   const orders = useSellerOrdersQuery()
   const products = useSellerProductsQuery()
+  const seller = useMySellerQuery()
   const summary = orders.data ? summarizeSellerOrders(orders.data.content) : null
   const onSale = products.data?.content.filter(isOnSale).length
 
@@ -22,6 +26,25 @@ export function CenterHomePage() {
   return (
     <div className="space-y-4">
       <PageHeader title="판매자 센터" description="주문을 발송하고, 상품과 정산을 관리해요." />
+      <Card className="flex items-center justify-between">
+        {seller.data ? (
+          <p className="font-semibold">
+            {seller.data.businessName}{' '}
+            <span className="text-muted-foreground text-sm font-normal">
+              판매자 #{seller.data.id}
+            </span>
+          </p>
+        ) : seller.isError ? (
+          <StateMessage tone="error">{getErrorMessage(seller.error)}</StateMessage>
+        ) : (
+          <StateMessage>내 판매자 정보를 불러오는 중…</StateMessage>
+        )}
+        {seller.data && (
+          <Badge variant={seller.data.status === 'ACTIVE' ? 'success' : 'destructive'}>
+            {SELLER_STATUS_LABEL[seller.data.status]}
+          </Badge>
+        )}
+      </Card>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {tiles.map((tile) => (
           <Link key={tile.label} to={tile.to}>

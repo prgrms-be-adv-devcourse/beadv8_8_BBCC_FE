@@ -355,7 +355,8 @@ http
       return send(res, 200, { ...d, orderId: String(o.orderId) })
     }
     if (r('GET', /^\/members\/me\/seller-application$/)) {
-      const a = apps.find((a) => a.applicantId === me)
+      // 백엔드: 가장 최근 신청
+      const a = apps.findLast((a) => a.applicantId === me)
       return a
         ? send(res, 200, myAppOf(a))
         : problem(res, 404, '찾을 수 없습니다', '신청 없음', req.url)
@@ -377,6 +378,30 @@ http
     }
     if (r('GET', /^\/admin\/seller-applications$/))
       return send(res, 200, page(apps.map(appSummaryOf)))
+    if ((x = r('POST', /^\/admin\/seller-applications\/(\d+)\/reject$/))) {
+      const a = apps.find((a) => a.id === +x[1])
+      if (a.status !== 'PENDING')
+        return problem(
+          res,
+          409,
+          '심사 중인 신청이 아닙니다',
+          '이미 처리된 판매자 신청입니다.',
+          req.url,
+        )
+      if (!body?.reason?.trim() || body.reason.length > 200)
+        return problem(res, 400, '잘못된 요청입니다', '거절 사유를 확인해 주세요.', req.url)
+      Object.assign(a, { status: 'REJECTED', rejectReason: body.reason, decidedAt: now() })
+      return send(res, 200, appSummaryOf(a))
+    }
+    if (r('GET', /^\/seller\/me$/)) {
+      if (!(u.roles || []).includes('SELLER'))
+        return problem(res, 403, '권한이 없습니다', '판매자만 볼 수 있습니다.', req.url)
+      return send(res, 200, {
+        sellerId: me,
+        businessName: u.nickname || '테스트상점',
+        status: 'ACTIVE',
+      })
+    }
     if ((x = r('POST', /^\/admin\/seller-applications\/(\d+)\/approve$/))) {
       const a = apps.find((a) => a.id === +x[1])
       a.status = 'APPROVED'

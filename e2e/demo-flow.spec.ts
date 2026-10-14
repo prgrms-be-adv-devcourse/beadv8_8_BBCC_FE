@@ -34,10 +34,24 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText('기본', { exact: true })).toBeVisible()
   })
 
-  await test.step('② 판매자 신청 → 관리자 승인', async () => {
+  await test.step('② 판매자 신청 → 관리자 거절 → 다시 신청 → 승인', async () => {
     await page.goto('/console/seller/apply')
     await page.getByRole('button', { name: '신청하기' }).click()
     await expect(page.getByText('심사 중')).toBeVisible()
+    await switchRole(page, '관리자')
+    await page.goto('/console/admin/seller-applications')
+    await page.getByRole('button', { name: '거절', exact: true }).click()
+    await page.getByRole('textbox', { name: '거절 사유' }).fill('사업자 서류를 다시 확인해 주세요')
+    await page.getByRole('button', { name: '거절하기' }).click()
+    await expect(page.getByText('거절됨')).toBeVisible()
+
+    await switchRole(page, '보호자')
+    await page.goto('/console/seller/apply')
+    await expect(page.getByText('거절 사유: 사업자 서류를 다시 확인해 주세요')).toBeVisible()
+    await expect(page.getByText('다시 신청하기')).toBeVisible()
+    await page.getByRole('button', { name: '신청하기' }).click()
+    await expect(page.getByText('심사 중')).toBeVisible()
+
     await switchRole(page, '관리자')
     await page.goto('/console/admin/seller-applications')
     await page.getByRole('button', { name: '승인' }).click()
