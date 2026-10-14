@@ -2,12 +2,15 @@ import type {
   SellerApplicationDto,
   SellerApplicationRequestDto,
   SellerApplicationSummaryDto,
+  SellerDto,
 } from '../api/seller.dto'
 import type {
   SellerApplication,
   SellerApplicationForm,
   SellerApplicationStatus,
   SellerApplicationSummary,
+  Seller,
+  SellerStatus,
 } from './seller'
 
 export function toSellerApplication(dto: SellerApplicationDto): SellerApplication {
@@ -43,5 +46,13 @@ export function toSellerApplicationRequest(
     businessName: form.businessName.trim(),
     representativeName: form.representativeName.trim(),
     businessRegistrationNumber: form.businessRegistrationNumber.trim(),
+  }
+}
+
+export function toSeller(dto: SellerDto): Seller {
+  return {
+    id: String(dto.sellerId),
+    businessName: dto.businessName,
+    status: dto.status as SellerStatus,
   }
 }

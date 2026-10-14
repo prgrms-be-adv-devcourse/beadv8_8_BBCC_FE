@@ -1,10 +1,12 @@
 import { apiClient, expectShape, getErrorStatus, type Page } from '@/shared/api'
 import type {
+  RejectSellerApplicationRequestDto,
   SellerApplicationDto,
   SellerApplicationRequestDto,
   SellerApplicationSummaryDto,
+  SellerDto,
 } from './seller.dto'
-import { sellerApplicationPageShape, sellerApplicationShape } from './seller.shape'
+import { sellerApplicationPageShape, sellerApplicationShape, sellerShape } from './seller.shape'
 
 export const sellerApi = {
   /** 신청한 적이 없으면 404 → null */
@@ -28,4 +30,8 @@ export const sellerApi = {
       .then(expectShape(sellerApplicationPageShape)),
   approve: (applicationId: string) =>
     apiClient.post(`/admin/seller-applications/${applicationId}/approve`),
+  /** 사유는 신청한 회원에게 그대로 보인다 */
+  reject: (applicationId: string, request: RejectSellerApplicationRequestDto) =>
+    apiClient.post(`/admin/seller-applications/${applicationId}/reject`, request),
+  getMine: () => apiClient.get<SellerDto>('/seller/me').then(expectShape(sellerShape)),
 }

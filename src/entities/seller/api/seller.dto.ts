@@ -27,3 +27,9 @@ export type SellerApplicationRequestDto = {
   representativeName: string
   businessRegistrationNumber: string
 }
+
+/** POST /admin/seller-applications/{id}/reject */
+export type RejectSellerApplicationRequestDto = { reason: string }
+
+/** GET /seller/me (판매자 ID = 회원 ID). 판매자 정보가 없으면 404 */
+export type SellerDto = { sellerId: number; businessName: string; status: string }

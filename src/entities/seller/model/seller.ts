@@ -31,3 +31,13 @@ export const APPLICATION_STATUS_LABEL: Record<SellerApplicationStatus, string> =
   APPROVED: '승인됨',
   REJECTED: '거절됨',
 }
+
+export type SellerStatus = 'ACTIVE' | 'SUSPENDED'
+
+/** 승인된 판매자 (GET /seller/me) */
+export type Seller = { id: string; businessName: string; status: SellerStatus }
+
+export const SELLER_STATUS_LABEL: Record<SellerStatus, string> = {
+  ACTIVE: '판매 가능',
+  SUSPENDED: '자격 정지',
+}

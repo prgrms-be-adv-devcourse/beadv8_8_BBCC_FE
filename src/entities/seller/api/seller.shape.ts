@@ -24,3 +24,9 @@ export const sellerApplicationPageShape = pageOf(
     createdAt: str,
   }),
 )
+
+export const sellerShape = obj({
+  sellerId: num,
+  businessName: str,
+  status: oneOf(['ACTIVE', 'SUSPENDED']),
+})
