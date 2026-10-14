@@ -16,10 +16,13 @@ export {
   canConfirmItem,
   deliveryOf,
   isAwaitingPayment,
+  isPaymentDelayed,
   needsCharge,
   orderProgress,
+  PAYMENT_DELAY_MS,
+  paymentPollInterval,
 } from './model/order.rules'
-export { orderKeys, useOrderQuery, useOrdersQuery } from './model/queries'
+export { orderKeys, paymentPendingMs, useOrderQuery, useOrdersQuery } from './model/queries'
 export { OrderDeliveryList } from './ui/OrderDeliveryList'
 export { OrderItemRow } from './ui/OrderItemRow'
 export { OrderProgressBar } from './ui/OrderProgressBar'
