@@ -1,0 +1,81 @@
+// 화면 주소는 여기서만 정한다. 화면 · 기능은 문자열 대신 이 값을 쓴다.
+
+/** 화면 영역: 쇼핑(보호자) · 판매자 센터 · 관리자 · 시연 콘솔 */
+export type Area = 'shop' | 'center' | 'admin' | 'console'
+
+export const AREA_LABEL: Record<Area, string> = {
+  shop: '쇼핑',
+  center: '판매자 센터',
+  admin: '관리자',
+  console: '시연 콘솔',
+}
+
+const under = (prefix: string, pathname: string) =>
+  pathname === prefix || pathname.startsWith(`${prefix}/`)
+
+export function areaOf(pathname: string): Area {
+  if (under('/console', pathname)) return 'console'
+  if (under('/center', pathname)) return 'center'
+  if (under('/admin', pathname)) return 'admin'
+  return 'shop'
+}
+
+const C = '/console'
+
+export const paths = {
+  login: '/login',
+  kakaoCallback: '/oauth/kakao/callback',
+  shop: {
+    home: '/',
+    product: (id: string, childId?: string | null) =>
+      childId ? `/products/${id}?childId=${childId}` : `/products/${id}`,
+    cart: '/cart',
+    orders: '/orders',
+    order: (id: string) => `/orders/${id}`,
+    my: '/my',
+    children: '/my/children',
+    addresses: '/my/addresses',
+    wallet: '/my/wallet',
+    chargeSuccess: '/my/wallet/charge/success',
+    chargeFail: '/my/wallet/charge/fail',
+  },
+  center: {
+    home: '/center',
+    apply: '/center/apply',
+    products: '/center/products',
+    orders: '/center/orders',
+    settlements: '/center/settlements',
+  },
+  admin: {
+    home: '/admin',
+    sellerApplications: '/admin/seller-applications',
+    settlements: '/admin/settlements',
+  },
+  console: {
+    home: C,
+    verify: `${C}/verify`,
+    children: `${C}/children`,
+    addresses: `${C}/addresses`,
+    products: `${C}/products`,
+    product: (id: string, childId?: string | null) =>
+      childId ? `${C}/products/${id}?childId=${childId}` : `${C}/products/${id}`,
+    cart: `${C}/cart`,
+    orders: `${C}/orders`,
+    order: (id: string) => `${C}/orders/${id}`,
+    wallet: `${C}/wallet`,
+    chargeSuccess: `${C}/wallet/charge/success`,
+    chargeFail: `${C}/wallet/charge/fail`,
+    sellerApply: `${C}/seller/apply`,
+    sellerProducts: `${C}/seller/products`,
+    sellerOrders: `${C}/seller/orders`,
+    sellerSettlements: `${C}/seller/settlements`,
+    adminSellerApplications: `${C}/admin/seller-applications`,
+    adminSettlements: `${C}/admin/settlements`,
+  },
+} as const
+
+/** 영역마다 따로 있는 예치금 · 충전 결과 화면 (충전은 쇼핑 · 콘솔에서만) */
+export function walletPathsOf(area: Area) {
+  const base = area === 'console' ? paths.console : paths.shop
+  return { wallet: base.wallet, chargeSuccess: base.chargeSuccess, chargeFail: base.chargeFail }
+}

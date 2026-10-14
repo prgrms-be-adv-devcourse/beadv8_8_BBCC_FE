@@ -13,3 +13,12 @@ export function validateTrackingNumber(trackingNumber: string): string | null {
   if (value.length > 50) return '송장 번호는 50자까지예요.'
   return null
 }
+
+/** 판매자 센터 첫 화면의 할 일: 발송할 것 · 배송 중 · 배송 완료 */
+export function summarizeSellerOrders(orders: SellerOrder[]) {
+  return {
+    toShip: orders.filter((order) => order.status === 'READY').length,
+    shipping: orders.filter((order) => order.status === 'SHIPPING').length,
+    delivered: orders.filter((order) => order.status === 'DELIVERED').length,
+  }
+}

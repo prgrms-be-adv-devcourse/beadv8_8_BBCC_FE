@@ -17,10 +17,12 @@ export {
   deliveryOf,
   isAwaitingPayment,
   needsCharge,
+  orderProgress,
 } from './model/order.rules'
 export { orderKeys, useOrderQuery, useOrdersQuery } from './model/queries'
 export { OrderDeliveryList } from './ui/OrderDeliveryList'
 export { OrderItemRow } from './ui/OrderItemRow'
+export { OrderProgressBar } from './ui/OrderProgressBar'
 export { OrderStatusBadge } from './ui/OrderStatusBadge'
 export { OrderStatusBanner } from './ui/OrderStatusBanner'
 export { OrderTimeline } from './ui/OrderTimeline'

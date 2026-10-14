@@ -67,3 +67,26 @@ export function buildOrderTimeline(order: Order): OrderTimelineEvent[] {
   }
   return events
 }
+
+const PROGRESS_STEPS = ['주문', '결제 완료', '배송 중', '배송 완료', '구매확정'] as const
+
+/** 쇼핑 화면 진행 막대: 결제 → 판매자 한 곳이라도 발송 → 모두 배송 완료 → 모두 구매확정 */
+export function orderProgress(order: Order): {
+  steps: readonly string[]
+  current: number
+  cancelled: boolean
+} {
+  const result = (current: number, cancelled = false) => ({
+    steps: PROGRESS_STEPS,
+    current,
+    cancelled,
+  })
+  if (order.status === 'CANCELLED') return result(0, true)
+  if (order.status === 'PENDING_PAYMENT') return result(0)
+  const { deliveries, items } = order
+  if (items.length > 0 && items.every((item) => item.confirmedAt !== null)) return result(4)
+  if (deliveries.length > 0 && deliveries.every((delivery) => delivery.deliveredAt !== null))
+    return result(3)
+  if (deliveries.some((delivery) => delivery.shippedAt !== null)) return result(2)
+  return result(1)
+}
