@@ -8,7 +8,9 @@ Codex는 이 파일을, Claude는 `CLAUDE.md`의 `@AGENTS.md`로 같은 내용�
 
 ## 역할
 
-- 지금은 이 방이 FE의 설계 · 구현 · 검수를 모두 맡는다. 순서: 설계(범위 · 구조 결정, 이슈 초안) → 구현 → 검수(diff 확인 · 검사 · 커밋 · PR 초안). 머지는 사용자가 한다.
+- 지금은 이 방이 FE의 설계 · 구현 · 검수를 모두 맡는다 (이슈 · 브랜치 · 커밋 · push · PR · rebase 포함). 순서: 설계(범위 · 구조 결정, 이슈) → 브랜치 → 구현 → 검수(diff 확인 · 검사 · 커밋 · push · PR · CI 판정). 머지는 사용자가 한다.
+- git 작업은 **FE 저장소(`beadv8_8_BBCC_FE`)에서만** 한다. 명령 전에 `git remote -v`로 FE 저장소인지 확인한다.
+- 검수 방이 따로 생기면 7절의 브랜치 만들기까지만 이 방이 하고, 커밋 · push · PR · rebase는 검수 방으로 넘긴다 (넘길 때 보고 형식은 7절).
 - 검수는 구현과 분리해서 한다: 커밋 전에 diff 전체를 다시 읽고 6절 검사를 돌린 뒤 결과를 보고한다.
 
 ## 백엔드 저장소
@@ -171,8 +173,17 @@ React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui · TanStack Query
 
 ## 7. Git
 
-- 브랜치 `feature/도메인/#이슈-기능`, 커밋 `타입: 한글 요약`(feat · fix · docs · style · refactor · chore, 50자 이내, 마침표 없음). main · develop 직접 push 금지.
+- 브랜치 `feature/<도메인>/#<이슈번호>-<영문-kebab>` (버그 수정은 `fix/...`), 커밋 `타입: 한글 요약`(feat · fix · docs · style · refactor · chore, 50자 이내, 마침표 없음). main · develop 직접 push 금지.
 - 커밋 · push · PR은 요청 · 승인 범위에서만 한다. 푸시된 커밋은 amend · 강제 푸시하지 않는다.
 - 커밋 작성자는 `L2J92 <air92323@gmail.com>`. push 권한이 없는 환경이면 로컬 커밋까지 하고 push · PR 생성 명령과 본문을 사용자에게 넘긴다.
 - 시연용 로컬 파일(`scripts/demo-seed.sql`)은 커밋하지 않는다 (`.git/info/exclude`).
 - 형식 정리와 기능 변경을 한 커밋에 섞지 않는다. 의존성 변경은 별도 커밋으로 나눈다.
+
+### 이슈 브랜치 만들기
+
+1. **이슈 확인:** 이슈 담당자가 L2J92인지 본다. L2J92에게 열린 이슈가 여러 개면 어느 이슈인지 사용자에게 묻는다. 이슈가 없으면 저장소 이슈 템플릿(`[FEAT] ` 등 머리말)으로 만든다.
+2. **시작 전 상태:** `git status`가 깨끗한지 본다. 커밋 안 된 변경이 있으면 멈추고 보고한다 (다른 이슈 파일이 섞이지 않게).
+3. **develop 최신 받기:** 만들기 직전에 `git fetch origin`.
+4. **만들기:** `git switch -c <브랜치> origin/develop` → `git branch --unset-upstream` (첫 push 때 `-u`로 설정). 같은 이름의 로컬 브랜치가 있으면 만들지 않고 보고한다.
+5. develop · main에서 직접 작업하지 않는다.
+6. **검수로 넘길 때 보고 (검수 방이 있을 때):** 브랜치 이름 · 기준 develop 커밋 해시 · 바뀐 파일 · 이슈 할 일별 반영 내용 · 공용 설정(빌드 · 린트 · CI · 의존성) 변경 여부 · 로컬에서 확인한 것 / CI로 넘기는 것.
