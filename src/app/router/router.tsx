@@ -1,49 +1,96 @@
 import { createBrowserRouter } from 'react-router'
-import { AddressesPage } from '@/pages/addresses'
-import { AdminSellerApplicationsPage } from '@/pages/admin-seller-applications'
-import { AdminSettlementsPage } from '@/pages/admin-settlements'
-import { CartPage } from '@/pages/cart'
-import { ChargeFailPage, ChargeSuccessPage } from '@/pages/charge-result'
-import { ChildrenPage } from '@/pages/children'
 import { HomePage } from '@/pages/home'
-import { KakaoCallbackPage } from '@/pages/kakao-callback'
-import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
-import { OrderDetailPage } from '@/pages/order-detail'
-import { OrdersPage } from '@/pages/orders'
-import { ProductDetailPage } from '@/pages/product-detail'
-import { ProductsPage } from '@/pages/products'
-import { SellerApplyPage } from '@/pages/seller-apply'
-import { SellerOrdersPage } from '@/pages/seller-orders'
-import { SellerProductsPage } from '@/pages/seller-products'
-import { SellerSettlementsPage } from '@/pages/seller-settlements'
-import { WalletPage } from '@/pages/wallet'
 import { RootLayout } from '../layouts/RootLayout'
 
+// 첫 화면만 바로 불러오고, 나머지 화면은 들어갈 때 불러온다 (번들 크기 경고 해소)
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'oauth/kakao/callback', element: <KakaoCallbackPage /> },
-      { path: 'children', element: <ChildrenPage /> },
-      { path: 'addresses', element: <AddressesPage /> },
-      { path: 'products', element: <ProductsPage /> },
-      { path: 'products/:productId', element: <ProductDetailPage /> },
-      { path: 'cart', element: <CartPage /> },
-      { path: 'orders', element: <OrdersPage /> },
-      { path: 'orders/:orderId', element: <OrderDetailPage /> },
-      { path: 'wallet', element: <WalletPage /> },
-      { path: 'wallet/charge/success', element: <ChargeSuccessPage /> },
-      { path: 'wallet/charge/fail', element: <ChargeFailPage /> },
-      { path: 'seller/apply', element: <SellerApplyPage /> },
-      { path: 'seller/products', element: <SellerProductsPage /> },
-      { path: 'seller/orders', element: <SellerOrdersPage /> },
-      { path: 'seller/settlements', element: <SellerSettlementsPage /> },
-      { path: 'admin/seller-applications', element: <AdminSellerApplicationsPage /> },
-      { path: 'admin/settlements', element: <AdminSettlementsPage /> },
+      {
+        path: 'login',
+        lazy: () => import('@/pages/login').then((m) => ({ Component: m.LoginPage })),
+      },
+      {
+        path: 'oauth/kakao/callback',
+        lazy: () =>
+          import('@/pages/kakao-callback').then((m) => ({ Component: m.KakaoCallbackPage })),
+      },
+      {
+        path: 'children',
+        lazy: () => import('@/pages/children').then((m) => ({ Component: m.ChildrenPage })),
+      },
+      {
+        path: 'addresses',
+        lazy: () => import('@/pages/addresses').then((m) => ({ Component: m.AddressesPage })),
+      },
+      {
+        path: 'products',
+        lazy: () => import('@/pages/products').then((m) => ({ Component: m.ProductsPage })),
+      },
+      {
+        path: 'products/:productId',
+        lazy: () =>
+          import('@/pages/product-detail').then((m) => ({ Component: m.ProductDetailPage })),
+      },
+      { path: 'cart', lazy: () => import('@/pages/cart').then((m) => ({ Component: m.CartPage })) },
+      {
+        path: 'orders',
+        lazy: () => import('@/pages/orders').then((m) => ({ Component: m.OrdersPage })),
+      },
+      {
+        path: 'orders/:orderId',
+        lazy: () => import('@/pages/order-detail').then((m) => ({ Component: m.OrderDetailPage })),
+      },
+      {
+        path: 'wallet',
+        lazy: () => import('@/pages/wallet').then((m) => ({ Component: m.WalletPage })),
+      },
+      {
+        path: 'wallet/charge/success',
+        lazy: () =>
+          import('@/pages/charge-result').then((m) => ({ Component: m.ChargeSuccessPage })),
+      },
+      {
+        path: 'wallet/charge/fail',
+        lazy: () => import('@/pages/charge-result').then((m) => ({ Component: m.ChargeFailPage })),
+      },
+      {
+        path: 'seller/apply',
+        lazy: () => import('@/pages/seller-apply').then((m) => ({ Component: m.SellerApplyPage })),
+      },
+      {
+        path: 'seller/products',
+        lazy: () =>
+          import('@/pages/seller-products').then((m) => ({ Component: m.SellerProductsPage })),
+      },
+      {
+        path: 'seller/orders',
+        lazy: () =>
+          import('@/pages/seller-orders').then((m) => ({ Component: m.SellerOrdersPage })),
+      },
+      {
+        path: 'seller/settlements',
+        lazy: () =>
+          import('@/pages/seller-settlements').then((m) => ({
+            Component: m.SellerSettlementsPage,
+          })),
+      },
+      {
+        path: 'admin/seller-applications',
+        lazy: () =>
+          import('@/pages/admin-seller-applications').then((m) => ({
+            Component: m.AdminSellerApplicationsPage,
+          })),
+      },
+      {
+        path: 'admin/settlements',
+        lazy: () =>
+          import('@/pages/admin-settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
