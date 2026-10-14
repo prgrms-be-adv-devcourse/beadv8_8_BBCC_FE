@@ -12,15 +12,25 @@ on:
 
 jobs:
   notify:
+    # PR 머지로 생긴 push는 'PR 머지' 알림과 겹치므로 보내지 않는다.
+    # 머지 커밋은 메시지로 바로 거르고, squash · rebase 머지는 아래 스크립트에서 API로 거른다
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Merge pull request')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - name: Send to Slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # {"GitHub아이디": "이름"} 형식의 Actions 변수. public 레포라 실명을 코드에 두지 않는다
+          NAME_MAP: ${{ vars.SLACK_NAME_MAP }}
           EVENT: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
           ACTION: ${{ github.event.action }}
           ACTOR: ${{ github.actor }}
-          REPO: ${{ github.repository }}
           REF: ${{ github.ref_name }}
           # push
           COMMIT_MSG: ${{ github.event.head_commit.message }}
@@ -30,6 +40,8 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_MERGED: ${{ github.event.pull_request.merged }}
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
+          PR_BASE: ${{ github.event.pull_request.base.ref }}
           REVIEWER: ${{ github.event.requested_reviewer.login || github.event.requested_team.name }}
           REVIEW_STATE: ${{ github.event.review.state }}
           REVIEW_URL: ${{ github.event.review.html_url }}
@@ -38,37 +50,82 @@ jobs:
           ISSUE_URL: ${{ github.event.issue.html_url }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
+          # squash · rebase 머지는 커밋 메시지가 'Merge pull request'로 시작하지 않는다.
+          # 커밋이 머지된 PR에 속하면 직접 push가 아니므로 보내지 않는다. 머지 직후엔 API에 늦게 보일 수 있어 한 번 더 본다.
+          # API 호출이 실패하면 진짜 직접 push를 놓치지 않도록 알림을 보낸다
+          if [ "$EVENT" = "push" ]; then
+            for attempt in 1 2; do
+              # 실패하면 gh가 오류 본문을 출력하므로 값을 비우고, 숫자일 때만 PR 번호로 본다
+              merged_pr=$(gh api "repos/$REPO/commits/$SHA/pulls" \
+                --jq '[.[] | select(.merged_at != null)][0].number // empty' 2>/dev/null) || merged_pr=""
+              if [[ "$merged_pr" =~ ^[0-9]+$ ]]; then
+                echo "PR #$merged_pr 머지로 생긴 push라 알림을 보내지 않는다"
+                exit 0
+              fi
+              if [ "$attempt" = 1 ]; then sleep 5; fi
+            done
+          fi
+
+          # 매핑에 없거나 JSON이 잘못되면 GitHub 아이디를 그대로 쓴다
+          display_name() {
+            local name
+            name=$(printf '%s' "${NAME_MAP:-null}" | jq -r --arg u "$1" '.[$u] // empty' 2>/dev/null)
+            printf '%s' "${name:-$1}"
+          }
+          ACTOR=$(display_name "$ACTOR")
+          REVIEWER=$(display_name "$REVIEWER")
+
+          # 색상: 파랑=열림, 보라=머지, 초록=승인, 주황=변경 요청·직접 push, 회색=닫힘·코멘트, 빨강=이슈
+          BRANCHES="\`$PR_HEAD\` → \`$PR_BASE\`"
           case "$EVENT" in
             push)
-              MSG=$(printf '%s' "$COMMIT_MSG" | head -n1)
-              TEXT="📦 *[$REPO]* \`$REF\` 브랜치에 push — $ACTOR"$'\n'"$MSG"$'\n'"<$COMPARE_URL|변경사항 보기>"
+              COLOR="#d29922"
+              TITLE=$(printf '%s' "$COMMIT_MSG" | head -n1)
+              URL="$COMPARE_URL"
+              META="⚠️ \`$REF\` 직접 push · $ACTOR"
               ;;
             pull_request)
               case "$ACTION" in
-                opened)           LABEL="🔀 PR 생성" ;;
-                reopened)         LABEL="🔁 PR 재오픈" ;;
-                closed)           if [ "$PR_MERGED" = "true" ]; then LABEL="✅ PR 머지"; else LABEL="❌ PR 닫힘"; fi ;;
-                review_requested) LABEL="👀 리뷰 요청 → $REVIEWER" ;;
+                opened)           COLOR="#2f81f7"; LABEL="🔀 PR 생성" ;;
+                reopened)         COLOR="#2f81f7"; LABEL="🔁 PR 재오픈" ;;
+                closed)           if [ "$PR_MERGED" = "true" ]; then COLOR="#8250df"; LABEL="🟣 PR 머지"; else COLOR="#8c959f"; LABEL="❌ PR 닫힘"; fi ;;
+                review_requested) COLOR="#2f81f7"; LABEL="👀 리뷰 요청 → $REVIEWER" ;;
               esac
-              TEXT="$LABEL *[$REPO]* #$PR_NUMBER — $ACTOR"$'\n'"<$PR_URL|$PR_TITLE>"
+              TITLE="#$PR_NUMBER $PR_TITLE"
+              URL="$PR_URL"
+              META="$LABEL · $ACTOR · $BRANCHES"
               ;;
             pull_request_review)
               case "$REVIEW_STATE" in
-                approved)          LABEL="✅ 리뷰 승인" ;;
-                changes_requested) LABEL="🔧 변경 요청" ;;
-                *)                 LABEL="💬 리뷰 코멘트" ;;
+                approved)          COLOR="#1a7f37"; LABEL="✅ 리뷰 승인" ;;
+                changes_requested) COLOR="#d29922"; LABEL="🔧 변경 요청" ;;
+                *)                 COLOR="#8c959f"; LABEL="💬 리뷰 코멘트" ;;
               esac
-              TEXT="$LABEL *[$REPO]* #$PR_NUMBER — $ACTOR"$'\n'"<$REVIEW_URL|$PR_TITLE>"
+              TITLE="#$PR_NUMBER $PR_TITLE"
+              URL="$REVIEW_URL"
+              META="$LABEL · $ACTOR · $BRANCHES"
               ;;
             issues)
               case "$ACTION" in
-                opened)   LABEL="🐛 이슈 생성" ;;
-                reopened) LABEL="🔁 이슈 재오픈" ;;
-                closed)   LABEL="✔️ 이슈 닫힘" ;;
+                opened)   COLOR="#cf222e"; LABEL="🐛 이슈 생성" ;;
+                reopened) COLOR="#cf222e"; LABEL="🔁 이슈 재오픈" ;;
+                closed)   COLOR="#8c959f"; LABEL="✔️ 이슈 닫힘" ;;
               esac
-              TEXT="$LABEL *[$REPO]* #$ISSUE_NUMBER — $ACTOR"$'\n'"<$ISSUE_URL|$ISSUE_TITLE>"
+              TITLE="#$ISSUE_NUMBER $ISSUE_TITLE"
+              URL="$ISSUE_URL"
+              META="$LABEL · $ACTOR"
               ;;
           esac
 
-          jq -n --arg t "$TEXT" '{text: $t}' \
+          # 제목은 굵은 링크, 부가 정보는 context 블록(작은 회색 글씨)에 둔다
+          jq -n --arg color "$COLOR" --arg title "$TITLE" --arg url "$URL" --arg meta "$META" '
+            def esc: gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;");
+            {attachments: [{
+              color: $color,
+              fallback: "\($meta) | \($title)",
+              blocks: [
+                {type: "section", text: {type: "mrkdwn", text: "*<\($url)|\($title | esc)>*"}},
+                {type: "context", elements: [{type: "mrkdwn", text: ($meta | esc)}]}
+              ]
+            }]}' \
             | curl -sS -f -X POST -H 'Content-Type: application/json' -d @- "$SLACK_WEBHOOK_URL"
