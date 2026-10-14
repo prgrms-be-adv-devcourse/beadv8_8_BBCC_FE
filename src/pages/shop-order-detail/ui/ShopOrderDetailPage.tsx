@@ -5,11 +5,13 @@ import {
   CANCEL_REASON_LABEL,
   canConfirmItem,
   deliveryOf,
+  isPaymentDelayed,
   needsCharge,
   OrderDeliveryList,
   OrderItemRow,
   OrderProgressBar,
   orderProgress,
+  paymentPendingMs,
   useOrderQuery,
 } from '@/entities/order'
 import {
@@ -68,6 +70,13 @@ export function ShopOrderDetailPage() {
             예치금으로 결제하는 중이에요… 잠시만 기다려 주세요
           </p>
         )}
+        {order.status === 'PENDING_PAYMENT' &&
+          isPaymentDelayed(paymentPendingMs(order.id, query.dataUpdatedAt)) && (
+            <p role="alert" className="text-destructive text-center text-sm">
+              결제가 평소보다 오래 걸리고 있어요. 10분 안에 결제되지 않으면 주문이 자동으로 취소되고
+              예치금은 빠져나가지 않아요.
+            </p>
+          )}
         {order.status === 'CANCELLED' && (
           <div className="space-y-1 text-center text-sm">
             <p>

@@ -1,3 +1,4 @@
+import { isPaymentDelayed } from '@/entities/order'
 import type { ApiCallLog } from '@/shared/api'
 import { paths } from '@/shared/config'
 
@@ -87,6 +88,41 @@ const paymentRecorded: LogsCheck = (logs) => {
     )
   }
   return { pass: false, evidence: problems.join(' / ') }
+}
+
+/**
+ * 주문 상세가 PAID면 통과. 결제 처리 중만 보였으면 실패로 남기고,
+ * 같은 주문이 30초 넘게 처리 중이면 서버 이벤트가 오지 않는다는 근거를 남긴다
+ */
+const orderPaid: LogsCheck = (logs) => {
+  const orderLogs = logs.filter(
+    (log) => log.method === 'GET' && /^\/orders\/[^/]+$/.test(log.path.split('?')[0]) && ok2xx(log),
+  )
+  if (orderLogs.length === 0) return null
+  const time = (log: ApiCallLog) => log.startedAt.slice(11, 19)
+  const paid = orderLogs.findLast((log) => body(log).status === 'PAID')
+  if (paid) return { pass: true, evidence: `${time(paid)} GET ${paid.path} → PAID` }
+
+  const pending = new Map<string, { first: number; last: number }>()
+  for (const log of orderLogs) {
+    if (body(log).status !== 'PENDING_PAYMENT') continue
+    const id = String(body(log).orderId)
+    const at = new Date(log.startedAt).getTime()
+    const span = pending.get(id)
+    pending.set(id, { first: span?.first ?? at, last: at })
+  }
+  const [longestId, longest] = [...pending].sort(
+    ([, a], [, b]) => b.last - b.first - (a.last - a.first),
+  )[0] ?? [null, null]
+  if (longestId && longest && isPaymentDelayed(longest.last - longest.first)) {
+    const seconds = Math.round((longest.last - longest.first) / 1000)
+    return {
+      pass: false,
+      evidence: `주문 #${longestId} 결제 처리 중 ${seconds}초째 — 서버 이벤트(order.created → stock.deducted → 결제)가 오지 않음`,
+    }
+  }
+  const last = orderLogs.at(-1)!
+  return { pass: false, evidence: `${time(last)} GET ${last.path} → ${String(body(last).status)}` }
 }
 
 export const VERIFICATION_CHECKS: VerificationCheck[] = [
@@ -244,11 +280,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     expected: '주문 상세 status = PAID',
     role: '보호자',
     screen: paths.console.orders,
-    call: {
-      method: 'GET',
-      pattern: /^\/orders\/[^/]+$/,
-      expect: (log) => body(log).status === 'PAID',
-    },
+    logs: orderPaid,
   },
   {
     id: 'payment-record',
