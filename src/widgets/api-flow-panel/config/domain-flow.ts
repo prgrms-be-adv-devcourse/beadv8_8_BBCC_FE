@@ -20,7 +20,7 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/children\/[^/]+\/recommended-products/, 'recommend'],
   [/^\/(seller\/)?products/, 'product'],
   [/^\/(cart|orders|seller\/orders)/, 'order'],
-  [/^\/wallets/, 'payment'],
+  [/^\/(wallets|payments)/, 'payment'],
   [/^\/(seller\/settlement|admin\/settlements)/, 'settlement'],
   [/^\/(auth|members|children|dev|admin\/(members|seller|sellers)|seller\/me)/, 'member'],
 ]

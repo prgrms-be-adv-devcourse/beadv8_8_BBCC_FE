@@ -46,6 +46,49 @@ function balanceChange(actor: string, direction: 'down' | 'up'): LogsCheck {
   }
 }
 
+/** 결제 완료(PAID)로 본 주문이 결제 도메인 목록(GET /payments)에 같은 금액의 COMPLETED로 있는지 */
+const paymentRecorded: LogsCheck = (logs) => {
+  const paidOrders = new Map<string, number>()
+  for (const log of logs) {
+    const order = body(log)
+    if (
+      log.method === 'GET' &&
+      /^\/orders\/[^/]+$/.test(log.path) &&
+      ok2xx(log) &&
+      order.status === 'PAID'
+    ) {
+      paidOrders.set(String(order.orderId), Number(order.totalAmount))
+    }
+  }
+  const paymentsLog = logs.findLast(
+    (log) => log.method === 'GET' && log.path.split('?')[0] === '/payments' && ok2xx(log),
+  )
+  if (paidOrders.size === 0 || !paymentsLog) return null
+  const payments = ((body(paymentsLog).content as Body[] | undefined) ?? []).map((item) => ({
+    id: String(item.paymentId),
+    orderId: String(item.orderId),
+    amount: Number(item.amount),
+    status: String(item.status),
+  }))
+  const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
+  const problems: string[] = []
+  for (const [orderId, total] of paidOrders) {
+    const payment = payments.find((item) => item.orderId === orderId)
+    if (payment?.status === 'COMPLETED' && payment.amount === total) {
+      return {
+        pass: true,
+        evidence: `주문 #${orderId} ${won(total)} ↔ 결제 #${payment.id} COMPLETED ${won(payment.amount)}`,
+      }
+    }
+    problems.push(
+      payment
+        ? `주문 #${orderId} ${won(total)} ↔ 결제 #${payment.id} ${payment.status} ${won(payment.amount)}`
+        : `결제 완료 주문 #${orderId}이 결제 목록에 없음`,
+    )
+  }
+  return { pass: false, evidence: problems.join(' / ') }
+}
+
 export const VERIFICATION_CHECKS: VerificationCheck[] = [
   {
     id: 'child',
@@ -206,6 +249,15 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
       pattern: /^\/orders\/[^/]+$/,
       expect: (log) => body(log).status === 'PAID',
     },
+  },
+  {
+    id: 'payment-record',
+    step: '④',
+    title: '결제 도메인 결제 기록',
+    expected: 'GET /payments에 결제 완료 주문과 같은 금액의 COMPLETED 결제',
+    role: '보호자',
+    screen: paths.console.orders,
+    logs: paymentRecorded,
   },
   {
     id: 'buyer-balance',

@@ -75,6 +75,12 @@ function observe(log: ApiCallLog): Observation[] {
       value: String(item.status),
     }))
   }
+  if (path === '/payments' && Array.isArray(body.content)) {
+    return (body.content as Json[]).map((item) => ({
+      resource: `결제 (주문 #${item.orderId})`,
+      value: String(item.status),
+    }))
+  }
   if (path === '/seller/products' && Array.isArray(body.content)) {
     return (body.content as Json[]).map((item) => ({
       resource: `상품 #${item.productId}`,
