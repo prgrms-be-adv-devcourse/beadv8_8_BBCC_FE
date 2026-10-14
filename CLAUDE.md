@@ -1,5 +1,7 @@
 # Kidly FE
 
+@AGENTS.md
+
 자녀 맞춤 키즈 패션 이커머스 프론트. React 19 / Vite / TypeScript / Tailwind CSS v4 / shadcn/ui / React Query / Zustand / React Router.
 
 ## 명령어
@@ -11,11 +13,7 @@
 
 ## 구조
 
-- `src/app`: 라우터, Provider, 레이아웃
-- `src/pages`: 라우트 단위 페이지
-- `src/features/<도메인>`: member, product, recommend, order, payment, settlement. 안에 `api/`, `components/`, `types.ts`
-- `src/shared`: `api`(axios 인스턴스), `ui`(shadcn), `lib`, `store`(Zustand)
-- import는 `@/` 별칭을 쓴다
+FSD(Feature-Sliced Design). 레이어 · 슬라이스 · import 규칙은 `AGENTS.md` 2절을 따른다.
 
 ## 규칙
 
