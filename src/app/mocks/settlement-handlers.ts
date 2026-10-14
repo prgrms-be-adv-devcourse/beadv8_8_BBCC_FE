@@ -1,6 +1,6 @@
-import type { Settlement, SettlementTarget } from '@/entities/settlement'
+import type { SettlementDetail, SettlementTarget } from '@/entities/settlement'
 import type { MockHandler } from '@/shared/api'
-import { loadMockState, memberIdOf, now, page, saveMockState } from './mock-utils'
+import { loadMockState, memberIdOf, now, page, problem, saveMockState } from './mock-utils'
 
 const FEE_RATE = 0.1
 
@@ -16,7 +16,7 @@ const targets: (SettlementTarget & { sellerId: string })[] = loadMockState('sett
     sellerId: '2',
   },
 ])
-const settlements: Settlement[] = loadMockState<Settlement[]>('settlements', [])
+const settlements: SettlementDetail[] = loadMockState<SettlementDetail[]>('settlements-v2', [])
 let nextSettlementId = settlements.length + 1
 
 export const settlementHandlers: MockHandler[] = [
@@ -40,6 +40,25 @@ export const settlementHandlers: MockHandler[] = [
     }),
   },
   {
+    method: 'GET',
+    path: '/seller/settlements/:settlementId',
+    handle: (request) => {
+      const settlement = settlements.find(
+        (item) =>
+          item.settlementId === request.params.settlementId &&
+          item.sellerId === memberIdOf(request),
+      )
+      return settlement
+        ? { status: 200, data: settlement }
+        : problem(
+            404,
+            '찾을 수 없습니다',
+            '정산서를 찾을 수 없습니다.',
+            `/api/v1/seller/settlements/${request.params.settlementId}`,
+          )
+    },
+  },
+  {
     method: 'POST',
     path: '/admin/settlements/run',
     handle: (request) => {
@@ -48,15 +67,15 @@ export const settlementHandlers: MockHandler[] = [
       const due = targets.filter(
         (target) => !target.settled && target.confirmedAt < `${periodEnd}T00:00:00`,
       )
-      const created: Settlement[] = []
+      const created: SettlementDetail[] = []
       for (const sellerId of new Set(due.map((target) => target.sellerId))) {
         const mine = due.filter((target) => target.sellerId === sellerId)
         const totalAmount = mine.reduce((sum, target) => sum + target.amount, 0)
         const feeAmount = Math.floor(totalAmount * FEE_RATE)
-        const settlement: Settlement = {
+        const settlement: SettlementDetail = {
           settlementId: String(nextSettlementId++),
           sellerId,
-          periodEnd,
+          period: { periodStart: null, periodEnd },
           itemCount: mine.length,
           totalAmount,
           feeRate: FEE_RATE,
@@ -64,13 +83,19 @@ export const settlementHandlers: MockHandler[] = [
           payoutAmount: totalAmount - feeAmount,
           status: 'COMPLETED',
           settledAt: now(),
+          items: mine.map((target) => ({
+            orderItemId: target.orderItemId,
+            productName: target.productName,
+            amount: target.amount,
+            confirmedAt: target.confirmedAt,
+          })),
         }
         mine.forEach((target) => (target.settled = true))
         settlements.push(settlement)
         created.push(settlement)
       }
       saveMockState('settlement-targets', targets)
-      saveMockState('settlements', settlements)
+      saveMockState('settlements-v2', settlements)
       return {
         status: 200,
         data: { periodEnd, settlementCount: created.length, settlements: created },

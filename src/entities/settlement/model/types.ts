@@ -14,7 +14,8 @@ export type SettlementTarget = {
 export type Settlement = {
   settlementId: string
   sellerId: string
-  periodEnd: string
+  /** 기획서 2.1: 시작일 조건 없음(null), 종료 기준일 이전 구매확정분 전체 */
+  period: { periodStart: string | null; periodEnd: string }
   itemCount: number
   totalAmount: number
   feeRate: number
@@ -22,6 +23,11 @@ export type Settlement = {
   payoutAmount: number
   status: 'COMPLETED'
   settledAt: string
+}
+
+/** GET /seller/settlements/{settlementId} */
+export type SettlementDetail = Settlement & {
+  items: { orderItemId: string; productName: string; amount: number; confirmedAt: string }[]
 }
 
 /** POST /admin/settlements/run 결과 */

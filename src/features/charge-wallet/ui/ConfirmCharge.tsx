@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
-import { walletKeys } from '@/entities/wallet'
+import { rememberCharge, walletKeys } from '@/entities/wallet'
 import { apiClient, getErrorMessage, runWithAction } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
 import { StateMessage } from '@/shared/ui/page-header'
@@ -27,7 +27,10 @@ export function ConfirmCharge({ search }: { search: URLSearchParams }) {
           amount: Number(search.get('amount')),
         }),
       ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: walletKeys.me }),
+    onSuccess: (response) => {
+      rememberCharge(response.data.chargeId)
+      void queryClient.invalidateQueries({ queryKey: walletKeys.me })
+    },
   })
 
   useEffect(() => {

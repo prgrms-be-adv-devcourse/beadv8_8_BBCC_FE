@@ -101,6 +101,19 @@ const FLOWS: { method: string; pattern: RegExp; steps: FlowStep[] }[] = [
   },
   {
     method: 'POST',
+    pattern: /^\/wallets\/me\/charges\/[^/]+\/cancel$/,
+    steps: [
+      {
+        name: '토스 결제 취소',
+        from: 'payment',
+        to: ['toss'],
+        description: '암호화해 둔 paymentKey를 복호화해 취소 요청 → 지갑 잔액 차감',
+        kind: 'external',
+      },
+    ],
+  },
+  {
+    method: 'POST',
     pattern: /^\/orders$/,
     steps: [
       {

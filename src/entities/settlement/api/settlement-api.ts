@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiClient, type Page } from '@/shared/api'
-import type { Settlement, SettlementTarget } from '../model/types'
+import type { Settlement, SettlementDetail, SettlementTarget } from '../model/types'
 
 export const settlementKeys = {
   targets: ['settlement', 'targets'] as const,
   list: ['settlement', 'list'] as const,
+  detail: (settlementId: string) => ['settlement', 'detail', settlementId] as const,
 }
 
 export const settlementApi = {
@@ -16,6 +17,10 @@ export const settlementApi = {
     apiClient
       .get<Page<Settlement>>('/seller/settlements', { params: { page: 0, size: 20 } })
       .then((response) => response.data),
+  get: (settlementId: string) =>
+    apiClient
+      .get<SettlementDetail>(`/seller/settlements/${settlementId}`)
+      .then((response) => response.data),
 }
 
 export function useSettlementTargetsQuery() {
@@ -24,4 +29,12 @@ export function useSettlementTargetsQuery() {
 
 export function useSettlementsQuery() {
   return useQuery({ queryKey: settlementKeys.list, queryFn: settlementApi.list })
+}
+
+export function useSettlementQuery(settlementId: string | null) {
+  return useQuery({
+    queryKey: settlementKeys.detail(settlementId ?? ''),
+    queryFn: () => settlementApi.get(settlementId!),
+    enabled: settlementId !== null,
+  })
 }

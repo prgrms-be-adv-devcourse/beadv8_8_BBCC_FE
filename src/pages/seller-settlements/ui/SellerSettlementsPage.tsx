@@ -1,8 +1,15 @@
-import { useSettlementsQuery, useSettlementTargetsQuery } from '@/entities/settlement'
+import { useState } from 'react'
+import {
+  useSettlementQuery,
+  useSettlementsQuery,
+  useSettlementTargetsQuery,
+  type Settlement,
+} from '@/entities/settlement'
 import { useWalletQuery } from '@/entities/wallet'
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime, formatWon } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { PageHeader, StateMessage } from '@/shared/ui/page-header'
 
@@ -54,21 +61,48 @@ export function SellerSettlementsPage() {
         )}
         {settlements.data?.content.length === 0 && <StateMessage>정산서가 없어요.</StateMessage>}
         {settlements.data?.content.map((settlement) => (
-          <div key={settlement.settlementId} className="border-t pt-2 text-sm">
-            <p className="font-medium">
-              정산서 #{settlement.settlementId} · {settlement.periodEnd} 기준 ·{' '}
-              {settlement.itemCount}건
-            </p>
-            <p className="text-muted-foreground">
-              판매 {formatWon(settlement.totalAmount)} − 수수료 {formatWon(settlement.feeAmount)} (
-              {settlement.feeRate * 100}%) ={' '}
-              <span className="text-foreground font-semibold">
-                지급 {formatWon(settlement.payoutAmount)}
-              </span>
-            </p>
-          </div>
+          <SettlementRow key={settlement.settlementId} settlement={settlement} />
         ))}
       </Card>
+    </div>
+  )
+}
+
+function SettlementRow({ settlement }: { settlement: Settlement }) {
+  const [open, setOpen] = useState(false)
+  const detail = useSettlementQuery(open ? settlement.settlementId : null)
+
+  return (
+    <div className="border-t pt-2 text-sm">
+      <div className="flex items-center justify-between">
+        <p className="font-medium">
+          정산서 #{settlement.settlementId} · {settlement.period.periodEnd} 이전 구매확정분 ·{' '}
+          {settlement.itemCount}건
+        </p>
+        <Button size="xs" variant="ghost" onClick={() => setOpen((value) => !value)}>
+          {open ? '접기' : '상세'}
+        </Button>
+      </div>
+      <p className="text-muted-foreground">
+        판매 {formatWon(settlement.totalAmount)} − 수수료 {formatWon(settlement.feeAmount)} (
+        {settlement.feeRate * 100}%) ={' '}
+        <span className="text-foreground font-semibold">
+          지급 {formatWon(settlement.payoutAmount)}
+        </span>
+      </p>
+      {open && detail.isError && (
+        <StateMessage tone="error">{getErrorMessage(detail.error)}</StateMessage>
+      )}
+      {open && detail.data && (
+        <ul className="text-muted-foreground mt-1 list-disc pl-5 text-xs">
+          {detail.data.items.map((item) => (
+            <li key={item.orderItemId}>
+              {item.productName} · {formatWon(item.amount)} · 구매확정{' '}
+              {formatDateTime(item.confirmedAt)}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
