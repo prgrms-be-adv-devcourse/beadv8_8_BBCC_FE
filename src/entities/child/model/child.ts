@@ -36,3 +36,18 @@ export const PREFERRED_FIT_LABEL: Record<PreferredFit, string> = {
   REGULAR: '보통',
   LOOSE: '여유',
 }
+
+/** 성장 이력 1건 (키 · 체형이 바뀔 때마다 쌓임) */
+export type GrowthRecord = {
+  id: string
+  heightCm: number
+  bodyType: BodyType | null
+  recordedAt: string
+}
+
+export type GrowthSummary = {
+  count: number
+  /** 처음 기록 → 마지막 기록 키 변화 (0.1cm). 기록이 2건 미만이면 null */
+  heightChangeCm: number | null
+  latest: GrowthRecord | null
+}

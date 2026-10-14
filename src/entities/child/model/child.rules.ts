@@ -1,4 +1,4 @@
-import type { Child, ChildForm } from './child'
+import type { Child, ChildForm, GrowthRecord, GrowthSummary } from './child'
 
 const hasOneDecimal = (value: number) => Math.round(value * 10) === value * 10
 
@@ -17,4 +17,19 @@ export function validateChildForm(form: ChildForm, today: string): string | null
 
 export function findChild(children: Child[] | undefined, childId: string | null): Child | null {
   return children?.find((child) => child.id === childId) ?? null
+}
+
+/** 성장 이력 요약: 기록 시각 순으로 처음 → 마지막 키 변화 */
+export function summarizeGrowth(records: GrowthRecord[]): GrowthSummary {
+  const sorted = [...records].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt))
+  const first = sorted[0]
+  const latest = sorted.at(-1) ?? null
+  return {
+    count: sorted.length,
+    heightChangeCm:
+      sorted.length >= 2 && latest
+        ? Math.round((latest.heightCm - first.heightCm) * 10) / 10
+        : null,
+    latest,
+  }
 }

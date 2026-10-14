@@ -18,6 +18,10 @@ const kakaoCallback = page(() =>
   import('@/pages/kakao-callback').then((m) => ({ Component: m.KakaoCallbackPage })),
 )
 const children = page(() => import('@/pages/children').then((m) => ({ Component: m.ChildrenPage })))
+const childDetail = page(() =>
+  import('@/pages/child-detail').then((m) => ({ Component: m.ChildDetailPage })),
+)
+const profile = page(() => import('@/pages/profile').then((m) => ({ Component: m.ProfilePage })))
 const addresses = page(() =>
   import('@/pages/addresses').then((m) => ({ Component: m.AddressesPage })),
 )
@@ -91,6 +95,8 @@ export const router = createBrowserRouter([
         ...page(() => import('@/pages/shop-my').then((m) => ({ Component: m.ShopMyPage }))),
       },
       { path: rel('', paths.shop.children), ...children },
+      { path: 'my/children/:childId', ...childDetail },
+      { path: rel('', paths.shop.profile), ...profile },
       { path: rel('', paths.shop.addresses), ...addresses },
       { path: rel('', paths.shop.wallet), ...wallet },
       { path: rel('', paths.shop.chargeSuccess), ...chargeSuccess },
@@ -162,6 +168,8 @@ export const router = createBrowserRouter([
         ...page(() => import('@/pages/verify').then((m) => ({ Component: m.VerifyPage }))),
       },
       { path: rel(paths.console.home, paths.console.children), ...children },
+      { path: 'children/:childId', ...childDetail },
+      { path: rel(paths.console.home, paths.console.profile), ...profile },
       { path: rel(paths.console.home, paths.console.addresses), ...addresses },
       {
         path: rel(paths.console.home, paths.console.products),

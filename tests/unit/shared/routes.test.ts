@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { areaOf, paths } from '@/shared/config'
+import { areaOf, memberPathsOf, paths } from '@/shared/config'
 
 describe('areaOf: 주소로 화면 영역을 나눈다', () => {
   it.each([
@@ -43,5 +43,18 @@ describe('paths: 영역별 주소', () => {
   it('쇼핑 상품 주소는 자녀를 고르면 childId를 붙인다', () => {
     expect(paths.shop.product('1')).toBe('/products/1')
     expect(paths.shop.product('1', '5')).toBe('/products/1?childId=5')
+  })
+})
+
+describe('회원 · 자녀 보완 화면 주소', () => {
+  it('자녀 상세 · 내 정보는 쇼핑과 콘솔에 각각 있다', () => {
+    expect(memberPathsOf('shop').child('3')).toBe('/my/children/3')
+    expect(memberPathsOf('console').child('3')).toBe('/console/children/3')
+    expect(memberPathsOf('shop').profile).toBe('/my/profile')
+    expect(memberPathsOf('console').profile).toBe('/console/profile')
+  })
+  it('판매자 센터 · 관리자에서는 쇼핑 주소를 쓴다', () => {
+    expect(memberPathsOf('center').children).toBe('/my/children')
+    expect(memberPathsOf('admin').child('1')).toBe('/my/children/1')
   })
 })

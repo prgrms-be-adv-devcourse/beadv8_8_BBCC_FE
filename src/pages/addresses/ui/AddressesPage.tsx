@@ -1,12 +1,15 @@
+import { useState } from 'react'
 import { useAddressesQuery } from '@/entities/address'
 import { AddressActions, AddressForm } from '@/features/manage-address'
 import { getErrorMessage } from '@/shared/api'
 import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { PageHeader, StateMessage } from '@/shared/ui/page-header'
 
 export function AddressesPage() {
   const addresses = useAddressesQuery()
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   return (
     <div className="space-y-4">
@@ -24,19 +27,28 @@ export function AddressesPage() {
           <StateMessage tone="error">{getErrorMessage(addresses.error)}</StateMessage>
         )}
         {addresses.data?.length === 0 && <StateMessage>등록한 배송지가 없어요.</StateMessage>}
-        {addresses.data?.map((address) => (
-          <Card key={address.id} className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">
-                {address.recipientName} {address.isDefault && <Badge>기본</Badge>}
-              </p>
-              <p className="text-muted-foreground text-sm">
-                {address.phone} · ({address.zipCode}) {address.fullAddress}
-              </p>
-            </div>
-            <AddressActions address={address} />
-          </Card>
-        ))}
+        {addresses.data?.map((address) =>
+          editingId === address.id ? (
+            <AddressForm key={address.id} edit={{ address, onDone: () => setEditingId(null) }} />
+          ) : (
+            <Card key={address.id} className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">
+                  {address.recipientName} {address.isDefault && <Badge>기본</Badge>}
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  {address.phone} · ({address.zipCode}) {address.fullAddress}
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="outline" onClick={() => setEditingId(address.id)}>
+                  수정
+                </Button>
+                <AddressActions address={address} />
+              </div>
+            </Card>
+          ),
+        )}
       </div>
     </div>
   )

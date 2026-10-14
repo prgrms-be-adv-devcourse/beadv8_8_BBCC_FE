@@ -63,3 +63,23 @@ export async function restoreSession() {
 export async function refreshSession() {
   await signIn(await reissueAccessToken())
 }
+
+/**
+ * 닉네임을 바꾼 뒤 토큰을 다시 받아 화면 · 이후 요청에 새 닉네임을 쓴다 (판매자 신청은 토큰의 닉네임으로 저장됨).
+ * 시연 계정은 쿠키가 없으므로 같은 계정으로 개발용 토큰을 다시 발급한다
+ */
+export async function updateNickname(nickname: string) {
+  await sessionApi.updateMe({ nickname: nickname.trim() })
+  const account = loadDemoAccount()
+  if (account) {
+    await signInAsDemo({ ...account, nickname: nickname.trim() })
+  } else {
+    await refreshSession()
+  }
+}
+
+/** 탈퇴 요청 뒤 로그인 상태를 지운다 */
+export async function withdraw() {
+  await sessionApi.withdraw()
+  await signOut()
+}

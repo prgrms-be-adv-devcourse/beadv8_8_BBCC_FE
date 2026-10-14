@@ -31,3 +31,16 @@ export function useAddressActions(addressId: string) {
     error: makeDefault.error ?? remove.error,
   }
 }
+
+/** 배송지 수정 (전체 교체) */
+export function useUpdateAddress(addressId: string, { onDone }: { onDone?: () => void } = {}) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (form: AddressForm) =>
+      runWithAction('배송지 수정', () => addressApi.update(addressId, toAddressRequest(form))),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: addressKeys.all })
+      onDone?.()
+    },
+  })
+}

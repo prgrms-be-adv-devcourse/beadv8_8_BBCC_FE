@@ -1,5 +1,10 @@
 import { apiClient, expectShape } from '@/shared/api'
-import type { DevTokenRequestDto, MemberDto, TokenResponseDto } from './session.dto'
+import type {
+  DevTokenRequestDto,
+  MemberDto,
+  MemberUpdateRequestDto,
+  TokenResponseDto,
+} from './session.dto'
 import { memberShape, tokenShape } from './session.shape'
 
 export const sessionApi = {
@@ -15,4 +20,8 @@ export const sessionApi = {
   /** 쿠키가 없어도 204 */
   logout: () => apiClient.post<void>('/auth/logout', undefined, { skipAuth: true }),
   getMe: () => apiClient.get<MemberDto>('/members/me').then(expectShape(memberShape)),
+  updateMe: (request: MemberUpdateRequestDto) =>
+    apiClient.patch<MemberDto>('/members/me', request).then(expectShape(memberShape)),
+  /** 탈퇴 (기획서 8장 보완, 조건 보류). 백엔드에 아직 없어 목 응답이다 */
+  withdraw: () => apiClient.delete('/members/me'),
 }
