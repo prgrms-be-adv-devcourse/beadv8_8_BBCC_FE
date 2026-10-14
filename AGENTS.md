@@ -114,6 +114,15 @@ Codex는 이 파일을, Claude는 `CLAUDE.md`의 `@AGENTS.md`로 같은 내용�
 - 서버 안의 이벤트(예: `order.created → stock.deducted → order.payment-requested → payment.completed`)는 기획서 8장 표를 고정 데이터로 옮겨 보여 주고, 화면에 "설계 기준"이라고 표시한다. 실제 로그처럼 꾸미지 않는다.
 - 목 응답은 패널과 화면에 "목"으로 표시한다.
 
+### 백엔드 확인 도구 (통합 테스트용)
+
+- **계약 검사:** 요청 함수는 응답을 `.then(expectShape(xxxShape))`로 받는다. 모양(`api/*.shape.ts`)은 DTO와 같이 고친다. 다르면 흐름 패널 "계약" 탭에 필드 경로 · 기대 · 실제가 쌓인다 (화면은 매퍼가 흡수해 그대로 동작). 백엔드가 더한 필드(extra)는 불일치로 세지 않는다.
+- **상태 변화:** 흐름 패널이 응답에서 서버 상태(주문 · 배송 · 주문상품 · 잔액 · 충전 · 판매자 신청 · 상품)를 읽어, 바뀐 순간과 걸린 시간을 보여 준다. 새 상태를 보이게 하려면 `widgets/api-flow-panel/model/state-changes.ts`에 추가한다.
+- **목 설정:** 목은 도메인 단위로 등록하고(`registerMockHandlers('상품', …)`), 흐름 패널 "목 설정"에서 실행 중에 끈다.
+- **흐름 확인(`/verify`):** 기획서 7장 완료 기준을 호출 결과로 자동 판정한다. 체크는 `widgets/verification-checklist/config/checks.ts`에 둔다.
+- **기록 내보내기:** 흐름 기록 · 상태 변화 · 실패 · 계약 불일치를 마크다운으로 내려받는다. 백엔드 담당자에게 넘길 때 쓴다.
+- 흐름 기록은 탭(sessionStorage)에 남아 새로고침 · 토스 이동 뒤에도 이어진다.
+
 ## 5. 디자인
 
 - shadcn 기본 컴포넌트 + `index.css` 색상 토큰만 쓴다. 새 컴포넌트 디자인 · 이미지 · 애니메이션 작업은 하지 않는다.

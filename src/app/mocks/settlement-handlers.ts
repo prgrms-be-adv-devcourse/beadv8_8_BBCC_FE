@@ -25,13 +25,26 @@ const settlements: SettlementDetailDto[] = loadMockState<SettlementDetailDto[]>(
 )
 let nextSettlementId = settlements.length + 1
 
+/** 목록 응답에는 상세(items)를 넣지 않는다 */
+function withoutItems(settlement: SettlementDetailDto) {
+  const copy: Partial<SettlementDetailDto> = { ...settlement }
+  delete copy.items
+  return copy
+}
+
 export const settlementHandlers: MockHandler[] = [
   {
     method: 'GET',
     path: '/seller/settlement-targets',
     handle: (request) => ({
       status: 200,
-      data: targets.filter((target) => target.sellerId === memberIdOf(request)),
+      data: targets
+        .filter((target) => target.sellerId === memberIdOf(request))
+        .map((target) => {
+          const copy: Partial<typeof target> = { ...target }
+          delete copy.sellerId
+          return copy
+        }),
     }),
   },
   {
@@ -40,7 +53,7 @@ export const settlementHandlers: MockHandler[] = [
     handle: (request) => ({
       status: 200,
       data: page(
-        settlements.filter((item) => item.sellerId === memberIdOf(request)),
+        settlements.filter((item) => item.sellerId === memberIdOf(request)).map(withoutItems),
         request,
       ),
     }),
@@ -104,7 +117,11 @@ export const settlementHandlers: MockHandler[] = [
       saveMockState('settlements-v2', settlements)
       return {
         status: 200,
-        data: { periodEnd, settlementCount: created.length, settlements: created },
+        data: {
+          periodEnd,
+          settlementCount: created.length,
+          settlements: created.map(withoutItems),
+        },
       }
     },
   },

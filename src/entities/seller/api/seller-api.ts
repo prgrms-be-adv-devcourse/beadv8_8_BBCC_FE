@@ -1,16 +1,17 @@
-import { apiClient, getErrorStatus, type Page } from '@/shared/api'
+import { apiClient, expectShape, getErrorStatus, type Page } from '@/shared/api'
 import type {
   SellerApplicationDto,
   SellerApplicationRequestDto,
   SellerApplicationSummaryDto,
 } from './seller.dto'
+import { sellerApplicationPageShape, sellerApplicationShape } from './seller.shape'
 
 export const sellerApi = {
   /** 신청한 적이 없으면 404 → null */
   getMyApplication: () =>
     apiClient
       .get<SellerApplicationDto>('/members/me/seller-application')
-      .then((response) => response.data)
+      .then(expectShape(sellerApplicationShape))
       .catch((error: unknown) => {
         if (getErrorStatus(error) === 404) {
           return null
@@ -24,7 +25,7 @@ export const sellerApi = {
       .get<Page<SellerApplicationSummaryDto>>('/admin/seller-applications', {
         params: { status: status ?? undefined, page: 0, size: 20 },
       })
-      .then((response) => response.data),
+      .then(expectShape(sellerApplicationPageShape)),
   approve: (applicationId: string) =>
     apiClient.post(`/admin/seller-applications/${applicationId}/approve`),
 }

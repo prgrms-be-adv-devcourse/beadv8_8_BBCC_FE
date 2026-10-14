@@ -5,6 +5,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios'
+import { useMockSettings } from './mock-settings'
 
 /**
  * 백엔드에 아직 없는 API(상품 · 추천 · 정산)에 목 응답을 준다.
@@ -28,13 +29,16 @@ export type MockHandler = {
 }
 
 const handlers: {
+  domain: string
   method: string
   pattern: RegExp
   keys: string[]
   handle: MockHandler['handle']
 }[] = []
 
-export function registerMockHandlers(list: MockHandler[]) {
+/** domain: 흐름 패널에서 켜고 끄는 단위 (예: 상품). 꺼진 도메인은 실제 서버로 보낸다 */
+export function registerMockHandlers(domain: string, list: MockHandler[]) {
+  useMockSettings.getState().register(domain)
   for (const handler of list) {
     const keys: string[] = []
     const source = handler.path.replace(/:([a-zA-Z]+)/g, (_, key: string) => {
@@ -42,6 +46,7 @@ export function registerMockHandlers(list: MockHandler[]) {
       return '([^/]+)'
     })
     handlers.push({
+      domain,
       method: handler.method,
       pattern: new RegExp(`^${source}$`),
       keys,
@@ -56,7 +61,11 @@ export function createMockAdapter(realAdapter: AxiosAdapter): AxiosAdapter {
   return async (config) => {
     const [pathname, search = ''] = (config.url ?? '').split('?')
     const method = (config.method ?? 'get').toUpperCase()
+    const enabled = useMockSettings.getState().enabled
     for (const handler of handlers) {
+      if (!enabled[handler.domain]) {
+        continue
+      }
       const match = handler.method === method ? handler.pattern.exec(pathname) : null
       if (!match) {
         continue

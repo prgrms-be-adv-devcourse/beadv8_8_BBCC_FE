@@ -10,6 +10,8 @@ declare module 'axios' {
     /** 401 뒤 재시도한 요청이면 true. 두 번 재시도하지 않는다 */
     retried?: boolean
     startedAt?: number
+    /** 흐름 기록 ID (계약 검사 결과를 붙일 때 쓴다) */
+    logId?: number
   }
 }
 
@@ -66,17 +68,36 @@ apiClient.interceptors.request.use((config) => {
 function record(config: InternalAxiosRequestConfig, response: AxiosResponse | undefined) {
   const startedAt = config.startedAt ?? performance.now()
   const log = useApiFlowLog.getState()
-  log.add({
+  config.logId = log.add({
     action: log.currentAction,
+    actor: actorOf(config),
     method: (config.method ?? 'get').toUpperCase(),
     path: config.url ?? '',
     status: response?.status ?? null,
     durationMs: Math.round(performance.now() - startedAt),
-    startedAt: new Date(performance.timeOrigin + startedAt),
+    startedAt: new Date(performance.timeOrigin + startedAt).toISOString(),
     mock: response?.headers['x-mock'] === 'true',
     requestBody: parseBody(config.data),
     responseBody: response?.data ?? null,
   })
+}
+
+/** 토큰 sub(회원 ID)만 읽는다. 서명 검증은 서버가 한다 */
+function actorOf(config: InternalAxiosRequestConfig): string | null {
+  const payload = String(config.headers.Authorization ?? '')
+    .replace('Bearer ', '')
+    .split('.')[1]
+  if (!payload) {
+    return null
+  }
+  try {
+    return (
+      (JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { sub?: string }).sub ??
+      null
+    )
+  } catch {
+    return null
+  }
 }
 
 function parseBody(data: unknown): unknown {

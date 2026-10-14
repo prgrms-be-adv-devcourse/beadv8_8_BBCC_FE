@@ -1,8 +1,9 @@
-import { apiClient } from '@/shared/api'
+import { apiClient, expectShape } from '@/shared/api'
 import type { AddCartItemRequestDto, CartDto } from './cart.dto'
+import { cartShape } from './cart.shape'
 
 export const cartApi = {
-  get: () => apiClient.get<CartDto>('/cart').then((response) => response.data),
+  get: () => apiClient.get<CartDto>('/cart').then(expectShape(cartShape)),
   addItem: (request: AddCartItemRequestDto) => apiClient.post('/cart/items', request),
   changeQuantity: (cartItemId: string, quantity: number) =>
     apiClient.patch(`/cart/items/${cartItemId}`, { quantity }),

@@ -91,6 +91,10 @@ export const router = createBrowserRouter([
         lazy: () =>
           import('@/pages/admin-settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
       },
+      {
+        path: 'verify',
+        lazy: () => import('@/pages/verify').then((m) => ({ Component: m.VerifyPage })),
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

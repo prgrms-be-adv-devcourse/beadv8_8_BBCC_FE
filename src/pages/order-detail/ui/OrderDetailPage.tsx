@@ -1,3 +1,5 @@
+import { useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { Link, useParams } from 'react-router'
 import {
   buildOrderTimeline,
@@ -10,6 +12,7 @@ import {
   OrderTimeline,
   useOrderQuery,
 } from '@/entities/order'
+import { useWalletQuery, WalletBalanceCard, walletKeys } from '@/entities/wallet'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime, formatWon } from '@/shared/lib'
@@ -19,6 +22,16 @@ import { PageHeader, StateMessage } from '@/shared/ui/page-header'
 export function OrderDetailPage() {
   const { orderId = '' } = useParams()
   const query = useOrderQuery(orderId)
+  const wallet = useWalletQuery()
+  const queryClient = useQueryClient()
+  const status = query.data?.status
+
+  // 결제 결과가 나오면 잔액을 다시 조회해 예치금 차감을 화면과 흐름 패널(상태 변화)에서 확인한다
+  useEffect(() => {
+    if (status && status !== 'PENDING_PAYMENT') {
+      void queryClient.invalidateQueries({ queryKey: walletKeys.me })
+    }
+  }, [status, queryClient])
 
   if (query.isPending) return <StateMessage>불러오는 중…</StateMessage>
   if (query.isError) return <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>
@@ -40,6 +53,13 @@ export function OrderDetailPage() {
             </Link>
           )
         }
+      />
+
+      <WalletBalanceCard
+        title="내 예치금 잔액 (결제 결과가 나오면 다시 조회)"
+        wallet={wallet.data}
+        pending={wallet.isPending}
+        error={wallet.error}
       />
 
       <Card>

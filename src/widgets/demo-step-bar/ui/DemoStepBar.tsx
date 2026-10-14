@@ -9,6 +9,17 @@ export function DemoStepBar() {
 
   return (
     <nav className="flex gap-1 overflow-x-auto border-b bg-white px-4 py-2">
+      <NavLink
+        to="/verify"
+        className={({ isActive }) =>
+          cn(
+            'shrink-0 rounded-lg border px-2 py-1 text-xs font-semibold',
+            isActive ? 'bg-primary text-primary-foreground' : 'border-primary text-primary',
+          )
+        }
+      >
+        ✓ 흐름 확인
+      </NavLink>
       {DEMO_STEPS.map((step) => (
         <div
           key={step.step}
