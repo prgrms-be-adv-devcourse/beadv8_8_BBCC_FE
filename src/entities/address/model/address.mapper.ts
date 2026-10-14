@@ -24,3 +24,15 @@ export function toAddressRequest(form: AddressForm): ShippingAddressRequestDto {
     isDefault: form.isDefault,
   }
 }
+
+/** 수정 폼 초기값 (상세 주소가 없으면 입력 칸용 빈 문자열) */
+export function toAddressForm(address: ShippingAddress): AddressForm {
+  return {
+    recipientName: address.recipientName,
+    phone: address.phone,
+    zipCode: address.zipCode,
+    roadAddress: address.roadAddress,
+    detailAddress: address.detailAddress ?? '',
+    isDefault: address.isDefault,
+  }
+}

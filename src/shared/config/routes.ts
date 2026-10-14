@@ -34,6 +34,8 @@ export const paths = {
     order: (id: string) => `/orders/${id}`,
     my: '/my',
     children: '/my/children',
+    child: (id: string) => `/my/children/${id}`,
+    profile: '/my/profile',
     addresses: '/my/addresses',
     wallet: '/my/wallet',
     chargeSuccess: '/my/wallet/charge/success',
@@ -55,6 +57,8 @@ export const paths = {
     home: C,
     verify: `${C}/verify`,
     children: `${C}/children`,
+    child: (id: string) => `${C}/children/${id}`,
+    profile: `${C}/profile`,
     addresses: `${C}/addresses`,
     products: `${C}/products`,
     product: (id: string, childId?: string | null) =>
@@ -78,4 +82,15 @@ export const paths = {
 export function walletPathsOf(area: Area) {
   const base = area === 'console' ? paths.console : paths.shop
   return { wallet: base.wallet, chargeSuccess: base.chargeSuccess, chargeFail: base.chargeFail }
+}
+
+/** 영역마다 있는 회원 · 자녀 화면 (판매자 센터 · 관리자에서는 쇼핑 화면으로) */
+export function memberPathsOf(area: Area) {
+  const base = area === 'console' ? paths.console : paths.shop
+  return {
+    children: base.children,
+    child: base.child,
+    addresses: base.addresses,
+    profile: base.profile,
+  }
 }

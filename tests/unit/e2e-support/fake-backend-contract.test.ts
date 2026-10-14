@@ -6,7 +6,7 @@ import { addressShape } from '@/entities/address/api/address.shape'
 import { toAddCartItemRequest } from '@/entities/cart'
 import { cartShape } from '@/entities/cart/api/cart.shape'
 import { toChildRequest } from '@/entities/child'
-import { childShape } from '@/entities/child/api/child.shape'
+import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
 import { paymentDetailShape, paymentPageShape } from '@/entities/payment/api/payment.shape'
 import { sellerOrderPageShape } from '@/entities/seller-order/api/seller-order.shape'
@@ -16,7 +16,7 @@ import {
   sellerApplicationShape,
   sellerShape,
 } from '@/entities/seller/api/seller.shape'
-import { tokenShape } from '@/entities/session/api/session.shape'
+import { memberShape, tokenShape } from '@/entities/session/api/session.shape'
 import { chargeConfirmShape, chargeShape, walletShape } from '@/entities/wallet/api/wallet.shape'
 import { DEMO_ADDRESS } from '@/features/manage-address/config/demo-address'
 import { DEMO_APPLICATION } from '@/features/apply-seller/config/demo-application'
@@ -83,6 +83,36 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     )
     expectContract((await call('GET', '/members/me/addresses', 1)).data, arr(addressShape))
     expectContract((await call('GET', '/wallets/me', 1)).data, walletShape)
+
+    // 회원 · 자녀 보완: 수정 · 성장 이력 · 삭제, 배송지 수정, 내 정보 수정
+    const child = (await call('GET', '/children', 1)).data[0]
+    const updated = await call('PATCH', `/children/${child.id}`, 1, {
+      ...toChildRequest(DEMO_CHILD),
+      heightCm: 118,
+    })
+    expectContract(updated.data, childShape)
+    const growth = await call('GET', `/children/${child.id}/growth-records`, 1)
+    expectContract(growth.data, arr(growthRecordShape))
+    expect(growth.data).toHaveLength(2)
+    const address = (await call('GET', '/members/me/addresses', 1)).data[0]
+    expectContract(
+      (
+        await call(
+          'PATCH',
+          `/members/me/addresses/${address.id}`,
+          1,
+          toAddressRequest(DEMO_ADDRESS),
+        )
+      ).data,
+      addressShape,
+    )
+    expectContract(
+      (await call('PATCH', '/members/me', 1, { nickname: '새닉네임' })).data,
+      memberShape,
+    )
+    const extra = await call('POST', '/children', 1, toChildRequest(DEMO_CHILD))
+    expect((await call('DELETE', `/children/${extra.data.id}`, 1)).status).toBe(204)
+    expect((await call('GET', `/children/${extra.data.id}`, 1)).status).toBe(404)
   })
 
   it('판매자 신청 · 승인', async () => {

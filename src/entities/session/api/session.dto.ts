@@ -12,3 +12,6 @@ export type MemberDto = {
 
 /** POST /dev/tokens (local 프로필 전용) */
 export type DevTokenRequestDto = { memberId: number; nickname?: string; roles: string[] }
+
+/** PATCH /members/me (지금은 닉네임만, 앞뒤 공백은 서버도 뺀다) */
+export type MemberUpdateRequestDto = { nickname: string }

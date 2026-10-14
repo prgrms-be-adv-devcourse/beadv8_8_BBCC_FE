@@ -12,3 +12,10 @@ export const childShape = obj({
   growthRecordCount: num,
   lastRecordedAt: nullable(str),
 })
+
+export const growthRecordShape = obj({
+  id: num,
+  heightCm: num,
+  bodyType: nullable(oneOf(['SLIM', 'NORMAL', 'CHUNKY'])),
+  recordedAt: str,
+})
