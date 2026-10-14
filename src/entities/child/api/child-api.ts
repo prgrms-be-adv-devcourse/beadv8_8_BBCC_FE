@@ -1,15 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api'
-import type { ChildProfile } from '../model/types'
-
-export const childKeys = {
-  all: ['children'] as const,
-}
+import type { ChildProfileDto, ChildProfileRequestDto } from './child.dto'
 
 export const childApi = {
-  list: () => apiClient.get<ChildProfile[]>('/children').then((response) => response.data),
-}
-
-export function useChildrenQuery(enabled = true) {
-  return useQuery({ queryKey: childKeys.all, queryFn: childApi.list, enabled })
+  list: () => apiClient.get<ChildProfileDto[]>('/children').then((response) => response.data),
+  get: (childId: string) =>
+    apiClient.get<ChildProfileDto>(`/children/${childId}`).then((response) => response.data),
+  register: (request: ChildProfileRequestDto) =>
+    apiClient.post<ChildProfileDto>('/children', request).then((response) => response.data),
 }

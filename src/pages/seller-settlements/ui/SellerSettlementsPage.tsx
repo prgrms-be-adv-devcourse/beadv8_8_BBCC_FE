@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import {
+  SettlementItemList,
+  SettlementSummary,
   useSettlementQuery,
   useSettlementsQuery,
   useSettlementTargetsQuery,
   type Settlement,
 } from '@/entities/settlement'
-import { useWalletQuery } from '@/entities/wallet'
+import { useWalletQuery, WalletBalanceCard } from '@/entities/wallet'
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime, formatWon } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
@@ -24,16 +26,12 @@ export function SellerSettlementsPage() {
         title="⑦ 정산 (판매자)"
         description="구매확정된 주문상품이 정산 대상이 되고, 정산하면 수수료 10%를 뺀 금액이 판매자 지갑에 적립돼요. (정산 API는 목)"
       />
-      <Card>
-        <p className="text-muted-foreground text-sm">내 예치금 지갑 (실제 API)</p>
-        {wallet.data ? (
-          <p className="text-xl font-bold">{formatWon(wallet.data.balance)}</p>
-        ) : (
-          <StateMessage tone={wallet.isError ? 'error' : 'muted'}>
-            {wallet.isError ? getErrorMessage(wallet.error) : '불러오는 중…'}
-          </StateMessage>
-        )}
-      </Card>
+      <WalletBalanceCard
+        title="내 예치금 지갑 (실제 API)"
+        wallet={wallet.data}
+        pending={wallet.isPending}
+        error={wallet.error}
+      />
       <Card className="space-y-2">
         <CardTitle>정산 대상</CardTitle>
         {targets.isError && (
@@ -41,7 +39,7 @@ export function SellerSettlementsPage() {
         )}
         {targets.data?.length === 0 && <StateMessage>정산 대상이 없어요.</StateMessage>}
         {targets.data?.map((target) => (
-          <div key={target.targetId} className="flex justify-between border-t pt-2 text-sm">
+          <div key={target.id} className="flex justify-between border-t pt-2 text-sm">
             <span>
               {target.productName} · 구매확정 {formatDateTime(target.confirmedAt)}
             </span>
@@ -61,48 +59,32 @@ export function SellerSettlementsPage() {
         )}
         {settlements.data?.content.length === 0 && <StateMessage>정산서가 없어요.</StateMessage>}
         {settlements.data?.content.map((settlement) => (
-          <SettlementRow key={settlement.settlementId} settlement={settlement} />
+          <SettlementRow key={settlement.id} settlement={settlement} />
         ))}
       </Card>
     </div>
   )
 }
 
+/** 펼치면 정산서 상세를 조회한다 */
 function SettlementRow({ settlement }: { settlement: Settlement }) {
   const [open, setOpen] = useState(false)
-  const detail = useSettlementQuery(open ? settlement.settlementId : null)
+  const detail = useSettlementQuery(open ? settlement.id : null)
 
   return (
-    <div className="border-t pt-2 text-sm">
-      <div className="flex items-center justify-between">
-        <p className="font-medium">
-          정산서 #{settlement.settlementId} · {settlement.period.periodEnd} 이전 구매확정분 ·{' '}
-          {settlement.itemCount}건
-        </p>
-        <Button size="xs" variant="ghost" onClick={() => setOpen((value) => !value)}>
-          {open ? '접기' : '상세'}
-        </Button>
-      </div>
-      <p className="text-muted-foreground">
-        판매 {formatWon(settlement.totalAmount)} − 수수료 {formatWon(settlement.feeAmount)} (
-        {settlement.feeRate * 100}%) ={' '}
-        <span className="text-foreground font-semibold">
-          지급 {formatWon(settlement.payoutAmount)}
-        </span>
-      </p>
+    <div className="border-t pt-2">
+      <SettlementSummary
+        settlement={settlement}
+        action={
+          <Button size="xs" variant="ghost" onClick={() => setOpen((value) => !value)}>
+            {open ? '접기' : '상세'}
+          </Button>
+        }
+      />
       {open && detail.isError && (
         <StateMessage tone="error">{getErrorMessage(detail.error)}</StateMessage>
       )}
-      {open && detail.data && (
-        <ul className="text-muted-foreground mt-1 list-disc pl-5 text-xs">
-          {detail.data.items.map((item) => (
-            <li key={item.orderItemId}>
-              {item.productName} · {formatWon(item.amount)} · 구매확정{' '}
-              {formatDateTime(item.confirmedAt)}
-            </li>
-          ))}
-        </ul>
-      )}
+      {open && detail.data && <SettlementItemList items={detail.data.items} />}
     </div>
   )
 }

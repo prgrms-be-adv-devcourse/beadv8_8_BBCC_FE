@@ -1,22 +1,28 @@
-import type { SettlementDetail, SettlementTarget } from '@/entities/settlement'
+import type { SettlementDetailDto, SettlementTargetDto } from '@/entities/settlement'
 import type { MockHandler } from '@/shared/api'
 import { loadMockState, memberIdOf, now, page, problem, saveMockState } from './mock-utils'
 
 const FEE_RATE = 0.1
 
 // 기획서 7.1 카드별 추가 데이터: 판매자 2의 정산 대상 1건 (25,000원)
-const targets: (SettlementTarget & { sellerId: string })[] = loadMockState('settlement-targets', [
-  {
-    targetId: '1',
-    orderItemId: '1',
-    productName: '데일리 맨투맨 (상품 A) 110',
-    amount: 25000,
-    confirmedAt: '2026-10-13T10:00:00',
-    settled: false,
-    sellerId: '2',
-  },
-])
-const settlements: SettlementDetail[] = loadMockState<SettlementDetail[]>('settlements-v2', [])
+const targets: (SettlementTargetDto & { sellerId: string })[] = loadMockState(
+  'settlement-targets',
+  [
+    {
+      targetId: '1',
+      orderItemId: '1',
+      productName: '데일리 맨투맨 (상품 A) 110',
+      amount: 25000,
+      confirmedAt: '2026-10-13T10:00:00',
+      settled: false,
+      sellerId: '2',
+    },
+  ],
+)
+const settlements: SettlementDetailDto[] = loadMockState<SettlementDetailDto[]>(
+  'settlements-v2',
+  [],
+)
 let nextSettlementId = settlements.length + 1
 
 export const settlementHandlers: MockHandler[] = [
@@ -67,12 +73,12 @@ export const settlementHandlers: MockHandler[] = [
       const due = targets.filter(
         (target) => !target.settled && target.confirmedAt < `${periodEnd}T00:00:00`,
       )
-      const created: SettlementDetail[] = []
+      const created: SettlementDetailDto[] = []
       for (const sellerId of new Set(due.map((target) => target.sellerId))) {
         const mine = due.filter((target) => target.sellerId === sellerId)
         const totalAmount = mine.reduce((sum, target) => sum + target.amount, 0)
         const feeAmount = Math.floor(totalAmount * FEE_RATE)
-        const settlement: SettlementDetail = {
+        const settlement: SettlementDetailDto = {
           settlementId: String(nextSettlementId++),
           sellerId,
           period: { periodStart: null, periodEnd },

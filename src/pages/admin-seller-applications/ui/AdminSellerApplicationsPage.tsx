@@ -1,8 +1,7 @@
-import { APPLICATION_STATUS_LABEL, useSellerApplicationsQuery } from '@/entities/seller'
+import { ApplicationStatusBadge, canApprove, useSellerApplicationsQuery } from '@/entities/seller'
 import { ApproveSellerButton } from '@/features/approve-seller'
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime } from '@/shared/lib'
-import { Badge } from '@/shared/ui/badge'
 import { Card } from '@/shared/ui/card'
 import { PageHeader, StateMessage } from '@/shared/ui/page-header'
 
@@ -24,8 +23,7 @@ export function AdminSellerApplicationsPage() {
         <Card key={application.id} className="flex items-center justify-between">
           <div>
             <p className="font-medium">
-              {application.businessName}{' '}
-              <Badge>{APPLICATION_STATUS_LABEL[application.status]}</Badge>
+              {application.businessName} <ApplicationStatusBadge status={application.status} />
             </p>
             <p className="text-muted-foreground text-sm">
               신청자 {application.applicantNickname}(회원 {application.applicantId}) ·{' '}
@@ -33,9 +31,7 @@ export function AdminSellerApplicationsPage() {
               {formatDateTime(application.createdAt)}
             </p>
           </div>
-          {application.status === 'PENDING' && (
-            <ApproveSellerButton applicationId={application.id} />
-          )}
+          {canApprove(application) && <ApproveSellerButton applicationId={application.id} />}
         </Card>
       ))}
     </div>

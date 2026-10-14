@@ -1,40 +1,24 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { sellerKeys } from '@/entities/seller'
-import { apiClient, getErrorMessage, runWithAction } from '@/shared/api'
+import { validateSellerApplicationForm, type SellerApplicationForm } from '@/entities/seller'
+import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/page-header'
-
-type Form = { businessName: string; representativeName: string; businessRegistrationNumber: string }
+import { DEMO_APPLICATION } from '../config/demo-application'
+import { useApplySeller } from '../model/use-apply-seller'
 
 export function ApplySellerForm() {
-  const queryClient = useQueryClient()
-  const [form, setForm] = useState<Form>({
-    businessName: '테스트상점',
-    representativeName: '홍길동',
-    businessRegistrationNumber: '1234567890',
-  })
+  const apply = useApplySeller()
+  const [form, setForm] = useState<SellerApplicationForm>(DEMO_APPLICATION)
   const [invalid, setInvalid] = useState<string | null>(null)
-
-  const apply = useMutation({
-    mutationFn: () =>
-      runWithAction('판매자 신청', () => apiClient.post('/members/me/seller-application', form)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: sellerKeys.myApplication }),
-  })
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    const message =
-      !form.businessName.trim() || !form.representativeName.trim()
-        ? '상호명과 대표자명을 입력해 주세요.'
-        : !/^\d{10}$/.test(form.businessRegistrationNumber)
-          ? '사업자등록번호는 하이픈 없는 숫자 10자리예요.'
-          : null
+    const message = validateSellerApplicationForm(form)
     setInvalid(message)
-    if (!message) apply.mutate()
+    if (!message) apply.mutate(form)
   }
 
   return (

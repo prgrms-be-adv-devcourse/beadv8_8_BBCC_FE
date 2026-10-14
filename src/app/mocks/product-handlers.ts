@@ -1,14 +1,14 @@
 import {
   CATEGORIES,
-  type ProductDetail,
-  type ProductOption,
-  type ProductSummary,
+  type ProductDetailDto,
+  type ProductSummaryDto,
+  type RegisterProductRequestDto,
 } from '@/entities/product'
 import type { MockHandler } from '@/shared/api'
 import { loadMockState, memberIdOf, page, problem, saveMockState } from './mock-utils'
 
 // 기획서 7.1 시연 데이터: 상품 A(옵션 1 · 2), 상품 B(옵션 3). 옵션 ID는 주문 쪽 상품 복사본과 같아야 담기가 된다
-const INITIAL_PRODUCTS: ProductDetail[] = [
+const INITIAL_PRODUCTS: ProductDetailDto[] = [
   {
     productId: '1',
     name: '데일리 맨투맨 (상품 A)',
@@ -72,20 +72,13 @@ const INITIAL_PRODUCTS: ProductDetail[] = [
   },
 ]
 
-export const products: ProductDetail[] = loadMockState('products', INITIAL_PRODUCTS)
+export const products: ProductDetailDto[] = loadMockState('products', INITIAL_PRODUCTS)
 const save = () => saveMockState('products', products)
 
 let nextProductId = 100 + products.length
 let nextOptionId = 100 + products.flatMap((product) => product.options).length
 
-type RegisterRequest = {
-  name: string
-  categoryId: string
-  description: string
-  options: Omit<ProductOption, 'optionId' | 'soldOut'>[]
-}
-
-export function summaryOf(product: ProductDetail): ProductSummary {
+export function summaryOf(product: ProductDetailDto): ProductSummaryDto {
   return {
     productId: product.productId,
     name: product.name,
@@ -141,18 +134,17 @@ export const productHandlers: MockHandler[] = [
     method: 'POST',
     path: '/seller/products',
     handle: (request) => {
-      const body = request.body as RegisterRequest
+      const body = request.body as RegisterProductRequestDto
       const options = body.options.map((option) => ({
         ...option,
         optionId: String(nextOptionId++),
         soldOut: option.stock <= 0,
       }))
-      const product: ProductDetail = {
+      const product: ProductDetailDto = {
         productId: String(nextProductId++),
         name: body.name,
         categoryId: body.categoryId,
-        categoryName:
-          CATEGORIES.find((category) => category.categoryId === body.categoryId)?.name ?? '',
+        categoryName: CATEGORIES.find((category) => category.id === body.categoryId)?.name ?? '',
         sellerId: memberIdOf(request) ?? '0',
         sellerName: '테스트상점',
         status: 'SALE_PENDING',

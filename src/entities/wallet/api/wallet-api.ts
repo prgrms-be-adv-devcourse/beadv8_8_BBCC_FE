@@ -1,29 +1,28 @@
-import { useQueries, useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api'
-import type { ChargeDetail, WalletBalance } from '../model/types'
+import type {
+  ChargeDetailDto,
+  ChargeRequestResultDto,
+  ConfirmChargeRequestDto,
+  ConfirmChargeResultDto,
+  WalletBalanceDto,
+} from './wallet.dto'
 
-export const walletKeys = {
-  me: ['wallet', 'me'] as const,
-  charge: (chargeId: number) => ['wallet', 'charge', chargeId] as const,
-}
+const CHARGES = '/wallets/me/charges'
 
 export const walletApi = {
-  getMine: () => apiClient.get<WalletBalance>('/wallets/me').then((response) => response.data),
-  getCharge: (chargeId: number) =>
+  getMine: () => apiClient.get<WalletBalanceDto>('/wallets/me').then((response) => response.data),
+  getCharge: (chargeId: string) =>
+    apiClient.get<ChargeDetailDto>(`${CHARGES}/${chargeId}`).then((response) => response.data),
+  /** 금액 범위(1천 원 ~ 100만 원)는 서버가 확인한다 */
+  requestCharge: (amount: number) =>
+    apiClient.post<ChargeRequestResultDto>(CHARGES, { amount }).then((response) => response.data),
+  confirmCharge: (request: ConfirmChargeRequestDto) =>
     apiClient
-      .get<ChargeDetail>(`/wallets/me/charges/${chargeId}`)
+      .post<ConfirmChargeResultDto>(`${CHARGES}/confirm`, request)
       .then((response) => response.data),
-}
-
-export function useWalletQuery() {
-  return useQuery({ queryKey: walletKeys.me, queryFn: walletApi.getMine })
-}
-
-export function useChargesQuery(chargeIds: number[]) {
-  return useQueries({
-    queries: chargeIds.map((chargeId) => ({
-      queryKey: walletKeys.charge(chargeId),
-      queryFn: () => walletApi.getCharge(chargeId),
-    })),
-  })
+  /**
+   * 충전 취소 = 토스 결제 취소. 기획서 ④(과제 필수)지만 백엔드에 아직 없어 목 응답이다.
+   * 경로는 구현된 충전 API 앞부분(/wallets/me/charges)에 맞췄다.
+   */
+  cancelCharge: (chargeId: string) => apiClient.post(`${CHARGES}/${chargeId}/cancel`),
 }

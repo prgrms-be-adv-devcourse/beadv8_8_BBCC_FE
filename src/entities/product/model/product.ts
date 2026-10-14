@@ -1,8 +1,7 @@
-// 상품 API는 백엔드에 아직 없다(목 응답). 모양은 기획서 8장 product.changed data와 노션 명세 v2를 따른다
 export type ProductStatus = 'SALE_PENDING' | 'ON_SALE' | 'STOPPED'
 
 export type ProductOption = {
-  optionId: string
+  id: string
   color: string
   material: string
   size: string
@@ -14,23 +13,35 @@ export type ProductOption = {
   soldOut: boolean
 }
 
-/** GET /products 목록 한 줄 */
 export type ProductSummary = {
-  productId: string
+  id: string
   name: string
-  categoryId: string
   categoryName: string
-  sellerId: string
   sellerName: string
   status: ProductStatus
   minPrice: number
-  thumbnailUrl: string | null
 }
 
-/** GET /products/{productId} */
 export type ProductDetail = ProductSummary & {
   description: string
   options: ProductOption[]
+}
+
+/** 상품 등록 폼 값: 색상 · 소재 하나 + 사이즈 줄 여러 개 */
+export type ProductSizeRow = {
+  size: string
+  minHeightCm: number
+  maxHeightCm: number
+  price: number
+  stock: number
+}
+
+export type RegisterProductForm = {
+  name: string
+  categoryId: string
+  color: string
+  material: string
+  sizes: ProductSizeRow[]
 }
 
 export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
@@ -40,8 +51,8 @@ export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
 }
 
 export const CATEGORIES = [
-  { categoryId: '1', name: '상의' },
-  { categoryId: '2', name: '하의' },
-  { categoryId: '3', name: '원피스' },
-  { categoryId: '4', name: '아우터' },
+  { id: '1', name: '상의' },
+  { id: '2', name: '하의' },
+  { id: '3', name: '원피스' },
+  { id: '4', name: '아우터' },
 ]

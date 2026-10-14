@@ -1,20 +1,19 @@
-/** GET /wallets/me */
-export type WalletBalance = {
-  balance: number
-}
+export type Wallet = { balance: number }
 
 export type ChargeStatus =
   'PENDING' | 'CONFIRMING' | 'DONE' | 'CANCELLING' | 'CANCELLED' | 'FAILED' | 'EXPIRED'
 
-/** GET /wallets/me/charges/{chargeId} */
-export type ChargeDetail = {
-  chargeId: number
-  /** 토스 주문번호 */
-  orderId: string
+export type Charge = {
+  id: string
   amount: number
   status: ChargeStatus
   approvedAt: string | null
 }
+
+/** 토스 결제창에 넘길 값 */
+export type ChargePayment = { chargeId: string; tossOrderId: string; amount: number }
+
+export type ChargeConfirmation = { chargeId: string; amount: number; balance: number | null }
 
 export const CHARGE_STATUS_LABEL: Record<ChargeStatus, string> = {
   PENDING: '결제 대기',

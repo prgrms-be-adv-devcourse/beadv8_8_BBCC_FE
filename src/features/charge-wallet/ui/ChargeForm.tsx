@@ -1,6 +1,6 @@
-import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-import { apiClient, getErrorMessage, runWithAction } from '@/shared/api'
+import { validateChargeAmount } from '@/entities/wallet'
+import { getErrorMessage } from '@/shared/api'
 import { env } from '@/shared/config'
 import { formatWon } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
@@ -8,30 +8,12 @@ import { Card, CardTitle } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/page-header'
-import { openTossPayment } from '../lib/toss'
+import { useRequestCharge } from '../model/use-charge-wallet'
 
-type ChargeRequestResponse = {
-  chargeId: number
-  orderId: string
-  amount: number
-  expiresAt: string
-}
-
-/** 충전 요청(서버) → 토스 결제창 → successUrl로 돌아오면 승인(ConfirmCharge) */
 export function ChargeForm() {
+  const charge = useRequestCharge()
   const [amount, setAmount] = useState(50_000)
-
-  const charge = useMutation({
-    mutationFn: () =>
-      runWithAction('예치금 충전 요청', async () => {
-        const { data } = await apiClient.post<ChargeRequestResponse>('/wallets/me/charges', {
-          amount,
-        })
-        await openTossPayment(env.tossClientKey, { orderId: data.orderId, amount: data.amount })
-      }),
-  })
-
-  const invalid = !(amount >= 1_000 && amount <= 1_000_000)
+  const invalid = validateChargeAmount(amount)
 
   return (
     <Card>
@@ -47,8 +29,8 @@ export function ChargeForm() {
           />
         </Label>
         <Button
-          disabled={invalid || !env.tossClientKey || charge.isPending}
-          onClick={() => charge.mutate()}
+          disabled={invalid !== null || !env.tossClientKey || charge.isPending}
+          onClick={() => charge.mutate(amount)}
         >
           {formatWon(amount)} 충전하기
         </Button>

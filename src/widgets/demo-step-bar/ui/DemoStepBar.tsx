@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router'
-import { hasRole, useSessionStore } from '@/entities/session'
+import { hasRole, ROLE_LABEL, useSessionStore } from '@/entities/session'
 import { cn } from '@/shared/lib'
-import { DEMO_STEPS, ROLE_LABEL } from '../config/steps'
+import { DEMO_STEPS } from '../config/steps'
 
 /** 시연 단계 ①~⑦ = 메뉴. 지금 역할로 쓸 수 없는 화면은 흐리게 표시한다 */
 export function DemoStepBar() {

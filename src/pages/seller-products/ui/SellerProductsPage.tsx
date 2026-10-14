@@ -1,7 +1,12 @@
-import { PRODUCT_STATUS_LABEL, useSellerProductsQuery } from '@/entities/product'
+import {
+  canStartSale,
+  describeSizes,
+  isOnSale,
+  PRODUCT_STATUS_LABEL,
+  useSellerProductsQuery,
+} from '@/entities/product'
 import { RegisterProductForm, StartSaleButton } from '@/features/register-product'
 import { getErrorMessage } from '@/shared/api'
-import { formatWon } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { Card } from '@/shared/ui/card'
 import { PageHeader, StateMessage } from '@/shared/ui/page-header'
@@ -24,24 +29,17 @@ export function SellerProductsPage() {
         )}
         {products.data?.content.length === 0 && <StateMessage>등록한 상품이 없어요.</StateMessage>}
         {products.data?.content.map((product) => (
-          <Card key={product.productId} className="flex items-center justify-between">
+          <Card key={product.id} className="flex items-center justify-between">
             <div>
               <p className="font-medium">
                 {product.name}{' '}
-                <Badge variant={product.status === 'ON_SALE' ? 'success' : 'muted'}>
+                <Badge variant={isOnSale(product) ? 'success' : 'muted'}>
                   {PRODUCT_STATUS_LABEL[product.status]}
                 </Badge>
               </p>
-              <p className="text-muted-foreground text-sm">
-                {product.options
-                  .map(
-                    (option) =>
-                      `${option.size}(${option.minHeightCm}~${option.maxHeightCm}cm, ${formatWon(option.price)}, 재고 ${option.stock})`,
-                  )
-                  .join(' · ')}
-              </p>
+              <p className="text-muted-foreground text-sm">{describeSizes(product)}</p>
             </div>
-            {product.status === 'SALE_PENDING' && <StartSaleButton productId={product.productId} />}
+            {canStartSale(product) && <StartSaleButton productId={product.id} />}
           </Card>
         ))}
       </div>

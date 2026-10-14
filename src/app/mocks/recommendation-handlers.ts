@@ -1,6 +1,6 @@
-import type { ChildProfile } from '@/entities/child'
-import type { ProductOption } from '@/entities/product'
-import type { Fit, SizeRecommendation } from '@/entities/recommendation'
+import type { ChildProfileDto } from '@/entities/child'
+import type { ProductOptionDto } from '@/entities/product'
+import type { RecommendedProductDto, SizeRecommendationDto } from '@/entities/recommendation'
 import type { MockHandler, MockRequest } from '@/shared/api'
 import { getErrorStatus } from '@/shared/api'
 import { fetchReal, page, problem } from './mock-utils'
@@ -9,7 +9,9 @@ import { products } from './product-handlers'
 const MARGIN_CM = 2
 
 // 기획서 2.1 추천 규칙 · 적합도를 단순하게 옮긴 목 (몸무게로 체형 판정은 생략, 입력된 체형만 사용)
-function fitOf(height: number, option: ProductOption): Fit {
+type Fit = 'ROOMY' | 'PROPER' | 'TIGHT'
+
+function fitOf(height: number, option: ProductOptionDto): Fit {
   if (height < option.minHeightCm) return 'ROOMY'
   if (height > option.maxHeightCm) return 'TIGHT'
   const nearLow = height - option.minHeightCm <= MARGIN_CM
@@ -20,7 +22,7 @@ function fitOf(height: number, option: ProductOption): Fit {
   return 'PROPER'
 }
 
-function recommend(child: ChildProfile, options: ProductOption[]) {
+function recommend(child: ChildProfileDto, options: ProductOptionDto[]) {
   const height = child.heightCm
   const candidates = options
     .filter(
@@ -60,9 +62,9 @@ function recommend(child: ChildProfile, options: ProductOption[]) {
   return { option: bigger, reasons }
 }
 
-async function loadChild(request: MockRequest, childId: string): Promise<ChildProfile | null> {
+async function loadChild(request: MockRequest, childId: string): Promise<ChildProfileDto | null> {
   try {
-    return await fetchReal<ChildProfile>(request, `/children/${childId}`)
+    return await fetchReal<ChildProfileDto>(request, `/children/${childId}`)
   } catch (error) {
     if (getErrorStatus(error) === 404) return null
     throw error
@@ -82,7 +84,7 @@ export const recommendationHandlers: MockHandler[] = [
         return problem(404, '찾을 수 없습니다', '상품 또는 자녀를 찾을 수 없습니다.', instance)
       }
       const { option, reasons } = recommend(child, product.options)
-      const data: SizeRecommendation = {
+      const data: SizeRecommendationDto = {
         productId: product.productId,
         childId,
         recommendedSize: option?.size ?? null,
@@ -116,7 +118,7 @@ export const recommendationHandlers: MockHandler[] = [
           `/api/v1/children/${request.params.childId}/recommended-products`,
         )
       }
-      const content = products
+      const content: RecommendedProductDto[] = products
         .filter((product) => product.status === 'ON_SALE')
         .flatMap((product) => {
           const { option } = recommend(

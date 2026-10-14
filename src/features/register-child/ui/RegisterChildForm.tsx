@@ -1,64 +1,35 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import {
   BODY_TYPE_LABEL,
-  childKeys,
   PREFERRED_FIT_LABEL,
+  validateChildForm,
   type BodyType,
-  type ChildProfileRequest,
+  type ChildForm,
   type Gender,
   type PreferredFit,
 } from '@/entities/child'
-import { apiClient, getErrorMessage, runWithAction } from '@/shared/api'
+import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Input, Select } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/page-header'
-
-// 기획서 7.1 시연 자녀 1
-const INITIAL: ChildProfileRequest = {
-  name: '테스트',
-  birthDate: '2019-01-01',
-  gender: 'MALE',
-  heightCm: 115.0,
-  weightKg: 20.0,
-  bodyType: 'NORMAL',
-  preferredFit: 'LOOSE',
-}
-
-/** 서버 검증과 같은 규칙을 먼저 확인한다 (서버 400 문구에는 필드명이 섞여 온다) */
-function validate(form: ChildProfileRequest): string | null {
-  if (!form.name.trim()) return '이름을 입력해 주세요.'
-  if (!form.birthDate || form.birthDate > new Date().toISOString().slice(0, 10))
-    return '생년월일은 오늘이나 그 전이어야 해요.'
-  if (!(form.heightCm >= 40 && form.heightCm <= 200)) return '키는 40~200cm 사이로 입력해 주세요.'
-  if (!(form.weightKg >= 2 && form.weightKg <= 150)) return '몸무게는 2~150kg 사이로 입력해 주세요.'
-  const oneDecimal = (value: number) => Math.round(value * 10) === value * 10
-  if (!oneDecimal(form.heightCm) || !oneDecimal(form.weightKg))
-    return '키 · 몸무게는 소수 첫째 자리까지만 입력할 수 있어요.'
-  return null
-}
+import { DEMO_CHILD } from '../config/demo-child'
+import { useRegisterChild } from '../model/use-register-child'
 
 export function RegisterChildForm() {
-  const queryClient = useQueryClient()
-  const [form, setForm] = useState<ChildProfileRequest>(INITIAL)
+  const register = useRegisterChild()
+  const [form, setForm] = useState<ChildForm>(DEMO_CHILD)
   const [invalid, setInvalid] = useState<string | null>(null)
-
-  const register = useMutation({
-    mutationFn: (request: ChildProfileRequest) =>
-      runWithAction('자녀 등록', () => apiClient.post('/children', request)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: childKeys.all }),
-  })
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    const message = validate(form)
+    const message = validateChildForm(form, new Date().toISOString().slice(0, 10))
     setInvalid(message)
     if (!message) register.mutate(form)
   }
 
-  const set = <K extends keyof ChildProfileRequest>(key: K, value: ChildProfileRequest[K]) =>
+  const set = <K extends keyof ChildForm>(key: K, value: ChildForm[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
   return (

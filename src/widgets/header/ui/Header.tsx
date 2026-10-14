@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { useSessionStore } from '@/entities/session'
+import { describeUser, useSessionStore } from '@/entities/session'
 import { LogoutButton } from '@/features/logout'
 import { SwitchDemoRole } from '@/features/switch-demo-role'
 
@@ -16,11 +16,7 @@ export function Header() {
         <div className="ml-auto flex items-center gap-3">
           <SwitchDemoRole />
           <span className="text-sm">
-            {status === 'restoring'
-              ? '로그인 확인 중…'
-              : user
-                ? `${user.nickname} · 회원 ${user.memberId} (${user.roles.join(' · ')})`
-                : '로그인 전'}
+            {status === 'restoring' ? '로그인 확인 중…' : user ? describeUser(user) : '로그인 전'}
           </span>
           {user ? (
             <LogoutButton />

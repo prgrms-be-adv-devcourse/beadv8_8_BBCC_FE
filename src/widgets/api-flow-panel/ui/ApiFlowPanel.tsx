@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useApiFlowLog, type ApiCallLog } from '@/shared/api'
 import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
-import { domainOf, flowOf, type DomainId, type FlowStep } from '../config/domain-flow'
+import type { DomainId, FlowStep } from '../config/domain-flow'
+import { followingSteps, latestActionDomains } from '../model/flow-view'
 import { DomainFlowMap } from './DomainFlowMap'
 
 /** 화면에서 일어난 API 호출과, 그 뒤 서버에서 이어지는 처리(설계 기준)를 보여 준다 */
@@ -40,36 +41,9 @@ export function ApiFlowPanel() {
   )
 }
 
-/** 가장 최근 행동에서 호출된 도메인과, 성공한 호출 뒤 이벤트로 이어진 도메인 */
-function latestActionDomains(logs: ApiCallLog[]) {
-  const called = new Set<DomainId>()
-  const followed = new Set<DomainId>()
-  // 주문 상세 다시 조회 같은 배경 호출은 건너뛰고, 사용자가 마지막으로 한 행동을 기준으로 한다
-  const lastAction = logs.findLast((log) => log.action !== null)
-  const last = lastAction ?? logs.at(-1)
-  if (!last) {
-    return { called, followed }
-  }
-  const group = lastAction
-    ? logs.filter((log) => log.action === lastAction.action && log.id <= lastAction.id).slice(-10)
-    : [last]
-  for (const log of group) {
-    const domain = domainOf(log.path)
-    if (domain) called.add(domain)
-    if (isSuccess(log)) {
-      flowOf(log.method, log.path).forEach((step) => step.to.forEach((to) => followed.add(to)))
-    }
-  }
-  return { called, followed }
-}
-
-function isSuccess(log: ApiCallLog) {
-  return log.status !== null && log.status < 400
-}
-
 function ApiCallRow({ log }: { log: ApiCallLog }) {
   const [open, setOpen] = useState(false)
-  const steps = isSuccess(log) ? flowOf(log.method, log.path) : []
+  const steps = followingSteps(log)
 
   return (
     <li className="rounded-md border text-xs">

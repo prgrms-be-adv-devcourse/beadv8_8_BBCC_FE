@@ -2,9 +2,8 @@ export type Gender = 'MALE' | 'FEMALE'
 export type BodyType = 'SLIM' | 'NORMAL' | 'CHUNKY'
 export type PreferredFit = 'SLIM' | 'REGULAR' | 'LOOSE'
 
-/** GET /children · /children/{childId} */
-export type ChildProfile = {
-  id: number
+export type Child = {
+  id: string
   name: string
   birthDate: string
   gender: Gender
@@ -13,11 +12,10 @@ export type ChildProfile = {
   bodyType: BodyType | null
   preferredFit: PreferredFit | null
   growthRecordCount: number
-  lastRecordedAt: string | null
 }
 
-/** 자녀 등록 · 수정 요청 (수정은 전체 교체) */
-export type ChildProfileRequest = {
+/** 자녀 입력 폼 값 */
+export type ChildForm = {
   name: string
   birthDate: string
   gender: Gender

@@ -47,9 +47,3 @@ export const DEMO_STEPS: {
     ],
   },
 ]
-
-export const ROLE_LABEL: Record<Role, string> = {
-  BUYER: '보호자',
-  SELLER: '판매자',
-  ADMIN: '관리자',
-}

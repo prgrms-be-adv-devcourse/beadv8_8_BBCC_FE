@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { pickShippingAddress, useAddressesQuery } from '@/entities/address'
 import { orderableLines, sumLineAmount, useCartQuery } from '@/entities/cart'
-import { useChildrenQuery } from '@/entities/child'
-import { useWalletQuery } from '@/entities/wallet'
+import { findChild, useChildrenQuery } from '@/entities/child'
+import { shortageOf, useWalletQuery } from '@/entities/wallet'
 import { CartItemControls } from '@/features/edit-cart-item'
 import { PlaceOrderButton } from '@/features/place-order'
 import { getErrorMessage } from '@/shared/api'
@@ -25,9 +25,7 @@ export function CartPage() {
   const lines = cart.data ? orderableLines(cart.data) : []
   const orderAmount = sumLineAmount(lines)
   const address = pickShippingAddress(addresses.data ?? [], addressId)
-  const shortage = wallet.data ? Math.max(0, orderAmount - wallet.data.balance) : 0
-  const childName = (childId: string | null) =>
-    children.data?.find((child) => String(child.id) === childId)?.name
+  const shortage = shortageOf(wallet.data?.balance, orderAmount)
 
   return (
     <div className="space-y-4">
@@ -56,7 +54,8 @@ export function CartPage() {
             <p className="text-muted-foreground text-sm">
               {line.unitPrice !== null ? formatWon(line.unitPrice) : '-'} × {line.quantity} ={' '}
               {formatWon(line.lineAmount)}
-              {line.childId && ` · 입을 자녀 ${childName(line.childId) ?? `#${line.childId}`}`}
+              {line.childId &&
+                ` · 입을 자녀 ${findChild(children.data, line.childId)?.name ?? `#${line.childId}`}`}
             </p>
           </div>
           <CartItemControls line={line} />

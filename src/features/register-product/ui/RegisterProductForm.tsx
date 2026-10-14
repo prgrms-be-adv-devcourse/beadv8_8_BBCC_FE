@@ -1,52 +1,40 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { CATEGORIES, productKeys } from '@/entities/product'
-import { apiClient, getErrorMessage, runWithAction } from '@/shared/api'
+import {
+  CATEGORIES,
+  validateRegisterProductForm,
+  type ProductSizeRow,
+  type RegisterProductForm as RegisterProductFormValue,
+} from '@/entities/product'
+import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Input, Select } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/page-header'
-
-type SizeRow = {
-  size: string
-  minHeightCm: number
-  maxHeightCm: number
-  price: number
-  stock: number
-}
+import { DEMO_PRODUCT, EMPTY_SIZE_ROW } from '../config/demo-product'
+import { useRegisterProduct } from '../model/use-register-product'
 
 /** 상품 등록 (목 API). 옵션 = 색상 × 소재 × 사이즈, 사이즈마다 권장 키 */
 export function RegisterProductForm() {
-  const queryClient = useQueryClient()
-  const [name, setName] = useState('데일리 맨투맨')
-  const [categoryId, setCategoryId] = useState('1')
-  const [color, setColor] = useState('네이비')
-  const [material, setMaterial] = useState('면')
-  const [rows, setRows] = useState<SizeRow[]>([
-    { size: '110', minHeightCm: 105, maxHeightCm: 115, price: 25000, stock: 10 },
-    { size: '120', minHeightCm: 115, maxHeightCm: 125, price: 25000, stock: 10 },
-  ])
+  const register = useRegisterProduct()
+  const [form, setForm] = useState<RegisterProductFormValue>(DEMO_PRODUCT)
+  const [invalid, setInvalid] = useState<string | null>(null)
 
-  const register = useMutation({
-    mutationFn: () =>
-      runWithAction('상품 등록', () =>
-        apiClient.post('/seller/products', {
-          name,
-          categoryId,
-          description: '',
-          options: rows.map((row) => ({ ...row, color, material })),
-        }),
-      ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: productKeys.sellerList }),
-  })
-
-  const updateRow = (index: number, patch: Partial<SizeRow>) =>
-    setRows((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)))
+  const set = <K extends keyof RegisterProductFormValue>(
+    key: K,
+    value: RegisterProductFormValue[K],
+  ) => setForm((prev) => ({ ...prev, [key]: value }))
+  const updateRow = (index: number, patch: Partial<ProductSizeRow>) =>
+    set(
+      'sizes',
+      form.sizes.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    )
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    register.mutate()
+    const message = validateRegisterProductForm(form)
+    setInvalid(message)
+    if (!message) register.mutate(form)
   }
 
   return (
@@ -56,13 +44,13 @@ export function RegisterProductForm() {
         <div className="grid grid-cols-4 gap-3">
           <Label className="col-span-2">
             상품명
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <Input value={form.name} onChange={(e) => set('name', e.target.value)} />
           </Label>
           <Label>
             카테고리
-            <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+            <Select value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)}>
               {CATEGORIES.map((category) => (
-                <option key={category.categoryId} value={category.categoryId}>
+                <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
@@ -71,11 +59,11 @@ export function RegisterProductForm() {
           <div className="grid grid-cols-2 gap-2">
             <Label>
               색상
-              <Input value={color} onChange={(e) => setColor(e.target.value)} />
+              <Input value={form.color} onChange={(e) => set('color', e.target.value)} />
             </Label>
             <Label>
               소재
-              <Input value={material} onChange={(e) => setMaterial(e.target.value)} />
+              <Input value={form.material} onChange={(e) => set('material', e.target.value)} />
             </Label>
           </div>
         </div>
@@ -89,7 +77,7 @@ export function RegisterProductForm() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => (
+            {form.sizes.map((row, index) => (
               <tr key={index}>
                 <td className="pr-2">
                   <Input
@@ -132,18 +120,14 @@ export function RegisterProductForm() {
           <Button
             type="button"
             variant="outline"
-            onClick={() =>
-              setRows((prev) => [
-                ...prev,
-                { size: '', minHeightCm: 0, maxHeightCm: 0, price: 0, stock: 0 },
-              ])
-            }
+            onClick={() => set('sizes', [...form.sizes, EMPTY_SIZE_ROW])}
           >
             사이즈 추가
           </Button>
           <Button type="submit" disabled={register.isPending}>
             등록하기
           </Button>
+          {invalid && <StateMessage tone="error">{invalid}</StateMessage>}
           {register.isError && (
             <StateMessage tone="error">{getErrorMessage(register.error)}</StateMessage>
           )}

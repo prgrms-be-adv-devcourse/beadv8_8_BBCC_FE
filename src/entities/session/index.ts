@@ -1,4 +1,18 @@
-export { refreshSession, restoreSession, sessionApi, signIn, signInAsDemo } from './api/session-api'
-export { hasRole, useSessionStore } from './model/session-store'
-export type { SessionUser } from './model/token-claims'
-export type { DevTokenRequest, Member, Role, SellerStatus, TokenResponse } from './model/types'
+export {
+  ROLE_LABEL,
+  type DemoAccount,
+  type Member,
+  type Role,
+  type SellerStatus,
+  type SessionUser,
+} from './model/session'
+export {
+  refreshSession,
+  restoreSession,
+  signIn,
+  signInAsDemo,
+  signInWithKakao,
+  signOut,
+} from './model/session-actions'
+export { describeUser, hasRole } from './model/session.rules'
+export { useSessionStore } from './model/session-store'
