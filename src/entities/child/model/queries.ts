@@ -6,8 +6,10 @@ export const childKeys = {
   all: ['children'] as const,
 }
 
-export function useChildrenQuery() {
+/** enabled: 보호자가 아닐 때 부르지 않으려면 false (쇼핑 첫 화면) */
+export function useChildrenQuery({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
+    enabled,
     queryKey: childKeys.all,
     queryFn: childApi.list,
     select: (list) => list.map(toChild),

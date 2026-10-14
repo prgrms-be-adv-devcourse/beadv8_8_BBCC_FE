@@ -1,4 +1,5 @@
 import type { ApiCallLog } from '@/shared/api'
+import { paths } from '@/shared/config'
 
 // 기획서 v1.0 7장 단계별 완료 기준을 "어떤 API가 어떤 결과를 돌려주면 통과"로 옮긴 체크리스트
 
@@ -52,7 +53,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '자녀 등록',
     expected: 'POST /children 2xx',
     role: '보호자',
-    screen: '/children',
+    screen: paths.console.children,
     call: { method: 'POST', pattern: /^\/children$/ },
   },
   {
@@ -61,7 +62,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '자녀 목록에 보임',
     expected: 'GET /children 결과 1명 이상',
     role: '보호자',
-    screen: '/children',
+    screen: paths.console.children,
     call: {
       method: 'GET',
       pattern: /^\/children$/,
@@ -74,7 +75,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '배송지 등록',
     expected: 'POST /members/me/addresses 2xx',
     role: '보호자',
-    screen: '/addresses',
+    screen: paths.console.addresses,
     call: { method: 'POST', pattern: /^\/members\/me\/addresses$/ },
   },
   {
@@ -83,7 +84,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '기본 배송지 1개',
     expected: '목록에 isDefault=true가 정확히 1개',
     role: '보호자',
-    screen: '/addresses',
+    screen: paths.console.addresses,
     call: {
       method: 'GET',
       pattern: /^\/members\/me\/addresses$/,
@@ -98,7 +99,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '판매자 신청',
     expected: 'POST /members/me/seller-application 2xx',
     role: '보호자',
-    screen: '/seller/apply',
+    screen: paths.console.sellerApply,
     call: { method: 'POST', pattern: /^\/members\/me\/seller-application$/ },
   },
   {
@@ -107,7 +108,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '관리자 승인',
     expected: '응답 status = APPROVED',
     role: '관리자',
-    screen: '/admin/seller-applications',
+    screen: paths.console.adminSellerApplications,
     call: {
       method: 'POST',
       pattern: /^\/admin\/seller-applications\/[^/]+\/approve$/,
@@ -120,7 +121,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '상품 등록',
     expected: 'POST /seller/products 2xx',
     role: '판매자',
-    screen: '/seller/products',
+    screen: paths.console.sellerProducts,
     call: { method: 'POST', pattern: /^\/seller\/products$/ },
   },
   {
@@ -129,7 +130,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '판매 시작',
     expected: 'POST .../start-sale 2xx',
     role: '판매자',
-    screen: '/seller/products',
+    screen: paths.console.sellerProducts,
     call: { method: 'POST', pattern: /^\/seller\/products\/[^/]+\/start-sale$/ },
   },
   {
@@ -138,7 +139,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '사이즈 추천',
     expected: '추천 사이즈가 있음',
     role: '보호자',
-    screen: '/products',
+    screen: paths.console.products,
     call: {
       method: 'GET',
       pattern: /^\/products\/[^/]+\/size-recommendation/,
@@ -151,7 +152,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '자녀 맞춤 목록',
     expected: '맞는 상품 1개 이상',
     role: '보호자',
-    screen: '/products',
+    screen: paths.console.products,
     call: {
       method: 'GET',
       pattern: /^\/children\/[^/]+\/recommended-products/,
@@ -164,7 +165,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '예치금 충전 승인',
     expected: '응답 status = DONE',
     role: '보호자',
-    screen: '/wallet',
+    screen: paths.console.wallet,
     call: {
       method: 'POST',
       pattern: /^\/wallets\/me\/charges\/confirm$/,
@@ -177,7 +178,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '장바구니 담기',
     expected: 'POST /cart/items 2xx',
     role: '보호자',
-    screen: '/products',
+    screen: paths.console.products,
     call: { method: 'POST', pattern: /^\/cart\/items$/ },
   },
   {
@@ -186,7 +187,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '주문하기',
     expected: '201 + status = PENDING_PAYMENT',
     role: '보호자',
-    screen: '/cart',
+    screen: paths.console.cart,
     call: {
       method: 'POST',
       pattern: /^\/orders$/,
@@ -199,7 +200,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '결제 완료 (서버 이벤트)',
     expected: '주문 상세 status = PAID',
     role: '보호자',
-    screen: '/orders',
+    screen: paths.console.orders,
     call: {
       method: 'GET',
       pattern: /^\/orders\/[^/]+$/,
@@ -212,7 +213,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '보호자 잔액 감소',
     expected: '회원 1 잔액 조회 값이 줄어듦',
     role: '보호자',
-    screen: '/wallet',
+    screen: paths.console.wallet,
     logs: balanceChange('1', 'down'),
   },
   {
@@ -221,7 +222,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '발송 (송장 등록)',
     expected: '응답 status = SHIPPING',
     role: '판매자',
-    screen: '/seller/orders',
+    screen: paths.console.sellerOrders,
     call: {
       method: 'POST',
       pattern: /^\/seller\/orders\/[^/]+\/ship$/,
@@ -234,7 +235,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '배송 완료',
     expected: '응답 status = DELIVERED',
     role: '판매자',
-    screen: '/seller/orders',
+    screen: paths.console.sellerOrders,
     call: {
       method: 'POST',
       pattern: /^\/seller\/orders\/[^/]+\/deliver$/,
@@ -247,7 +248,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '구매확정',
     expected: '응답 status = CONFIRMED',
     role: '보호자',
-    screen: '/orders',
+    screen: paths.console.orders,
     call: {
       method: 'POST',
       pattern: /^\/orders\/[^/]+\/items\/[^/]+\/confirm$/,
@@ -260,7 +261,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '정산 실행',
     expected: '정산서 1개 이상 생성',
     role: '관리자',
-    screen: '/admin/settlements',
+    screen: paths.console.adminSettlements,
     call: {
       method: 'POST',
       pattern: /^\/admin\/settlements\/run$/,
@@ -273,7 +274,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '판매자 지갑 적립',
     expected: '회원 2 잔액 조회 값이 늘어남 (정산 목이면 늘지 않음)',
     role: '판매자',
-    screen: '/seller/settlements',
+    screen: paths.console.sellerSettlements,
     logs: balanceChange('2', 'up'),
   },
 ]

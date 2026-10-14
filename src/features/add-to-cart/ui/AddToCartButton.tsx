@@ -10,9 +10,11 @@ type Props = {
   childId: string | null
   quantity: number
   disabled?: boolean
+  /** 담은 뒤 보여 줄 장바구니 주소 (영역마다 다르다) */
+  cartHref: string
 }
 
-export function AddToCartButton({ optionId, childId, quantity, disabled }: Props) {
+export function AddToCartButton({ optionId, childId, quantity, disabled, cartHref }: Props) {
   const add = useAddToCart()
 
   return (
@@ -29,7 +31,7 @@ export function AddToCartButton({ optionId, childId, quantity, disabled }: Props
       {add.isSuccess && (
         <StateMessage>
           담았어요.{' '}
-          <Link to="/cart" className="text-primary underline">
+          <Link to={cartHref} className="text-primary underline">
             장바구니 보기
           </Link>
         </StateMessage>

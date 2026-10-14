@@ -11,6 +11,7 @@ import {
 import { SizeRecommendationSummary, useSizeRecommendationQuery } from '@/entities/recommendation'
 import { AddToCartButton } from '@/features/add-to-cart'
 import { getErrorMessage } from '@/shared/api'
+import { paths } from '@/shared/config'
 import { formatWon } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
@@ -83,6 +84,7 @@ export function ProductDetailPage() {
           childId={childId}
           quantity={quantity}
           disabled={!onSale}
+          cartHref={paths.console.cart}
         />
       </Card>
     </div>

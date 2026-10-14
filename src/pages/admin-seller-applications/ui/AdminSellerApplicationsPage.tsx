@@ -11,8 +11,9 @@ export function AdminSellerApplicationsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="② 판매자 신청 심사 (관리자)"
-        description="승인하면 신청한 회원이 다음 토큰부터 SELLER 역할을 받아요."
+        title="판매자 신청 심사"
+        step="②"
+        note="승인하면 신청한 회원이 다음 토큰부터 SELLER 역할을 받아요."
       />
       {applications.isPending && <StateMessage>불러오는 중…</StateMessage>}
       {applications.isError && (

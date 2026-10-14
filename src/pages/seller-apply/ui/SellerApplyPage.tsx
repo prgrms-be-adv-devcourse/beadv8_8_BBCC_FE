@@ -11,8 +11,10 @@ export function SellerApplyPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="② 판매자 신청"
-        description="신청 → 관리자 승인 → 토큰 재발급으로 판매자 역할이 반영돼요."
+        title="판매자 신청"
+        step="②"
+        description="관리자가 승인하면 판매자 센터를 쓸 수 있어요."
+        note="신청 → 관리자 승인 → 토큰 재발급으로 판매자 역할이 반영돼요."
       />
       {application.isPending && <StateMessage>불러오는 중…</StateMessage>}
       {application.isError && (

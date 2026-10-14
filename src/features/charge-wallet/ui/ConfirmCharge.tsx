@@ -4,7 +4,13 @@ import { formatWon } from '@/shared/lib'
 import { StateMessage } from '@/shared/ui/page-header'
 import { useConfirmCharge } from '../model/use-charge-wallet'
 
-export function ConfirmCharge({ search }: { search: URLSearchParams }) {
+export function ConfirmCharge({
+  search,
+  walletHref,
+}: {
+  search: URLSearchParams
+  walletHref: string
+}) {
   const confirm = useConfirmCharge(search)
 
   if (confirm.invalidRequest)
@@ -18,7 +24,7 @@ export function ConfirmCharge({ search }: { search: URLSearchParams }) {
         {formatWon(confirm.data.amount)} 충전했어요.
         {confirm.data.balance !== null && ` 잔액 ${formatWon(confirm.data.balance)}`}
       </p>
-      <Link to="/wallet" className="text-primary underline">
+      <Link to={walletHref} className="text-primary underline">
         예치금으로 돌아가기
       </Link>
     </div>

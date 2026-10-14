@@ -23,8 +23,10 @@ export function SellerSettlementsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="⑦ 정산 (판매자)"
-        description="구매확정된 주문상품이 정산 대상이 되고, 정산하면 수수료 10%를 뺀 금액이 판매자 지갑에 적립돼요. (정산 API는 목)"
+        title="정산"
+        step="⑦"
+        description="구매확정된 판매 금액에서 수수료를 빼고 지갑에 적립돼요."
+        note="구매확정된 주문상품이 정산 대상이 되고, 정산하면 수수료 10%를 뺀 금액이 판매자 지갑에 적립돼요. (정산 API는 목)"
       />
       <WalletBalanceCard
         title="내 예치금 지갑 (실제 API)"

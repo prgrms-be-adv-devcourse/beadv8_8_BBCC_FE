@@ -13,15 +13,19 @@ import { env } from '@/shared/config'
 import { openTossPayment } from '../lib/toss'
 
 /** 충전 요청(서버) → 토스 결제창으로 이동. 돌아오면 useConfirmCharge가 승인한다 */
-export function useRequestCharge() {
+export function useRequestCharge(returnTo: { successPath: string; failPath: string }) {
   return useMutation({
     mutationFn: (amount: number) =>
       runWithAction('예치금 충전 요청', async () => {
         const payment = toChargePayment(await walletApi.requestCharge(amount))
-        await openTossPayment(env.tossClientKey, {
-          orderId: payment.tossOrderId,
-          amount: payment.amount,
-        })
+        await openTossPayment(
+          env.tossClientKey,
+          {
+            orderId: payment.tossOrderId,
+            amount: payment.amount,
+          },
+          returnTo,
+        )
       }),
   })
 }

@@ -10,8 +10,9 @@ import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/page-header'
 import { useRequestCharge } from '../model/use-charge-wallet'
 
-export function ChargeForm() {
-  const charge = useRequestCharge()
+/** returnTo: 토스 결제창에서 돌아올 화면 (영역마다 다르다) */
+export function ChargeForm({ returnTo }: { returnTo: { successPath: string; failPath: string } }) {
+  const charge = useRequestCharge(returnTo)
   const [amount, setAmount] = useState(50_000)
   const invalid = validateChargeAmount(amount)
 

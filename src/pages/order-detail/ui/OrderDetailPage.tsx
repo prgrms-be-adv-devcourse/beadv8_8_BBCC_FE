@@ -15,6 +15,7 @@ import {
 import { useWalletQuery, WalletBalanceCard, walletKeys } from '@/entities/wallet'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
 import { getErrorMessage } from '@/shared/api'
+import { paths } from '@/shared/config'
 import { formatDateTime, formatWon } from '@/shared/lib'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { PageHeader, StateMessage } from '@/shared/ui/page-header'
@@ -48,7 +49,7 @@ export function OrderDetailPage() {
         polling={query.isFetching}
         cancelAction={
           needsCharge(order) && (
-            <Link to="/wallet" className="text-primary text-sm underline">
+            <Link to={paths.console.wallet} className="text-primary text-sm underline">
               예치금 충전하러 가기
             </Link>
           )

@@ -11,8 +11,10 @@ export function AddressesPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="① 배송지"
-        description="주문은 회원 API를 부르지 않아요. 화면이 여기서 고른 배송지를 주문 요청에 담아 보내요."
+        title="배송지"
+        step="①"
+        description="주문할 때 여기 등록한 배송지 중에서 골라요."
+        note="주문은 회원 API를 부르지 않아요. 화면이 여기서 고른 배송지를 주문 요청에 담아 보내요."
       />
       <AddressForm />
       <div className="space-y-2">

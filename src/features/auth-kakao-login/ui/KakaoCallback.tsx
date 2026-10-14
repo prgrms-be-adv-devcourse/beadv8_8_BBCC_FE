@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { getErrorMessage } from '@/shared/api'
+import { paths } from '@/shared/config'
 import { StateMessage } from '@/shared/ui/page-header'
 import { useKakaoLogin } from '../model/use-kakao-login'
 
@@ -12,7 +13,7 @@ export function KakaoCallback({ code, onSuccess }: { code: string | null; onSucc
     return (
       <div className="space-y-2">
         <StateMessage tone="error">{getErrorMessage(login.error)}</StateMessage>
-        <Link to="/login" className="text-primary underline">
+        <Link to={paths.login} className="text-primary underline">
           다시 로그인
         </Link>
       </div>

@@ -4,6 +4,7 @@ import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import { ProductCard, useProductsQuery } from '@/entities/product'
 import { FitBadge, useRecommendedProductsQuery } from '@/entities/recommendation'
 import { getErrorMessage } from '@/shared/api'
+import { paths } from '@/shared/config'
 import { PageHeader, StateMessage } from '@/shared/ui/page-header'
 
 /** 전체 상품 또는 자녀 맞춤 목록 (맞는 사이즈가 판매 중인 상품만) */
@@ -17,8 +18,9 @@ export function ProductsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="③ 상품"
-        description="자녀를 고르면 추천이 자기 복사본(자녀 · 상품)으로 맞는 사이즈가 있는 상품만 보여 줘요."
+        title="상품"
+        step="③"
+        note="자녀를 고르면 추천이 자기 복사본(자녀 · 상품)으로 맞는 사이즈가 있는 상품만 보여 줘요."
       />
       <ChildPicker
         children={children.data ?? []}
@@ -28,7 +30,7 @@ export function ProductsPage() {
         label={(child) => `${child.name} 맞춤 (${child.heightCm}cm)`}
       />
       {children.data?.length === 0 && (
-        <Link to="/children" className="text-primary text-sm underline">
+        <Link to={paths.console.children} className="text-primary text-sm underline">
           자녀를 등록하면 맞는 옷만 골라 드려요
         </Link>
       )}
@@ -43,7 +45,7 @@ export function ProductsPage() {
           ? all.data?.content.map((product) => (
               <ProductCard
                 key={product.id}
-                to={`/products/${product.id}`}
+                to={paths.console.product(product.id)}
                 name={product.name}
                 meta={`${product.categoryName} · ${product.sellerName}`}
                 price={product.minPrice}
@@ -52,7 +54,7 @@ export function ProductsPage() {
           : recommended.data?.content.map((product) => (
               <ProductCard
                 key={product.id}
-                to={`/products/${product.id}?childId=${childId}`}
+                to={paths.console.product(product.id, childId)}
                 name={product.name}
                 meta={`${product.categoryName} · ${product.sellerName}`}
                 price={product.minPrice}

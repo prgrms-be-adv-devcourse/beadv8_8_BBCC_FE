@@ -17,8 +17,10 @@ export function SellerProductsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="② 상품 등록 (판매자)"
-        description="판매를 시작하면 상품이 product.changed 이벤트를 보내 추천 · 주문이 복사본을 저장해요. (상품 API는 목)"
+        title="상품 관리"
+        step="②"
+        description="상품을 등록하고 판매를 시작해요."
+        note="판매를 시작하면 상품이 product.changed 이벤트를 보내 추천 · 주문이 복사본을 저장해요. (상품 API는 목)"
       />
       <RegisterProductForm />
       <div className="space-y-2">

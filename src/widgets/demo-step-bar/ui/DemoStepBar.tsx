@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router'
 import { hasRole, ROLE_LABEL, useSessionStore } from '@/entities/session'
+import { paths } from '@/shared/config'
 import { cn } from '@/shared/lib'
 import { DEMO_STEPS } from '../config/steps'
 
@@ -10,7 +11,7 @@ export function DemoStepBar() {
   return (
     <nav className="flex gap-1 overflow-x-auto border-b bg-white px-4 py-2">
       <NavLink
-        to="/verify"
+        to={paths.console.verify}
         className={({ isActive }) =>
           cn(
             'shrink-0 rounded-lg border px-2 py-1 text-xs font-semibold',

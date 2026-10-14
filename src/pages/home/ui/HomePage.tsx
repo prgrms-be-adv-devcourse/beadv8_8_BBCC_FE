@@ -1,18 +1,19 @@
 import { Link } from 'react-router'
 import { useSessionStore } from '@/entities/session'
+import { paths } from '@/shared/config'
 import { Card } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/page-header'
 
 const SCENARIO = [
-  ['보호자', '/children', '① 자녀 등록 (테스트 · 115cm · 보통 · 여유)'],
-  ['보호자', '/addresses', '① 배송지 등록'],
-  ['판매자', '/seller/products', '② 상품 등록 → 판매 시작 (목)'],
-  ['보호자', '/products', '③ 자녀 맞춤 목록 → 상품 A 상세 → 추천 사이즈 120 (목)'],
-  ['보호자', '/cart', '④ 담기 → 주문하기 → 주문 상세에서 PAID 확인'],
-  ['판매자', '/seller/orders', '⑤ 발송 → 배송 완료'],
-  ['보호자', '/orders', '⑥ 주문 상세에서 구매확정'],
-  ['관리자', '/admin/settlements', '⑦ 정산 실행 (목)'],
-  ['판매자', '/seller/settlements', '⑦ 정산서 · 지급액 22,500원 확인 (목)'],
+  ['보호자', paths.console.children, '① 자녀 등록 (테스트 · 115cm · 보통 · 여유)'],
+  ['보호자', paths.console.addresses, '① 배송지 등록'],
+  ['판매자', paths.console.sellerProducts, '② 상품 등록 → 판매 시작 (목)'],
+  ['보호자', paths.console.products, '③ 자녀 맞춤 목록 → 상품 A 상세 → 추천 사이즈 120 (목)'],
+  ['보호자', paths.console.cart, '④ 담기 → 주문하기 → 주문 상세에서 PAID 확인'],
+  ['판매자', paths.console.sellerOrders, '⑤ 발송 → 배송 완료'],
+  ['보호자', paths.console.orders, '⑥ 주문 상세에서 구매확정'],
+  ['관리자', paths.console.adminSettlements, '⑦ 정산 실행 (목)'],
+  ['판매자', paths.console.sellerSettlements, '⑦ 정산서 · 지급액 22,500원 확인 (목)'],
 ]
 
 export function HomePage() {

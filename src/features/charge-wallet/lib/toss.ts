@@ -37,6 +37,7 @@ function loadSdk(): Promise<void> {
 export async function openTossPayment(
   clientKey: string,
   payment: { orderId: string; amount: number },
+  returnTo: { successPath: string; failPath: string },
 ) {
   await loadSdk()
   const tossPayments = window.TossPayments!(clientKey)
@@ -45,7 +46,7 @@ export async function openTossPayment(
     amount: { currency: 'KRW', value: payment.amount },
     orderId: payment.orderId,
     orderName: 'Kidly 예치금 충전',
-    successUrl: `${window.location.origin}/wallet/charge/success`,
-    failUrl: `${window.location.origin}/wallet/charge/fail`,
+    successUrl: `${window.location.origin}${returnTo.successPath}`,
+    failUrl: `${window.location.origin}${returnTo.failPath}`,
   })
 }

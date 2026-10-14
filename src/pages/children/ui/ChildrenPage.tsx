@@ -9,8 +9,10 @@ export function ChildrenPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="① 자녀 프로필"
-        description="자녀를 등록하면 회원이 child.changed 이벤트를 보내고, 추천 · 주문이 각자 복사본을 저장해요."
+        title="자녀 프로필"
+        step="①"
+        description="자녀를 등록하면 상품마다 맞는 사이즈를 추천해 드려요."
+        note="자녀를 등록하면 회원이 child.changed 이벤트를 보내고, 추천 · 주문이 각자 복사본을 저장해요."
       />
       <RegisterChildForm />
       <div className="space-y-2">
