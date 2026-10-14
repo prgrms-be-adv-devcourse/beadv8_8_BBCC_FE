@@ -76,7 +76,8 @@ export function createMockAdapter(realAdapter: AxiosAdapter): AxiosAdapter {
       })
       await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
       const response: AxiosResponse = {
-        data: result.data ?? '',
+        // 실제 네트워크처럼 복사본을 준다 (목 저장소 객체를 그대로 넘기면 캐시가 바뀐 줄 모른다)
+        data: result.data === undefined ? '' : JSON.parse(JSON.stringify(result.data)),
         status: result.status,
         statusText: String(result.status),
         headers: new AxiosHeaders({ 'x-mock': 'true' }),
