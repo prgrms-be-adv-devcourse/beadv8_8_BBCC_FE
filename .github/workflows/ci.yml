@@ -21,3 +21,14 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run build
+      - run: npm run test
+
+      # E2E: 가짜 백엔드 + 개발 서버를 띄워 시연 흐름(①~⑦)을 브라우저로 따라간다
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
