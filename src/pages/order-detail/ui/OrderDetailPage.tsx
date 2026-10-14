@@ -5,11 +5,13 @@ import {
   buildOrderTimeline,
   canConfirmItem,
   deliveryOf,
+  isPaymentDelayed,
   needsCharge,
   OrderDeliveryList,
   OrderItemRow,
   OrderStatusBanner,
   OrderTimeline,
+  paymentPendingMs,
   useOrderQuery,
 } from '@/entities/order'
 import {
@@ -59,6 +61,10 @@ export function OrderDetailPage() {
       <OrderStatusBanner
         order={order}
         polling={query.isFetching}
+        delayed={
+          order.status === 'PENDING_PAYMENT' &&
+          isPaymentDelayed(paymentPendingMs(order.id, query.dataUpdatedAt))
+        }
         cancelAction={
           needsCharge(order) && (
             <Link to={paths.console.wallet} className="text-primary text-sm underline">

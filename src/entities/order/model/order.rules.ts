@@ -90,3 +90,15 @@ export function orderProgress(order: Order): {
   if (deliveries.some((delivery) => delivery.shippedAt !== null)) return result(2)
   return result(1)
 }
+
+/** 결제 처리 중이 이보다 길면 서버 이벤트(재고 차감 → 결제)가 오지 않는 것으로 본다 */
+export const PAYMENT_DELAY_MS = 30_000
+
+export function isPaymentDelayed(pendingMs: number): boolean {
+  return pendingMs >= PAYMENT_DELAY_MS
+}
+
+/** 결제 처리 중 다시 조회 간격: 처음 30초는 1초, 그 뒤 10초 (흐름 기록이 조회로 덮이지 않게) */
+export function paymentPollInterval(pendingMs: number): number {
+  return isPaymentDelayed(pendingMs) ? 10_000 : 1_000
+}

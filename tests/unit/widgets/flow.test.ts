@@ -129,3 +129,37 @@ describe('흐름 확인 판정', () => {
     expect(result).toMatchObject({ state: 'pass', evidence: '100,000 → 75,000원' })
   })
 })
+
+describe('흐름 확인: 결제 완료 지연 근거', () => {
+  const check = VERIFICATION_CHECKS.find((item) => item.id === 'order-paid')!
+  const at = (second: number) =>
+    `2026-10-15T10:${String(Math.floor(second / 60)).padStart(2, '0')}:${String(second % 60).padStart(2, '0')}.000Z`
+
+  it('같은 주문이 30초 넘게 결제 처리 중이면 지연 시간과 원인 후보를 남긴다', () => {
+    const result = evaluate(check, [
+      log({ path: '/orders/6', startedAt: at(0), responseBody: order('PENDING_PAYMENT') }),
+      log({ path: '/orders/6', startedAt: at(45), responseBody: order('PENDING_PAYMENT') }),
+    ])
+    expect(result.state).toBe('fail')
+    expect(result.evidence).toMatch(/주문 #6 결제 처리 중 45초째/)
+    expect(result.evidence).toMatch(/stock\.deducted/)
+  })
+
+  it('30초 전이면 지연이라고 하지 않는다 (경계)', () => {
+    const result = evaluate(check, [
+      log({ path: '/orders/6', startedAt: at(0), responseBody: order('PENDING_PAYMENT') }),
+      log({ path: '/orders/6', startedAt: at(29), responseBody: order('PENDING_PAYMENT') }),
+    ])
+    expect(result.state).toBe('fail')
+    expect(result.evidence).not.toMatch(/초째/)
+  })
+
+  it('나중에 PAID가 보이면 통과', () => {
+    expect(
+      evaluate(check, [
+        log({ path: '/orders/6', startedAt: at(0), responseBody: order('PENDING_PAYMENT') }),
+        log({ path: '/orders/6', startedAt: at(45), responseBody: order('PAID') }),
+      ]).state,
+    ).toBe('pass')
+  })
+})
