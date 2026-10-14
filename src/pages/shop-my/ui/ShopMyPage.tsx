@@ -1,11 +1,13 @@
 import { Link } from 'react-router'
 import { useAddressesQuery } from '@/entities/address'
 import { useChildrenQuery } from '@/entities/child'
+import { PaymentRow, usePaymentsQuery } from '@/entities/payment'
 import { describeUser, hasRole, useSessionStore } from '@/entities/session'
 import { useWalletQuery } from '@/entities/wallet'
+import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { formatWon } from '@/shared/lib'
-import { Card } from '@/shared/ui/card'
+import { Card, CardTitle } from '@/shared/ui/card'
 import { StateMessage } from '@/shared/ui/page-header'
 
 /** 마이페이지: 자녀 · 배송지 · 예치금 요약과 바로가기 */
@@ -15,6 +17,7 @@ export function ShopMyPage() {
   const children = useChildrenQuery({ enabled: isBuyer })
   const addresses = useAddressesQuery()
   const wallet = useWalletQuery()
+  const payments = usePaymentsQuery({ enabled: Boolean(user) })
 
   if (!user) {
     return (
@@ -66,6 +69,17 @@ export function ShopMyPage() {
           </Link>
         ))}
       </div>
+      <Card className="space-y-2">
+        <CardTitle>최근 결제 내역</CardTitle>
+        {payments.isPending && <StateMessage>불러오는 중…</StateMessage>}
+        {payments.isError && (
+          <StateMessage tone="error">{getErrorMessage(payments.error)}</StateMessage>
+        )}
+        {payments.data?.length === 0 && <StateMessage>결제한 주문이 없어요.</StateMessage>}
+        {payments.data?.slice(0, 5).map((payment) => (
+          <PaymentRow key={payment.id} payment={payment} />
+        ))}
+      </Card>
       <Card className="flex items-center justify-between">
         <div>
           <p className="font-semibold">아동복을 팔고 싶다면</p>

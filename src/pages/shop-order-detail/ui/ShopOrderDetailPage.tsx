@@ -12,6 +12,13 @@ import {
   orderProgress,
   useOrderQuery,
 } from '@/entities/order'
+import {
+  checkOrderPayment,
+  findPaymentOfOrder,
+  PaymentCard,
+  paymentKeys,
+  usePaymentsQuery,
+} from '@/entities/payment'
 import { walletKeys } from '@/entities/wallet'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
 import { getErrorMessage } from '@/shared/api'
@@ -25,11 +32,15 @@ export function ShopOrderDetailPage() {
   const query = useOrderQuery(orderId)
   const queryClient = useQueryClient()
   const status = query.data?.status
+  const awaiting = query.data?.status === 'PENDING_PAYMENT'
+  // 결제 결과가 나온 뒤에만 결제 도메인 기록을 조회한다 (처리 중에는 기록이 없거나 반영 전)
+  const payments = usePaymentsQuery({ enabled: query.isSuccess && !awaiting })
 
   // 결제 결과가 나오면 예치금 잔액이 바뀌었으므로 다음 조회 때 새로 받는다
   useEffect(() => {
     if (status && status !== 'PENDING_PAYMENT') {
       void queryClient.invalidateQueries({ queryKey: walletKeys.me })
+      void queryClient.invalidateQueries({ queryKey: paymentKeys.list })
     }
   }, [status, queryClient])
 
@@ -38,6 +49,7 @@ export function ShopOrderDetailPage() {
 
   const order = query.data
   const progress = orderProgress(order)
+  const payment = findPaymentOfOrder(payments.data, order.id)
 
   return (
     <div className="space-y-4">
@@ -90,6 +102,13 @@ export function ShopOrderDetailPage() {
           <span>{formatWon(order.totalAmount)}</span>
         </div>
       </Card>
+
+      <PaymentCard
+        payment={payment}
+        check={checkOrderPayment(order, payment)}
+        pending={payments.isLoading}
+        error={payments.error}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="space-y-1 text-sm">

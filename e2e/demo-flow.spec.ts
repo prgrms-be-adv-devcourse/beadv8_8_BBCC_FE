@@ -69,6 +69,8 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await page.getByRole('button', { name: /주문하기/ }).click()
     await expect(page.getByText('결제 처리 중')).toBeVisible()
     await expect(page.getByText('결제 완료', { exact: true }).first()).toBeVisible()
+    // 결제 도메인 기록(GET /payments)과 주문 상태가 맞는지
+    await expect(page.getByRole('status', { name: '결제 확인' })).toContainText('일치')
   })
   const orderUrl = page.url()
 
@@ -114,7 +116,7 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
 
   await test.step('흐름 확인: 정산 목 때문에 판매자 지갑 적립만 대기', async () => {
     await page.goto('/console/verify')
-    await expect(page.getByText('통과 19')).toBeVisible()
+    await expect(page.getByText('통과 20')).toBeVisible()
     await expect(page.getByText('실패 0')).toBeVisible()
   })
 
