@@ -1,8 +1,8 @@
-/** GET /seller/orders 한 줄 = 판매자 몫의 배송 1건. 상태 값은 주문의 배송 상태와 같다 */
-export type SellerOrder = {
+/** GET /seller/orders 한 줄 (백엔드 SellerOrderResponse) */
+export type SellerOrderDto = {
   sellerOrderId: string
   orderId: string
-  status: 'READY' | 'SHIPPING' | 'DELIVERED'
+  status: string
   carrier: string | null
   trackingNumber: string | null
   shippedAt: string | null
@@ -16,7 +16,10 @@ export type SellerOrder = {
     unitPrice: number
     quantity: number
     amount: number
-    status: 'ORDERED' | 'CONFIRMED'
+    status: string
     child: { name: string; heightCm: number } | null
   }[]
 }
+
+/** POST /seller/orders/{sellerOrderId}/ship */
+export type ShipRequestDto = { carrier: string; trackingNumber: string }

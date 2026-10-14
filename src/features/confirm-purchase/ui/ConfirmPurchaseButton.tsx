@@ -1,8 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { orderKeys } from '@/entities/order'
-import { apiClient, getErrorMessage, runWithAction } from '@/shared/api'
+import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/page-header'
+import { useConfirmPurchase } from '../model/use-confirm-purchase'
 
 export function ConfirmPurchaseButton({
   orderId,
@@ -11,15 +10,7 @@ export function ConfirmPurchaseButton({
   orderId: string
   orderItemId: string
 }) {
-  const queryClient = useQueryClient()
-
-  const confirm = useMutation({
-    mutationFn: () =>
-      runWithAction('구매확정', () =>
-        apiClient.post(`/orders/${orderId}/items/${orderItemId}/confirm`),
-      ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) }),
-  })
+  const confirm = useConfirmPurchase(orderId)
 
   return (
     <div className="flex items-center gap-2">
@@ -27,7 +18,8 @@ export function ConfirmPurchaseButton({
         size="sm"
         disabled={confirm.isPending}
         onClick={() => {
-          if (window.confirm('구매확정하면 취소 · 환불할 수 없어요. 확정할까요?')) confirm.mutate()
+          if (window.confirm('구매확정하면 취소 · 환불할 수 없어요. 확정할까요?'))
+            confirm.mutate(orderItemId)
         }}
       >
         구매확정

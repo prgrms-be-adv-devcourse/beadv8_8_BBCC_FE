@@ -1,18 +1,12 @@
+import type { DeliveryStatus } from '@/shared/config'
+
 export type OrderStatus = 'PENDING_PAYMENT' | 'PAID' | 'CANCELLED'
 export type CancelReason = 'OUT_OF_STOCK' | 'PAYMENT_FAILED' | 'PAYMENT_EXPIRED'
 export type OrderItemStatus = 'ORDERED' | 'CONFIRMED'
 export type ConfirmType = 'DIRECT' | 'AUTO'
-export type DeliveryStatus = 'READY' | 'SHIPPING' | 'DELIVERED'
-
-export type OrderShippingAddress = {
-  recipientName: string
-  phone: string
-  zipCode: string
-  address: string
-}
 
 export type OrderItem = {
-  orderItemId: string
+  id: string
   productId: string
   optionId: string
   sellerId: string
@@ -25,19 +19,13 @@ export type OrderItem = {
   deliveredAt: string | null
   confirmedAt: string | null
   confirmType: ConfirmType | null
-  /** 주문 당시 자녀 정보. 자녀를 고르지 않았으면 null */
-  child: {
-    childId: string
-    name: string
-    heightCm: number
-    weightKg: number
-    bodyType: string | null
-  } | null
+  /** 주문 당시 자녀 정보. 고르지 않았으면 null */
+  child: { id: string; name: string; heightCm: number; weightKg: number } | null
 }
 
 /** 판매자별 배송 */
 export type OrderDelivery = {
-  sellerOrderId: string
+  id: string
   sellerId: string
   status: DeliveryStatus
   carrier: string | null
@@ -46,25 +34,30 @@ export type OrderDelivery = {
   deliveredAt: string | null
 }
 
-/** GET /orders/{orderId} · POST /orders 응답 */
-export type OrderDetail = {
-  orderId: string
+export type Order = {
+  id: string
   status: OrderStatus
   cancelReason: CancelReason | null
   totalAmount: number
   orderedAt: string
-  paymentDueAt: string | null
-  shippingAddress: OrderShippingAddress
+  shippingAddress: { recipientName: string; phone: string; zipCode: string; address: string }
   items: OrderItem[]
   deliveries: OrderDelivery[]
 }
 
-/** GET /orders 한 줄 */
 export type OrderSummary = {
-  orderId: string
+  id: string
   status: OrderStatus
   totalAmount: number
   orderedAt: string
+}
+
+/** 상태 변화 순서 한 줄 */
+export type OrderTimelineEvent = {
+  at: string | null
+  label: string
+  /** 서버에서 일어난 일 (설계 기준) */
+  note?: string
 }
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
@@ -84,20 +77,8 @@ export const ITEM_STATUS_LABEL: Record<OrderItemStatus, string> = {
   CONFIRMED: '구매확정',
 }
 
-export const DELIVERY_STATUS_LABEL: Record<DeliveryStatus, string> = {
-  READY: '발송 준비',
-  SHIPPING: '배송 중',
-  DELIVERED: '배송 완료',
-}
-
-export const CARRIERS = [
-  { code: 'CJ', name: 'CJ대한통운' },
-  { code: 'EPOST', name: '우체국택배' },
-  { code: 'HANJIN', name: '한진택배' },
-  { code: 'LOTTE', name: '롯데택배' },
-  { code: 'LOGEN', name: '로젠택배' },
-]
-
-export function carrierName(code: string | null): string {
-  return CARRIERS.find((carrier) => carrier.code === code)?.name ?? code ?? '-'
+/** 주문하기 입력 (화면 모델 기준). 요청 DTO로는 매퍼가 바꾼다 */
+export type PlaceOrderInput = {
+  items: { optionId: string; childId: string | null; quantity: number; unitPrice: number }[]
+  shippingAddress: { recipientName: string; phone: string; zipCode: string; address: string }
 }

@@ -132,7 +132,7 @@ export function ProductDetailPage() {
         {!onSale && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}
         <AddToCartButton
           optionId={optionId}
-          childId={childId}
+          childId={childId === null ? null : String(childId)}
           quantity={quantity}
           disabled={!onSale}
         />

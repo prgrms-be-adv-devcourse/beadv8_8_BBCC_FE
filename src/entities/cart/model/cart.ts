@@ -1,10 +1,11 @@
-/** GET /cart 한 줄. 주문 쪽 ID는 문자열 */
+/** 화면용 장바구니 한 줄 */
 export type CartLine = {
-  cartItemId: string
+  id: string
   optionId: string
   productId: string
   productName: string
   size: string
+  /** 입을 자녀 (선택) */
   childId: string | null
   quantity: number
   /** 지금 단가. 상품 정보가 없으면 null */
@@ -15,6 +16,6 @@ export type CartLine = {
 }
 
 export type Cart = {
-  items: CartLine[]
+  lines: CartLine[]
   totalAmount: number
 }

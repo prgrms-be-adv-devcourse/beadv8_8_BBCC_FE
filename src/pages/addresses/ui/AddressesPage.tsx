@@ -29,8 +29,7 @@ export function AddressesPage() {
                 {address.recipientName} {address.isDefault && <Badge>기본</Badge>}
               </p>
               <p className="text-muted-foreground text-sm">
-                {address.recipientPhone} · ({address.zipCode}) {address.roadAddress}{' '}
-                {address.detailAddress}
+                {address.phone} · ({address.zipCode}) {address.fullAddress}
               </p>
             </div>
             <AddressActions address={address} />

@@ -1,2 +1,5 @@
-export { addressApi, addressKeys, useAddressesQuery } from './api/address-api'
-export type { ShippingAddress, ShippingAddressRequest } from './model/types'
+export { addressApi } from './api/address-api'
+export type { AddressForm, ShippingAddress } from './model/address'
+export { toAddressRequest } from './model/address.mapper'
+export { pickShippingAddress, validateAddressForm } from './model/address.rules'
+export { addressKeys, useAddressesQuery } from './model/queries'

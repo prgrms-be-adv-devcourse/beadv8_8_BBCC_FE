@@ -1,49 +1,27 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { addressKeys, type ShippingAddressRequest } from '@/entities/address'
-import { apiClient, getErrorMessage, runWithAction } from '@/shared/api'
+import { validateAddressForm, type AddressForm as AddressFormValue } from '@/entities/address'
+import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/page-header'
-
-// 기획서 7.1 시연 배송지 1
-const INITIAL: ShippingAddressRequest = {
-  recipientName: '홍길동',
-  recipientPhone: '010-0000-0000',
-  zipCode: '04524',
-  roadAddress: '서울시 테스트로 1',
-  detailAddress: null,
-  isDefault: true,
-}
-
-const PHONE_PATTERN = /^010-\d{4}-\d{4}$/
+import { DEMO_ADDRESS } from '../config/demo-address'
+import { useRegisterAddress } from '../model/use-manage-address'
 
 export function AddressForm() {
-  const queryClient = useQueryClient()
-  const [form, setForm] = useState<ShippingAddressRequest>(INITIAL)
+  const register = useRegisterAddress()
+  const [form, setForm] = useState<AddressFormValue>(DEMO_ADDRESS)
   const [invalid, setInvalid] = useState<string | null>(null)
-
-  const register = useMutation({
-    mutationFn: (request: ShippingAddressRequest) =>
-      runWithAction('배송지 등록', () => apiClient.post('/members/me/addresses', request)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: addressKeys.all }),
-  })
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    const message =
-      !form.recipientName.trim() || !form.zipCode.trim() || !form.roadAddress.trim()
-        ? '받는 분 · 우편번호 · 주소를 입력해 주세요.'
-        : !PHONE_PATTERN.test(form.recipientPhone)
-          ? '연락처는 010-1234-5678 형식이어야 해요.'
-          : null
+    const message = validateAddressForm(form)
     setInvalid(message)
     if (!message) register.mutate(form)
   }
 
-  const set = <K extends keyof ShippingAddressRequest>(key: K, value: ShippingAddressRequest[K]) =>
+  const set = <K extends keyof AddressFormValue>(key: K, value: AddressFormValue[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
   return (
@@ -59,10 +37,7 @@ export function AddressForm() {
         </Label>
         <Label>
           연락처
-          <Input
-            value={form.recipientPhone}
-            onChange={(e) => set('recipientPhone', e.target.value)}
-          />
+          <Input value={form.phone} onChange={(e) => set('phone', e.target.value)} />
         </Label>
         <Label>
           우편번호
@@ -75,8 +50,8 @@ export function AddressForm() {
         <Label>
           상세 주소 (선택)
           <Input
-            value={form.detailAddress ?? ''}
-            onChange={(e) => set('detailAddress', e.target.value || null)}
+            value={form.detailAddress}
+            onChange={(e) => set('detailAddress', e.target.value)}
           />
         </Label>
         <label className="flex items-center gap-2 self-end text-sm">

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
-import { useAddressesQuery } from '@/entities/address'
-import { useCartQuery } from '@/entities/cart'
+import { Link, useNavigate } from 'react-router'
+import { pickShippingAddress, useAddressesQuery } from '@/entities/address'
+import { orderableLines, sumLineAmount, useCartQuery } from '@/entities/cart'
 import { useChildrenQuery } from '@/entities/child'
 import { useWalletQuery } from '@/entities/wallet'
 import { CartItemControls } from '@/features/edit-cart-item'
@@ -15,18 +15,17 @@ import { PageHeader, StateMessage } from '@/shared/ui/page-header'
 
 /** 장바구니 + 주문서 (배송지 선택 · 잔액 확인 · 주문하기) */
 export function CartPage() {
+  const navigate = useNavigate()
   const cart = useCartQuery()
   const addresses = useAddressesQuery()
   const wallet = useWalletQuery()
   const children = useChildrenQuery()
-  const [addressId, setAddressId] = useState<number | null>(null)
+  const [addressId, setAddressId] = useState<string | null>(null)
 
-  const purchasable = cart.data?.items.filter((line) => line.purchasable) ?? []
-  const orderAmount = purchasable.reduce((sum, line) => sum + line.lineAmount, 0)
-  const address =
-    addresses.data?.find((item) => item.id === addressId) ??
-    addresses.data?.find((item) => item.isDefault) ??
-    null
+  const lines = cart.data ? orderableLines(cart.data) : []
+  const orderAmount = sumLineAmount(lines)
+  const address = pickShippingAddress(addresses.data ?? [], addressId)
+  const shortage = wallet.data ? Math.max(0, orderAmount - wallet.data.balance) : 0
   const childName = (childId: string | null) =>
     children.data?.find((child) => String(child.id) === childId)?.name
 
@@ -39,7 +38,7 @@ export function CartPage() {
 
       {cart.isPending && <StateMessage>불러오는 중…</StateMessage>}
       {cart.isError && <StateMessage tone="error">{getErrorMessage(cart.error)}</StateMessage>}
-      {cart.data?.items.length === 0 && (
+      {cart.data?.lines.length === 0 && (
         <StateMessage>
           장바구니가 비었어요.{' '}
           <Link to="/products" className="text-primary underline">
@@ -47,8 +46,8 @@ export function CartPage() {
           </Link>
         </StateMessage>
       )}
-      {cart.data?.items.map((line) => (
-        <Card key={line.cartItemId} className="flex items-center justify-between gap-4">
+      {cart.data?.lines.map((line) => (
+        <Card key={line.id} className="flex items-center justify-between gap-4">
           <div>
             <p className="font-medium">
               {line.productName} · {line.size}{' '}
@@ -64,7 +63,7 @@ export function CartPage() {
         </Card>
       ))}
 
-      {purchasable.length > 0 && (
+      {lines.length > 0 && (
         <Card className="space-y-3">
           <CardTitle>주문서</CardTitle>
           <div className="space-y-1">
@@ -74,10 +73,7 @@ export function CartPage() {
                 배송지를 먼저 등록해 주세요
               </Link>
             ) : (
-              <Select
-                value={address?.id ?? ''}
-                onChange={(e) => setAddressId(Number(e.target.value))}
-              >
+              <Select value={address?.id ?? ''} onChange={(e) => setAddressId(e.target.value)}>
                 {addresses.data?.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.recipientName} · {item.roadAddress} {item.isDefault ? '(기본)' : ''}
@@ -96,16 +92,20 @@ export function CartPage() {
                   : '…'}
             </span>
           </div>
-          {wallet.data && wallet.data.balance < orderAmount && (
+          {shortage > 0 && (
             <StateMessage tone="error">
-              잔액이 {formatWon(orderAmount - wallet.data.balance)} 부족해요. 주문하면 결제 실패로
-              취소돼요.{' '}
+              잔액이 {formatWon(shortage)} 부족해요. 주문하면 결제 실패로 취소돼요.{' '}
               <Link to="/wallet" className="underline">
                 충전하기
               </Link>
             </StateMessage>
           )}
-          <PlaceOrderButton lines={purchasable} address={address} totalAmount={orderAmount} />
+          <PlaceOrderButton
+            lines={lines}
+            address={address}
+            totalAmount={orderAmount}
+            onPlaced={(order) => navigate(`/orders/${order.id}`)}
+          />
         </Card>
       )}
     </div>
