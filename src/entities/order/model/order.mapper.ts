@@ -64,7 +64,15 @@ export function toOrderSummary(dto: OrderSummaryDto): OrderSummary {
     status: dto.status as OrderStatus,
     totalAmount: dto.totalAmount,
     orderedAt: dto.orderedAt,
+    title: orderTitle(dto.representativeProductName, dto.itemCount),
   }
+}
+
+/** 대표 상품명 + 나머지 건수. 상품명이 없으면 null */
+export function orderTitle(name: string | null, itemCount: number): string | null {
+  const trimmed = name?.trim()
+  if (!trimmed) return null
+  return itemCount > 1 ? `${trimmed} 외 ${itemCount - 1}건` : trimmed
 }
 
 /** 주문 쪽 요청은 ID가 숫자(Long)다 */

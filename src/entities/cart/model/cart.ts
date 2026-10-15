@@ -3,6 +3,8 @@ export type CartLine = {
   id: string
   optionId: string
   productId: string
+  /** 판매자 ID. 모르면 null ("판매자 정보 없음" 묶음) */
+  sellerId: string | null
   productName: string
   optionName: string | null
   size: string | null

@@ -23,3 +23,20 @@ export function isAllSelected(cart: Cart, excludedIds: ReadonlySet<string>): boo
   const orderable = orderableLines(cart)
   return orderable.length > 0 && orderable.every((line) => !excludedIds.has(line.id))
 }
+
+export type SellerGroup = { sellerId: string | null; lines: CartLine[] }
+
+/** 판매자별 묶음 (기획서 F05). 처음 나온 순서를 지키고, 판매자를 모르는 줄은 맨 뒤 한 묶음 */
+export function groupBySeller(lines: CartLine[]): SellerGroup[] {
+  const groups = new Map<string | null, CartLine[]>()
+  for (const line of lines) {
+    const key = line.sellerId
+    groups.set(key, [...(groups.get(key) ?? []), line])
+  }
+  const known = [...groups].filter(([sellerId]) => sellerId !== null)
+  const unknown = groups.get(null)
+  return [
+    ...known.map(([sellerId, group]) => ({ sellerId, lines: group })),
+    ...(unknown ? [{ sellerId: null, lines: unknown }] : []),
+  ]
+}

@@ -53,7 +53,14 @@ export const orderDetailShape = obj({
 })
 
 export const orderPageShape = pageOf(
-  obj({ orderId: str, status: oneOf(ORDER_STATUS), totalAmount: num, orderedAt: str }),
+  obj({
+    orderId: str,
+    status: oneOf(ORDER_STATUS),
+    totalAmount: num,
+    orderedAt: str,
+    representativeProductName: nullable(str),
+    itemCount: num,
+  }),
 )
 
 export const adminOrderPageShape = pageOf(

@@ -7,6 +7,7 @@ export function toCart(dto: CartDto): Cart {
       id: item.cartItemId,
       optionId: item.optionId,
       productId: item.productId,
+      sellerId: item.sellerId ?? null,
       productName: item.productName,
       optionName: item.optionName ?? null,
       size: item.size,

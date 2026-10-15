@@ -62,8 +62,10 @@ export function ShopOrdersPage() {
         <Link key={order.id} to={paths.shop.order(order.id)} className="block">
           <Card className="hover:border-primary flex flex-wrap items-center justify-between gap-3 transition-colors">
             <div>
-              <p className="text-muted-foreground text-sm">{formatDateTime(order.orderedAt)}</p>
-              <p className="font-semibold">주문번호 {order.id}</p>
+              <p className="text-muted-foreground text-sm">
+                {formatDateTime(order.orderedAt)} · 주문번호 {order.id}
+              </p>
+              <p className="font-semibold">{order.title ?? `주문번호 ${order.id}`}</p>
             </div>
             <div className="flex items-center gap-3">
               <span className="font-semibold">{formatWon(order.totalAmount)}</span>

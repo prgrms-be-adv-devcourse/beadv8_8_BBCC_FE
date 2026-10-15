@@ -53,6 +53,10 @@ export type OrderSummaryDto = {
   status: string
   totalAmount: number
   orderedAt: string
+  /** 주문상품 ID가 가장 작은 주문상품의 주문 당시 상품명. 찾지 못하면 null */
+  representativeProductName: string | null
+  /** 주문상품 수 (행 수, 수량 합 아님). 찾지 못하면 0 */
+  itemCount: number
 }
 
 /** POST /orders */

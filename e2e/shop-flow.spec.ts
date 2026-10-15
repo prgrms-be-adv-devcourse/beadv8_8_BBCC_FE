@@ -186,7 +186,8 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     }
     // 상품 B 재고 5개보다 많이 → 재고 부족 취소
     await order('2', /그레이 \/ 120/, '6')
-    await expect(page.getByText('재고가 부족해요')).toBeVisible()
+    await expect(page.getByText(/구매할 수 없는 상품이 있어/)).toBeVisible()
+    await expect(page.getByRole('link', { name: '장바구니에서 다시 확인하기' })).toBeVisible()
     // 잔액보다 큰 금액 → 결제 실패 취소 · 결제 도메인 실패 기록
     await order('1', /네이비 \/ 110/, '8')
     await expect(page.getByText(/예치금 결제에 실패했어요/)).toBeVisible()
