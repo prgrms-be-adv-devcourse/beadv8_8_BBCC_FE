@@ -16,6 +16,7 @@ export type ProductOption = {
 export type ProductSummary = {
   id: string
   name: string
+  categoryId: string
   categoryName: string
   sellerName: string
   status: ProductStatus
@@ -56,3 +57,24 @@ export const CATEGORIES = [
   { id: '3', name: '원피스' },
   { id: '4', name: '아우터' },
 ]
+
+/** 상품 수정 폼: 상품명 · 카테고리 · 설명 · 옵션별 가격 (재고는 재고 조정으로) */
+export type ProductEditForm = {
+  name: string
+  categoryId: string
+  description: string
+  /** optionId → 가격 */
+  prices: Record<string, number>
+}
+
+/** 재고 조정 사유 (BE InventoryAdjustmentReason에서 처음 재고 INITIAL 제외) */
+export type StockReason = 'RESTOCK' | 'DEFECTIVE' | 'LOST' | 'CORRECTION'
+
+export const STOCK_REASON_LABEL: Record<StockReason, string> = {
+  RESTOCK: '입고',
+  DEFECTIVE: '불량',
+  LOST: '분실',
+  CORRECTION: '정정',
+}
+
+export type ProductSearch = { keyword: string; categoryId: string | null }

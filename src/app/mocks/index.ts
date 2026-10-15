@@ -15,6 +15,6 @@ export function setupMocks() {
   registerMockHandlers('추천', recommendationHandlers)
   registerMockHandlers('정산', settlementHandlers)
   registerMockHandlers('충전 취소', paymentHandlers)
-  registerMockHandlers('탈퇴 · 성장 이력 수정', memberHandlers)
+  registerMockHandlers('회원 보완 (탈퇴 · 이력 · 판매자 정보)', memberHandlers)
   registerMockHandlers('관리자 전체 조회', adminHandlers)
 }

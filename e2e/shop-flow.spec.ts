@@ -41,6 +41,22 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
   })
 
+  await test.step('판매자 센터: 상품 수정 · 재고 조정 · 판매 중지 → 다시 판매 (목)', async () => {
+    const mine = page.locator('[data-slot="card"]').last()
+    await mine.getByRole('button', { name: '수정' }).click()
+    await mine.getByLabel('상품명').fill('데일리 맨투맨 (수정)')
+    await mine.getByRole('button', { name: '수정 저장' }).click()
+    await expect(mine.getByText(/데일리 맨투맨 \(수정\)/)).toBeVisible()
+    await mine.getByRole('button', { name: '재고 조정' }).first().click()
+    await mine.getByLabel('110 증감 수량').fill('5')
+    await mine.getByRole('button', { name: '조정', exact: true }).click()
+    await expect(mine.getByText('재고 15')).toBeVisible()
+    await mine.getByRole('button', { name: '판매 중지' }).click()
+    await expect(mine.getByRole('button', { name: '판매 시작' })).toBeVisible()
+    await mine.getByRole('button', { name: '판매 시작' }).click()
+    await expect(mine.getByRole('button', { name: '판매 중지' })).toBeVisible()
+  })
+
   await test.step('마이페이지: 자녀 · 배송지 등록', async () => {
     await switchRole(page, '보호자')
     await page.goto('/my/children')
@@ -72,6 +88,20 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('배송지 수정')).toBeVisible()
     await page.getByRole('button', { name: '저장하기' }).click()
     await expect(page.getByText('배송지 수정')).toHaveCount(0)
+  })
+
+  await test.step('쇼핑: 상품 검색 · 카테고리 (목)', async () => {
+    await page.getByRole('link', { name: 'Kidly', exact: true }).click()
+    await page.getByRole('textbox', { name: '상품 검색' }).fill('조거')
+    await page.getByRole('button', { name: '검색' }).click()
+    await expect(page.getByText('밴딩 조거 팬츠 (상품 B)')).toBeVisible()
+    await expect(page.getByText('데일리 맨투맨 (상품 A)')).toHaveCount(0)
+    await page.getByRole('textbox', { name: '상품 검색' }).fill('')
+    await page.getByRole('button', { name: '검색' }).click()
+    await page.getByRole('button', { name: '상의', exact: true }).click()
+    await expect(page.getByText('데일리 맨투맨 (상품 A)')).toBeVisible()
+    await expect(page.getByText('밴딩 조거 팬츠 (상품 B)')).toHaveCount(0)
+    await page.getByRole('button', { name: '전체 카테고리' }).click()
   })
 
   await test.step('쇼핑: 자녀 맞춤 상품 → 상세 추천 → 담기', async () => {
@@ -111,6 +141,10 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('발송할 주문')).toBeVisible()
     await expect(page.getByText('테스트상점').first()).toBeVisible()
     await expect(page.getByText('판매 가능')).toBeVisible()
+    await page.getByRole('button', { name: '상호명 수정' }).click()
+    await page.getByRole('textbox', { name: '상호명' }).fill('테스트상점 본점')
+    await page.getByRole('button', { name: '상호명 저장' }).click()
+    await expect(page.getByText('테스트상점 본점')).toBeVisible()
     await page.getByRole('link', { name: '주문 · 배송' }).click()
     await page.getByRole('button', { name: '발송' }).first().click()
     await page.getByRole('button', { name: '배송 완료 처리' }).first().click()
@@ -145,6 +179,13 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByRole('textbox', { name: '판매자 정지 사유' }).fill('정책 위반 상품 반복 등록')
     await page.getByRole('button', { name: '자격 정지하기' }).click()
     await expect(page.getByText('판매자 자격 정지', { exact: true })).toBeVisible()
+
+    await page.getByRole('link', { name: '상품 관리' }).click()
+    const target = page.locator('[data-slot="card"]').filter({ hasText: '데일리 맨투맨 (수정)' })
+    await target.getByRole('button', { name: '판매 중지' }).click()
+    await target.getByRole('textbox', { name: '판매 중지 사유' }).fill('상품 정보 허위 기재')
+    await target.getByRole('button', { name: '중지하기' }).click()
+    await expect(page.getByText('데일리 맨투맨 (수정)')).toHaveCount(0)
 
     await page.getByRole('link', { name: '전체 주문' }).click()
     await expect(page.getByText(/^주문 \d+$/).first()).toBeVisible()

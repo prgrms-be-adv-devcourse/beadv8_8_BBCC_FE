@@ -12,8 +12,10 @@ export {
 export { toSeller, toSellerApplicationRequest } from './model/seller.mapper'
 export {
   canApprove,
+  BUSINESS_NAME_MAX,
   canReapply,
   REJECT_REASON_MAX,
+  validateBusinessName,
   validateRejectReason,
   validateSellerApplicationForm,
 } from './model/seller.rules'

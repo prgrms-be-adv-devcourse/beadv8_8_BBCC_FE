@@ -1,18 +1,23 @@
 import { useQuery } from '@tanstack/react-query'
 import { productApi } from '../api/product-api'
-import { toProductDetail, toProductSummary } from './product.mapper'
+import type { ProductSearch } from './product'
+import { toProductDetail, toProductSearchParams, toProductSummary } from './product.mapper'
 
 export const productKeys = {
   all: ['products'] as const,
   list: ['products', 'list'] as const,
+  search: (search: ProductSearch) => ['products', 'list', search] as const,
   detail: (productId: string) => ['products', 'detail', productId] as const,
   sellerList: ['products', 'seller'] as const,
 }
 
-export function useProductsQuery() {
+const NO_SEARCH: ProductSearch = { keyword: '', categoryId: null }
+
+/** 판매 중인 상품 (검색어 · 카테고리) */
+export function useProductsQuery(search: ProductSearch = NO_SEARCH) {
   return useQuery({
-    queryKey: productKeys.list,
-    queryFn: productApi.list,
+    queryKey: productKeys.search(search),
+    queryFn: () => productApi.list(toProductSearchParams(search)),
     select: (page) => ({ ...page, content: page.content.map(toProductSummary) }),
   })
 }

@@ -1,11 +1,15 @@
 import type {
   ProductDetailDto,
   ProductOptionDto,
+  ProductSearchParamsDto,
   ProductSummaryDto,
   RegisterProductRequestDto,
+  UpdateProductRequestDto,
 } from '../api/product.dto'
 import type {
   ProductDetail,
+  ProductEditForm,
+  ProductSearch,
   ProductOption,
   ProductStatus,
   ProductSummary,
@@ -16,6 +20,7 @@ export function toProductSummary(dto: ProductSummaryDto): ProductSummary {
   return {
     id: dto.productId,
     name: dto.name,
+    categoryId: dto.categoryId,
     categoryName: dto.categoryName,
     sellerName: dto.sellerName,
     status: dto.status as ProductStatus,
@@ -57,4 +62,29 @@ export function toRegisterProductRequest(form: RegisterProductForm): RegisterPro
       material: form.material,
     })),
   }
+}
+
+export function toProductEditForm(product: ProductDetail): ProductEditForm {
+  return {
+    name: product.name,
+    categoryId: product.categoryId,
+    description: product.description,
+    prices: Object.fromEntries(product.options.map((option) => [option.id, option.price])),
+  }
+}
+
+export function toUpdateProductRequest(form: ProductEditForm): UpdateProductRequestDto {
+  return {
+    name: form.name.trim(),
+    categoryId: form.categoryId,
+    description: form.description,
+    options: Object.entries(form.prices).map(([optionId, price]) => ({ optionId, price })),
+  }
+}
+
+export function toProductSearchParams(search: ProductSearch): ProductSearchParamsDto {
+  const params: ProductSearchParamsDto = {}
+  if (search.keyword.trim()) params.keyword = search.keyword.trim()
+  if (search.categoryId) params.categoryId = search.categoryId
+  return params
 }

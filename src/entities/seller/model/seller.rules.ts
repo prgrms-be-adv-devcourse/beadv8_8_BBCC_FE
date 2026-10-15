@@ -28,3 +28,13 @@ export function validateRejectReason(reason: string): string | null {
 export function canReapply(application: SellerApplication | null): boolean {
   return application === null || application.status === 'REJECTED'
 }
+
+/** 백엔드 NAME_MAX_LENGTH (상호명 · 대표자명) */
+export const BUSINESS_NAME_MAX = 50
+
+export function validateBusinessName(name: string): string | null {
+  const value = name.trim()
+  if (!value) return '상호명을 입력해 주세요.'
+  if (value.length > BUSINESS_NAME_MAX) return `상호명은 ${BUSINESS_NAME_MAX}자까지예요.`
+  return null
+}

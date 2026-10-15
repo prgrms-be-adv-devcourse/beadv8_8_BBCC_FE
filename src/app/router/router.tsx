@@ -52,6 +52,9 @@ const adminSellerApplications = page(() =>
 const adminMembers = page(() =>
   import('@/pages/admin-members').then((m) => ({ Component: m.AdminMembersPage })),
 )
+const adminProducts = page(() =>
+  import('@/pages/admin-products').then((m) => ({ Component: m.AdminProductsPage })),
+)
 const adminOrders = page(() =>
   import('@/pages/admin-orders').then((m) => ({ Component: m.AdminOrdersPage })),
 )
@@ -152,6 +155,7 @@ export const router = createBrowserRouter([
         items={[
           { to: paths.admin.members, label: '회원 관리' },
           { to: paths.admin.sellerApplications, label: '판매자 신청 심사' },
+          { to: paths.admin.products, label: '상품 관리' },
           { to: paths.admin.orders, label: '전체 주문' },
           { to: paths.admin.payments, label: '전체 결제' },
           { to: paths.admin.settlements, label: '정산' },
@@ -163,6 +167,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to={paths.admin.members} replace /> },
       { path: rel(paths.admin.home, paths.admin.members), ...adminMembers },
       { path: rel(paths.admin.home, paths.admin.orders), ...adminOrders },
+      { path: rel(paths.admin.home, paths.admin.products), ...adminProducts },
       { path: rel(paths.admin.home, paths.admin.payments), ...adminPayments },
       { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
       { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
@@ -224,6 +229,7 @@ export const router = createBrowserRouter([
       { path: rel(paths.console.home, paths.console.adminSettlements), ...adminSettlements },
       { path: rel(paths.console.home, paths.console.adminMembers), ...adminMembers },
       { path: rel(paths.console.home, paths.console.adminOrders), ...adminOrders },
+      { path: rel(paths.console.home, paths.console.adminProducts), ...adminProducts },
       { path: rel(paths.console.home, paths.console.adminPayments), ...adminPayments },
       { path: '*', element: <NotFoundPage /> },
     ],

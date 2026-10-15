@@ -53,6 +53,7 @@ export const paths = {
     members: '/admin/members',
     sellerApplications: '/admin/seller-applications',
     orders: '/admin/orders',
+    products: '/admin/products',
     payments: '/admin/payments',
     settlements: '/admin/settlements',
   },
@@ -80,6 +81,7 @@ export const paths = {
     adminSettlements: `${C}/admin/settlements`,
     adminMembers: `${C}/admin/members`,
     adminOrders: `${C}/admin/orders`,
+    adminProducts: `${C}/admin/products`,
     adminPayments: `${C}/admin/payments`,
   },
 } as const

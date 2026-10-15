@@ -3,6 +3,7 @@ import {
   type ProductDetailDto,
   type ProductSummaryDto,
   type RegisterProductRequestDto,
+  type UpdateProductRequestDto,
 } from '@/entities/product'
 import type { MockHandler } from '@/shared/api'
 import { loadMockState, memberIdOf, page, problem, saveMockState } from './mock-utils'
@@ -78,6 +79,14 @@ const save = () => saveMockState('products', products)
 let nextProductId = 100 + products.length
 let nextOptionId = 100 + products.flatMap((product) => product.options).length
 
+function findMine(productId: string, sellerId: string | null) {
+  return products.find((item) => item.productId === productId && item.sellerId === sellerId)
+}
+
+function notFound(instance: string) {
+  return problem(404, '찾을 수 없습니다', '상품을 찾을 수 없습니다.', instance)
+}
+
 export function summaryOf(product: ProductDetailDto): ProductSummaryDto {
   return {
     productId: product.productId,
@@ -99,7 +108,17 @@ export const productHandlers: MockHandler[] = [
     handle: (request) => ({
       status: 200,
       data: page(
-        products.filter((product) => product.status === 'ON_SALE').map(summaryOf),
+        products
+          .filter((product) => product.status === 'ON_SALE')
+          .filter((product) => {
+            const keyword = request.query.get('keyword')
+            const categoryId = request.query.get('categoryId')
+            return (
+              (!keyword || product.name.includes(keyword)) &&
+              (!categoryId || product.categoryId === categoryId)
+            )
+          })
+          .map(summaryOf),
         request,
       ),
     }),
@@ -172,6 +191,66 @@ export const productHandlers: MockHandler[] = [
         )
       }
       product.status = 'ON_SALE'
+      save()
+      return { status: 200, data: product }
+    },
+  },
+  {
+    method: 'PATCH',
+    path: '/seller/products/:productId',
+    handle: (request) => {
+      const product = findMine(request.params.productId, memberIdOf(request))
+      if (!product) return notFound(`/api/v1/seller/products/${request.params.productId}`)
+      const body = request.body as UpdateProductRequestDto
+      product.name = body.name
+      product.description = body.description
+      product.categoryId = body.categoryId
+      product.categoryName =
+        CATEGORIES.find((category) => category.id === body.categoryId)?.name ?? product.categoryName
+      for (const { optionId, price } of body.options) {
+        const option = product.options.find((item) => item.optionId === optionId)
+        if (option) option.price = price
+      }
+      product.minPrice = Math.min(...product.options.map((option) => option.price))
+      save()
+      return { status: 200, data: product }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/seller/products/:productId/stop-sale',
+    handle: (request) => {
+      const product = findMine(request.params.productId, memberIdOf(request))
+      if (!product) return notFound(`/api/v1/seller/products/${request.params.productId}/stop-sale`)
+      product.status = 'STOPPED'
+      save()
+      return { status: 200, data: product }
+    },
+  },
+  {
+    method: 'PATCH',
+    path: '/seller/products/:productId/options/:optionId/stock',
+    handle: (request) => {
+      const instance = `/api/v1/seller/products/${request.params.productId}/options/${request.params.optionId}/stock`
+      const product = findMine(request.params.productId, memberIdOf(request))
+      const option = product?.options.find((item) => item.optionId === request.params.optionId)
+      if (!product || !option) return notFound(instance)
+      const { delta } = request.body as { delta: number; reason: string }
+      if (option.stock + delta < 0)
+        return problem(409, '재고가 부족합니다', '재고는 0보다 적어질 수 없습니다.', instance)
+      option.stock += delta
+      option.soldOut = option.stock === 0
+      save()
+      return { status: 200, data: product }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/admin/products/:productId/stop-sale',
+    handle: (request) => {
+      const product = products.find((item) => item.productId === request.params.productId)
+      if (!product) return notFound(`/api/v1/admin/products/${request.params.productId}/stop-sale`)
+      product.status = 'STOPPED'
       save()
       return { status: 200, data: product }
     },

@@ -61,6 +61,7 @@ export const DEMO_STEPS: {
     title: '관리자 보완',
     links: [
       { to: paths.console.adminMembers, label: '회원', role: 'ADMIN' },
+      { to: paths.console.adminProducts, label: '상품', role: 'ADMIN' },
       { to: paths.console.adminOrders, label: '주문', role: 'ADMIN' },
       { to: paths.console.adminPayments, label: '결제', role: 'ADMIN' },
     ],
