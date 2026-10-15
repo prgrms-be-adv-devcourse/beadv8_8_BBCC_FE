@@ -77,6 +77,16 @@ jobs:
             echo "::notice::production 배포됨 https://kidly-fe.vercel.app ($url)"
           else
             url=$(npx --yes vercel@64.2.0 deploy --prebuilt --token="$VERCEL_TOKEN")
-            npx --yes vercel@64.2.0 alias set "$url" "$DEV_ALIAS" --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
+            # 고정 별칭은 API로 붙인다 (vercel alias set은 회원 정보를 먼저 읽는데, 팀 범위 토큰이면 404로 실패한다)
+            api="https://api.vercel.com"
+            auth="Authorization: Bearer $VERCEL_TOKEN"
+            # 실패하면 API 응답 본문이 로그에 남는다
+            found=$(curl -sS --fail-with-body -H "$auth" "$api/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID") ||
+              { echo "$found"; exit 1; }
+            deployment=$(jq -r .id <<< "$found")
+            curl -sS --fail-with-body -X POST -H "$auth" -H "content-type: application/json" \
+              "$api/v2/deployments/$deployment/aliases?teamId=$VERCEL_ORG_ID" \
+              -d "{\"alias\":\"$DEV_ALIAS\"}"
+            echo
             echo "::notice::develop 배포됨 https://$DEV_ALIAS ($url)"
           fi
