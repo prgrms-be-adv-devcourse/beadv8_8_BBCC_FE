@@ -1,32 +1,36 @@
 name: Vercel Deploy
 
-# FE를 Vercel production(https://kidly-fe.vercel.app)에 배포한다. 빌드 값은 아래 빌드 단계의 Variables로 바꾼다.
-# - develop에 머지되면 develop 기준으로 production(https://kidly-fe.vercel.app)에 배포
-# - 다시 올려야 하면 Actions에서 develop으로 수동 실행. vercel CLI로 로컬 파일을 직접 올리지 않는다
+# FE를 Vercel에 배포한다. 브랜치마다 고정 주소가 하나씩 있다
+# - main 머지    → production  https://kidly-fe.vercel.app      (발표 · 공유용)
+# - develop 머지 → preview + 별칭 https://kidly-fe-dev.vercel.app (개발 확인용)
+# 다시 올려야 하면 Actions에서 해당 브랜치로 수동 실행한다. vercel CLI로 로컬 파일을 직접 올리지 않는다
 # 필요한 값: Secrets VERCEL_TOKEN, Variables VERCEL_ORG_ID · VERCEL_PROJECT_ID (Settings → Secrets and variables → Actions)
-# 팀 배포(EC2 · GHCR)는 deploy.yml이 맡는다. 이 워크플로는 Vercel 배포만 맡는다 (PR별 Preview 배포는 하지 않는다)
+# 팀 배포(EC2 · GHCR)는 deploy.yml이 맡는다. 이 워크플로는 Vercel 배포만 맡는다
 
 on:
   push:
-    branches: [develop]
+    branches: [main, develop]
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# 머지가 이어지면 마지막 것만 올린다
+# 같은 브랜치에서 머지가 이어지면 마지막 것만 올린다
 concurrency:
-  group: vercel-deploy
+  group: vercel-deploy-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      # main = production, develop = preview (+ 고정 별칭)
+      VERCEL_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      DEV_ALIAS: kidly-fe-dev.vercel.app
     steps:
       - name: Vercel 값 확인
         id: ready
@@ -47,7 +51,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      # 빌드 값은 저장소 Variables로 바꾼다 (없으면 아래 기본값). 바꾼 뒤 이 워크플로를 develop으로 다시 실행하면 반영된다
+      # 빌드 값은 저장소 Variables로 바꾼다 (없으면 아래 기본값, main · develop 같은 값). 바꾼 뒤 해당 브랜치로 다시 실행하면 반영된다
       # - VERCEL_USE_MOCK: false면 백엔드에 없는 API의 목(상품 목록 · 정산 등)을 끈다 (기본 true)
       # - VERCEL_API_BASE_URL: 실제 백엔드 주소 (기본 비움). 그 서버의 CORS에 이 사이트 주소를 허용해야 한다
       # - VERCEL_DEMO_ROLE_SWITCH: false면 시연 역할 전환을 감춘다 (기본 true. 개발용 토큰이 없는 백엔드면 false)
@@ -58,11 +62,21 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VERCEL_API_BASE_URL }}
           VITE_DEMO_ROLE_SWITCH: ${{ vars.VERCEL_DEMO_ROLE_SWITCH || 'true' }}
         run: |
-          npx --yes vercel@64.2.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
-          npx --yes vercel@64.2.0 build --prod --token="$VERCEL_TOKEN"
+          npx --yes vercel@64.2.0 pull --yes --environment="$VERCEL_ENV" --token="$VERCEL_TOKEN"
+          if [ "$VERCEL_ENV" = production ]; then
+            npx --yes vercel@64.2.0 build --prod --token="$VERCEL_TOKEN"
+          else
+            npx --yes vercel@64.2.0 build --token="$VERCEL_TOKEN"
+          fi
 
       - name: 배포
         if: steps.ready.outputs.ok == 'true'
         run: |
-          url=$(npx --yes vercel@64.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
-          echo "::notice::배포됨 $url (목 ${{ vars.VERCEL_USE_MOCK || 'true' }} · API ${{ vars.VERCEL_API_BASE_URL || '없음' }})"
+          if [ "$VERCEL_ENV" = production ]; then
+            url=$(npx --yes vercel@64.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+            echo "::notice::production 배포됨 https://kidly-fe.vercel.app ($url)"
+          else
+            url=$(npx --yes vercel@64.2.0 deploy --prebuilt --token="$VERCEL_TOKEN")
+            npx --yes vercel@64.2.0 alias set "$url" "$DEV_ALIAS" --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
+            echo "::notice::develop 배포됨 https://$DEV_ALIAS ($url)"
+          fi
