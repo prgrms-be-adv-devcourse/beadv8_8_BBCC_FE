@@ -10,6 +10,8 @@ import {
   OrderItemRow,
   OrderProgressBar,
   orderProgress,
+  paymentDeadline,
+  paymentDeadlineLabel,
 } from '@/entities/order'
 import { PaymentCard } from '@/entities/payment'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
@@ -29,6 +31,8 @@ export function ShopOrderDetailPage() {
 
   const order = query.data
   const progress = orderProgress(order)
+  const deadline = paymentDeadline(order)
+  const expired = order.status === 'CANCELLED' && order.cancelReason === 'PAYMENT_EXPIRED'
 
   return (
     <div className="space-y-4">
@@ -51,12 +55,18 @@ export function ShopOrderDetailPage() {
         {order.status === 'PENDING_PAYMENT' && (
           <p className="text-primary text-center text-sm font-medium">
             예치금으로 결제하는 중이에요… 잠시만 기다려 주세요
+            {deadline && (
+              <span className="text-muted-foreground block text-xs font-normal">
+                {deadline.time}까지 결제되지 않으면 주문이 자동으로 취소돼요
+              </span>
+            )}
           </p>
         )}
         {delayed && (
           <p role="alert" className="text-destructive text-center text-sm">
-            결제가 평소보다 오래 걸리고 있어요. 10분 안에 결제되지 않으면 주문이 자동으로 취소되고
-            예치금은 빠져나가지 않아요.
+            결제가 평소보다 오래 걸리고 있어요.{' '}
+            {deadline ? `결제 마감 ${deadline.time}까지` : '결제 마감 시간까지'} 결제되지 않으면
+            주문이 자동으로 취소되고 예치금은 빠져나가지 않아요.
           </p>
         )}
         {order.status === 'CANCELLED' && (
@@ -65,6 +75,12 @@ export function ShopOrderDetailPage() {
               {order.cancelReason ? CANCEL_REASON_LABEL[order.cancelReason] : '주문이 취소됐어요.'}{' '}
               예치금은 빠져나가지 않았어요.
             </p>
+            {expired && (
+              <p className="text-muted-foreground">
+                {deadline && `결제 마감 ${paymentDeadlineLabel(deadline)} · `}담았던 상품은
+                장바구니에 그대로 있어요.
+              </p>
+            )}
             {needsCharge(order) && (
               <Link to={paths.shop.wallet} className="text-primary underline">
                 예치금 충전하러 가기

@@ -23,6 +23,7 @@ export function toOrder(dto: OrderDetailDto): Order {
     cancelReason: dto.cancelReason as CancelReason | null,
     totalAmount: dto.totalAmount,
     orderedAt: dto.orderedAt,
+    paymentDueAt: dto.paymentDueAt ?? null,
     shippingAddress: dto.shippingAddress,
     items: dto.items.map((item) => ({
       id: item.orderItemId,

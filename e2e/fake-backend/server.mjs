@@ -54,6 +54,12 @@ const members = {
   },
 }
 const now = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19)
+const later = (ms) => new Date(Date.now() + 9 * 3600e3 + ms).toISOString().slice(0, 19)
+// 결제 마감 (BE kidly.order.payment-timeout, 기본 10분)
+const PAYMENT_TIMEOUT_MS = 10 * 60e3
+// 다음 주문 하나를 처리하지 않고 결제 마감에 취소한다 (상품 order.created 리스너가 없는 실제 백엔드 흉내).
+// POST /__fake/payment-stall { timeoutMs } — 가짜 백엔드 전용
+let stallNext = null
 const problem = (res, status, title, detail, instance) =>
   send(res, status, { type: 'about:blank', title, status, detail, instance })
 // 주문 BE #253: 수량 1~99, 범위 밖이면 400 INVALID_QUANTITY
@@ -125,6 +131,10 @@ http
     const u = who(req)
     const r = (method, re) => m === method && p.match(re)
     let x
+    if (r('POST', /^\/__fake\/payment-stall$/)) {
+      stallNext = { timeoutMs: body?.timeoutMs ?? PAYMENT_TIMEOUT_MS }
+      return send(res, 204)
+    }
     if (r('POST', /^\/dev\/tokens$/))
       return send(res, 200, {
         accessToken: `${b64({ alg: 'none' })}.${b64({ sub: String(body.memberId), nickname: body.nickname || '회원' + body.memberId, roles: body.roles })}.sig`,
@@ -416,79 +426,88 @@ http
         cancelReason: null,
         totalAmount: items.reduce((s, i) => s + i.amount, 0),
         orderedAt: now(),
-        paymentDueAt: now(),
+        paymentDueAt: later(stallNext?.timeoutMs ?? PAYMENT_TIMEOUT_MS),
         shippingAddress: body.shippingAddress,
         items,
         deliveries: [],
       }
       orders.push(o)
+      const stall = stallNext
+      stallNext = null
+      // 결제 마감: 그때까지 결제 처리 중이면 PAYMENT_EXPIRED로 취소 (BE 마감 스케줄러)
       setTimeout(() => {
-        // 상품: 하나라도 부족하면 아무것도 차감하지 않고 주문 취소 (기획서 4장).
-        // 장바구니는 그대로 남는다 (BE: 결제 완료 뒤 주문한 줄만 빠진다)
-        const short = o.items.filter((it) => (stock[it.optionId] ?? 0) < it.quantity)
-        if (short.length > 0) {
-          o.status = 'CANCELLED'
-          o.cancelReason = 'OUT_OF_STOCK'
-          short.forEach((it) => (it.unavailableReason = 'OUT_OF_STOCK'))
-          return
-        }
-        o.items.forEach((it) => (stock[it.optionId] -= it.quantity))
-        if ((wallets[me] ?? 0) < o.totalAmount) {
-          // 결제 실패 → 주문 취소 · 재고 복구
-          o.items.forEach((it) => (stock[it.optionId] += it.quantity))
-          o.status = 'CANCELLED'
-          o.cancelReason = 'PAYMENT_FAILED'
-          // 백엔드: 잔액 부족만 실패 결제를 저장한다
+        if (o.status !== 'PENDING_PAYMENT') return
+        o.status = 'CANCELLED'
+        o.cancelReason = 'PAYMENT_EXPIRED'
+      }, stall?.timeoutMs ?? PAYMENT_TIMEOUT_MS).unref()
+      if (!stall)
+        setTimeout(() => {
+          // 상품: 하나라도 부족하면 아무것도 차감하지 않고 주문 취소 (기획서 4장).
+          // 장바구니는 그대로 남는다 (BE: 결제 완료 뒤 주문한 줄만 빠진다)
+          const short = o.items.filter((it) => (stock[it.optionId] ?? 0) < it.quantity)
+          if (short.length > 0) {
+            o.status = 'CANCELLED'
+            o.cancelReason = 'OUT_OF_STOCK'
+            short.forEach((it) => (it.unavailableReason = 'OUT_OF_STOCK'))
+            return
+          }
+          o.items.forEach((it) => (stock[it.optionId] -= it.quantity))
+          if ((wallets[me] ?? 0) < o.totalAmount) {
+            // 결제 실패 → 주문 취소 · 재고 복구
+            o.items.forEach((it) => (stock[it.optionId] += it.quantity))
+            o.status = 'CANCELLED'
+            o.cancelReason = 'PAYMENT_FAILED'
+            // 백엔드: 잔액 부족만 실패 결제를 저장한다
+            payments.push({
+              paymentId: nid(),
+              memberId: me,
+              orderId: o.orderId,
+              amount: o.totalAmount,
+              refundedAmount: 0,
+              status: 'FAILED',
+              failureCode: 'INSUFFICIENT_BALANCE',
+              paidAt: null,
+              createdAt: now(),
+              items: [],
+            })
+            return
+          }
+          wallets[me] -= o.totalAmount
+          const paymentId = nid()
+          ledger(me, 'PAYMENT', -o.totalAmount, paymentId)
           payments.push({
-            paymentId: nid(),
+            paymentId,
             memberId: me,
             orderId: o.orderId,
             amount: o.totalAmount,
             refundedAmount: 0,
-            status: 'FAILED',
-            failureCode: 'INSUFFICIENT_BALANCE',
-            paidAt: null,
+            status: 'COMPLETED',
+            failureCode: null,
+            paidAt: now(),
             createdAt: now(),
-            items: [],
+            items: o.items.map((i) => ({
+              orderItemId: Number(i.orderItemId),
+              amount: i.amount,
+              refundedAmount: 0,
+            })),
           })
-          return
-        }
-        wallets[me] -= o.totalAmount
-        const paymentId = nid()
-        ledger(me, 'PAYMENT', -o.totalAmount, paymentId)
-        payments.push({
-          paymentId,
-          memberId: me,
-          orderId: o.orderId,
-          amount: o.totalAmount,
-          refundedAmount: 0,
-          status: 'COMPLETED',
-          failureCode: null,
-          paidAt: now(),
-          createdAt: now(),
-          items: o.items.map((i) => ({
-            orderItemId: Number(i.orderItemId),
-            amount: i.amount,
-            refundedAmount: 0,
-          })),
-        })
-        o.status = 'PAID'
-        // 결제 완료 → 주문한 옵션의 장바구니 줄만 뺀다
-        const ordered = new Set(o.items.map((it) => String(it.optionId)))
-        for (let i = cart.length - 1; i >= 0; i--)
-          if (cart[i].memberId === me && ordered.has(String(cart[i].optionId))) cart.splice(i, 1)
-        o.deliveries = [
-          {
-            sellerOrderId: String(nid()),
-            sellerId: '2',
-            status: 'READY',
-            carrier: null,
-            trackingNumber: null,
-            shippedAt: null,
-            deliveredAt: null,
-          },
-        ]
-      }, 2000)
+          o.status = 'PAID'
+          // 결제 완료 → 주문한 옵션의 장바구니 줄만 뺀다
+          const ordered = new Set(o.items.map((it) => String(it.optionId)))
+          for (let i = cart.length - 1; i >= 0; i--)
+            if (cart[i].memberId === me && ordered.has(String(cart[i].optionId))) cart.splice(i, 1)
+          o.deliveries = [
+            {
+              sellerOrderId: String(nid()),
+              sellerId: '2',
+              status: 'READY',
+              carrier: null,
+              trackingNumber: null,
+              shippedAt: null,
+              deliveredAt: null,
+            },
+          ]
+        }, 2000)
       return send(res, 201, detailOf(o))
     }
     if (r('GET', /^\/orders$/))

@@ -36,6 +36,7 @@ const order = (over: Partial<Order> = {}): Order => ({
   cancelReason: null,
   totalAmount: 1000,
   orderedAt: '2026-10-14T10:00:00',
+  paymentDueAt: null,
   shippingAddress: { recipientName: '홍', phone: '010', zipCode: '1', address: '서울' },
   items: [item()],
   deliveries: [delivery()],

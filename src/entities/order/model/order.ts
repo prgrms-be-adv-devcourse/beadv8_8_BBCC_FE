@@ -43,6 +43,8 @@ export type Order = {
   cancelReason: CancelReason | null
   totalAmount: number
   orderedAt: string
+  /** 결제 마감 (BE kidly.order.payment-timeout, 기본 10분). 이때까지 결제가 끝나지 않으면 PAYMENT_EXPIRED로 취소 */
+  paymentDueAt: string | null
   shippingAddress: { recipientName: string; phone: string; zipCode: string; address: string }
   items: OrderItem[]
   deliveries: OrderDelivery[]
@@ -75,7 +77,7 @@ export const CANCEL_REASON_LABEL: Record<CancelReason, string> = {
   /** 재고 부족 · 판매 중지를 모두 포함 (BE cancelReason 하나) */
   OUT_OF_STOCK: '구매할 수 없는 상품이 있어 주문이 취소됐어요.',
   PAYMENT_FAILED: '예치금 결제에 실패했어요 (잔액 부족 등)',
-  PAYMENT_EXPIRED: '결제 제한 시간(10분)이 지났어요',
+  PAYMENT_EXPIRED: '결제 마감 시간이 지나 주문이 자동으로 취소됐어요.',
 }
 
 /** 주문상품 단위 구매 불가 이유 (BE items[].unavailableReason). 모르는 값은 "구매 불가" */

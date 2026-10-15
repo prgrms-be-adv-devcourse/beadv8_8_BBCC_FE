@@ -179,7 +179,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.locator('[aria-current="step"]')).toHaveText('5')
   })
 
-  await test.step('취소 · 실패: 재고 부족 → 잔액 부족 (기획서 2.1)', async () => {
+  await test.step('취소 · 실패: 재고 부족 → 결제 마감 → 잔액 부족 (기획서 2.1)', async () => {
     const order = async (productId: string, option: RegExp, quantity: string) => {
       await page.goto(`/products/${productId}`)
       await page.getByRole('button', { name: option }).click()
@@ -200,6 +200,21 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page).toHaveURL(/\/cart$/)
     await page.getByRole('button', { name: '빼기' }).first().click()
     await expect(page.getByText('장바구니가 비었어요.')).toBeVisible()
+    // 결제 마감 → 자동 취소 (실제 백엔드는 상품 order.created 리스너가 없어 이렇게 끝난다).
+    // 가짜 백엔드가 다음 주문을 처리하지 않고 5초 뒤 마감 취소하게 한다
+    await page.request.post('http://localhost:18080/__fake/payment-stall', {
+      data: { timeoutMs: 5000 },
+    })
+    await order('2', /그레이 \/ 120/, '1')
+    await expect(
+      page.getByText(/\d\d:\d\d까지 결제되지 않으면 주문이 자동으로 취소돼요/),
+    ).toBeVisible()
+    await expect(page.getByText(/결제 마감 시간이 지나 주문이 자동으로 취소됐어요/)).toBeVisible()
+    await expect(page.getByText(/결제 마감 \d\d:\d\d · 담았던 상품은 장바구니에/)).toBeVisible()
+    await page.getByRole('link', { name: '장바구니에서 다시 확인하기' }).click()
+    await expect(page).toHaveURL(/\/cart$/)
+    await page.getByRole('button', { name: '빼기' }).first().click()
+    await expect(page.getByText('장바구니가 비었어요.')).toBeVisible()
     // 잔액보다 큰 금액 → 결제 실패 취소 · 결제 도메인 실패 기록
     await order('1', /네이비 \/ 110/, '8')
     await expect(page.getByText(/예치금 결제에 실패했어요/)).toBeVisible()
@@ -207,7 +222,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
     await page.goto('/console/verify')
     const failure = page.getByRole('region', { name: '취소 · 실패 시나리오' })
-    await expect(failure.getByText('통과 3')).toBeVisible()
+    await expect(failure.getByText('통과 4')).toBeVisible()
     await expect(failure.getByText('실패 0')).toBeVisible()
     await page.goto('/')
   })
