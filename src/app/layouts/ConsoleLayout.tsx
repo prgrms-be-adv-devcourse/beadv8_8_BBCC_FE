@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router'
 import { cn } from '@/shared/lib'
 import { ApiFlowPanel, usePresentationMode } from '@/widgets/api-flow-panel'
+import { AutoDemoBar } from '@/widgets/auto-demo'
 import { DemoBar } from '@/widgets/demo-bar'
 import { TopProgressBar } from './TopProgressBar'
 import { DemoGuide, DemoStepBar } from '@/widgets/demo-step-bar'
@@ -20,14 +21,17 @@ export function ConsoleLayout() {
           presentation ? 'grid-cols-[1fr_560px]' : 'grid-cols-[1fr_440px]',
         )}
       >
-        <main className="overflow-y-auto px-6 py-6">
-          <div className="mx-auto max-w-3xl">
-            <SessionGate>
-              <DemoGuide />
-              <Outlet />
-            </SessionGate>
-          </div>
-        </main>
+        <div className="flex min-h-0 flex-col">
+          <main className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+            <div className="mx-auto max-w-3xl">
+              <SessionGate>
+                <DemoGuide />
+                <Outlet />
+              </SessionGate>
+            </div>
+          </main>
+          <AutoDemoBar />
+        </div>
         <ApiFlowPanel />
       </div>
     </div>
