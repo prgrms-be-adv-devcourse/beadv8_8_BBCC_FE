@@ -166,7 +166,8 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
       step: '⑦',
       actor: '관리자',
       todo: ['"정산 실행"을 눌러요 (원래는 매월 자동)'],
-      watch: 'POST /admin/settlements/run → settlement.completed → 판매자 지갑 적립 (목)',
+      watch:
+        'POST /admin/settlements/run → settlement.payout-requested → payment.payout-completed → 판매자 예치금 입금 (목)',
       next: { label: '⑦ 정산서', to: C.sellerSettlements },
     },
   },

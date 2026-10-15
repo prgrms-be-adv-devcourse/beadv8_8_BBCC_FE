@@ -51,7 +51,7 @@ export function AdminMembersPage() {
         >
           <Input
             aria-label="회원 검색"
-            placeholder="회원 번호 · 닉네임"
+            placeholder="회원 번호 · 닉네임 · 이메일"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
           />
@@ -70,7 +70,10 @@ export function AdminMembersPage() {
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium">
               {member.nickname}{' '}
-              <span className="text-muted-foreground text-sm">회원 {member.id}</span>
+              <span className="text-muted-foreground text-sm">
+                회원 {member.id}
+                {member.email && ` · ${member.email}`}
+              </span>
             </p>
             <Badge variant={member.status === 'ACTIVE' ? 'success' : 'destructive'}>
               {MEMBER_STATUS_LABEL[member.status]}

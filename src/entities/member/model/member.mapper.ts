@@ -5,6 +5,7 @@ export function toAdminMember(dto: AdminMemberDto): AdminMember {
   return {
     id: String(dto.id),
     nickname: dto.nickname,
+    email: dto.email ?? null,
     status: dto.status as MemberStatus,
     sellerStatus: dto.sellerStatus as AdminMember['sellerStatus'],
     suspendReason: dto.suspendReason,

@@ -164,10 +164,17 @@ const FLOWS: { method: string; pattern: RegExp; steps: FlowStep[] }[] = [
     pattern: /^\/admin\/settlements\/run$/,
     steps: [
       {
-        name: 'settlement.completed',
+        name: 'settlement.payout-requested',
         from: 'settlement',
         to: ['payment'],
-        description: '수수료 10% 뺀 금액을 판매자 지갑에 적립',
+        description: '수수료 10% 뺀 정산금액을 판매자 예치금에 입금 요청',
+        kind: 'event',
+      },
+      {
+        name: 'payment.payout-completed',
+        from: 'payment',
+        to: ['settlement'],
+        description: '예치금 입금 끝 → 정산서 지급 완료',
         kind: 'event',
       },
     ],

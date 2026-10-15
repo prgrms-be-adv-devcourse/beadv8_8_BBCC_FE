@@ -2,6 +2,8 @@
 export type AdminMemberDto = {
   id: number
   nickname: string
+  /** 이메일을 받기 전에 가입한 회원은 null (BE #242) */
+  email?: string | null
   /** ACTIVE · SUSPENDED */
   status: string
   /** 판매자가 아니면 null */

@@ -5,6 +5,7 @@ export function toMember(dto: MemberDto): Member {
   return {
     id: String(dto.id),
     nickname: dto.nickname,
+    email: dto.email ?? null,
     roles: dto.roles as Role[],
     sellerStatus: dto.sellerStatus as SellerStatus | null,
     providers: dto.providers,
