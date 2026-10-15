@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router'
-import { orderableLines } from '@/entities/cart'
+import { groupBySeller, orderableLines, sumLineAmount } from '@/entities/cart'
 import { findChild, useChildrenQuery } from '@/entities/child'
 import { ProductImage } from '@/entities/product'
 import { CartItemControls } from '@/features/edit-cart-item'
@@ -11,6 +11,11 @@ import { Badge } from '@/shared/ui/badge'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Select } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/StateMessage'
+
+/** 판매자 ID로 묶음 이름 (판매자 이름은 응답에 없다) */
+function sellerLabel(sellerId: string | null): string {
+  return sellerId === null ? '판매자 정보 없음' : `판매자 #${sellerId}`
+}
 
 /** 장바구니 + 주문서: 주문할 상품 선택 → 배송지 · 예치금 잔액 확인 → 주문하기 (기획서 F05 · F06) */
 export function ShopCartPage() {
@@ -64,44 +69,60 @@ export function ShopCartPage() {
               />
               전체 선택 ({lines.length}/{orderableIds.size})
             </label>
-            {cart.data.lines.map((line) => (
-              <Card
-                key={line.id}
-                className="flex flex-wrap items-center gap-3 sm:flex-nowrap sm:gap-4"
+            {groupBySeller(cart.data.lines).map((group) => (
+              <section
+                key={group.sellerId ?? 'unknown'}
+                aria-label={sellerLabel(group.sellerId)}
+                className="space-y-2"
               >
-                <input
-                  type="checkbox"
-                  className="accent-primary size-4 shrink-0"
-                  aria-label={`${line.productName} ${optionLabel(line) ?? ''} 주문하기`}
-                  checked={orderableIds.has(line.id) && isSelected(line.id)}
-                  disabled={!orderableIds.has(line.id)}
-                  onChange={() => toggleLine(line.id)}
-                />
-                <ProductImage
-                  src={null}
-                  alt={line.productName}
-                  className="size-16 shrink-0 rounded-lg"
-                />
-                <div className="min-w-0 flex-1 basis-48">
-                  <p className="font-medium">
-                    {line.productName}{' '}
-                    {!line.purchasable && <Badge variant="destructive">구매 불가</Badge>}
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    {[
-                      optionLabel(line),
-                      line.childId &&
-                        `${findChild(children.data, line.childId)?.name ?? `자녀 #${line.childId}`}가 입어요`,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </p>
-                  <p className="text-sm font-semibold">{formatWon(line.lineAmount)}</p>
+                <div className="text-muted-foreground flex items-center justify-between border-b pb-1 text-sm">
+                  <span className="text-foreground font-semibold">
+                    {sellerLabel(group.sellerId)}
+                  </span>
+                  <span>
+                    {group.lines.length}개 · {formatWon(sumLineAmount(group.lines))}
+                  </span>
                 </div>
-                <div className="ml-auto">
-                  <CartItemControls line={line} />
-                </div>
-              </Card>
+                {group.lines.map((line) => (
+                  <Card
+                    key={line.id}
+                    className="flex flex-wrap items-center gap-3 sm:flex-nowrap sm:gap-4"
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-primary size-4 shrink-0"
+                      aria-label={`${line.productName} ${optionLabel(line) ?? ''} 주문하기`}
+                      checked={orderableIds.has(line.id) && isSelected(line.id)}
+                      disabled={!orderableIds.has(line.id)}
+                      onChange={() => toggleLine(line.id)}
+                    />
+                    <ProductImage
+                      src={null}
+                      alt={line.productName}
+                      className="size-16 shrink-0 rounded-lg"
+                    />
+                    <div className="min-w-0 flex-1 basis-48">
+                      <p className="font-medium">
+                        {line.productName}{' '}
+                        {!line.purchasable && <Badge variant="destructive">구매 불가</Badge>}
+                      </p>
+                      <p className="text-muted-foreground text-sm">
+                        {[
+                          optionLabel(line),
+                          line.childId &&
+                            `${findChild(children.data, line.childId)?.name ?? `자녀 #${line.childId}`}가 입어요`,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                      <p className="text-sm font-semibold">{formatWon(line.lineAmount)}</p>
+                    </div>
+                    <div className="ml-auto">
+                      <CartItemControls line={line} />
+                    </div>
+                  </Card>
+                ))}
+              </section>
             ))}
           </div>
 

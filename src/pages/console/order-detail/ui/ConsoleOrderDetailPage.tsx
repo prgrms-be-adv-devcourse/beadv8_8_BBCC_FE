@@ -3,6 +3,7 @@ import {
   buildOrderTimeline,
   canConfirmItem,
   deliveryOf,
+  needsCartReview,
   needsCharge,
   OrderDeliveryList,
   OrderItemRow,
@@ -40,10 +41,16 @@ export function ConsoleOrderDetailPage() {
         polling={query.isFetching}
         delayed={delayed}
         cancelAction={
-          needsCharge(order) && (
+          needsCharge(order) ? (
             <Link to={paths.console.wallet} className="text-primary text-sm underline">
               예치금 충전하러 가기
             </Link>
+          ) : (
+            needsCartReview(order) && (
+              <Link to={paths.console.cart} className="text-primary text-sm underline">
+                장바구니에서 다시 확인하기
+              </Link>
+            )
           )
         }
       />

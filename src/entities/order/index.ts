@@ -12,7 +12,7 @@ export {
   type OrderSummary,
   type PlaceOrderInput,
 } from './model/order'
-export { toAdminOrder, toOrder, toPlaceOrderRequest } from './model/order.mapper'
+export { orderTitle, toAdminOrder, toOrder, toPlaceOrderRequest } from './model/order.mapper'
 export {
   buildOrderTimeline,
   canConfirmItem,
@@ -20,6 +20,7 @@ export {
   deliveryOf,
   filterOrdersByTab,
   isPaymentDelayed,
+  needsCartReview,
   needsCharge,
   ORDER_TABS,
   orderProgress,

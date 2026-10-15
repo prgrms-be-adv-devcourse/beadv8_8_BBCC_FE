@@ -24,7 +24,10 @@ export function ConsoleOrdersPage() {
         <Link key={order.id} to={paths.console.order(order.id)}>
           <Card className="hover:border-primary mb-2 flex items-center justify-between transition-colors">
             <div>
-              <p className="font-medium">주문 #{order.id}</p>
+              <p className="font-medium">
+                주문 #{order.id}
+                {order.title && ` · ${order.title}`}
+              </p>
               <p className="text-muted-foreground text-sm">{formatDateTime(order.orderedAt)}</p>
             </div>
             <div className="flex items-center gap-3">

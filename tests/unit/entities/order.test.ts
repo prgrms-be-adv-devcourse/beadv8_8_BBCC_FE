@@ -145,6 +145,9 @@ describe('주문 규칙', () => {
     const events = buildOrderTimeline(
       toOrder({ ...dto, status: 'CANCELLED', cancelReason: 'OUT_OF_STOCK' }),
     )
-    expect(events.at(-1)).toMatchObject({ label: '주문 취소', note: '재고가 부족해요' })
+    expect(events.at(-1)).toMatchObject({
+      label: '주문 취소',
+      note: '구매할 수 없는 상품이 있어 주문이 취소됐어요.',
+    })
   })
 })

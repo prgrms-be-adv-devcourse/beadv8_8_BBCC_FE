@@ -23,6 +23,11 @@ export function deliveryOf(order: Order, item: OrderItem) {
 }
 
 /** 잔액 부족으로 취소된 주문이면 충전으로 안내한다 */
+/** 구매할 수 없는 상품(재고 부족 · 판매 중지)으로 취소: 장바구니에 남아 있으니 다시 확인하게 한다 */
+export function needsCartReview(order: Order): boolean {
+  return order.status === 'CANCELLED' && order.cancelReason === 'OUT_OF_STOCK'
+}
+
 export function needsCharge(order: Order): boolean {
   return order.status === 'CANCELLED' && order.cancelReason === 'PAYMENT_FAILED'
 }

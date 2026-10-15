@@ -3,6 +3,7 @@ export type { Cart, CartLine } from './model/cart'
 export { toAddCartItemRequest } from './model/cart.mapper'
 export {
   canDecrease,
+  groupBySeller,
   isAllSelected,
   orderableLines,
   selectedLines,

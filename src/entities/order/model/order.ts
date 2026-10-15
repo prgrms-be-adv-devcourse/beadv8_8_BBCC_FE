@@ -51,6 +51,8 @@ export type OrderSummary = {
   status: OrderStatus
   totalAmount: number
   orderedAt: string
+  /** 대표 상품 (예: "데일리 맨투맨 외 1건"). 상품명을 모르면 null */
+  title: string | null
 }
 
 /** 상태 변화 순서 한 줄 */
@@ -68,7 +70,8 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
 }
 
 export const CANCEL_REASON_LABEL: Record<CancelReason, string> = {
-  OUT_OF_STOCK: '재고가 부족해요',
+  /** 재고 부족 · 판매 중지를 모두 포함 (BE cancelReason 하나) */
+  OUT_OF_STOCK: '구매할 수 없는 상품이 있어 주문이 취소됐어요.',
   PAYMENT_FAILED: '예치금 결제에 실패했어요 (잔액 부족 등)',
   PAYMENT_EXPIRED: '결제 제한 시간(10분)이 지났어요',
 }

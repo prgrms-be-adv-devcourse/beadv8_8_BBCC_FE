@@ -327,6 +327,7 @@ http
         memberId: me,
         optionId: String(body.optionId),
         productId: String(rp.productId),
+        sellerId: String(rp.sellerId),
         productName: rp.name,
         optionName: rp.optionName,
         size: rp.size,
@@ -481,6 +482,11 @@ http
               status: o.status,
               totalAmount: o.totalAmount,
               orderedAt: o.orderedAt,
+              // 주문상품 ID가 가장 작은 주문상품의 상품명 · 주문상품 수 (BE #243)
+              representativeProductName:
+                [...o.items].sort((a, b) => Number(a.orderItemId) - Number(b.orderItemId))[0]
+                  ?.productName ?? null,
+              itemCount: o.items.length,
             })),
         ),
       )

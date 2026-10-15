@@ -3,6 +3,7 @@ import {
   CANCEL_REASON_LABEL,
   canConfirmItem,
   deliveryOf,
+  needsCartReview,
   needsCharge,
   OrderDeliveryList,
   OrderItemRow,
@@ -60,6 +61,11 @@ export function ShopOrderDetailPage() {
             {needsCharge(order) && (
               <Link to={paths.shop.wallet} className="text-primary underline">
                 예치금 충전하러 가기
+              </Link>
+            )}
+            {needsCartReview(order) && (
+              <Link to={paths.shop.cart} className="text-primary underline">
+                장바구니에서 다시 확인하기
               </Link>
             )}
           </div>
