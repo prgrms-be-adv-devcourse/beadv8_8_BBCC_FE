@@ -41,6 +41,7 @@ export function toOrder(dto: OrderDetailDto): Order {
       confirmedAt: item.confirmedAt,
       confirmType: item.confirmType as ConfirmType | null,
       unavailableReason: item.unavailableReason ?? null,
+      sellerName: item.sellerName?.trim() || null,
       child: item.child && {
         id: item.child.childId,
         name: item.child.name,
@@ -51,6 +52,9 @@ export function toOrder(dto: OrderDetailDto): Order {
     deliveries: dto.deliveries.map((delivery) => ({
       id: delivery.sellerOrderId,
       sellerId: delivery.sellerId,
+      sellerName:
+        dto.items.find((item) => item.sellerId === delivery.sellerId && item.sellerName?.trim())
+          ?.sellerName ?? null,
       status: delivery.status as DeliveryStatus,
       carrier: delivery.carrier,
       trackingNumber: delivery.trackingNumber,
@@ -67,6 +71,7 @@ export function toOrderSummary(dto: OrderSummaryDto): OrderSummary {
     totalAmount: dto.totalAmount,
     orderedAt: dto.orderedAt,
     title: orderTitle(dto.representativeProductName, dto.itemCount),
+    sellerName: dto.sellerName?.trim() || null,
   }
 }
 

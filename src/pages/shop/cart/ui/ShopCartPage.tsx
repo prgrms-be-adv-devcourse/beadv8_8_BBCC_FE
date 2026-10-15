@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router'
-import { groupBySeller, orderableLines, sumLineAmount } from '@/entities/cart'
+import { groupBySeller, orderableLines, sellerGroupLabel, sumLineAmount } from '@/entities/cart'
 import { findChild, useChildrenQuery } from '@/entities/child'
 import { ProductImage } from '@/entities/product'
 import { CartItemControls } from '@/features/edit-cart-item'
@@ -11,11 +11,6 @@ import { Badge } from '@/shared/ui/badge'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Select } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/StateMessage'
-
-/** 판매자 ID로 묶음 이름 (판매자 이름은 응답에 없다) */
-function sellerLabel(sellerId: string | null): string {
-  return sellerId === null ? '판매자 정보 없음' : `판매자 #${sellerId}`
-}
 
 /** 장바구니 + 주문서: 주문할 상품 선택 → 배송지 · 예치금 잔액 확인 → 주문하기 (기획서 F05 · F06) */
 export function ShopCartPage() {
@@ -72,13 +67,11 @@ export function ShopCartPage() {
             {groupBySeller(cart.data.lines).map((group) => (
               <section
                 key={group.sellerId ?? 'unknown'}
-                aria-label={sellerLabel(group.sellerId)}
+                aria-label={sellerGroupLabel(group)}
                 className="space-y-2"
               >
                 <div className="text-muted-foreground flex items-center justify-between border-b pb-1 text-sm">
-                  <span className="text-foreground font-semibold">
-                    {sellerLabel(group.sellerId)}
-                  </span>
+                  <span className="text-foreground font-semibold">{sellerGroupLabel(group)}</span>
                   <span>
                     {group.lines.length}개 · {formatWon(sumLineAmount(group.lines))}
                   </span>

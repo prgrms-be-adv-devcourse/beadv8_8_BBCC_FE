@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupBySeller, type CartLine } from '@/entities/cart'
+import { groupBySeller, sellerGroupLabel, type CartLine } from '@/entities/cart'
 import {
   CANCEL_REASON_LABEL,
   needsCartReview,
@@ -57,6 +57,7 @@ describe('장바구니 판매자별 묶음 (BE #243 sellerId)', () => {
     optionId: id,
     productId: id,
     sellerId,
+    sellerName: null,
     productName: `상품 ${id}`,
     optionName: null,
     size: null,
@@ -83,5 +84,13 @@ describe('주문상품 구매 불가 표시 (안 2, BE 예정 items[].unavailabl
     expect(unavailableLabel({ unavailableReason: 'OPTION_NOT_ON_SALE' })).toBe('옵션 판매 중지')
     expect(unavailableLabel({ unavailableReason: 'SOMETHING_NEW' })).toBe('구매 불가')
     expect(unavailableLabel({ unavailableReason: null })).toBeNull()
+  })
+})
+
+describe('판매자 상호명 (BE #311 sellerName)', () => {
+  it('묶음 이름: 상호명 → 판매자 번호 → 판매자 정보 없음', () => {
+    expect(sellerGroupLabel({ sellerId: '2', sellerName: '테스트상점' })).toBe('테스트상점')
+    expect(sellerGroupLabel({ sellerId: '2', sellerName: null })).toBe('판매자 #2')
+    expect(sellerGroupLabel({ sellerId: null, sellerName: null })).toBe('판매자 정보 없음')
   })
 })

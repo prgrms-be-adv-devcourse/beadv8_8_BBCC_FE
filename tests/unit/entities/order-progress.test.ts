@@ -6,6 +6,7 @@ const item = (over: Partial<OrderItem> = {}): OrderItem => ({
   productId: '1',
   optionId: '1',
   sellerId: '2',
+  sellerName: null,
   productName: '맨투맨',
   optionName: '네이비 / 120',
   size: '120',
@@ -23,6 +24,7 @@ const item = (over: Partial<OrderItem> = {}): OrderItem => ({
 const delivery = (over: Partial<OrderDelivery> = {}): OrderDelivery => ({
   id: '1',
   sellerId: '2',
+  sellerName: null,
   status: 'READY',
   carrier: null,
   trackingNumber: null,
