@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { useApiFlowLog, useMockSettings, type ApiCallLog } from '@/shared/api'
+import { isFailedCall, useApiFlowLog, useMockSettings, type ApiCallLog } from '@/shared/api'
 import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import type { DomainId, FlowStep } from '../config/domain-flow'
@@ -22,7 +22,7 @@ export function ApiFlowPanel() {
   const contractErrorCount = logs.filter((log) =>
     log.contractIssues.some((issue) => issue.type !== 'extra'),
   ).length
-  const failedCount = logs.filter((log) => log.status === null || log.status >= 400).length
+  const failedCount = logs.filter(isFailedCall).length
 
   const exportReport = () => {
     const report = buildReport(logs, changes)
@@ -140,16 +140,27 @@ function ApiCallRow({ log }: ApiCallRowProps) {
         <span className="w-11 shrink-0 font-mono font-semibold">{log.method}</span>
         <span className="flex-1 truncate font-mono">{log.path}</span>
         {log.mock && <span className="bg-highlight rounded px-1">목</span>}
+        {log.expectedReason && (
+          <span className="bg-muted text-muted-foreground rounded px-1" title={log.expectedReason}>
+            예상됨
+          </span>
+        )}
         {log.contractIssues.some((issue) => issue.type !== 'extra') && (
           <span className="bg-destructive/10 text-destructive rounded px-1">계약 불일치</span>
         )}
-        <span className={cn('w-8 text-right font-mono font-semibold', statusColor(log.status))}>
+        <span
+          className={cn(
+            'w-8 text-right font-mono font-semibold',
+            log.expectedReason ? 'text-muted-foreground' : statusColor(log.status),
+          )}
+        >
           {log.status ?? '실패'}
         </span>
         <span className="text-muted-foreground w-11 text-right">{log.durationMs}ms</span>
       </button>
       <div className="text-muted-foreground flex gap-2 px-2 pb-1">
         {log.action && <span>↳ {log.action}</span>}
+        {log.expectedReason && <span className="truncate">{log.expectedReason}</span>}
         <span className="ml-auto">{log.actor ? `회원 ${log.actor}` : '토큰 없음'}</span>
       </div>
       {steps.length > 0 && <FlowSteps steps={steps} />}

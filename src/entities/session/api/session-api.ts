@@ -19,7 +19,13 @@ export const sessionApi = {
       .then(expectShape(tokenShape)),
   /** 쿠키가 없어도 204 */
   logout: () => apiClient.post<void>('/auth/logout', undefined, { skipAuth: true }),
-  getMe: () => apiClient.get<MemberDto>('/members/me').then(expectShape(memberShape)),
+  /** 개발용 토큰은 회원 행이 없을 수 있어 404가 올 수 있다 (흐름 패널에 "예상됨") */
+  getMe: () =>
+    apiClient
+      .get<MemberDto>('/members/me', {
+        expected: { statuses: [404], reason: '개발용 토큰은 회원 정보가 없을 수 있음' },
+      })
+      .then(expectShape(memberShape)),
   updateMe: (request: MemberUpdateRequestDto) =>
     apiClient.patch<MemberDto>('/members/me', request).then(expectShape(memberShape)),
   /** 탈퇴 (기획서 8장 보완, 조건 보류). 백엔드에 아직 없어 목 응답이다 */

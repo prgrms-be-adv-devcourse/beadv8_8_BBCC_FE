@@ -12,7 +12,9 @@ export const sellerApi = {
   /** 신청한 적이 없으면 404 → null */
   getMyApplication: () =>
     apiClient
-      .get<SellerApplicationDto>('/members/me/seller-application')
+      .get<SellerApplicationDto>('/members/me/seller-application', {
+        expected: { statuses: [404], reason: '아직 판매자 신청이 없음' },
+      })
       .then(expectShape(sellerApplicationShape))
       .catch((error: unknown) => {
         if (getErrorStatus(error) === 404) {

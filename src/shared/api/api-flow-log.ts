@@ -17,6 +17,8 @@ export type ApiCallLog = {
   startedAt: string
   /** 목 응답이면 true (응답 헤더 x-mock: true) */
   mock: boolean
+  /** 요청이 미리 밝힌 예상 응답이면 그 이유 (실패로 세지 않는다). 예전 기록에는 없다 */
+  expectedReason?: string | null
   requestBody: unknown
   responseBody: unknown
   /** 응답이 계약(DTO 모양)과 다른 곳 */

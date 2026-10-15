@@ -1,6 +1,7 @@
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import { env } from '@/shared/config'
 import { useApiFlowLog } from './api-flow-log'
+import { expectedReasonOf, type ExpectedResponse } from './call-outcome'
 import { createMockAdapter, defaultAdapter } from './mock-adapter'
 
 declare module 'axios' {
@@ -12,6 +13,8 @@ declare module 'axios' {
     startedAt?: number
     /** 흐름 기록 ID (계약 검사 결과를 붙일 때 쓴다) */
     logId?: number
+    /** 정상 흐름에서도 오는 오류 응답. 흐름 패널에 "예상됨"으로 표시하고 실패로 세지 않는다 */
+    expected?: ExpectedResponse
   }
 }
 
@@ -45,7 +48,11 @@ let reissuing: Promise<string> | null = null
 /** 동시에 여러 요청이 401을 받아도 재발급은 한 번만 보낸다 (Refresh Token이 매번 교체되므로) */
 export function reissueAccessToken(): Promise<string> {
   reissuing ??= apiClient
-    .post<{ accessToken: string }>('/auth/reissue', undefined, { skipAuth: true, retried: true })
+    .post<{ accessToken: string }>('/auth/reissue', undefined, {
+      skipAuth: true,
+      retried: true,
+      expected: { statuses: [401], reason: '재발급 쿠키 없음 (로그인 전 · 역할 전환)' },
+    })
     .then((response) => {
       authHandlers.onTokenReissued(response.data.accessToken)
       return response.data.accessToken
@@ -74,6 +81,7 @@ function record(config: InternalAxiosRequestConfig, response: AxiosResponse | un
     method: (config.method ?? 'get').toUpperCase(),
     path: config.url ?? '',
     status: response?.status ?? null,
+    expectedReason: expectedReasonOf(response?.status ?? null, config.expected),
     durationMs: Math.round(performance.now() - startedAt),
     startedAt: new Date(performance.timeOrigin + startedAt).toISOString(),
     mock: response?.headers['x-mock'] === 'true',
