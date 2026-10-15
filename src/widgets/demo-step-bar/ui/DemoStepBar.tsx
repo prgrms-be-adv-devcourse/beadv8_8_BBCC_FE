@@ -9,7 +9,7 @@ export function DemoStepBar() {
   const user = useSessionStore((state) => state.user)
 
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b bg-white px-4 py-2">
+    <nav className="flex flex-wrap gap-1 border-b bg-white px-4 py-2">
       <NavLink
         to={paths.console.verify}
         className={({ isActive }) =>

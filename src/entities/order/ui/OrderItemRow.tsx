@@ -26,7 +26,7 @@ export function OrderItemRow({ item, delivery, action }: OrderItemRowProps) {
           {formatWon(item.unitPrice)} × {item.quantity} = {formatWon(item.amount)}
           {item.child &&
             ` · 입을 자녀 ${item.child.name} (주문 당시 ${item.child.heightCm}cm · ${item.child.weightKg}kg)`}
-          {delivery && ` · 배송 ${DELIVERY_STATUS_LABEL[delivery.status]}`}
+          {delivery && ` · ${DELIVERY_STATUS_LABEL[delivery.status]}`}
         </p>
       </div>
       {action}

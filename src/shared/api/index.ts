@@ -1,5 +1,6 @@
 export { apiClient, configureAuth, reissueAccessToken } from './client'
 export { runWithAction, useApiFlowLog, type ApiCallLog } from './api-flow-log'
+export { expectedReasonOf, isFailedCall, type ExpectedResponse } from './call-outcome'
 export {
   arr,
   bool,

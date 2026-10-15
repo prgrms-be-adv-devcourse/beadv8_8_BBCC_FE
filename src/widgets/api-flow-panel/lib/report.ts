@@ -1,4 +1,4 @@
-import type { ApiCallLog } from '@/shared/api'
+import { isFailedCall, type ApiCallLog } from '@/shared/api'
 import type { StateChange } from '../model/state-changes'
 
 function problemDetail(body: unknown): string | null {
@@ -12,10 +12,11 @@ function problemDetail(body: unknown): string | null {
 /** 담당자에게 그대로 붙여 넣을 수 있는 마크다운 기록 */
 export function buildReport(logs: ApiCallLog[], changes: StateChange[]): string {
   const lines: string[] = [`# Kidly 통합 확인 기록 (${new Date().toLocaleString('ko-KR')})`, '']
-  const failed = logs.filter((log) => log.status === null || log.status >= 400)
+  const failed = logs.filter(isFailedCall)
+  const expected = logs.filter((log) => log.expectedReason)
   const contract = logs.filter((log) => log.contractIssues.length > 0)
   lines.push(
-    `- 호출 ${logs.length}건 · 실패 ${failed.length}건 · 계약 불일치 ${contract.length}건`,
+    `- 호출 ${logs.length}건 · 실패 ${failed.length}건 · 예상된 오류 응답 ${expected.length}건 · 계약 불일치 ${contract.length}건`,
     '',
   )
 

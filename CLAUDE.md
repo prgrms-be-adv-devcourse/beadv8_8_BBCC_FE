@@ -8,7 +8,7 @@
 
 | 목적                 | 명령                                                              |
 | -------------------- | ----------------------------------------------------------------- |
-| 한 번에 검사         | `npm run check` (lint · format · build · test)                    |
+| 한 번에 검사         | `npm run check` (lint · lint:fsd · format · build · test)         |
 | 실행                 | `npm run dev` (`.env.example`을 `.env.local`로 복사)              |
 | 린트 · 포맷          | `npm run lint` / `npm run format:check` (고치기 `npm run format`) |
 | 빌드(타입 검사 포함) | `npm run build`                                                   |
