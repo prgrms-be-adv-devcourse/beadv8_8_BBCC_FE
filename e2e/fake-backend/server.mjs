@@ -1,5 +1,5 @@
 // E2E 전용 가짜 백엔드 (실제 백엔드 코드와 무관). 구현된 API의 응답 모양(DTO)만 흉내 낸다.
-// 상품은 등록 · 판매 시작 · 상세 · 카테고리만 있다(products.mjs). 상품 목록 · 사이즈 추천 · 자녀 맞춤 목록 · 관리자 전체 주문 · 결제는 여기서 응답하고, 판매자 상품 목록 · 정산은 FE 목(app/mocks)이 응답한다.
+// 상품은 등록 · 판매 시작 · 상세 · 카테고리만 있다(products.mjs). 상품 목록 · 사이즈 추천 · 자녀 맞춤 목록 · 관리자 전체 주문 · 결제 · 정산은 여기서 응답하고, 판매자 상품 목록은 FE 목(app/mocks)이 응답한다.
 // 응답 모양이 실제와 달라지면 FE 흐름 패널의 계약 검사로 드러난다.
 import http from 'node:http'
 import {
@@ -23,7 +23,10 @@ const children = [],
   orders = [],
   apps = [],
   payments = [],
-  charges = []
+  charges = [],
+  // 정산 (BE SellerSettlementController · AdminSettlementController)
+  settlements = [],
+  settlementRuns = []
 const wallets = { 1: 100000, 2: 0, 3: 0 }
 // BE WalletLedger: 잔액이 바뀔 때마다 한 줄 (출금은 음수)
 const ledgers = []
@@ -186,6 +189,105 @@ http
     }
     if (!u) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
     const me = Number(u.sub)
+    // 정산: 구매확정된 주문상품이 대상, 실행하면 판매자별 정산서 → 바로 예치금 입금(PAID)
+    const confirmedItems = () =>
+      orders.flatMap((o) =>
+        o.items
+          .filter((it) => it.status === 'CONFIRMED' && it.confirmedAt)
+          .map((it) => ({ order: o, item: it })),
+      )
+    const itemOf = ({ order, item }) => ({
+      orderItemId: Number(item.orderItemId),
+      orderId: Number(order.orderId),
+      salesAmount: item.amount,
+      confirmedAt: item.confirmedAt,
+    })
+    const summaryOf = ({ sellerId: _s, items: _i, failReason: _f, ...st }) => st
+    if (r('GET', /^\/seller\/settlement-targets$/))
+      return send(
+        res,
+        200,
+        page(
+          confirmedItems()
+            .filter((x) => String(x.item.sellerId) === String(me) && !x.item.settled)
+            .map(itemOf),
+        ),
+      )
+    if (r('GET', /^\/seller\/settlements$/))
+      return send(
+        res,
+        200,
+        page(
+          settlements
+            .filter((st) => st.sellerId === me)
+            .slice()
+            .reverse()
+            .map(summaryOf),
+        ),
+      )
+    if ((x = r('GET', /^\/seller\/settlements\/(\d+)$/))) {
+      const st = settlements.find((st) => st.settlementId === +x[1] && st.sellerId === me)
+      if (!st) return problem(res, 404, '찾을 수 없습니다', '정산서를 찾을 수 없습니다.', req.url)
+      const { sellerId: _s, ...detail } = st
+      return send(res, 200, detail)
+    }
+    if (r('POST', /^\/admin\/settlements\/run$/)) {
+      if (!(u.roles || []).includes('ADMIN'))
+        return problem(res, 403, '권한이 없습니다', '관리자만 실행할 수 있습니다.', req.url)
+      const cutoffOn = body?.cutoffOn
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(cutoffOn ?? ''))
+        return problem(res, 400, '잘못된 요청입니다', '종료 기준일을 넣어 주세요.', req.url)
+      if (settlementRuns.some((run) => run.cutoffAt.startsWith(cutoffOn)))
+        return problem(res, 409, '이미 정산했습니다', '이미 정산한 기준일입니다.', req.url)
+      const due = confirmedItems().filter(
+        (x) => !x.item.settled && x.item.confirmedAt < `${cutoffOn}T00:00:00`,
+      )
+      const end = new Date(Date.parse(`${cutoffOn}T00:00:00Z`) - 86_400_000)
+        .toISOString()
+        .slice(0, 10)
+      const start = due.map((x) => x.item.confirmedAt.slice(0, 10)).sort()[0] ?? end
+      const sellers = [...new Set(due.map((x) => Number(x.item.sellerId)))]
+      for (const sellerId of sellers) {
+        const mine = due.filter((x) => Number(x.item.sellerId) === sellerId)
+        const total = mine.reduce((sum, x) => sum + x.item.amount, 0)
+        const fee = Math.floor(total * 0.1)
+        const st = {
+          settlementId: nid(),
+          sellerId,
+          periodStartOn: start,
+          periodEndOn: end,
+          totalSalesAmount: total,
+          feeRate: 0.1,
+          feeAmount: fee,
+          settlementAmount: total - fee,
+          status: 'PAID',
+          completedAt: now(),
+          paidAt: now(),
+          failReason: null,
+          items: mine.map(itemOf),
+        }
+        mine.forEach((x) => (x.item.settled = true))
+        settlements.push(st)
+        // settlement.payout-requested → 결제가 판매자 예치금에 입금
+        wallets[sellerId] = (wallets[sellerId] ?? 0) + st.settlementAmount
+        ledger(sellerId, 'SETTLEMENT', st.settlementAmount, String(st.settlementId))
+      }
+      const run = {
+        runId: nid(),
+        cutoffAt: `${cutoffOn}T00:00:00`,
+        periodStartOn: start,
+        periodEndOn: end,
+        triggerType: 'MANUAL',
+        status: 'COMPLETED',
+        successCount: sellers.length,
+        failCount: 0,
+        requestedBy: me,
+        startedAt: now(),
+        finishedAt: now(),
+      }
+      settlementRuns.push(run)
+      return send(res, 201, run)
+    }
     // 자녀 맞춤 목록 (BE #316): 판매 중 상품 중 자녀에게 맞는 사이즈가 있는 것, 최신순
     if ((x = r('GET', /^\/children\/(\d+)\/recommended-products$/))) {
       const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)

@@ -3,13 +3,11 @@ import { adminHandlers } from '@/app/mocks/admin-handlers'
 import { memberHandlers } from '@/app/mocks/member-handlers'
 import { productHandlers } from '@/app/mocks/product-handlers'
 import { recommendationHandlers } from '@/app/mocks/recommendation-handlers'
-import { settlementHandlers } from '@/app/mocks/settlement-handlers'
 import { MOCK_ENDPOINTS } from '@/shared/api'
 
 const handlers = [
   ...productHandlers,
   ...recommendationHandlers,
-  ...settlementHandlers,
   ...memberHandlers,
   ...adminHandlers,
 ]

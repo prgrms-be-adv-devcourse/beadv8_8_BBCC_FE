@@ -1,36 +1,39 @@
-import { arr, bool, nullable, num, obj, pageOf, str } from '@/shared/api'
+import { arr, nullable, num, obj, oneOf, pageOf, str } from '@/shared/api'
+
+const STATUS = oneOf(['COMPLETED', 'PAID', 'FAILED'])
 
 const settlementFields = {
-  settlementId: str,
-  sellerId: str,
-  period: obj({ periodStart: nullable(str), periodEnd: str }),
-  itemCount: num,
-  totalAmount: num,
+  settlementId: num,
+  periodStartOn: str,
+  periodEndOn: str,
+  totalSalesAmount: num,
   feeRate: num,
   feeAmount: num,
-  payoutAmount: num,
-  status: str,
-  settledAt: str,
+  settlementAmount: num,
+  status: STATUS,
+  completedAt: nullable(str),
+  paidAt: nullable(str),
 }
 
-export const settlementTargetsShape = arr(
-  obj({
-    targetId: str,
-    orderItemId: str,
-    productName: str,
-    amount: num,
-    confirmedAt: str,
-    settled: bool,
-  }),
-)
-export const settlementShape = obj(settlementFields)
-export const settlementPageShape = pageOf(settlementShape)
+const itemFields = { orderItemId: num, orderId: num, salesAmount: num, confirmedAt: str }
+
+export const settlementTargetPageShape = pageOf(obj(itemFields))
+export const settlementPageShape = pageOf(obj(settlementFields))
 export const settlementDetailShape = obj({
   ...settlementFields,
-  items: arr(obj({ orderItemId: str, productName: str, amount: num, confirmedAt: str })),
+  failReason: nullable(str),
+  items: arr(obj(itemFields)),
 })
 export const settlementRunShape = obj({
-  periodEnd: str,
-  settlementCount: num,
-  settlements: arr(obj(settlementFields)),
+  runId: num,
+  cutoffAt: str,
+  periodStartOn: str,
+  periodEndOn: str,
+  triggerType: str,
+  status: oneOf(['RUNNING', 'COMPLETED', 'PARTIAL_FAILED', 'FAILED']),
+  successCount: num,
+  failCount: num,
+  requestedBy: nullable(num),
+  startedAt: str,
+  finishedAt: nullable(str),
 })

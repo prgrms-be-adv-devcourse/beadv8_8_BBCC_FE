@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 // 시연 콘솔(/console)에서 정상 흐름 ①~⑦을 시연 순서대로 따라가며, 화면 결과와 흐름 확인(/verify) 판정까지 확인한다.
-// 가짜 백엔드(e2e/fake-backend) + FE 목(상품 · 추천 · 정산)으로 돈다.
+// 가짜 백엔드(e2e/fake-backend) + FE 목(판매자 상품 목록 · 수정 등 BE에 없는 것)으로 돈다.
 
 const NICKNAME = {
   보호자: '보호자 · 회원 1',
@@ -112,7 +112,11 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText(/구매확정$/).first()).toBeVisible()
   })
 
-  await test.step('⑦ 정산 실행 → 정산서 (목, ⑥에서 구매확정한 주문상품으로)', async () => {
+  await test.step('⑦ 정산 실행 → 정산서 · 예치금 입금 (⑥에서 구매확정한 주문상품으로)', async () => {
+    // 정산 전: 판매자 정산 대상에 방금 구매확정한 주문상품이 있다 (판매자 예치금도 먼저 조회해 둔다)
+    await switchRole(page, '판매자')
+    await page.goto('/console/seller/settlements')
+    await expect(page.getByText(/주문 #\d+ · 주문상품 #\d+ · 구매확정/)).toBeVisible()
     await switchRole(page, '관리자')
     await page.goto('/console/admin/settlements')
     // 기본으로 오늘 구매확정분까지 포함 → 방금 구매확정한 상품이 정산된다
@@ -120,13 +124,14 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
       page.getByRole('checkbox', { name: '오늘 구매확정분까지 포함 (시연용)' }),
     ).toBeChecked()
     await page.getByRole('button', { name: '정산 실행' }).click()
-    await expect(page.getByText(/판매자 1명 정산 완료 · 판매자 \d+ 지급 [\d,]+원/)).toBeVisible()
+    await expect(page.getByText(/정산 완료 · 성공 1 · 실패 0 · 기간/)).toBeVisible()
     await switchRole(page, '판매자')
     await page.goto('/console/seller/settlements')
-    await expect(page.getByText(/데일리 맨투맨 네이비 \/ 120 · 구매확정/)).toBeVisible()
-    await expect(page.getByText('정산됨')).toBeVisible()
+    await expect(page.getByText('정산 대상이 없어요.')).toBeVisible()
+    await expect(page.getByText('지급 완료', { exact: true })).toBeVisible()
+    await expect(page.getByText(/지급 22,500원/)).toBeVisible()
     await page.getByRole('button', { name: '상세' }).click()
-    await expect(page.getByText(/데일리 맨투맨 네이비 \/ 120 · [\d,]+원 · 구매확정/)).toBeVisible()
+    await expect(page.getByText(/주문 #\d+ · 주문상품 #\d+ · 25,000원 · 구매확정/)).toBeVisible()
   })
 
   await test.step('④ 충전 승인(토스 복귀) → 충전 취소', async () => {
@@ -149,10 +154,10 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText(NICKNAME.보호자)).toBeVisible()
   })
 
-  await test.step('흐름 확인: 정산 목 때문에 판매자 지갑 적립만 대기', async () => {
+  await test.step('흐름 확인: 정상 흐름 판정', async () => {
     await page.goto('/console/verify')
     try {
-      await expect(page.getByText('통과 20')).toBeVisible()
+      await expect(page.getByText('통과 21')).toBeVisible()
     } catch (error) {
       // CI에서 원인을 바로 보이게: 통과하지 못한 항목을 오류 메시지에 붙인다
       const pending = await page

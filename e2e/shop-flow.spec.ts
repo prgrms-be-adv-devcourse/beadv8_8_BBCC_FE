@@ -309,7 +309,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText(/주문번호/).first()).toBeVisible()
   })
 
-  await test.step('관리자: 회원 관리 · 판매자 자격 정지 · 전체 주문 · 결제 · 정산 재처리', async () => {
+  await test.step('관리자: 회원 관리 · 판매자 자격 정지 · 전체 주문 · 결제 · 정산 실행', async () => {
     await switchRole(page, '관리자')
     await page.goto('/admin')
     await expect(page.getByRole('heading', { name: '회원 관리' })).toBeVisible()
@@ -338,11 +338,9 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('결제 완료').first()).toBeVisible()
 
     await page.getByRole('link', { name: '정산', exact: true }).click()
-    await page.getByLabel(/적립 실패를 흉내/).check()
     await page.getByRole('button', { name: '정산 실행' }).click()
-    await expect(page.getByText('적립 실패')).toBeVisible()
-    await page.getByRole('button', { name: '재처리' }).click()
-    await expect(page.getByText('정산 완료', { exact: true })).toBeVisible()
+    // 앞 E2E가 같은 기준일로 이미 실행했으면 BE처럼 409 문구를 그대로 보여 준다
+    await expect(page.getByText(/정산 완료 · 성공 \d+|이미 정산한 기준일입니다/)).toBeVisible()
     await switchRole(page, '보호자')
   })
 

@@ -15,6 +15,7 @@ import { settlementApi } from '@/entities/settlement'
 import { walletApi } from '@/entities/wallet'
 import { demoCategoryId, demoRegisterForm } from '@/features/register-product'
 import { settlementPeriodEnd } from '@/features/run-settlement'
+import { getErrorStatus } from '@/shared/api'
 import { paths } from '@/shared/config'
 
 export type DemoRole = '보호자' | '판매자' | '관리자'
@@ -247,9 +248,15 @@ export const AUTO_DEMO_STEPS: AutoDemoStep[] = [
     run: async (ctx) => {
       await ctx.as('관리자')
       await ctx.show(C.adminSettlements, '관리자: 정산 실행 (오늘 구매확정분까지)')
-      await ctx.call('정산 실행', () =>
-        settlementApi.run({ periodEnd: settlementPeriodEnd(new Date(), true) }),
-      )
+      try {
+        await ctx.call('정산 실행', () =>
+          settlementApi.run({ cutoffOn: settlementPeriodEnd(new Date(), true) }),
+        )
+      } catch (error) {
+        // 같은 기준일로 이미 실행했으면 409 (오늘 두 번째 자동 시연). 정산서 화면은 그대로 본다
+        if (getErrorStatus(error) !== 409) throw error
+        ctx.say('오늘 기준일 정산은 이미 실행됨 → 정산서 확인')
+      }
       await ctx.as('판매자')
       await ctx.show(C.sellerSettlements, '판매자: 정산서 확인')
       await ctx.wait(1000)

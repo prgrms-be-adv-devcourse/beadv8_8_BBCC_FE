@@ -7,39 +7,50 @@ import type {
 import type {
   Settlement,
   SettlementDetail,
+  SettlementItem,
   SettlementRunResult,
   SettlementStatus,
-  SettlementTarget,
 } from './settlement'
 
-export function toSettlementTarget(dto: SettlementTargetDto): SettlementTarget {
+export function toSettlementItem(dto: SettlementTargetDto): SettlementItem {
   return {
-    id: dto.targetId,
-    productName: dto.productName,
-    amount: dto.amount,
+    orderItemId: String(dto.orderItemId),
+    orderId: String(dto.orderId),
+    amount: dto.salesAmount,
     confirmedAt: dto.confirmedAt,
-    settled: dto.settled,
   }
 }
 
 export function toSettlement(dto: SettlementDto): Settlement {
   return {
-    id: dto.settlementId,
-    sellerId: dto.sellerId,
+    id: String(dto.settlementId),
     status: dto.status as SettlementStatus,
-    periodEnd: dto.period.periodEnd,
-    itemCount: dto.itemCount,
-    totalAmount: dto.totalAmount,
+    periodStart: dto.periodStartOn,
+    periodEnd: dto.periodEndOn,
+    totalAmount: dto.totalSalesAmount,
     feeRatePercent: Math.round(dto.feeRate * 100),
     feeAmount: dto.feeAmount,
-    payoutAmount: dto.payoutAmount,
+    payoutAmount: dto.settlementAmount,
+    completedAt: dto.completedAt,
+    paidAt: dto.paidAt,
   }
 }
 
 export function toSettlementDetail(dto: SettlementDetailDto): SettlementDetail {
-  return { ...toSettlement(dto), items: dto.items }
+  return {
+    ...toSettlement(dto),
+    failReason: dto.failReason,
+    items: dto.items.map(toSettlementItem),
+  }
 }
 
 export function toSettlementRunResult(dto: SettlementRunResultDto): SettlementRunResult {
-  return { settlementCount: dto.settlementCount, settlements: dto.settlements.map(toSettlement) }
+  return {
+    runId: String(dto.runId),
+    status: dto.status,
+    successCount: dto.successCount,
+    failCount: dto.failCount,
+    periodStart: dto.periodStartOn,
+    periodEnd: dto.periodEndOn,
+  }
 }

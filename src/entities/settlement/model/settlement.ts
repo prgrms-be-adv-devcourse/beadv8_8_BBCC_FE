@@ -1,37 +1,50 @@
-export type SettlementTarget = {
-  id: string
-  productName: string
+/** 아직 정산 안 된 구매확정 주문상품 (BE 응답에 상품명이 없어 주문 번호로 보여 준다) */
+export type SettlementItem = {
+  orderItemId: string
+  orderId: string
   amount: number
   confirmedAt: string
-  settled: boolean
 }
 
-/** COMPLETED = 계산 완료(지급 요청) · FAILED = 판매자 지갑 적립 실패 (재처리 대상) */
-export type SettlementStatus = 'COMPLETED' | 'FAILED'
+/** COMPLETED = 정산 완료(지급 요청) · PAID = 예치금 입금 끝 · FAILED = 실패 */
+export type SettlementStatus = 'COMPLETED' | 'PAID' | 'FAILED'
 
 export type Settlement = {
   id: string
-  sellerId: string
   status: SettlementStatus
-  /** 이 날 0시 이전 구매확정분 (시작일 조건 없음, 기획서 2.1) */
+  periodStart: string
   periodEnd: string
-  itemCount: number
   totalAmount: number
   feeRatePercent: number
   feeAmount: number
   payoutAmount: number
+  completedAt: string | null
+  paidAt: string | null
 }
 
 export type SettlementDetail = Settlement & {
-  items: { orderItemId: string; productName: string; amount: number; confirmedAt: string }[]
+  failReason: string | null
+  items: SettlementItem[]
 }
 
 export type SettlementRunResult = {
-  settlementCount: number
-  settlements: Settlement[]
+  runId: string
+  status: string
+  successCount: number
+  failCount: number
+  periodStart: string
+  periodEnd: string
 }
 
 export const SETTLEMENT_STATUS_LABEL: Record<SettlementStatus, string> = {
   COMPLETED: '정산 완료',
-  FAILED: '적립 실패',
+  PAID: '지급 완료',
+  FAILED: '실패',
+}
+
+export const SETTLEMENT_RUN_STATUS_LABEL: Record<string, string> = {
+  RUNNING: '실행 중',
+  COMPLETED: '완료',
+  PARTIAL_FAILED: '일부 실패',
+  FAILED: '실패',
 }

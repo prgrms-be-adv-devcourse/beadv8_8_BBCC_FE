@@ -8,7 +8,7 @@ import {
 } from '@/entities/member'
 import { toAdminOrder } from '@/entities/order'
 import { toAdminPayment } from '@/entities/payment'
-import { canRetrySettlement, toSettlement } from '@/entities/settlement'
+import { toSettlement, toSettlementRunResult } from '@/entities/settlement'
 import type { ApiCallLog } from '@/shared/api'
 import { REASON_MAX, validateReason } from '@/shared/lib'
 
@@ -88,22 +88,45 @@ describe('관리자 전체 주문 · 결제 · 정산', () => {
       }),
     ).toMatchObject({ id: '3', orderId: '6', memberId: '1' })
   })
-  it('정산 재처리는 적립에 실패한 정산만', () => {
-    const settlement = toSettlement({
-      settlementId: '1',
-      sellerId: '2',
-      period: { periodStart: null, periodEnd: '2026-10-01' },
-      itemCount: 1,
-      totalAmount: 25000,
-      feeRate: 0.1,
-      feeAmount: 2500,
-      payoutAmount: 22500,
-      status: 'FAILED',
-      settledAt: '2026-10-15T10:00:00',
+  it('정산서 (BE SettlementSummaryResponse): 숫자 ID → 문자열, 수수료율 → %', () => {
+    expect(
+      toSettlement({
+        settlementId: 1,
+        periodStartOn: '2026-10-01',
+        periodEndOn: '2026-10-16',
+        totalSalesAmount: 25000,
+        feeRate: 0.1,
+        feeAmount: 2500,
+        settlementAmount: 22500,
+        status: 'PAID',
+        completedAt: '2026-10-16T10:00:00',
+        paidAt: '2026-10-16T10:00:01',
+      }),
+    ).toMatchObject({ id: '1', status: 'PAID', feeRatePercent: 10, payoutAmount: 22500 })
+  })
+  it('정산 실행 기록: 성공 · 실패 수와 기간', () => {
+    expect(
+      toSettlementRunResult({
+        runId: 7,
+        cutoffAt: '2026-10-17T00:00:00',
+        periodStartOn: '2026-10-01',
+        periodEndOn: '2026-10-16',
+        triggerType: 'MANUAL',
+        status: 'COMPLETED',
+        successCount: 1,
+        failCount: 0,
+        requestedBy: 3,
+        startedAt: '2026-10-16T10:00:00',
+        finishedAt: '2026-10-16T10:00:01',
+      }),
+    ).toEqual({
+      runId: '7',
+      status: 'COMPLETED',
+      successCount: 1,
+      failCount: 0,
+      periodStart: '2026-10-01',
+      periodEnd: '2026-10-16',
     })
-    expect(settlement.status).toBe('FAILED')
-    expect(canRetrySettlement(settlement)).toBe(true)
-    expect(canRetrySettlement({ ...settlement, status: 'COMPLETED' })).toBe(false)
   })
 })
 
