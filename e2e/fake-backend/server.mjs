@@ -1,5 +1,5 @@
 // E2E 전용 가짜 백엔드 (실제 백엔드 코드와 무관). 구현된 API의 응답 모양(DTO)만 흉내 낸다.
-// 상품 · 추천 · 정산 · 충전 취소는 FE 목(app/mocks)이 응답하므로 여기에는 없다.
+// 상품 · 추천 · 정산은 FE 목(app/mocks)이 응답하므로 여기에는 없다.
 // 응답 모양이 실제와 달라지면 FE 흐름 패널의 계약 검사로 드러난다.
 import http from 'node:http'
 
@@ -198,6 +198,21 @@ http
         chargeId: 77,
         status: 'DONE',
         amount: body.amount,
+        balance: wallets[me],
+      })
+    }
+    if ((x = r('POST', /^\/wallets\/me\/charges\/(\d+)\/cancel$/))) {
+      // BE ChargeCancelResponse: 끝나면 200 CANCELLED + 취소 후 잔액
+      const c = charges.find(
+        (c) => c.chargeId === +x[1] && c.memberId === me && c.status === 'DONE',
+      )
+      if (!c) return problem(res, 409, 'Conflict', '취소할 수 없는 충전이에요.')
+      c.status = 'CANCELLED'
+      wallets[me] = (wallets[me] ?? 0) - c.amount
+      return send(res, 200, {
+        chargeId: c.chargeId,
+        status: 'CANCELLED',
+        amount: c.amount,
         balance: wallets[me],
       })
     }

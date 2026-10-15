@@ -19,6 +19,13 @@ export const chargeConfirmShape = obj({
   balance: nullable(num),
 })
 
+export const chargeCancelShape = obj({
+  chargeId: num,
+  status: str,
+  amount: num,
+  balance: nullable(num),
+})
+
 export const walletTransactionPageShape = pageOf(
   obj({
     transactionId: num,

@@ -1,4 +1,4 @@
-import type { Charge } from '@/entities/wallet'
+import { isChargeCancelling, type Charge } from '@/entities/wallet'
 import { getErrorMessage } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
@@ -10,8 +10,14 @@ type CancelChargeButtonProps = { charge: Charge }
 export function CancelChargeButton({ charge }: CancelChargeButtonProps) {
   const cancel = useCancelCharge(charge.id)
 
-  if (cancel.isSuccess) {
-    return <StateMessage>취소 요청됨 (목 · 실제 잔액은 바뀌지 않아요)</StateMessage>
+  if (cancel.data) {
+    return (
+      <StateMessage>
+        {isChargeCancelling(cancel.data)
+          ? '토스 결과를 확인하는 중이에요. 충전 내역에서 상태를 확인해 주세요.'
+          : `취소했어요.${cancel.data.balance !== null ? ` 잔액 ${formatWon(cancel.data.balance)}` : ''}`}
+      </StateMessage>
+    )
   }
   return (
     <div className="flex items-center gap-2">

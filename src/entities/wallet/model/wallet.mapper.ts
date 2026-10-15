@@ -1,4 +1,5 @@
 import type {
+  ChargeCancelResultDto,
   ChargeDetailDto,
   ChargeRequestResultDto,
   ConfirmChargeRequestDto,
@@ -7,6 +8,7 @@ import type {
 } from '../api/wallet.dto'
 import type {
   Charge,
+  ChargeCancellation,
   ChargeConfirmation,
   ChargePayment,
   ChargeStatus,
@@ -28,6 +30,15 @@ export function toChargePayment(dto: ChargeRequestResultDto): ChargePayment {
 }
 
 export function toChargeConfirmation(dto: ConfirmChargeResultDto): ChargeConfirmation {
+  return {
+    chargeId: String(dto.chargeId),
+    status: dto.status as ChargeStatus,
+    amount: dto.amount,
+    balance: dto.balance,
+  }
+}
+
+export function toChargeCancellation(dto: ChargeCancelResultDto): ChargeCancellation {
   return {
     chargeId: String(dto.chargeId),
     status: dto.status as ChargeStatus,

@@ -28,6 +28,14 @@ export type ConfirmChargeResultDto = {
   balance: number | null
 }
 
+/** POST /wallets/me/charges/{chargeId}/cancel (BE ChargeCancelResponse). 200 = 취소 완료, 202 = 토스 결과 확인 중(balance null) */
+export type ChargeCancelResultDto = {
+  chargeId: number
+  status: string
+  amount: number
+  balance: number | null
+}
+
 /** GET /wallets/me/transactions 한 줄 (기획서 8장 보완 · BE 미구현 → 목, 모양은 BE WalletLedger) */
 export type WalletTransactionDto = {
   transactionId: number

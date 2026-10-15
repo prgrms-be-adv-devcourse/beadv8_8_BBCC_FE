@@ -4,6 +4,7 @@ export type { ChargeDetailDto, WalletTransactionDto } from './api/wallet.dto'
 export {
   CHARGE_STATUS_LABEL,
   type Charge,
+  type ChargeCancellation,
   type ChargeConfirmation,
   type ChargePayment,
   type ChargeStatus,
@@ -14,6 +15,7 @@ export {
 } from './model/wallet'
 export {
   toCharge,
+  toChargeCancellation,
   toChargeConfirmation,
   toChargePayment,
   toConfirmChargeRequest,
@@ -21,6 +23,7 @@ export {
 } from './model/wallet.mapper'
 export {
   canCancelCharge,
+  isChargeCancelling,
   CHARGE_MAX,
   CHARGE_MIN,
   isChargeConfirming,
