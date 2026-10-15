@@ -2,7 +2,9 @@ import { Badge } from '@/shared/ui/badge'
 import { Card } from '@/shared/ui/card'
 import { BODY_TYPE_LABEL, GENDER_LABEL, PREFERRED_FIT_LABEL, type Child } from '../model/child'
 
-export function ChildCard({ child }: { child: Child }) {
+type ChildCardProps = { child: Child }
+
+export function ChildCard({ child }: ChildCardProps) {
   return (
     <Card className="flex items-center justify-between">
       <div>

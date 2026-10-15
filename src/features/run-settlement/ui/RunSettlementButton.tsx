@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { getErrorMessage } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useRunSettlement } from '../model/use-run-settlement'
 
 export function RunSettlementButton() {

@@ -1,6 +1,6 @@
 import { env } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { kakaoAuthorizeUrl } from '../lib/kakao-authorize-url'
 
 /** 카카오 인가 화면으로 이동 → 돌아오면 KakaoCallback이 인가 코드로 로그인한다 */

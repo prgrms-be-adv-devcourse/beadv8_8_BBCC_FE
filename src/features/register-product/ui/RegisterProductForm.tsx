@@ -10,7 +10,7 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Input, Select } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { DEMO_PRODUCT, EMPTY_SIZE_ROW } from '../config/demo-product'
 import { useRegisterProduct } from '../model/use-register-product'
 
@@ -30,7 +30,7 @@ export function RegisterProductForm() {
       form.sizes.map((row, i) => (i === index ? { ...row, ...patch } : row)),
     )
 
-  const submit = (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const message = validateRegisterProductForm(form)
     setInvalid(message)
@@ -40,7 +40,7 @@ export function RegisterProductForm() {
   return (
     <Card>
       <CardTitle className="mb-3">상품 등록</CardTitle>
-      <form className="space-y-3" onSubmit={submit}>
+      <form className="space-y-3" onSubmit={handleSubmit}>
         <div className="grid grid-cols-4 gap-3">
           <Label className="col-span-2">
             상품명

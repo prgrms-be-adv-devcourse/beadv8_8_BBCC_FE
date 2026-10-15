@@ -1,10 +1,12 @@
 import type { ShippingAddress } from '@/entities/address'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useAddressActions } from '../model/use-manage-address'
 
-export function AddressActions({ address }: { address: ShippingAddress }) {
+type AddressActionsProps = { address: ShippingAddress }
+
+export function AddressActions({ address }: AddressActionsProps) {
   const { makeDefault, remove, pending, error } = useAddressActions(address.id)
 
   return (

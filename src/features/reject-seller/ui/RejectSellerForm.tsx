@@ -3,11 +3,13 @@ import { REJECT_REASON_MAX, validateRejectReason } from '@/entities/seller'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useRejectSeller } from '../model/use-reject-seller'
 
+type RejectSellerFormProps = { applicationId: string }
+
 /** 거절 버튼 → 사유 입력 → 거절하기 (사유는 신청한 회원에게 그대로 보인다) */
-export function RejectSellerForm({ applicationId }: { applicationId: string }) {
+export function RejectSellerForm({ applicationId }: RejectSellerFormProps) {
   const reject = useRejectSeller()
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState('')

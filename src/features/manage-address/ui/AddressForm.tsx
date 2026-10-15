@@ -10,16 +10,16 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { DEMO_ADDRESS } from '../config/demo-address'
 import { useRegisterAddress, useUpdateAddress } from '../model/use-manage-address'
 
-type Props = {
+type AddressFormProps = {
   /** 있으면 수정 모드 (전체 교체) */
   edit?: { address: ShippingAddress; onDone: () => void }
 }
 
-export function AddressForm({ edit }: Props = {}) {
+export function AddressForm({ edit }: AddressFormProps = {}) {
   const create = useRegisterAddress()
   const update = useUpdateAddress(edit?.address.id ?? '', { onDone: edit?.onDone })
   const register = edit ? update : create
@@ -28,7 +28,7 @@ export function AddressForm({ edit }: Props = {}) {
   )
   const [invalid, setInvalid] = useState<string | null>(null)
 
-  const submit = (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const message = validateAddressForm(form)
     setInvalid(message)
@@ -41,7 +41,7 @@ export function AddressForm({ edit }: Props = {}) {
   return (
     <Card>
       <CardTitle className="mb-3">{edit ? '배송지 수정' : '배송지 등록'}</CardTitle>
-      <form className="grid grid-cols-2 gap-3" onSubmit={submit}>
+      <form className="grid grid-cols-2 gap-3" onSubmit={handleSubmit}>
         <Label>
           받는 분
           <Input

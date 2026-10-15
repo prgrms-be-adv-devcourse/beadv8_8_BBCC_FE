@@ -1,17 +1,22 @@
 import { getErrorMessage } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import type { Wallet } from '../model/wallet'
 
-type Props = {
+type WalletBalanceCardProps = {
   title?: string
   wallet: Wallet | undefined
   pending: boolean
   error: unknown
 }
 
-export function WalletBalanceCard({ title = '잔액', wallet, pending, error }: Props) {
+export function WalletBalanceCard({
+  title = '잔액',
+  wallet,
+  pending,
+  error,
+}: WalletBalanceCardProps) {
   return (
     <Card>
       <p className="text-muted-foreground text-sm">{title}</p>

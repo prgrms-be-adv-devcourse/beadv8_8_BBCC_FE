@@ -4,17 +4,17 @@ import type { Order } from '@/entities/order'
 import { getErrorMessage } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { usePlaceOrder } from '../model/use-place-order'
 
-type Props = {
+type PlaceOrderButtonProps = {
   lines: CartLine[]
   address: ShippingAddress | null
   totalAmount: number
   onPlaced: (order: Order) => void
 }
 
-export function PlaceOrderButton({ lines, address, totalAmount, onPlaced }: Props) {
+export function PlaceOrderButton({ lines, address, totalAmount, onPlaced }: PlaceOrderButtonProps) {
   const place = usePlaceOrder({ onPlaced })
 
   return (

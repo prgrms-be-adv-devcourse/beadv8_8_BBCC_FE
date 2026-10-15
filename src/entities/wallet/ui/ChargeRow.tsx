@@ -3,7 +3,9 @@ import { formatDateTime, formatWon } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { CHARGE_STATUS_LABEL, type Charge } from '../model/wallet'
 
-export function ChargeRow({ charge, action }: { charge: Charge; action?: ReactNode }) {
+type ChargeRowProps = { charge: Charge; action?: ReactNode }
+
+export function ChargeRow({ charge, action }: ChargeRowProps) {
   return (
     <div className="flex items-center justify-between border-t pt-2 text-sm">
       <span>

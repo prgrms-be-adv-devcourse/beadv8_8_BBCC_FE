@@ -4,14 +4,14 @@ import { formatWon } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { ITEM_STATUS_LABEL, type OrderDelivery, type OrderItem } from '../model/order'
 
-type Props = {
+type OrderItemRowProps = {
   item: OrderItem
   delivery: OrderDelivery | null
   /** 오른쪽 동작 (예: 구매확정 버튼) */
   action?: ReactNode
 }
 
-export function OrderItemRow({ item, delivery, action }: Props) {
+export function OrderItemRow({ item, delivery, action }: OrderItemRowProps) {
   return (
     <div className="flex items-center justify-between border-t pt-2 text-sm">
       <div>

@@ -1,9 +1,11 @@
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useRetrySettlement } from '../model/use-retry-settlement'
 
-export function RetrySettlementButton({ settlementId }: { settlementId: string }) {
+type RetrySettlementButtonProps = { settlementId: string }
+
+export function RetrySettlementButton({ settlementId }: RetrySettlementButtonProps) {
   const retry = useRetrySettlement(settlementId)
   return (
     <span className="flex items-center gap-2">

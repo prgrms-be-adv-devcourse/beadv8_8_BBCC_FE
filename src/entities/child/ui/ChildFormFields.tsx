@@ -10,7 +10,7 @@ import {
   type PreferredFit,
 } from '../model/child'
 
-type Props = {
+type ChildFormFieldsProps = {
   form: ChildForm
   onChange: (form: ChildForm) => void
   /** 폼 아래 버튼 · 안내 */
@@ -18,7 +18,7 @@ type Props = {
 }
 
 /** 자녀 입력 칸 (등록 · 수정이 같이 쓴다). 값과 검증은 부르는 쪽이 갖는다 */
-export function ChildFormFields({ form, onChange, footer }: Props) {
+export function ChildFormFields({ form, onChange, footer }: ChildFormFieldsProps) {
   const set = <K extends keyof ChildForm>(key: K, value: ChildForm[K]) =>
     onChange({ ...form, [key]: value })
 

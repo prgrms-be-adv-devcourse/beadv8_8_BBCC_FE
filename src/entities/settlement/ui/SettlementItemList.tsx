@@ -1,7 +1,9 @@
 import { formatDateTime, formatWon } from '@/shared/lib'
 import type { SettlementDetail } from '../model/settlement'
 
-export function SettlementItemList({ items }: { items: SettlementDetail['items'] }) {
+type SettlementItemListProps = { items: SettlementDetail['items'] }
+
+export function SettlementItemList({ items }: SettlementItemListProps) {
   return (
     <ul className="text-muted-foreground mt-1 list-disc pl-5 text-xs">
       {items.map((item) => (

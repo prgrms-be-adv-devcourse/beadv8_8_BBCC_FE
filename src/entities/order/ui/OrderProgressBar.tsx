@@ -1,9 +1,9 @@
 import { cn } from '@/shared/lib'
 
-type Props = { steps: readonly string[]; current: number; cancelled: boolean }
+type OrderProgressBarProps = { steps: readonly string[]; current: number; cancelled: boolean }
 
 /** 주문 → 결제 완료 → 배송 중 → 배송 완료 → 구매확정 진행 막대 (값은 orderProgress) */
-export function OrderProgressBar({ steps, current, cancelled }: Props) {
+export function OrderProgressBar({ steps, current, cancelled }: OrderProgressBarProps) {
   if (cancelled) {
     return (
       <p className="bg-destructive/10 text-destructive rounded-lg p-3 text-center text-sm font-semibold">

@@ -1,9 +1,11 @@
 import { carrierName, DELIVERY_STATUS_LABEL } from '@/shared/config'
 import { Badge } from '@/shared/ui/badge'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import type { Order } from '../model/order'
 
-export function OrderDeliveryList({ order }: { order: Order }) {
+type OrderDeliveryListProps = { order: Order }
+
+export function OrderDeliveryList({ order }: OrderDeliveryListProps) {
   return (
     <>
       {order.deliveries.length === 0 && (

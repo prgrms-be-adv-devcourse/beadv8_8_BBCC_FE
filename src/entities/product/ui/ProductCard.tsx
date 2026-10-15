@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { formatWon } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 
-type Props = {
+type ProductCardProps = {
   to: string
   name: string
   meta: string
@@ -12,7 +12,7 @@ type Props = {
   badge?: ReactNode
 }
 
-export function ProductCard({ to, name, meta, price, badge }: Props) {
+export function ProductCard({ to, name, meta, price, badge }: ProductCardProps) {
   return (
     <Link to={to}>
       <Card className="hover:border-primary space-y-2 transition-colors">

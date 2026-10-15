@@ -3,11 +3,13 @@ import { BODY_TYPE_LABEL, type BodyType, type GrowthRecord } from '@/entities/ch
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Input, Select } from '@/shared/ui/input'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUpdateGrowthRecord } from '../model/use-edit-child'
 
+type EditGrowthRecordProps = { childId: string; record: GrowthRecord }
+
 /** 성장 이력 한 줄 수정 (기획서 8장 보완 · 목) */
-export function EditGrowthRecord({ childId, record }: { childId: string; record: GrowthRecord }) {
+export function EditGrowthRecord({ childId, record }: EditGrowthRecordProps) {
   const update = useUpdateGrowthRecord(childId)
   const [open, setOpen] = useState(false)
   const [heightCm, setHeightCm] = useState(record.heightCm)

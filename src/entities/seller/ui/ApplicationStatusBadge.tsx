@@ -1,7 +1,9 @@
 import { Badge } from '@/shared/ui/badge'
 import { APPLICATION_STATUS_LABEL, type SellerApplicationStatus } from '../model/seller'
 
-export function ApplicationStatusBadge({ status }: { status: SellerApplicationStatus }) {
+type ApplicationStatusBadgeProps = { status: SellerApplicationStatus }
+
+export function ApplicationStatusBadge({ status }: ApplicationStatusBadgeProps) {
   return (
     <Badge
       variant={

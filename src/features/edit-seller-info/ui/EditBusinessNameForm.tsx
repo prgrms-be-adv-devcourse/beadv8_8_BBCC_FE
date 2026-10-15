@@ -3,21 +3,23 @@ import { BUSINESS_NAME_MAX, validateBusinessName } from '@/entities/seller'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUpdateBusinessName } from '../model/use-edit-seller-info'
 
-export function EditBusinessNameForm({ current, onDone }: { current: string; onDone: () => void }) {
+type EditBusinessNameFormProps = { current: string; onDone: () => void }
+
+export function EditBusinessNameForm({ current, onDone }: EditBusinessNameFormProps) {
   const update = useUpdateBusinessName()
   const [name, setName] = useState(current)
   const invalid = validateBusinessName(name)
 
-  const submit = (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (!invalid) update.mutate(name, { onSuccess: onDone })
   }
 
   return (
-    <form className="flex flex-wrap items-center gap-2" onSubmit={submit}>
+    <form className="flex flex-wrap items-center gap-2" onSubmit={handleSubmit}>
       <Input
         aria-label="상호명"
         className="w-60"

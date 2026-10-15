@@ -3,6 +3,8 @@ import { ORDER_STATUS_LABEL, type OrderStatus } from '../model/order'
 
 const VARIANT = { PENDING_PAYMENT: 'default', PAID: 'success', CANCELLED: 'destructive' } as const
 
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
+type OrderStatusBadgeProps = { status: OrderStatus }
+
+export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
   return <Badge variant={VARIANT[status]}>{ORDER_STATUS_LABEL[status]}</Badge>
 }

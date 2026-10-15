@@ -79,15 +79,13 @@ export function ApiFlowPanel() {
   )
 }
 
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
+type TabButtonProps = {
   active: boolean
   onClick: () => void
   children: ReactNode
-}) {
+}
+
+function TabButton({ active, onClick, children }: TabButtonProps) {
   return (
     <button
       type="button"
@@ -102,7 +100,9 @@ function TabButton({
   )
 }
 
-function CallList({ logs }: { logs: ApiCallLog[] }) {
+type CallListProps = { logs: ApiCallLog[] }
+
+function CallList({ logs }: CallListProps) {
   if (logs.length === 0) {
     return (
       <p className="text-muted-foreground p-2 text-xs">
@@ -119,7 +119,9 @@ function CallList({ logs }: { logs: ApiCallLog[] }) {
   )
 }
 
-function ApiCallRow({ log }: { log: ApiCallLog }) {
+type ApiCallRowProps = { log: ApiCallLog }
+
+function ApiCallRow({ log }: ApiCallRowProps) {
   const [open, setOpen] = useState(false)
   const steps = followingSteps(log)
 
@@ -162,7 +164,9 @@ function ApiCallRow({ log }: { log: ApiCallLog }) {
   )
 }
 
-function ChangeList({ changes }: { changes: StateChange[] }) {
+type ChangeListProps = { changes: StateChange[] }
+
+function ChangeList({ changes }: ChangeListProps) {
   const visible = changes.filter((change) => change.from !== null)
   if (visible.length === 0) {
     return (
@@ -199,7 +203,9 @@ function ChangeList({ changes }: { changes: StateChange[] }) {
   )
 }
 
-function ContractList({ logs }: { logs: ApiCallLog[] }) {
+type ContractListProps = { logs: ApiCallLog[] }
+
+function ContractList({ logs }: ContractListProps) {
   if (logs.length === 0) {
     return (
       <p className="text-muted-foreground p-2 text-xs">
@@ -229,7 +235,9 @@ const ISSUE_LABEL = {
   extra: '추가 필드',
 } as const
 
-function IssueList({ log }: { log: ApiCallLog }) {
+type IssueListProps = { log: ApiCallLog }
+
+function IssueList({ log }: IssueListProps) {
   return (
     <ul className="space-y-0.5">
       {log.contractIssues.map((issue) => (
@@ -282,7 +290,9 @@ const DOMAIN_NAME: Record<DomainId, string> = {
   kakao: '카카오',
 }
 
-function FlowSteps({ steps }: { steps: FlowStep[] }) {
+type FlowStepsProps = { steps: FlowStep[] }
+
+function FlowSteps({ steps }: FlowStepsProps) {
   return (
     <div className="mx-2 mb-2 rounded border border-dashed p-1.5">
       <div className="text-muted-foreground mb-1 text-[11px]">
@@ -303,7 +313,9 @@ function FlowSteps({ steps }: { steps: FlowStep[] }) {
   )
 }
 
-function JsonBlock({ label, value }: { label: string; value: unknown }) {
+type JsonBlockProps = { label: string; value: unknown }
+
+function JsonBlock({ label, value }: JsonBlockProps) {
   if (value === null || value === '') {
     return null
   }

@@ -1,9 +1,9 @@
 import type { ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router'
-import { NotFoundPage } from '@/pages/not-found'
+import { NotFoundPage } from '@/pages/common/not-found'
 import { paths } from '@/shared/config'
 import { ConsoleLayout } from '../layouts/ConsoleLayout'
-import { RouteFallback } from '../layouts/SessionGate'
+import { RouteFallback } from '../layouts/RouteFallback'
 import { ShopLayout } from '../layouts/ShopLayout'
 import { WorkspaceLayout } from '../layouts/WorkspaceLayout'
 
@@ -13,56 +13,62 @@ import { WorkspaceLayout } from '../layouts/WorkspaceLayout'
 type LazyPage = () => Promise<{ Component: ComponentType }>
 const page = (load: LazyPage) => ({ lazy: load })
 
-const login = page(() => import('@/pages/login').then((m) => ({ Component: m.LoginPage })))
+const login = page(() => import('@/pages/common/login').then((m) => ({ Component: m.LoginPage })))
 const kakaoCallback = page(() =>
-  import('@/pages/kakao-callback').then((m) => ({ Component: m.KakaoCallbackPage })),
+  import('@/pages/common/kakao-callback').then((m) => ({ Component: m.KakaoCallbackPage })),
 )
-const children = page(() => import('@/pages/children').then((m) => ({ Component: m.ChildrenPage })))
+const children = page(() =>
+  import('@/pages/shop/children').then((m) => ({ Component: m.ShopChildrenPage })),
+)
 const childDetail = page(() =>
-  import('@/pages/child-detail').then((m) => ({ Component: m.ChildDetailPage })),
+  import('@/pages/shop/child-detail').then((m) => ({ Component: m.ShopChildDetailPage })),
 )
-const profile = page(() => import('@/pages/profile').then((m) => ({ Component: m.ProfilePage })))
+const profile = page(() =>
+  import('@/pages/shop/profile').then((m) => ({ Component: m.ShopProfilePage })),
+)
 const addresses = page(() =>
-  import('@/pages/addresses').then((m) => ({ Component: m.AddressesPage })),
+  import('@/pages/shop/addresses').then((m) => ({ Component: m.ShopAddressesPage })),
 )
-const wallet = page(() => import('@/pages/wallet').then((m) => ({ Component: m.WalletPage })))
+const wallet = page(() =>
+  import('@/pages/shop/wallet').then((m) => ({ Component: m.ShopWalletPage })),
+)
 const chargeSuccess = page(() =>
-  import('@/pages/charge-result').then((m) => ({ Component: m.ChargeSuccessPage })),
+  import('@/pages/shop/charge-result').then((m) => ({ Component: m.ShopChargeSuccessPage })),
 )
 const chargeFail = page(() =>
-  import('@/pages/charge-result').then((m) => ({ Component: m.ChargeFailPage })),
+  import('@/pages/shop/charge-result').then((m) => ({ Component: m.ShopChargeFailPage })),
 )
-const sellerApply = page(() =>
-  import('@/pages/seller-apply').then((m) => ({ Component: m.SellerApplyPage })),
+const centerApply = page(() =>
+  import('@/pages/center/apply').then((m) => ({ Component: m.CenterApplyPage })),
 )
-const sellerProducts = page(() =>
-  import('@/pages/seller-products').then((m) => ({ Component: m.SellerProductsPage })),
+const centerProducts = page(() =>
+  import('@/pages/center/products').then((m) => ({ Component: m.CenterProductsPage })),
 )
-const sellerOrders = page(() =>
-  import('@/pages/seller-orders').then((m) => ({ Component: m.SellerOrdersPage })),
+const centerOrders = page(() =>
+  import('@/pages/center/orders').then((m) => ({ Component: m.CenterOrdersPage })),
 )
-const sellerSettlements = page(() =>
-  import('@/pages/seller-settlements').then((m) => ({ Component: m.SellerSettlementsPage })),
+const centerSettlements = page(() =>
+  import('@/pages/center/settlements').then((m) => ({ Component: m.CenterSettlementsPage })),
 )
 const adminSellerApplications = page(() =>
-  import('@/pages/admin-seller-applications').then((m) => ({
+  import('@/pages/admin/seller-applications').then((m) => ({
     Component: m.AdminSellerApplicationsPage,
   })),
 )
 const adminMembers = page(() =>
-  import('@/pages/admin-members').then((m) => ({ Component: m.AdminMembersPage })),
+  import('@/pages/admin/members').then((m) => ({ Component: m.AdminMembersPage })),
 )
 const adminProducts = page(() =>
-  import('@/pages/admin-products').then((m) => ({ Component: m.AdminProductsPage })),
+  import('@/pages/admin/products').then((m) => ({ Component: m.AdminProductsPage })),
 )
 const adminOrders = page(() =>
-  import('@/pages/admin-orders').then((m) => ({ Component: m.AdminOrdersPage })),
+  import('@/pages/admin/orders').then((m) => ({ Component: m.AdminOrdersPage })),
 )
 const adminPayments = page(() =>
-  import('@/pages/admin-payments').then((m) => ({ Component: m.AdminPaymentsPage })),
+  import('@/pages/admin/payments').then((m) => ({ Component: m.AdminPaymentsPage })),
 )
 const adminSettlements = page(() =>
-  import('@/pages/admin-settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
+  import('@/pages/admin/settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
 )
 
 /** 주소에서 앞의 영역 접두어를 뗀 상대 경로 */
@@ -76,35 +82,35 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        ...page(() => import('@/pages/shop-home').then((m) => ({ Component: m.ShopHomePage }))),
+        ...page(() => import('@/pages/shop/home').then((m) => ({ Component: m.ShopHomePage }))),
       },
       { path: rel('', paths.login), ...login },
       { path: rel('', paths.kakaoCallback), ...kakaoCallback },
       {
         path: 'products/:productId',
         ...page(() =>
-          import('@/pages/shop-product-detail').then((m) => ({
+          import('@/pages/shop/product-detail').then((m) => ({
             Component: m.ShopProductDetailPage,
           })),
         ),
       },
       {
         path: rel('', paths.shop.cart),
-        ...page(() => import('@/pages/shop-cart').then((m) => ({ Component: m.ShopCartPage }))),
+        ...page(() => import('@/pages/shop/cart').then((m) => ({ Component: m.ShopCartPage }))),
       },
       {
         path: rel('', paths.shop.orders),
-        ...page(() => import('@/pages/shop-orders').then((m) => ({ Component: m.ShopOrdersPage }))),
+        ...page(() => import('@/pages/shop/orders').then((m) => ({ Component: m.ShopOrdersPage }))),
       },
       {
         path: 'orders/:orderId',
         ...page(() =>
-          import('@/pages/shop-order-detail').then((m) => ({ Component: m.ShopOrderDetailPage })),
+          import('@/pages/shop/order-detail').then((m) => ({ Component: m.ShopOrderDetailPage })),
         ),
       },
       {
         path: rel('', paths.shop.my),
-        ...page(() => import('@/pages/shop-my').then((m) => ({ Component: m.ShopMyPage }))),
+        ...page(() => import('@/pages/shop/my').then((m) => ({ Component: m.ShopMyPage }))),
       },
       { path: rel('', paths.shop.children), ...children },
       { path: 'my/children/:childId', ...childDetail },
@@ -137,12 +143,12 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        ...page(() => import('@/pages/center-home').then((m) => ({ Component: m.CenterHomePage }))),
+        ...page(() => import('@/pages/center/home').then((m) => ({ Component: m.CenterHomePage }))),
       },
-      { path: rel(paths.center.home, paths.center.apply), ...sellerApply },
-      { path: rel(paths.center.home, paths.center.products), ...sellerProducts },
-      { path: rel(paths.center.home, paths.center.orders), ...sellerOrders },
-      { path: rel(paths.center.home, paths.center.settlements), ...sellerSettlements },
+      { path: rel(paths.center.home, paths.center.apply), ...centerApply },
+      { path: rel(paths.center.home, paths.center.products), ...centerProducts },
+      { path: rel(paths.center.home, paths.center.orders), ...centerOrders },
+      { path: rel(paths.center.home, paths.center.settlements), ...centerSettlements },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
@@ -181,11 +187,15 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        ...page(() => import('@/pages/home').then((m) => ({ Component: m.HomePage }))),
+        ...page(() =>
+          import('@/pages/console/home').then((m) => ({ Component: m.ConsoleHomePage })),
+        ),
       },
       {
         path: rel(paths.console.home, paths.console.verify),
-        ...page(() => import('@/pages/verify').then((m) => ({ Component: m.VerifyPage }))),
+        ...page(() =>
+          import('@/pages/console/verify').then((m) => ({ Component: m.ConsoleVerifyPage })),
+        ),
       },
       { path: rel(paths.console.home, paths.console.children), ...children },
       { path: 'children/:childId', ...childDetail },
@@ -193,35 +203,45 @@ export const router = createBrowserRouter([
       { path: rel(paths.console.home, paths.console.addresses), ...addresses },
       {
         path: rel(paths.console.home, paths.console.products),
-        ...page(() => import('@/pages/products').then((m) => ({ Component: m.ProductsPage }))),
+        ...page(() =>
+          import('@/pages/console/products').then((m) => ({ Component: m.ConsoleProductsPage })),
+        ),
       },
       {
         path: 'products/:productId',
         ...page(() =>
-          import('@/pages/product-detail').then((m) => ({ Component: m.ProductDetailPage })),
+          import('@/pages/console/product-detail').then((m) => ({
+            Component: m.ConsoleProductDetailPage,
+          })),
         ),
       },
       {
         path: rel(paths.console.home, paths.console.cart),
-        ...page(() => import('@/pages/cart').then((m) => ({ Component: m.CartPage }))),
+        ...page(() =>
+          import('@/pages/console/cart').then((m) => ({ Component: m.ConsoleCartPage })),
+        ),
       },
       {
         path: rel(paths.console.home, paths.console.orders),
-        ...page(() => import('@/pages/orders').then((m) => ({ Component: m.OrdersPage }))),
+        ...page(() =>
+          import('@/pages/console/orders').then((m) => ({ Component: m.ConsoleOrdersPage })),
+        ),
       },
       {
         path: 'orders/:orderId',
         ...page(() =>
-          import('@/pages/order-detail').then((m) => ({ Component: m.OrderDetailPage })),
+          import('@/pages/console/order-detail').then((m) => ({
+            Component: m.ConsoleOrderDetailPage,
+          })),
         ),
       },
       { path: rel(paths.console.home, paths.console.wallet), ...wallet },
       { path: rel(paths.console.home, paths.console.chargeSuccess), ...chargeSuccess },
       { path: rel(paths.console.home, paths.console.chargeFail), ...chargeFail },
-      { path: rel(paths.console.home, paths.console.sellerApply), ...sellerApply },
-      { path: rel(paths.console.home, paths.console.sellerProducts), ...sellerProducts },
-      { path: rel(paths.console.home, paths.console.sellerOrders), ...sellerOrders },
-      { path: rel(paths.console.home, paths.console.sellerSettlements), ...sellerSettlements },
+      { path: rel(paths.console.home, paths.console.sellerApply), ...centerApply },
+      { path: rel(paths.console.home, paths.console.sellerProducts), ...centerProducts },
+      { path: rel(paths.console.home, paths.console.sellerOrders), ...centerOrders },
+      { path: rel(paths.console.home, paths.console.sellerSettlements), ...centerSettlements },
       {
         path: rel(paths.console.home, paths.console.adminSellerApplications),
         ...adminSellerApplications,

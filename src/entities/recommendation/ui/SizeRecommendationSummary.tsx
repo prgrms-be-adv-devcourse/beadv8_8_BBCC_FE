@@ -2,11 +2,11 @@ import { Badge } from '@/shared/ui/badge'
 import type { SizeRecommendation } from '../model/recommendation'
 import { FitBadge } from './FitBadge'
 
-export function SizeRecommendationSummary({
-  recommendation,
-}: {
+type SizeRecommendationSummaryProps = {
   recommendation: SizeRecommendation
-}) {
+}
+
+export function SizeRecommendationSummary({ recommendation }: SizeRecommendationSummaryProps) {
   return (
     <div className="space-y-1">
       <p>

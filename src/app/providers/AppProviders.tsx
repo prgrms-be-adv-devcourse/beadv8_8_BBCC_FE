@@ -6,7 +6,9 @@ import { queryClient } from './query-client'
 
 let restoreStarted = false
 
-export function AppProviders({ children }: { children: ReactNode }) {
+type AppProvidersProps = { children: ReactNode }
+
+export function AppProviders({ children }: AppProvidersProps) {
   useEffect(() => {
     // StrictMode에서 effect가 두 번 실행돼도 복원은 한 번만
     if (!restoreStarted) {

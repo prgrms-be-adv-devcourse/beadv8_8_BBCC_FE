@@ -1,8 +1,10 @@
 import { cn, formatDateTime, formatWon } from '@/shared/lib'
 import { WALLET_TX_LABEL, type WalletTransaction } from '../model/wallet'
 
+type WalletTransactionListProps = { transactions: WalletTransaction[] }
+
 /** 예치금 거래 내역: 종류 · 금액(+/−) · 거래 뒤 잔액 (최신이 위) */
-export function WalletTransactionList({ transactions }: { transactions: WalletTransaction[] }) {
+export function WalletTransactionList({ transactions }: WalletTransactionListProps) {
   return (
     <ol className="space-y-1">
       {transactions.map((tx) => (

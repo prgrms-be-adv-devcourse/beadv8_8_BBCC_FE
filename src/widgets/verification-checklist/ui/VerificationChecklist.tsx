@@ -62,7 +62,9 @@ export function VerificationChecklist() {
   )
 }
 
-function Counts({ rows, action }: { rows: Row[]; action?: ReactNode }) {
+type CountsProps = { rows: Row[]; action?: ReactNode }
+
+function Counts({ rows, action }: CountsProps) {
   const count = (state: string) => rows.filter(({ result }) => result.state === state).length
   return (
     <div className="flex items-center gap-2 text-sm">
@@ -75,7 +77,9 @@ function Counts({ rows, action }: { rows: Row[]; action?: ReactNode }) {
   )
 }
 
-function CheckRows({ rows }: { rows: Row[] }) {
+type CheckRowsProps = { rows: Row[] }
+
+function CheckRows({ rows }: CheckRowsProps) {
   return rows.map(({ check, result }) => (
     <Card
       key={check.id}

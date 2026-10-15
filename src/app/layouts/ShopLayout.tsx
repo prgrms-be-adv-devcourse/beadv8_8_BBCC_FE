@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router'
 import { ShopHeader } from '@/widgets/shop-header'
-import { DemoBarWithFlowDrawer } from './FlowDrawer'
+import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { SessionGate } from './SessionGate'
 
 /** 쇼핑(보호자): 일반 쇼핑몰 화면. API 흐름은 시연 막대의 버튼으로 연다 */
