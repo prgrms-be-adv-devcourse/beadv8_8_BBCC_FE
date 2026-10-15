@@ -1,0 +1,55 @@
+name: Deploy
+
+# 배포 이미지(Nginx + 정적 파일)를 만든다.
+# - PR: 이미지가 빌드되는지만 확인 (올리지 않음)
+# - main 머지 · 수동 실행: GHCR에 올림 (ghcr.io/<저장소>:latest · :<커밋>)
+# - EC2 반영(SSH → docker compose pull · up)은 서버 정보 · 배포 compose가 정해지면 아래 deploy 잡에 붙인다
+# 빌드 값은 저장소 Variables(Settings → Secrets and variables → Actions → Variables)에서 읽는다.
+# 모두 화면에 그대로 들어가는 공개 값이다. 비밀 값(토스 시크릿 키 · pem 등)은 여기 넣지 않는다
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths: ['Dockerfile', '.dockerignore', 'deploy/**', '.github/workflows/deploy.yml']
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 이미지 이름 (GHCR은 소문자)
+        id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        if: github.event_name != 'pull_request'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ steps.name.outputs.image }}:latest
+            ${{ steps.name.outputs.image }}:${{ github.sha }}
+          build-args: |
+            VITE_USE_MOCK=${{ vars.VITE_USE_MOCK || 'true' }}
+            VITE_DEMO_ROLE_SWITCH=${{ vars.VITE_DEMO_ROLE_SWITCH || 'true' }}
+            VITE_TOSS_CLIENT_KEY=${{ vars.VITE_TOSS_CLIENT_KEY }}
+            VITE_KAKAO_CLIENT_ID=${{ vars.VITE_KAKAO_CLIENT_ID }}
+            VITE_KAKAO_REDIRECT_URI=${{ vars.VITE_KAKAO_REDIRECT_URI }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,59 @@
+# Kidly 프론트 Nginx (공식 이미지가 시작할 때 ${API_UPSTREAM} · ${NGINX_RESOLVER}를 채운다)
+# - 정적 파일: 새로고침 · 직접 주소 입력도 index.html로 (SPA)
+# - /api: 같은 주소로 받아 백엔드로 넘긴다 → CORS 없음, 리프레시 토큰 쿠키(SameSite=Lax) 그대로
+# - HTTPS는 앞단(호스트 Nginx + Certbot 등)에서 끝내고 이 컨테이너는 80만 연다
+
+# 앞단에서 HTTPS를 끝냈으면 그 값을, 아니면 이 연결의 scheme을 백엔드에 넘긴다
+map $http_x_forwarded_proto $forwarded_proto {
+    default $http_x_forwarded_proto;
+    ''      $scheme;
+}
+
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    client_max_body_size 10m;
+    server_tokens off;
+
+    gzip on;
+    gzip_min_length 1024;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # 백엔드 컨테이너가 늦게 떠도 Nginx가 먼저 뜰 수 있게 요청 때 이름을 찾는다
+    resolver ${NGINX_RESOLVER} valid=10s ipv6=off;
+
+    location /api/ {
+        set $api_upstream ${API_UPSTREAM};
+        proxy_pass $api_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_read_timeout 60s;
+    }
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 'ok';
+    }
+
+    # 파일 이름에 해시가 붙은 번들: 오래 캐시
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # 새 배포가 바로 보이게 index.html은 캐시하지 않는다
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

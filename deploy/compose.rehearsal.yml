@@ -1,0 +1,20 @@
+# 배포 리허설: 배포와 같은 FE 이미지(Nginx)를 내 PC에서 띄워, 로컬 백엔드(8080)와 같은 주소로 붙여 본다
+#   docker compose -f deploy/compose.rehearsal.yml up --build
+#   → http://localhost:8081 (API는 /api → 호스트의 8080)
+# 백엔드는 따로 띄운다 (BE 저장소의 docker-compose + bootRun). 개발 토큰(local 프로필)이 있으면 시연 역할 전환도 된다
+services:
+  fe:
+    build:
+      context: ..
+      args:
+        VITE_USE_MOCK: 'true'
+        VITE_DEMO_ROLE_SWITCH: 'true'
+        VITE_TOSS_CLIENT_KEY: ${VITE_TOSS_CLIENT_KEY:-}
+        VITE_KAKAO_CLIENT_ID: ${VITE_KAKAO_CLIENT_ID:-}
+        VITE_KAKAO_REDIRECT_URI: http://localhost:8081/oauth/kakao/callback
+    environment:
+      API_UPSTREAM: http://host.docker.internal:8080
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    ports:
+      - '8081:80'

@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.github
+.idea
+.vscode
+Claude outputs
+test-results
+playwright-report
+blob-report
+tests
+e2e
+scripts
+.env
+.env.*
+!.env.example
+*.log

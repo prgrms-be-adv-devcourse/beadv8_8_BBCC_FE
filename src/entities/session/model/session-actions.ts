@@ -1,4 +1,5 @@
 import { reissueAccessToken } from '@/shared/api'
+import { env } from '@/shared/config'
 import { sessionApi } from '../api/session-api'
 import { loadDemoAccount, saveDemoAccount } from './demo-storage'
 import type { DemoAccount } from './session'
@@ -46,7 +47,8 @@ export async function restoreSession() {
   try {
     await signIn(await reissueAccessToken())
   } catch {
-    const account = loadDemoAccount()
+    // 시연 역할 전환을 끈 배포(개발 토큰 없음)에서는 기억한 시연 계정으로 다시 받지 않는다
+    const account = env.demoRoleSwitch ? loadDemoAccount() : null
     try {
       if (account) {
         await signInAsDemo(account)

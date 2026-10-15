@@ -1,6 +1,8 @@
 export const env = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL ?? '',
   isDev: import.meta.env.DEV,
+  /** 시연 역할 전환(개발용 토큰). 개발 토큰이 없는 서버면 false로 빌드 → 카카오 로그인만 */
+  demoRoleSwitch: import.meta.env.VITE_DEMO_ROLE_SWITCH !== 'false',
   tossClientKey: import.meta.env.VITE_TOSS_CLIENT_KEY ?? '',
   kakaoClientId: import.meta.env.VITE_KAKAO_CLIENT_ID ?? '',
   kakaoRedirectUri:

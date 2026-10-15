@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router'
 import { describeUser, useSessionStore } from '@/entities/session'
 import { LogoutButton } from '@/features/logout'
 import { SwitchDemoRole } from '@/features/switch-demo-role'
-import { AREA_LABEL, paths, type Area } from '@/shared/config'
+import { AREA_LABEL, env, paths, type Area } from '@/shared/config'
 import { cn, useArea } from '@/shared/lib'
 
 const AREA_HOME: Record<Area, string> = {
@@ -39,9 +39,11 @@ export function DemoBar({ actions }: DemoBarProps) {
         ))}
       </nav>
       <div className="ml-auto flex items-center gap-3 [&_button]:h-7">
-        <div className="rounded-md bg-white px-1 py-0.5 text-slate-900">
-          <SwitchDemoRole />
-        </div>
+        {env.demoRoleSwitch && (
+          <div className="rounded-md bg-white px-1 py-0.5 text-slate-900">
+            <SwitchDemoRole />
+          </div>
+        )}
         <span className="text-xs">
           {status === 'restoring' ? '로그인 확인 중…' : user ? describeUser(user) : '로그인 전'}
         </span>
