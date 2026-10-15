@@ -5,6 +5,7 @@ export type MemberFilter = 'ALL' | 'BUYER' | 'SELLER' | 'SUSPENDED'
 export type AdminMember = {
   id: string
   nickname: string
+  email: string | null
   status: MemberStatus
   sellerStatus: 'ACTIVE' | 'SUSPENDED' | null
   suspendReason: string | null

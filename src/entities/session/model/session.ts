@@ -13,6 +13,8 @@ export type SessionUser = {
 export type Member = {
   id: string
   nickname: string
+  /** 카카오 이메일. 없으면 null */
+  email: string | null
   roles: Role[]
   /** 판매자가 아니면 null. 정지되면 SUSPENDED이고 roles에 SELLER가 없다 */
   sellerStatus: SellerStatus | null

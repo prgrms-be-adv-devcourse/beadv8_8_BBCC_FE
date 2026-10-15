@@ -5,6 +5,8 @@ export type TokenResponseDto = { accessToken: string }
 export type MemberDto = {
   id: number
   nickname: string
+  /** 가입 때 받은 카카오 이메일 (BE #242). 이메일을 받기 전에 가입했거나 개발용 토큰 회원은 null */
+  email?: string | null
   roles: string[]
   sellerStatus: string | null
   providers: string[]

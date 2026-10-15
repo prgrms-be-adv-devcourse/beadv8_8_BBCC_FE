@@ -29,6 +29,7 @@ export function ShopProfilePage() {
           역할 {user.roles.map((role) => ROLE_LABEL[role]).join(' · ')}
           {member && ` · 로그인 ${member.providers.join(' · ') || '개발용 토큰'}`}
         </p>
+        {member?.email && <p className="text-muted-foreground">이메일 {member.email}</p>}
       </Card>
       <Card>
         <CardTitle className="mb-3">닉네임</CardTitle>
