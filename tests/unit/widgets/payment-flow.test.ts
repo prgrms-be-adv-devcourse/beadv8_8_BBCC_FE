@@ -85,6 +85,17 @@ describe('흐름 확인: 결제 도메인 결제 기록', () => {
     ).toBe('fail')
   })
 
+  it('다른 회원이 나중에 결제 목록을 조회해도 주문한 회원의 결제 목록으로 판단한다', () => {
+    const result = evaluate(check, [
+      log({ actor: '1', path: '/orders/6', responseBody: paidOrder }),
+      log({ actor: '1', path: '/payments', responseBody: paymentPage(completed) }),
+      // 역할 전환 뒤 같은 화면이 판매자 토큰으로 다시 조회
+      log({ actor: '2', path: '/orders/6', responseBody: paidOrder }),
+      log({ actor: '2', path: '/payments', responseBody: paymentPage() }),
+    ])
+    expect(result.state).toBe('pass')
+  })
+
   it('결제 완료 주문이나 결제 목록 조회가 없으면 대기', () => {
     expect(evaluate(check, [log({ path: '/orders/6', responseBody: paidOrder })]).state).toBe(
       'waiting',

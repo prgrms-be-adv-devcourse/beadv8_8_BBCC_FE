@@ -75,6 +75,26 @@ describe('흐름 확인: 취소 · 실패 시나리오 (기획서 2.1)', () => {
     expect(result.state).toBe('pass')
     expect(result.evidence).toMatch(/주문 #9 ↔ 결제 #4 FAILED/)
   })
+  it('결제 실패 기록: 다른 회원이 나중에 조회한 결제 목록과 섞지 않는다', () => {
+    const failed = {
+      paymentId: 4,
+      orderId: 9,
+      amount: 200000,
+      status: 'FAILED',
+      failureCode: 'INSUFFICIENT_BALANCE',
+    }
+    expect(
+      evaluate(check('payment-failed-record'), [
+        log({
+          actor: '1',
+          path: '/orders/9',
+          responseBody: order('9', 'CANCELLED', 'PAYMENT_FAILED'),
+        }),
+        log({ actor: '1', path: '/payments', responseBody: { content: [failed] } }),
+        log({ actor: '3', path: '/payments', responseBody: { content: [] } }),
+      ]).state,
+    ).toBe('pass')
+  })
   it('결제 실패 기록: 결제 목록에 없으면 실패', () => {
     expect(
       evaluate(check('payment-failed-record'), [

@@ -9,9 +9,12 @@ export function useSwitchDemoRole() {
   const mutation = useMutation({
     mutationFn: (account: DemoAccount) =>
       runWithAction(`역할 전환: ${account.label}`, async () => {
-        // 이전 역할의 조회 결과가 남지 않게 비운다
-        queryClient.clear()
+        await queryClient.cancelQueries()
         await signInAsDemo(account)
+        // 이전 역할의 조회 결과를 버린다. 지금 화면에 떠 있는 조회는 새 역할로 다시 불러온다
+        // (clear()만 하면 같은 화면에 머물 때 다시 조회하지 않는다)
+        queryClient.removeQueries({ type: 'inactive' })
+        await queryClient.resetQueries({ type: 'active' })
       }),
   })
 
