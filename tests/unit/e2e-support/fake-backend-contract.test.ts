@@ -19,6 +19,7 @@ import {
 } from '@/entities/seller/api/seller.shape'
 import { memberShape, tokenShape } from '@/entities/session/api/session.shape'
 import {
+  chargeCancelShape,
   chargeConfirmShape,
   chargePageShape,
   chargeShape,
@@ -244,5 +245,11 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const list = await call('GET', '/wallets/me/charges', 1)
     expectContract(list.data, chargePageShape)
     expect(list.data.content[0]).toMatchObject({ chargeId: 77, status: 'DONE' })
+  })
+
+  it('충전 취소 (BE ChargeCancelResponse)', async () => {
+    const cancelled = await call('POST', '/wallets/me/charges/77/cancel', 1)
+    expectContract(cancelled.data, chargeCancelShape)
+    expect(cancelled.data).toMatchObject({ chargeId: 77, status: 'CANCELLED', amount: 50000 })
   })
 })

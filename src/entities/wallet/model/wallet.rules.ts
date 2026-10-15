@@ -20,6 +20,11 @@ export function shortageOf(balance: number | undefined, amount: number): number 
   return balance === undefined ? 0 : Math.max(0, amount - balance)
 }
 
+/** 토스 결과를 아직 몰라 충전 취소를 확인 중(202)인지 */
+export function isChargeCancelling(result: { status: string }): boolean {
+  return result.status === 'CANCELLING'
+}
+
 /** 토스 결과를 아직 몰라 승인 확인 중(202)인지 */
 export function isChargeConfirming(confirmation: { status: string }): boolean {
   return confirmation.status === 'CONFIRMING'

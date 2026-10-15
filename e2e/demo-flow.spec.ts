@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 // 시연 콘솔(/console)에서 정상 흐름 ①~⑦을 시연 순서대로 따라가며, 화면 결과와 흐름 확인(/verify) 판정까지 확인한다.
-// 가짜 백엔드(e2e/fake-backend) + FE 목(상품 · 추천 · 정산 · 충전 취소)으로 돈다.
+// 가짜 백엔드(e2e/fake-backend) + FE 목(상품 · 추천 · 정산)으로 돈다.
 
 const NICKNAME = {
   보호자: '보호자 · 회원 1',
@@ -114,7 +114,7 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText(/구매확정 2026-10-13/).nth(1)).toBeVisible()
   })
 
-  await test.step('④ 충전 승인(토스 복귀) → 충전 취소 (목)', async () => {
+  await test.step('④ 충전 승인(토스 복귀) → 충전 취소', async () => {
     await switchRole(page, '보호자')
     await page.goto('/console/wallet/charge/success?paymentKey=pk&orderId=toss-77&amount=50000')
     await expect(page.getByText(/50,000원 충전했어요/)).toBeVisible()
@@ -124,7 +124,9 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByRole('listitem', { name: '거래 충전' })).toBeVisible()
     await expect(page.getByRole('listitem', { name: '거래 주문 결제' }).first()).toBeVisible()
     await page.getByRole('button', { name: '충전 취소' }).click()
-    await expect(page.getByText(/취소 요청됨/)).toBeVisible()
+    // 실제 API: 충전 내역이 다시 조회돼 '취소됨'이 되고, 거래 내역에 충전 취소가 생긴다
+    await expect(page.getByText('취소됨').first()).toBeVisible()
+    await expect(page.getByRole('listitem', { name: '거래 충전 취소' })).toBeVisible()
   })
 
   await test.step('새로고침 뒤에도 시연 역할 유지', async () => {

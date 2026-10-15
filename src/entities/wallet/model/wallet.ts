@@ -21,6 +21,14 @@ export type ChargeConfirmation = {
   balance: number | null
 }
 
+/** 충전 취소 결과 (BE ChargeCancelResponse). 취소 중이면 balance null */
+export type ChargeCancellation = {
+  chargeId: string
+  status: ChargeStatus
+  amount: number
+  balance: number | null
+}
+
 export const CHARGE_STATUS_LABEL: Record<ChargeStatus, string> = {
   PENDING: '결제 대기',
   CONFIRMING: '승인 중',

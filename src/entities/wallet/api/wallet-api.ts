@@ -1,5 +1,6 @@
 import { apiClient, expectShape, type Page } from '@/shared/api'
 import type {
+  ChargeCancelResultDto,
   ChargeDetailDto,
   ChargeRequestResultDto,
   ConfirmChargeRequestDto,
@@ -8,6 +9,7 @@ import type {
   WalletTransactionDto,
 } from './wallet.dto'
 import {
+  chargeCancelShape,
   chargeConfirmShape,
   chargePageShape,
   chargeRequestShape,
@@ -43,9 +45,9 @@ export const walletApi = {
     apiClient
       .post<ConfirmChargeResultDto>(`${CHARGES}/confirm`, request)
       .then(expectShape(chargeConfirmShape)),
-  /**
-   * 충전 취소 = 토스 결제 취소. 기획서 ④(과제 필수)지만 백엔드에 아직 없어 목 응답이다.
-   * 경로는 구현된 충전 API 앞부분(/wallets/me/charges)에 맞췄다.
-   */
-  cancelCharge: (chargeId: string) => apiClient.post(`${CHARGES}/${chargeId}/cancel`),
+  /** 충전 취소 = 토스 결제 취소. 200 = 취소 완료, 202 = 토스 결과 확인 중 (충전액은 이미 빠짐) */
+  cancelCharge: (chargeId: string) =>
+    apiClient
+      .post<ChargeCancelResultDto>(`${CHARGES}/${chargeId}/cancel`)
+      .then(expectShape(chargeCancelShape)),
 }
