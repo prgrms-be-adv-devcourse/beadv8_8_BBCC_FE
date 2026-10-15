@@ -1,6 +1,6 @@
 import type { ChildProfileDto } from '@/entities/child'
 import { type ProductDetailDto, toProductDetail } from '@/entities/product'
-import type { RecommendedProductDto, SizeRecommendationDto } from '@/entities/recommendation'
+import type { RecommendedProductDto } from '@/entities/recommendation'
 import type { MockHandler, MockRequest } from '@/shared/api'
 import { getErrorStatus } from '@/shared/api'
 import { fetchReal, page, problem } from './mock-utils'
@@ -34,15 +34,6 @@ function sizeOptionsOf(detail: ProductDetailDto): SizeOption[] {
     bySize.set(row.size, previous ? { ...previous, soldOut: previous.soldOut && row.soldOut } : row)
   }
   return [...bySize.values()]
-}
-
-async function loadProduct(request: MockRequest, productId: string) {
-  try {
-    return await fetchReal<ProductDetailDto>(request, `/products/${productId}`)
-  } catch (error) {
-    if (getErrorStatus(error) === 404) return null
-    throw error
-  }
 }
 
 const MARGIN_CM = 2
@@ -110,41 +101,8 @@ async function loadChild(request: MockRequest, childId: string): Promise<ChildPr
   }
 }
 
+// 사이즈 추천은 실제 API(BE #262). 자녀 맞춤 목록만 목으로 남는다
 export const recommendationHandlers: MockHandler[] = [
-  {
-    method: 'GET',
-    path: '/products/:productId/size-recommendation',
-    handle: async (request) => {
-      const instance = `/api/v1/products/${request.params.productId}/size-recommendation`
-      const product = await loadProduct(request, request.params.productId)
-      const childId = request.query.get('childId') ?? ''
-      const child = await loadChild(request, childId)
-      if (!product || !child) {
-        return problem(404, '찾을 수 없습니다', '상품 또는 자녀를 찾을 수 없습니다.', instance)
-      }
-      const options = sizeOptionsOf(product)
-      const { option, reasons } = recommend(child, options)
-      const data: SizeRecommendationDto = {
-        productId: product.productId,
-        childId,
-        recommendedSize: option?.size ?? null,
-        fit: option ? fitOf(child.heightCm, option) : null,
-        reasons,
-        sizes: options.map((item) => {
-          const inRange =
-            child.heightCm >= item.minHeightCm - MARGIN_CM &&
-            child.heightCm <= item.maxHeightCm + MARGIN_CM
-          return {
-            size: item.size,
-            minHeightCm: item.minHeightCm,
-            maxHeightCm: item.maxHeightCm,
-            fit: inRange ? fitOf(child.heightCm, item) : null,
-          }
-        }),
-      }
-      return { status: 200, data }
-    },
-  },
   {
     method: 'GET',
     path: '/children/:childId/recommended-products',

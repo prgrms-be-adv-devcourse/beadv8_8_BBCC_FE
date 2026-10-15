@@ -39,8 +39,8 @@ describe('주문 서버 처리 단계 (주문 접수 → 재고 확보 → 예�
   })
 })
 
-describe('사이즈 추천: 그림에 쓸 사이즈별 권장 키', () => {
-  it('응답의 sizes를 그대로 옮긴다', async () => {
+describe('사이즈 추천 (BE #262)', () => {
+  it('응답의 안내 · 후보를 그대로 옮긴다', async () => {
     const { toSizeRecommendation } = await import('@/entities/recommendation')
     expect(
       toSizeRecommendation({
@@ -48,15 +48,36 @@ describe('사이즈 추천: 그림에 쓸 사이즈별 권장 키', () => {
         childId: '2',
         recommendedSize: '120',
         fit: 'ROOMY',
-        reasons: [],
-        sizes: [
-          { size: '110', minHeightCm: 105, maxHeightCm: 115, fit: 'TIGHT' },
-          { size: '120', minHeightCm: 115, maxHeightCm: 125, fit: 'ROOMY' },
+        notices: [
+          {
+            code: 'BODY_TYPE_ADJUSTED',
+            message: '입력하신 체형보다 키와 몸무게를 우선해 추천했어요.',
+          },
         ],
-      }).sizes,
-    ).toEqual([
-      { size: '110', minHeightCm: 105, maxHeightCm: 115, fit: 'TIGHT' },
-      { size: '120', minHeightCm: 115, maxHeightCm: 125, fit: 'ROOMY' },
-    ])
+        candidateSizes: ['110', '120'],
+        lastPurchasedSize: null,
+      }),
+    ).toEqual({
+      recommendedSize: '120',
+      fit: 'ROOMY',
+      notices: [
+        {
+          code: 'BODY_TYPE_ADJUSTED',
+          message: '입력하신 체형보다 키와 몸무게를 우선해 추천했어요.',
+        },
+      ],
+      candidateSizes: ['110', '120'],
+      lastPurchasedSize: null,
+    })
+  })
+
+  it('그래프는 상품 상세 실측에서 권장 키가 있는 사이즈만', async () => {
+    const { sizeRangesOf } = await import('@/entities/recommendation')
+    expect(
+      sizeRangesOf([
+        { size: '110', minHeightCm: 105, maxHeightCm: 115 },
+        { size: 'FREE', minHeightCm: null, maxHeightCm: null },
+      ]),
+    ).toEqual([{ size: '110', minHeightCm: 105, maxHeightCm: 115 }])
   })
 })

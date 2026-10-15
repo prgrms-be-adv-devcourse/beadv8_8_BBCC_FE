@@ -74,7 +74,7 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByRole('table', { name: '사이즈 정보' })).toBeVisible()
   })
 
-  await test.step('③ 자녀 맞춤 목록 → 방금 등록한 상품 상세 사이즈 추천 (목)', async () => {
+  await test.step('③ 자녀 맞춤 목록(목) → 방금 등록한 상품 상세 사이즈 추천', async () => {
     await switchRole(page, '보호자')
     await page.goto('/console/products')
     await page.getByRole('button', { name: /테스트 맞춤/ }).click()
