@@ -5,24 +5,37 @@ export type {
   ProductOptionDto,
   ProductSummaryDto,
   RegisterProductRequestDto,
+  UpdateProductRequestDto,
 } from './api/product.dto'
 export {
   CATEGORIES,
   PRODUCT_STATUS_LABEL,
+  STOCK_REASON_LABEL,
   type ProductDetail,
+  type ProductEditForm,
   type ProductOption,
+  type ProductSearch,
   type ProductSizeRow,
   type ProductStatus,
   type ProductSummary,
   type RegisterProductForm,
+  type StockReason,
 } from './model/product'
-export { toRegisterProductRequest } from './model/product.mapper'
+export {
+  toProductEditForm,
+  toProductSearchParams,
+  toRegisterProductRequest,
+  toUpdateProductRequest,
+} from './model/product.mapper'
 export {
   canStartSale,
+  canStopSale,
   describeSizes,
   findOption,
   isOnSale,
+  validateProductEditForm,
   validateRegisterProductForm,
+  validateStockAdjustment,
 } from './model/product.rules'
 export {
   productKeys,

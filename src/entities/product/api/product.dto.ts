@@ -38,3 +38,17 @@ export type RegisterProductRequestDto = {
   description: string
   options: Omit<ProductOptionDto, 'optionId' | 'soldOut'>[]
 }
+
+/** PATCH /seller/products/{productId} (기획서 8장 보완) */
+export type UpdateProductRequestDto = {
+  name: string
+  categoryId: string
+  description: string
+  options: { optionId: string; price: number }[]
+}
+
+/** PATCH /seller/products/{productId}/options/{optionId}/stock — 증감 수량과 사유 */
+export type AdjustStockRequestDto = { delta: number; reason: string }
+
+/** GET /products 검색 조건 (빈 값은 보내지 않음) */
+export type ProductSearchParamsDto = { keyword?: string; categoryId?: string }

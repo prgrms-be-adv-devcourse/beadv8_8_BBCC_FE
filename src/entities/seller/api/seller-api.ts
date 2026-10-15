@@ -38,5 +38,8 @@ export const sellerApi = {
     apiClient
       .post<SellerDto>(`/admin/sellers/${sellerId}/suspend`, request)
       .then(expectShape(sellerShape)),
+  /** 판매자 정보 수정 (기획서 8장 보완). 백엔드에 아직 없어 목 응답이다 */
+  updateMine: (request: { businessName: string }) =>
+    apiClient.patch<SellerDto>('/seller/me', request).then(expectShape(sellerShape)),
   getMine: () => apiClient.get<SellerDto>('/seller/me').then(expectShape(sellerShape)),
 }

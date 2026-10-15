@@ -74,3 +74,10 @@ describe('관리자 보완 화면 주소', () => {
     expect(areaOf(paths.admin.members)).toBe('admin')
   })
 })
+
+describe('상품 보완 화면 주소', () => {
+  it('관리자 상품 관리는 관리자 영역과 콘솔에 있다', () => {
+    expect(paths.admin.products).toBe('/admin/products')
+    expect(paths.console.adminProducts).toBe('/console/admin/products')
+  })
+})
