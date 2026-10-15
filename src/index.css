@@ -88,6 +88,52 @@
   --growth: #a9b77d;
 }
 
+/* 서버 이벤트 흐름 그림 (EventFlowDiagram): 순서대로 나타나고 선이 그려진다 */
+@keyframes flow-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes flow-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes flow-march {
+  to {
+    stroke-dashoffset: -0.18;
+  }
+}
+
+.flow-fade {
+  opacity: 0;
+  animation: flow-fade 0.3s ease-out forwards;
+}
+
+.flow-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: flow-draw 0.6s ease-out forwards;
+}
+
+/* 기다리는 이벤트: 점선이 흐른다 */
+.flow-pending {
+  stroke-dasharray: 0.06 0.03;
+  animation: flow-march 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-fade,
+  .flow-draw,
+  .flow-pending {
+    animation: none;
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
 /* 맨 위 진행 막대 (TopProgressBar): 왼쪽에서 오른쪽으로 계속 흐른다 */
 @keyframes top-progress {
   from {

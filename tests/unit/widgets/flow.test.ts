@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ApiCallLog } from '@/shared/api'
 import { domainOf } from '@/widgets/api-flow-panel/config/domain-flow'
-import { latestActionDomains } from '@/widgets/api-flow-panel/model/flow-view'
+import { latestTimeline } from '@/widgets/api-flow-panel/model/event-timeline'
+import { isKeyCall } from '@/widgets/api-flow-panel/model/presentation-mode'
 import { deriveStateChanges } from '@/widgets/api-flow-panel/model/state-changes'
 import { VERIFICATION_CHECKS } from '@/widgets/verification-checklist/config/checks'
 import { evaluate } from '@/widgets/verification-checklist/model/evaluate'
@@ -83,13 +84,115 @@ describe('상태 변화', () => {
 })
 
 describe('도메인 흐름도', () => {
-  it('마지막 행동의 호출 도메인과 이벤트로 이어진 도메인을 표시한다 (배경 조회는 건너뜀)', () => {
-    const { called, followed } = latestActionDomains([
-      log({ action: '주문하기', method: 'POST', path: '/orders', status: 201 }),
-      log({ action: null, path: '/orders/6' }),
+  it('주문하기 뒤 아직 결제 처리 중이면 첫 이벤트만 끝나고 나머지는 기다림', () => {
+    const timeline = latestTimeline(
+      [
+        log({
+          action: '주문하기',
+          method: 'POST',
+          path: '/orders',
+          status: 201,
+          responseBody: order('PENDING_PAYMENT'),
+        }),
+        log({ action: null, path: '/orders/6', responseBody: order('PENDING_PAYMENT') }),
+      ],
+      domainOf,
+    )!
+    expect(timeline.origin).toBe('order')
+    expect(timeline.steps.map((step) => [step.name, step.state])).toEqual([
+      ['order.created', 'done'],
+      ['stock.deducted', 'pending'],
+      ['order.payment-requested', 'pending'],
+      ['payment.completed', 'pending'],
     ])
-    expect([...called]).toEqual(['order'])
-    expect([...followed].sort()).toEqual(['order', 'payment', 'product'])
+    expect(timeline.outcome?.tone).toBe('pending')
+  })
+  it('결제 완료면 모두 끝남 + 걸린 시간', () => {
+    const timeline = latestTimeline(
+      [
+        log({
+          action: '주문하기',
+          method: 'POST',
+          path: '/orders',
+          status: 201,
+          responseBody: order('PENDING_PAYMENT'),
+          startedAt: '2026-10-15T10:00:00.000Z',
+        }),
+        log({
+          path: '/orders/6',
+          responseBody: order('PAID'),
+          startedAt: '2026-10-15T10:00:02.500Z',
+        }),
+      ],
+      domainOf,
+    )!
+    expect(timeline.steps.every((step) => step.state === 'done')).toBe(true)
+    expect(timeline.outcome).toEqual({ tone: 'success', text: '결제 완료 · 2.5초' })
+  })
+  it('잔액 부족 취소: 결제 실패 → 주문 취소 → 재고 복구(보상)', () => {
+    const timeline = latestTimeline(
+      [
+        log({
+          action: '주문하기',
+          method: 'POST',
+          path: '/orders',
+          status: 201,
+          responseBody: order('PENDING_PAYMENT'),
+        }),
+        log({
+          path: '/orders/6',
+          responseBody: { ...order('CANCELLED'), cancelReason: 'PAYMENT_FAILED' },
+        }),
+      ],
+      domainOf,
+    )!
+    expect(timeline.steps.slice(-2).map((step) => [step.name, step.state])).toEqual([
+      ['payment.failed', 'failed'],
+      ['order.cancelled', 'compensate'],
+    ])
+  })
+  it('재고 부족 취소: 재고 차감 실패에서 멈춘다', () => {
+    const timeline = latestTimeline(
+      [
+        log({
+          action: '주문하기',
+          method: 'POST',
+          path: '/orders',
+          status: 201,
+          responseBody: order('PENDING_PAYMENT'),
+        }),
+        log({
+          path: '/orders/6',
+          responseBody: { ...order('CANCELLED'), cancelReason: 'OUT_OF_STOCK' },
+        }),
+      ],
+      domainOf,
+    )!
+    expect(timeline.steps.map((step) => step.name)).toEqual([
+      'order.created',
+      'stock.deduction-failed',
+    ])
+  })
+  it('배경 호출만 있으면 그림 없음, 다른 행동은 설계 기준 단계 그대로', () => {
+    expect(latestTimeline([log({ path: '/orders/6' })], domainOf)).toBeNull()
+    const timeline = latestTimeline(
+      [log({ action: '판매 시작', method: 'PUT', path: '/seller/products/7/sale-status' })],
+      domainOf,
+    )!
+    expect(timeline.steps.map((step) => [step.name, step.to])).toEqual([
+      ['product.changed', ['recommend', 'order']],
+    ])
+  })
+  it('발표 모드: 역할 전환 · 예상된 응답 · 배경 조회는 숨기고 행동 호출과 실패는 보인다', () => {
+    expect(isKeyCall(log({ action: '주문하기', method: 'POST', path: '/orders' }))).toBe(true)
+    expect(
+      isKeyCall(log({ action: '역할 전환: 보호자', method: 'POST', path: '/dev/tokens' })),
+    ).toBe(false)
+    expect(isKeyCall(log({ path: '/members/me', status: 404, expectedReason: '역할 전환' }))).toBe(
+      false,
+    )
+    expect(isKeyCall(log({ path: '/orders/6' }))).toBe(false)
+    expect(isKeyCall(log({ path: '/orders/6', status: 500 }))).toBe(true)
   })
 })
 

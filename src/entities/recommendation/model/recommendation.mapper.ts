@@ -3,7 +3,17 @@ import type { RecommendedProductDto, SizeRecommendationDto } from '../api/recomm
 import type { Fit, RecommendedProduct, SizeRecommendation } from './recommendation'
 
 export function toSizeRecommendation(dto: SizeRecommendationDto): SizeRecommendation {
-  return { recommendedSize: dto.recommendedSize, fit: dto.fit as Fit | null, reasons: dto.reasons }
+  return {
+    recommendedSize: dto.recommendedSize,
+    fit: dto.fit as Fit | null,
+    reasons: dto.reasons,
+    sizes: dto.sizes.map((item) => ({
+      size: item.size,
+      minHeightCm: item.minHeightCm,
+      maxHeightCm: item.maxHeightCm,
+      fit: item.fit as Fit | null,
+    })),
+  }
 }
 
 export function toRecommendedProduct(dto: RecommendedProductDto): RecommendedProduct {
