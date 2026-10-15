@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { settlementApi } from '../api/settlement-api'
-import { toSettlement, toSettlementDetail, toSettlementTarget } from './settlement.mapper'
+import { toSettlement, toSettlementDetail, toSettlementItem } from './settlement.mapper'
 
 export const settlementKeys = {
   all: ['settlement'] as const,
@@ -13,7 +13,7 @@ export function useSettlementTargetsQuery() {
   return useQuery({
     queryKey: settlementKeys.targets,
     queryFn: settlementApi.targets,
-    select: (list) => list.map(toSettlementTarget),
+    select: (page) => ({ ...page, content: page.content.map(toSettlementItem) }),
   })
 }
 
@@ -31,13 +31,5 @@ export function useSettlementQuery(settlementId: string | null) {
     queryFn: () => settlementApi.get(settlementId!),
     select: toSettlementDetail,
     enabled: settlementId !== null,
-  })
-}
-
-export function useAdminSettlementsQuery() {
-  return useQuery({
-    queryKey: ['settlement', 'admin'] as const,
-    queryFn: settlementApi.adminList,
-    select: (page) => page.content.map(toSettlement),
   })
 }

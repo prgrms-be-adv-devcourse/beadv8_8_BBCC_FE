@@ -1,42 +1,51 @@
-// 정산 API는 백엔드에 아직 없다(목 응답). 모양은 기획서 7장 ⑦ · 2.1 정산 기준 · settlement.completed data
+// 정산 API (BE SellerSettlementController · AdminSettlementController). 정산 쪽 ID는 숫자(Long)로 온다
 
-/** GET /seller/settlement-targets 한 줄 = 구매확정된 주문상품 1건 */
+/** GET /seller/settlement-targets 한 줄 = 아직 정산 안 된 구매확정 주문상품 1건 */
 export type SettlementTargetDto = {
-  targetId: string
-  orderItemId: string
-  productName: string
-  amount: number
+  orderItemId: number
+  orderId: number
+  salesAmount: number
   confirmedAt: string
-  settled: boolean
 }
 
-/** GET /seller/settlements 한 줄 */
+/** GET /seller/settlements 한 줄 (BE SettlementSummaryResponse) */
 export type SettlementDto = {
-  settlementId: string
-  sellerId: string
-  period: { periodStart: string | null; periodEnd: string }
-  itemCount: number
-  totalAmount: number
+  settlementId: number
+  periodStartOn: string
+  periodEndOn: string
+  totalSalesAmount: number
+  /** 예: 0.10 */
   feeRate: number
   feeAmount: number
-  payoutAmount: number
+  settlementAmount: number
+  /** COMPLETED(정산 완료 · 지급 요청) · PAID(예치금 입금 끝) · FAILED */
   status: string
-  settledAt: string
+  completedAt: string | null
+  paidAt: string | null
 }
 
 /** GET /seller/settlements/{settlementId} */
 export type SettlementDetailDto = SettlementDto & {
-  items: { orderItemId: string; productName: string; amount: number; confirmedAt: string }[]
+  failReason: string | null
+  items: { orderItemId: number; orderId: number; salesAmount: number; confirmedAt: string }[]
 }
 
-/** POST /admin/settlements/run */
-export type SettlementRunRequestDto = {
-  periodEnd: string
-  /** 목 전용: 판매자 지갑 적립 실패를 흉내 낸다 (재처리 시연용, 실제 서버는 무시) */
-  simulatePayoutFailure?: boolean
-}
+/** POST /admin/settlements/run. 이날 0시 전에 구매확정된 대상을 정산한다 */
+export type SettlementRunRequestDto = { cutoffOn: string }
+
+/** 정산 실행 기록 (BE SettlementRunResponse) */
 export type SettlementRunResultDto = {
-  periodEnd: string
-  settlementCount: number
-  settlements: SettlementDto[]
+  runId: number
+  cutoffAt: string
+  periodStartOn: string
+  periodEndOn: string
+  /** SCHEDULED · MANUAL */
+  triggerType: string
+  /** RUNNING · COMPLETED · PARTIAL_FAILED · FAILED */
+  status: string
+  successCount: number
+  failCount: number
+  requestedBy: number | null
+  startedAt: string
+  finishedAt: string | null
 }

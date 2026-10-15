@@ -69,48 +69,33 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     backend: 'BE #316 develop 머지(10/16) → 실제 (FE #117)',
     screens: '쇼핑 홈 · 콘솔 상품(자녀 맞춤)',
   },
-  // 정산 (보류 결정 → 목 유지)
+  // 정산 (BE SellerSettlementController · AdminSettlementController, FE #119). 관리자 정산서 목록 · 재처리는 BE에 없어 화면에서 뺌
   {
     method: 'GET',
     path: '/seller/settlement-targets',
-    source: 'mock',
-    backend: '보류(목 유지)',
+    source: 'real',
+    backend: 'BE develop(ca574d3) 머지 → 실제 (FE #119)',
     screens: '판매자 정산',
   },
   {
     method: 'GET',
     path: '/seller/settlements',
-    source: 'mock',
-    backend: '보류(목 유지)',
+    source: 'real',
+    backend: 'BE develop(ca574d3) 머지 → 실제 (FE #119)',
     screens: '판매자 정산',
   },
   {
     method: 'GET',
     path: '/seller/settlements/:settlementId',
-    source: 'mock',
-    backend: '보류(목 유지)',
+    source: 'real',
+    backend: 'BE develop(ca574d3) 머지 → 실제 (FE #119)',
     screens: '판매자 정산(상세)',
-  },
-  {
-    method: 'GET',
-    path: '/admin/settlements',
-    source: 'mock',
-    backend: '보류(목 유지)',
-    screens: '관리자 정산',
-  },
-  {
-    method: 'POST',
-    path: '/admin/settlements/:settlementId/retry',
-    source: 'mock',
-    backend: '보류(목 유지)',
-    screens: '관리자 정산(재처리)',
   },
   {
     method: 'POST',
     path: '/admin/settlements/run',
-    source: 'mock',
-    backend:
-      'BE AdminSettlementController 있음(cutoffOn · run 응답 다름), 정산 조회 API가 없어 보류(목 유지)',
+    source: 'real',
+    backend: 'BE develop(742516f) 머지 → 실제 (FE #119)',
     screens: '관리자 정산(실행)',
   },
   // 회원 보완

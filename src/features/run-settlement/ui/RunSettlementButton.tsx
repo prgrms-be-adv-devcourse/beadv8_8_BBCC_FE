@@ -1,16 +1,13 @@
 import { useState } from 'react'
+import { SETTLEMENT_RUN_STATUS_LABEL } from '@/entities/settlement'
 import { getErrorMessage } from '@/shared/api'
-import { env } from '@/shared/config'
-import { formatWon } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { settlementPeriodEnd } from '../lib/period-end'
 import { useRunSettlement } from '../model/use-run-settlement'
-import { MockBadge } from '@/shared/ui/MockBadge'
 
 export function RunSettlementButton() {
   const run = useRunSettlement()
-  const [simulateFailure, setSimulateFailure] = useState(false)
   // 정산은 종료 기준일 "이전" 구매확정분만 대상이다. 시연에서는 방금 구매확정한 상품까지 넣으려고 내일을 기준일로 보낸다
   const [includeToday, setIncludeToday] = useState(true)
 
@@ -19,44 +16,28 @@ export function RunSettlementButton() {
       <Button
         disabled={run.isPending}
         onClick={() => {
-          const periodEnd = settlementPeriodEnd(new Date(), includeToday)
-          if (window.confirm(`${periodEnd} 이전 구매확정분으로 정산을 실행할까요?`)) {
-            run.mutate({
-              periodEnd,
-              simulatePayoutFailure: simulateFailure,
-            })
+          const cutoffOn = settlementPeriodEnd(new Date(), includeToday)
+          if (window.confirm(`${cutoffOn} 0시 전 구매확정분으로 정산을 실행할까요?`)) {
+            run.mutate(cutoffOn)
           }
         }}
       >
         정산 실행
       </Button>
-      <MockBadge endpoints={['POST /admin/settlements/run']} />
       <label className="text-muted-foreground flex items-center gap-2 text-xs">
         <input
           type="checkbox"
           checked={includeToday}
           onChange={(e) => setIncludeToday(e.target.checked)}
         />
-        오늘 구매확정분까지 포함{env.demoRoleSwitch && ' (시연용)'}
-      </label>
-      <label className="text-muted-foreground flex items-center gap-2 text-xs">
-        <input
-          type="checkbox"
-          checked={simulateFailure}
-          onChange={(e) => setSimulateFailure(e.target.checked)}
-        />
-        판매자 지갑 적립 실패를 흉내 내기 (목 · 재처리 시연용)
+        오늘 구매확정분까지 포함 (시연용)
       </label>
       {run.isError && <StateMessage tone="error">{getErrorMessage(run.error)}</StateMessage>}
       {run.data && (
         <StateMessage>
-          판매자 {run.data.settlementCount}명 정산 완료
-          {run.data.settlements.map((settlement) => (
-            <span key={settlement.id}>
-              {' '}
-              · 판매자 {settlement.sellerId} 지급 {formatWon(settlement.payoutAmount)}
-            </span>
-          ))}
+          정산 {SETTLEMENT_RUN_STATUS_LABEL[run.data.status] ?? run.data.status} · 성공{' '}
+          {run.data.successCount} · 실패 {run.data.failCount} · 기간 {run.data.periodStart} ~{' '}
+          {run.data.periodEnd}
         </StateMessage>
       )}
     </div>

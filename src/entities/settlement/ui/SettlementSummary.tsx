@@ -1,20 +1,25 @@
 import type { ReactNode } from 'react'
-import { formatWon } from '@/shared/lib'
-import type { Settlement } from '../model/settlement'
+import { formatDateTime, formatWon } from '@/shared/lib'
+import { Badge } from '@/shared/ui/badge'
+import { SETTLEMENT_STATUS_LABEL, type Settlement } from '../model/settlement'
 
 type SettlementSummaryProps = {
   settlement: Settlement
   action?: ReactNode
 }
 
-/** 정산서 한 줄: 판매 − 수수료 = 지급 */
+const STATUS_VARIANT = { COMPLETED: 'muted', PAID: 'success', FAILED: 'destructive' } as const
+
+/** 정산서 한 줄: 기간 · 판매 − 수수료 = 지급 · 상태 */
 export function SettlementSummary({ settlement, action }: SettlementSummaryProps) {
   return (
     <div className="text-sm">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <p className="font-medium">
-          정산서 #{settlement.id} · {settlement.periodEnd} 이전 구매확정분 · {settlement.itemCount}
-          건
+          정산서 #{settlement.id} · {settlement.periodStart} ~ {settlement.periodEnd}{' '}
+          <Badge variant={STATUS_VARIANT[settlement.status]}>
+            {SETTLEMENT_STATUS_LABEL[settlement.status]}
+          </Badge>
         </p>
         {action}
       </div>
@@ -25,6 +30,7 @@ export function SettlementSummary({ settlement, action }: SettlementSummaryProps
         <span className="text-foreground font-semibold">
           지급 {formatWon(settlement.payoutAmount)}
         </span>
+        {settlement.paidAt && ` · 예치금 입금 ${formatDateTime(settlement.paidAt)}`}
       </p>
     </div>
   )

@@ -10,12 +10,10 @@ import {
 import { useWalletQuery, WalletBalanceCard } from '@/entities/wallet'
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime, formatWon } from '@/shared/lib'
-import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
-import { MockBadge } from '@/shared/ui/MockBadge'
 
 export function CenterSettlementsPage() {
   const targets = useSettlementTargetsQuery()
@@ -28,42 +26,32 @@ export function CenterSettlementsPage() {
         title="정산"
         step="⑦"
         description="구매확정된 판매 금액에서 수수료를 빼고 예치금으로 입금돼요."
-        note="구매확정된 주문상품이 정산 대상이 되고, 정산하면 수수료 10%를 뺀 금액이 판매자 예치금으로 입금돼요. 정산 API는 아직 목이라 정산서는 보이지만, 예치금 잔액 · 입출금 내역에는 백엔드 정산 API가 생겨야 반영돼요."
+        note="구매확정된 주문상품이 정산 대상으로 쌓이고, 정산이 실행되면 수수료 10%를 뺀 금액이 판매자 예치금으로 입금돼요(지급 완료)."
       />
       <WalletBalanceCard
-        title="내 예치금 지갑 (실제 API · 정산 입금은 아직 반영 안 됨)"
+        title="내 예치금 지갑"
         wallet={wallet.data}
         pending={wallet.isPending}
         error={wallet.error}
       />
       <Card className="space-y-2">
-        <CardTitle>
-          정산 대상
-          <MockBadge endpoints={['GET /seller/settlement-targets']} />
-        </CardTitle>
+        <CardTitle>정산 대상 (아직 정산 안 된 구매확정분)</CardTitle>
         {targets.isError && (
           <StateMessage tone="error">{getErrorMessage(targets.error)}</StateMessage>
         )}
-        {targets.data?.length === 0 && <StateMessage>정산 대상이 없어요.</StateMessage>}
-        {targets.data?.map((target) => (
-          <div key={target.id} className="flex justify-between border-t pt-2 text-sm">
+        {targets.data?.content.length === 0 && <StateMessage>정산 대상이 없어요.</StateMessage>}
+        {targets.data?.content.map((target) => (
+          <div key={target.orderItemId} className="flex justify-between border-t pt-2 text-sm">
             <span>
-              {target.productName} · 구매확정 {formatDateTime(target.confirmedAt)}
+              주문 #{target.orderId} · 주문상품 #{target.orderItemId} · 구매확정{' '}
+              {formatDateTime(target.confirmedAt)}
             </span>
-            <span>
-              {formatWon(target.amount)}{' '}
-              <Badge variant={target.settled ? 'success' : 'muted'}>
-                {target.settled ? '정산됨' : '미정산'}
-              </Badge>
-            </span>
+            <span>{formatWon(target.amount)}</span>
           </div>
         ))}
       </Card>
       <Card className="space-y-2">
-        <CardTitle>
-          내 정산서
-          <MockBadge endpoints={['GET /seller/settlements']} />
-        </CardTitle>
+        <CardTitle>내 정산서</CardTitle>
         {settlements.isError && (
           <StateMessage tone="error">{getErrorMessage(settlements.error)}</StateMessage>
         )}
@@ -95,6 +83,9 @@ function SettlementRow({ settlement }: SettlementRowProps) {
       />
       {open && detail.isError && (
         <StateMessage tone="error">{getErrorMessage(detail.error)}</StateMessage>
+      )}
+      {open && detail.data?.failReason && (
+        <StateMessage tone="error">실패 사유: {detail.data.failReason}</StateMessage>
       )}
       {open && detail.data && <SettlementItemList items={detail.data.items} />}
     </div>
