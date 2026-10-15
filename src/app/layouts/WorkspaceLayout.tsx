@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router'
 import { hasRole, ROLE_LABEL, useSessionStore, type Role } from '@/entities/session'
+import { useArea } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { SideNav, type SideNavItem } from '@/shared/ui/SideNav'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
@@ -27,12 +28,14 @@ export function WorkspaceLayout({
   const user = useSessionStore((state) => state.user)
   const { pathname } = useLocation()
   const blocked = !hasRole(user, role) && !openPaths.includes(pathname)
+  // 영역 색(index.css의 data-area): 시연 막대 · 흐름 서랍은 빼고 메뉴와 본문에만
+  const area = useArea()
 
   return (
     <div className="flex h-svh flex-col">
       <DemoBarWithFlowDrawer />
-      <div className="flex min-h-0 flex-1">
-        <SideNav title={title} items={items} />
+      <div data-area={area} className="flex min-h-0 flex-1">
+        <SideNav title={title} items={items} tone={area === 'admin' ? 'dark' : 'light'} />
         <main className="bg-muted/30 flex-1 overflow-y-auto px-8 py-6">
           <div className="mx-auto max-w-4xl">
             <SessionGate>
