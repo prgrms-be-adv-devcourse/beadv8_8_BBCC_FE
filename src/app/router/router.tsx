@@ -204,8 +204,8 @@ export const router = createBrowserRouter(
     },
     {
       path: paths.console.home,
-      // 시연 도구를 끈 배포에서는 시연 콘솔을 열지 않고 쇼핑 홈으로 보낸다
-      element: env.demoTools ? <ConsoleLayout /> : <Navigate to={paths.shop.home} replace />,
+      // 시연 기능을 끈 배포에서는 시연 콘솔을 열지 않고 쇼핑 홈으로 보낸다
+      element: env.demoRoleSwitch ? <ConsoleLayout /> : <Navigate to={paths.shop.home} replace />,
       HydrateFallback: RouteFallback,
       children: [
         {

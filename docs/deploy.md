@@ -26,15 +26,14 @@
 
 모두 화면에 그대로 들어가는 **공개 값**이다. 비밀 값은 넣지 않는다.
 
-| 이름                      | 배포 값                                          | 설명                                                                                                        |
-| ------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `VITE_API_BASE_URL`       | 비움                                             | 같은 주소의 `/api`로 요청                                                                                   |
-| `VITE_USE_MOCK`           | `true`                                           | 백엔드에 없는 API(상품 목록 · 추천 · 정산 등)는 목                                                          |
-| `VITE_DEMO_ROLE_SWITCH`   | 서버에 개발 토큰이 있으면 `true`, 없으면 `false` | `false`면 시연 역할 전환을 감추고 카카오 로그인만                                                           |
-| `VITE_DEMO_TOOLS`         | 비움                                             | `false`면 시연 막대 표시 · 시연 콘솔 · API 흐름 · 시연용 문구를 감춤. 비우면 `VITE_DEMO_ROLE_SWITCH`를 따름 |
-| `VITE_TOSS_CLIENT_KEY`    | 토스 테스트 클라이언트 키                        | 결제 담당에게                                                                                               |
-| `VITE_KAKAO_CLIENT_ID`    | 카카오 REST API 키                               | 회원 담당에게                                                                                               |
-| `VITE_KAKAO_REDIRECT_URI` | `https://도메인/oauth/kakao/callback`            | 백엔드 `KAKAO_REDIRECT_URI`와 같게                                                                          |
+| 이름                      | 배포 값                                          | 설명                                                                                       |
+| ------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `VITE_API_BASE_URL`       | 비움                                             | 같은 주소의 `/api`로 요청                                                                  |
+| `VITE_USE_MOCK`           | `true`                                           | 백엔드에 없는 API(상품 목록 · 추천 · 정산 등)는 목                                         |
+| `VITE_DEMO_ROLE_SWITCH`   | 서버에 개발 토큰이 있으면 `true`, 없으면 `false` | `false`면 시연 기능(역할 전환 · 시연 콘솔 · API 흐름 · 시연 문구)을 감추고 카카오 로그인만 |
+| `VITE_TOSS_CLIENT_KEY`    | 토스 테스트 클라이언트 키                        | 결제 담당에게                                                                              |
+| `VITE_KAKAO_CLIENT_ID`    | 카카오 REST API 키                               | 회원 담당에게                                                                              |
+| `VITE_KAKAO_REDIRECT_URI` | `https://도메인/oauth/kakao/callback`            | 백엔드 `KAKAO_REDIRECT_URI`와 같게                                                         |
 
 실행 환경 값: `API_UPSTREAM`(백엔드 주소, 기본 `http://app:8080`), `NGINX_RESOLVER`(기본 Docker DNS `127.0.0.11`).
 
@@ -78,7 +77,6 @@ GitHub Variables가 아니라 **Vercel 환경 변수**에서 받는다. Producti
 | `VITE_USE_MOCK`           | 백엔드에 API가 다 생기면 `false`                   | 같음                                                   | 목 켜짐                           |
 | `VITE_API_BASE_URL`       | 아래 "백엔드 연결" 참고                            | 같음                                                   | 비움 (로그인 · 주문 · 결제 안 됨) |
 | `VITE_DEMO_ROLE_SWITCH`   | 연결한 백엔드에 개발 토큰이 없으면 `false`         | 같음                                                   | 켜짐                              |
-| `VITE_DEMO_TOOLS`         | 넣지 않음 (역할 전환을 따라 꺼짐)                  | 발표 때 시연 콘솔을 쓰려면 `true`                      | `VITE_DEMO_ROLE_SWITCH`를 따름    |
 | `VITE_TOSS_CLIENT_KEY`    | 토스 테스트 클라이언트 키 (결제 담당)              | 같음                                                   | 충전 안 됨                        |
 | `VITE_KAKAO_CLIENT_ID`    | 카카오 REST API 키 (회원 담당)                     | 같음                                                   | 카카오 로그인 안 됨               |
 | `VITE_KAKAO_REDIRECT_URI` | `https://kidly-fe.vercel.app/oauth/kakao/callback` | `https://kidly-fe-dev.vercel.app/oauth/kakao/callback` | 로그인 복귀 실패                  |

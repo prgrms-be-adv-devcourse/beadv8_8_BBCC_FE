@@ -37,7 +37,7 @@ export function RunSettlementButton() {
           checked={includeToday}
           onChange={(e) => setIncludeToday(e.target.checked)}
         />
-        오늘 구매확정분까지 포함{env.demoTools && ' (시연용)'}
+        오늘 구매확정분까지 포함{env.demoRoleSwitch && ' (시연용)'}
       </label>
       <label className="text-muted-foreground flex items-center gap-2 text-xs">
         <input

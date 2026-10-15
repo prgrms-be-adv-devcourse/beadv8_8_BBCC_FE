@@ -14,8 +14,8 @@ export function DemoBarWithFlowDrawer() {
   const count = useApiFlowLog((state) => state.logs.length)
   const presentation = usePresentationMode((state) => state.on)
 
-  // 시연 도구를 끈 배포에서는 API 흐름 패널 없이 막대만 둔다
-  if (!env.demoTools) return <DemoBar />
+  // 시연 기능을 끈 배포에서는 API 흐름 패널 없이 막대만 둔다
+  if (!env.demoRoleSwitch) return <DemoBar />
 
   return (
     <>
