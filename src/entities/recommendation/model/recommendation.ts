@@ -22,13 +22,13 @@ export type SizeRecommendation = {
 export type RecommendedProduct = {
   id: string
   name: string
-  categoryId: string
-  brand: string | null
+  /** 판매자 상호명. 모르면 null */
+  businessName: string | null
   minPrice: number | null
   /** 대표 이미지 (S3). 없으면 null → 기본 이미지 */
   imageUrl: string | null
-  recommendedSize: string
-  fit: Fit
+  /** 사이즈 무관 상품이면 null */
+  recommendedSize: string | null
 }
 
 export const FIT_LABEL: Record<Fit, string> = {

@@ -65,8 +65,8 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'GET',
     path: '/children/:childId/recommended-products',
-    source: 'mock',
-    backend: 'BE #255 · #286 진행 중',
+    source: 'real',
+    backend: 'BE #316 develop 머지(10/16) → 실제 (FE #117)',
     screens: '쇼핑 홈 · 콘솔 상품(자녀 맞춤)',
   },
   // 정산 (보류 결정 → 목 유지)
@@ -109,7 +109,8 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     method: 'POST',
     path: '/admin/settlements/run',
     source: 'mock',
-    backend: '보류(목 유지)',
+    backend:
+      'BE AdminSettlementController 있음(cutoffOn · run 응답 다름), 정산 조회 API가 없어 보류(목 유지)',
     screens: '관리자 정산(실행)',
   },
   // 회원 보완
@@ -138,15 +139,15 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'GET',
     path: '/admin/orders',
-    source: 'mock',
-    backend: 'BE #259',
+    source: 'real',
+    backend: 'BE #323 develop 머지(10/16) → 실제 (FE #117)',
     screens: '관리자 주문',
   },
   {
     method: 'GET',
     path: '/admin/payments',
-    source: 'mock',
-    backend: 'BE 없음',
+    source: 'real',
+    backend: 'BE #326 develop 머지(10/16) → 실제 (FE #117)',
     screens: '관리자 결제',
   },
 ]

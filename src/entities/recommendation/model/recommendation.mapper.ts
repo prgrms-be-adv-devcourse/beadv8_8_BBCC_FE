@@ -27,11 +27,9 @@ export function toRecommendedProduct(dto: RecommendedProductDto): RecommendedPro
   return {
     id: dto.productId,
     name: dto.name,
-    categoryId: dto.categoryId,
-    brand: dto.brand?.trim() || null,
+    businessName: dto.businessName?.trim() || null,
     minPrice: dto.minPrice,
     imageUrl: toImageUrl(dto.thumbnailUrl),
     recommendedSize: dto.recommendedSize,
-    fit: dto.fit as Fit,
   }
 }

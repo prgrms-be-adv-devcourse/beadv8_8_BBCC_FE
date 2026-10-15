@@ -2,10 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
-  categoryNameOf,
   ProductCard,
   listItemMeta,
-  productMeta,
   useCategoriesQuery,
   useProductsQuery,
   type ProductSearch,
@@ -159,13 +157,10 @@ export function ShopHomePage() {
                   key={product.id}
                   to={paths.shop.product(product.id, childId)}
                   name={product.name}
-                  meta={productMeta({
-                    categoryName: categoryNameOf(product.categoryId, categories.data ?? []),
-                    brand: product.brand,
-                  })}
+                  meta={product.businessName ?? ''}
                   price={product.minPrice}
                   imageUrl={product.imageUrl}
-                  badge={<FitBadge size={product.recommendedSize} fit={product.fit} />}
+                  badge={<FitBadge size={product.recommendedSize} />}
                 />
               ))}
         </div>

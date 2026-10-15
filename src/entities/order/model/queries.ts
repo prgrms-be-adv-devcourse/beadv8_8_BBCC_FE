@@ -48,8 +48,14 @@ export function useOrderQuery(orderId: string) {
 
 export function useAdminOrdersQuery(status: string | null) {
   return useQuery({
-    queryKey: ['orders', 'admin', status] as const,
-    queryFn: () => orderApi.adminList(status),
-    select: (page) => ({ ...page, content: page.content.map(toAdminOrder) }),
+    queryKey: ['orders', 'admin'] as const,
+    queryFn: () => orderApi.adminList(),
+    // BE는 상태로 거르지 않는다 (최근 100건 안에서 화면이 거른다)
+    select: (page) => ({
+      ...page,
+      content: page.content
+        .map(toAdminOrder)
+        .filter((order) => status === null || order.status === status),
+    }),
   })
 }

@@ -16,11 +16,9 @@ export const recommendedProductPageShape = pageOf(
   obj({
     productId: str,
     name: str,
-    categoryId: str,
-    brand: nullable(str),
-    minPrice: nullable(num),
     thumbnailUrl: nullable(str),
-    recommendedSize: str,
-    fit: FIT,
+    businessName: nullable(str),
+    minPrice: nullable(num),
+    recommendedSize: nullable(str),
   }),
 )
