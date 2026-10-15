@@ -34,6 +34,8 @@ type StoredProduct = {
    * 그 밖의 상품은 이 탭에서 등록했으니 있다고 본다
    */
   seeded?: boolean
+  /** 목 수정으로 이름을 바꿨는지 */
+  renamed?: boolean
 }
 
 const SEEDED: StoredProduct[] = [
@@ -105,8 +107,9 @@ function merge(product: StoredProduct, detail: ProductDetailDto | null): SellerP
   const prices = options.map((option) => option.price)
   return {
     productId: product.productId,
-    // 이름은 등록 · 목 수정 값 (실제 상세에는 목 수정이 반영되지 않는다)
-    name: product.name,
+    // 이름은 등록 · 목 수정 값 (실제 상세에는 목 수정이 반영되지 않는다).
+    // 시연 데이터 ID는 실제 서버의 그 ID 상품이 무엇이든 실제 이름을 쓴다 (목 수정 전까지)
+    name: product.seeded && detail && !product.renamed ? detail.name : product.name,
     brand: detail?.brand ?? product.brand,
     categoryId: detail?.categoryId ?? product.categoryId,
     status: statusOf(product),
@@ -198,6 +201,7 @@ export const productHandlers: MockHandler[] = [
       if (!product) return notFound(`/api/v1/seller/products/${request.params.productId}`)
       const body = request.body as UpdateProductRequestDto
       product.name = body.name
+      product.renamed = true
       for (const { optionId, price } of body.options) {
         const option = product.options.find((item) => item.optionId === optionId)
         if (option) option.price = price
