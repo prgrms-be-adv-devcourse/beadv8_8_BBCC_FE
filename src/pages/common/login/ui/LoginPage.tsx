@@ -1,7 +1,7 @@
 import { useNavigate, useSearchParams } from 'react-router'
 import { KakaoLoginButton } from '@/features/auth-kakao-login'
 import { SwitchDemoRole } from '@/features/switch-demo-role'
-import { paths } from '@/shared/config'
+import { env, paths } from '@/shared/config'
 import { safeReturnPath } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
@@ -22,10 +22,12 @@ export function LoginPage() {
       <Card className="space-y-3">
         <KakaoLoginButton next={next} />
       </Card>
-      <Card className="space-y-2">
-        <p className="text-sm font-medium">시연용 로그인 (local 전용 개발용 토큰)</p>
-        <SwitchDemoRole onSwitched={() => navigate(next ?? paths.shop.home, { replace: true })} />
-      </Card>
+      {env.demoRoleSwitch && (
+        <Card className="space-y-2">
+          <p className="text-sm font-medium">시연용 로그인 (local 전용 개발용 토큰)</p>
+          <SwitchDemoRole onSwitched={() => navigate(next ?? paths.shop.home, { replace: true })} />
+        </Card>
+      )}
     </div>
   )
 }

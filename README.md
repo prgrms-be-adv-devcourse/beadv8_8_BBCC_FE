@@ -81,3 +81,7 @@ CI(`.github/workflows/ci.yml`)가 PR마다 모두 돌린다. E2E가 실패하면
 
 - 브랜치 `feature/<도메인>/#<이슈>-<영문-kebab>`, 커밋 `타입: 한글 요약 (#이슈)`, develop으로 PR. main · develop 직접 push 금지.
 - 매퍼 · 업무 규칙은 테스트를 먼저 쓴다. 화면은 구현 뒤 E2E로 확인한다.
+
+## 배포
+
+EC2 한 대에서 Nginx가 정적 파일을 서빙하고 `/api`를 백엔드로 넘긴다. 절차 · 빌드 값 · 리허설은 [docs/deploy.md](docs/deploy.md).

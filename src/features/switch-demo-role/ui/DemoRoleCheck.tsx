@@ -1,4 +1,5 @@
 import { getErrorMessage } from '@/shared/api'
+import { env } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
 import { DEMO_ACCOUNTS } from '../config/demo-accounts'
 import { useSwitchDemoRole } from '../model/use-switch-demo-role'
@@ -13,7 +14,7 @@ export function DemoRoleCheck({ label }: DemoRoleCheckProps) {
   const switchRole = useSwitchDemoRole()
   const account = DEMO_ACCOUNTS.find((candidate) => candidate.label === label)
 
-  if (!account || switchRole.currentMemberId === account.memberId) {
+  if (!env.demoRoleSwitch || !account || switchRole.currentMemberId === account.memberId) {
     return null
   }
   return (

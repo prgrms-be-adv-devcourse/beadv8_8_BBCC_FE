@@ -1,4 +1,5 @@
 import { getErrorMessage } from '@/shared/api'
+import { env } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
 import { DEMO_ACCOUNTS } from '../config/demo-accounts'
 import { useSwitchDemoRole } from '../model/use-switch-demo-role'
@@ -12,6 +13,7 @@ type SwitchDemoRoleProps = {
 export function SwitchDemoRole({ onSwitched }: SwitchDemoRoleProps = {}) {
   const switchRole = useSwitchDemoRole()
 
+  if (!env.demoRoleSwitch) return null
   return (
     <div className="flex items-center gap-1">
       <span className="text-muted-foreground mr-1 text-xs">시연 역할</span>
