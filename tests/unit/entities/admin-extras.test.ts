@@ -148,7 +148,7 @@ describe('목: 관리자 전체 조회는 이 탭에서 본 응답으로 만든�
     expect(orders).toEqual([
       {
         orderId: '6',
-        memberId: 1,
+        memberId: '1',
         status: 'PAID',
         cancelReason: null,
         totalAmount: 25000,
