@@ -47,9 +47,21 @@ function balanceChange(actor: string, direction: 'down' | 'up'): LogsCheck {
   }
 }
 
+/** 회원마다 마지막 결제 목록(GET /payments). 역할 전환 뒤 다른 회원이 조회한 목록과 섞이지 않게 */
+function latestPaymentsByActor(logs: ApiCallLog[]): Map<string | null, Body[]> {
+  const latest = new Map<string | null, Body[]>()
+  for (const log of logs) {
+    if (log.method === 'GET' && log.path.split('?')[0] === '/payments' && ok2xx(log)) {
+      latest.set(log.actor, (body(log).content as Body[] | undefined) ?? [])
+    }
+  }
+  return latest
+}
+
 /** 결제 완료(PAID)로 본 주문이 결제 도메인 목록(GET /payments)에 같은 금액의 COMPLETED로 있는지 */
 const paymentRecorded: LogsCheck = (logs) => {
-  const paidOrders = new Map<string, number>()
+  // 주문 ID → 금액 · 조회한 회원 (결제 목록은 그 회원의 것으로 비교한다)
+  const paidOrders = new Map<string, { total: number; actor: string | null }>()
   for (const log of logs) {
     const order = body(log)
     if (
@@ -58,23 +70,29 @@ const paymentRecorded: LogsCheck = (logs) => {
       ok2xx(log) &&
       order.status === 'PAID'
     ) {
-      paidOrders.set(String(order.orderId), Number(order.totalAmount))
+      // 처음 결제 완료를 본 회원 = 주문한 회원 (역할 전환 뒤 다른 회원이 다시 조회해도 바꾸지 않음)
+      if (!paidOrders.has(String(order.orderId))) {
+        paidOrders.set(String(order.orderId), {
+          total: Number(order.totalAmount),
+          actor: log.actor,
+        })
+      }
     }
   }
-  const paymentsLog = logs.findLast(
-    (log) => log.method === 'GET' && log.path.split('?')[0] === '/payments' && ok2xx(log),
-  )
-  if (paidOrders.size === 0 || !paymentsLog) return null
-  const payments = ((body(paymentsLog).content as Body[] | undefined) ?? []).map((item) => ({
-    id: String(item.paymentId),
-    orderId: String(item.orderId),
-    amount: Number(item.amount),
-    status: String(item.status),
-  }))
+  const latestPayments = latestPaymentsByActor(logs)
   const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
   const problems: string[] = []
-  for (const [orderId, total] of paidOrders) {
-    const payment = payments.find((item) => item.orderId === orderId)
+  for (const [orderId, { total, actor }] of paidOrders) {
+    const list = latestPayments.get(actor)
+    if (!list) continue
+    const payment = list
+      .map((item) => ({
+        id: String(item.paymentId),
+        orderId: String(item.orderId),
+        amount: Number(item.amount),
+        status: String(item.status),
+      }))
+      .find((item) => item.orderId === orderId)
     if (payment?.status === 'COMPLETED' && payment.amount === total) {
       return {
         pass: true,
@@ -87,6 +105,7 @@ const paymentRecorded: LogsCheck = (logs) => {
         : `결제 완료 주문 #${orderId}이 결제 목록에 없음`,
     )
   }
+  if (problems.length === 0) return null
   return { pass: false, evidence: problems.join(' / ') }
 }
 
@@ -387,20 +406,21 @@ function cancelledWith(reason: string): LogsCheck {
 
 /** 잔액 부족으로 취소된 주문 ↔ 결제 도메인 FAILED(INSUFFICIENT_BALANCE) 기록 */
 const paymentFailedRecorded: LogsCheck = (logs) => {
-  const failedOrders = new Set(
+  // 주문 ID → 조회한 회원 (결제 목록은 그 회원의 것으로 비교한다)
+  const failedOrders = new Map(
     orderDetailLogs(logs)
       .filter(
         (log) => body(log).status === 'CANCELLED' && body(log).cancelReason === 'PAYMENT_FAILED',
       )
-      .map((log) => String(body(log).orderId)),
+      .map((log) => [String(body(log).orderId), log.actor] as const)
+      // 처음 본 회원 = 주문한 회원
+      .reverse(),
   )
-  const paymentsLog = logs.findLast(
-    (log) => log.method === 'GET' && log.path.split('?')[0] === '/payments' && ok2xx(log),
-  )
-  if (failedOrders.size === 0 || !paymentsLog) return null
-  const payments = (body(paymentsLog).content as Body[] | undefined) ?? []
-  for (const orderId of failedOrders) {
-    const payment = payments.find((item) => String(item.orderId) === orderId)
+  const latestPayments = latestPaymentsByActor(logs)
+  const checked = [...failedOrders].filter(([, actor]) => latestPayments.has(actor))
+  if (checked.length === 0) return null
+  for (const [orderId, actor] of checked) {
+    const payment = latestPayments.get(actor)!.find((item) => String(item.orderId) === orderId)
     if (payment?.status === 'FAILED' && payment.failureCode === 'INSUFFICIENT_BALANCE') {
       return {
         pass: true,
@@ -410,7 +430,7 @@ const paymentFailedRecorded: LogsCheck = (logs) => {
   }
   return {
     pass: false,
-    evidence: `잔액 부족 취소 주문 #${[...failedOrders].join(', #')}의 실패 결제 기록이 결제 목록에 없음`,
+    evidence: `잔액 부족 취소 주문 #${checked.map(([orderId]) => orderId).join(', #')}의 실패 결제 기록이 결제 목록에 없음`,
   }
 }
 
