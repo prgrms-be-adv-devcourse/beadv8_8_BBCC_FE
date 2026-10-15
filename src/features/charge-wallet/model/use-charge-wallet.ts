@@ -9,14 +9,22 @@ import {
 } from '@/entities/wallet'
 import { runWithAction } from '@/shared/api'
 import { env } from '@/shared/config'
+import { rememberChargeReturn, type ChargeReturn } from '../lib/charge-return'
 import { openTossPayment } from '../lib/toss'
 
-/** 충전 요청(서버) → 토스 결제창으로 이동. 돌아오면 useConfirmCharge가 승인한다 */
-export function useRequestCharge(returnTo: { successPath: string; failPath: string }) {
+/**
+ * 충전 요청(서버) → 토스 결제창으로 이동. 돌아오면 useConfirmCharge가 승인한다.
+ * afterCharge: 승인 뒤 "돌아가기"로 보여 줄 화면 (예: 주문서). 자동으로 이동하거나 주문하지 않는다
+ */
+export function useRequestCharge(
+  returnTo: { successPath: string; failPath: string },
+  afterCharge: ChargeReturn | null = null,
+) {
   return useMutation({
     mutationFn: (amount: number) =>
       runWithAction('예치금 충전 요청', async () => {
         const payment = toChargePayment(await walletApi.requestCharge(amount))
+        rememberChargeReturn(afterCharge)
         await openTossPayment(
           env.tossClientKey,
           {

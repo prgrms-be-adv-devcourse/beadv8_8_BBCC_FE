@@ -25,6 +25,7 @@ export {
   CHARGE_MIN,
   isChargeConfirming,
   shortageOf,
+  suggestChargeAmount,
   validateChargeAmount,
 } from './model/wallet.rules'
 export {

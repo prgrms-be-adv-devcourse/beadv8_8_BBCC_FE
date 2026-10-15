@@ -24,3 +24,12 @@ export function shortageOf(balance: number | undefined, amount: number): number 
 export function isChargeConfirming(confirmation: { status: string }): boolean {
   return confirmation.status === 'CONFIRMING'
 }
+
+/** 부족한 금액을 채울 충전 금액: 천 원 단위로 올리고 충전 한도 안으로. 부족하지 않으면 null */
+export function suggestChargeAmount(shortage: number): number | null {
+  if (shortage <= 0) {
+    return null
+  }
+  const rounded = Math.ceil(shortage / 1_000) * 1_000
+  return Math.min(CHARGE_MAX, Math.max(CHARGE_MIN, rounded))
+}
