@@ -1,6 +1,5 @@
 export { walletApi } from './api/wallet-api'
 export {
-  CHARGE_STATUS_LABEL,
   type Charge,
   type ChargeCancellation,
   type ChargeConfirmation,
@@ -22,8 +21,6 @@ export {
 export {
   canCancelCharge,
   isChargeCancelling,
-  CHARGE_MAX,
-  CHARGE_MIN,
   isChargeConfirming,
   shortageOf,
   suggestChargeAmount,

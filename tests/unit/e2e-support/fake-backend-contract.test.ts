@@ -10,7 +10,7 @@ import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
 import { paymentDetailShape, paymentPageShape } from '@/entities/payment/api/payment.shape'
-import { sellerOrderPageShape } from '@/entities/seller-order/api/seller-order.shape'
+import { deliveryShape, sellerOrderPageShape } from '@/entities/seller-order/api/seller-order.shape'
 import { toSellerApplicationRequest } from '@/entities/seller'
 import {
   sellerApplicationPageShape,
@@ -213,11 +213,14 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const sellerOrders = await call('GET', '/seller/orders', 2)
     expectContract(sellerOrders.data, sellerOrderPageShape)
     const sellerOrderId = sellerOrders.data.content[0].sellerOrderId
-    await call('POST', `/seller/orders/${sellerOrderId}/ship`, 2, {
+    const shipped = await call('POST', `/seller/orders/${sellerOrderId}/ship`, 2, {
       carrier: 'CJ',
       trackingNumber: '1234',
     })
-    await call('POST', `/seller/orders/${sellerOrderId}/deliver`, 2)
+    expectContract(shipped.data, deliveryShape)
+    const delivered = await call('POST', `/seller/orders/${sellerOrderId}/deliver`, 2)
+    expectContract(delivered.data, deliveryShape)
+    expect(delivered.data.status).toBe('DELIVERED')
     expectContract((await call('GET', '/seller/orders', 2)).data, sellerOrderPageShape)
 
     const itemId = order.data.items[0].orderItemId

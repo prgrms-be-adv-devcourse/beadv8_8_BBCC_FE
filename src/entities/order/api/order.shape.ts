@@ -3,14 +3,14 @@ import { arr, nullable, num, obj, oneOf, pageOf, str } from '@/shared/api'
 const ORDER_STATUS = ['PENDING_PAYMENT', 'PAID', 'CANCELLED']
 const DELIVERY_STATUS = ['READY', 'SHIPPING', 'DELIVERED']
 
-export const shippingAddressShape = obj({
+const shippingAddressShape = obj({
   recipientName: str,
   phone: str,
   zipCode: str,
   address: str,
 })
 
-export const orderItemShape = obj({
+const orderItemShape = obj({
   orderItemId: str,
   productId: str,
   optionId: str,

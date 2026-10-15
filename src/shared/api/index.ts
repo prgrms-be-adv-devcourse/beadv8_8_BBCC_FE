@@ -16,12 +16,7 @@ export {
   type ContractIssue,
   type Shape,
 } from './contract'
-export {
-  getErrorMessage,
-  getErrorStatus,
-  isProblemDetail,
-  type ProblemDetail,
-} from './problem-detail'
+export { getErrorMessage, getErrorStatus, type ProblemDetail } from './problem-detail'
 export type { Page } from './types'
 export {
   registerMockHandlers,

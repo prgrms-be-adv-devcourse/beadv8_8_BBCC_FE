@@ -19,7 +19,6 @@ export {
   countOrdersByTab,
   deliveryOf,
   filterOrdersByTab,
-  isAwaitingPayment,
   isPaymentDelayed,
   needsCharge,
   ORDER_TABS,

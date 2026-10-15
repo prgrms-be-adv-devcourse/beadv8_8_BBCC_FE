@@ -26,3 +26,14 @@ export type SellerOrderDto = {
 
 /** POST /seller/orders/{sellerOrderId}/ship */
 export type ShipRequestDto = { carrier: string; trackingNumber: string }
+
+/** POST /seller/orders/{id}/ship · /deliver (BE DeliveryResponse) */
+export type DeliveryDto = {
+  sellerOrderId: string
+  orderId: string
+  status: string
+  carrier: string | null
+  trackingNumber: string | null
+  shippedAt: string | null
+  deliveredAt: string | null
+}

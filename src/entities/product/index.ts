@@ -38,7 +38,6 @@ export {
   toProductSearchParams,
   toProductSummary,
   toRegisterProductRequest,
-  toSellerProduct,
   toUpdateProductRequest,
 } from './model/product.mapper'
 export {
@@ -46,14 +45,12 @@ export {
   canStopSale,
   categoryNameOf,
   findOption,
-  heightRange,
   isFreeSize,
   isOnSale,
   optionCombos,
   priceGroups,
   productMeta,
   sizeValues,
-  stockLabel,
   validateProductEditForm,
   validateRegisterProductForm,
   validateStockAdjustment,

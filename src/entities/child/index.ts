@@ -3,8 +3,6 @@ export type { ChildProfileDto, GrowthRecordDto } from './api/child.dto'
 export { childApi } from './api/child-api'
 export {
   BODY_TYPE_LABEL,
-  GENDER_LABEL,
-  PREFERRED_FIT_LABEL,
   type BodyType,
   type Child,
   type ChildForm,
