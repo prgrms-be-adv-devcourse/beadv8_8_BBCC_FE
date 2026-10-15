@@ -2,6 +2,7 @@ import { Outlet } from 'react-router'
 import { ShopHeader } from '@/widgets/shop-header'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { SessionGate } from './SessionGate'
+import { ShopLoginRedirect } from './ShopLoginRedirect'
 
 /** 쇼핑(보호자): 일반 쇼핑몰 화면. API 흐름은 시연 막대의 버튼으로 연다 */
 export function ShopLayout() {
@@ -11,7 +12,9 @@ export function ShopLayout() {
       <ShopHeader />
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
         <SessionGate>
-          <Outlet />
+          <ShopLoginRedirect>
+            <Outlet />
+          </ShopLoginRedirect>
         </SessionGate>
       </main>
       <footer className="text-muted-foreground border-t bg-white py-6 text-center text-xs">

@@ -24,6 +24,21 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
   })
   page.on('dialog', (dialog) => dialog.accept())
 
+  await test.step('로그인 전: 상품은 보고, 장바구니는 로그인 뒤 원래 화면으로 (기획서 F01 · F03)', async () => {
+    await page.goto('/products/1')
+    await expect(page.getByText('데일리 맨투맨 (상품 A)').first()).toBeVisible()
+    await expect(page.getByRole('link', { name: '로그인하고 담기' })).toHaveAttribute(
+      'href',
+      '/login?next=%2Fproducts%2F1',
+    )
+    await page.goto('/cart')
+    await expect(page).toHaveURL(/\/login\?next=%2Fcart$/)
+    await expect(page.getByText('로그인하면 보던 화면으로 돌아가요.')).toBeVisible()
+    await page.getByRole('main').getByRole('button', { name: '보호자', exact: true }).click()
+    await expect(page).toHaveURL(/\/cart$/)
+    await expect(page.getByRole('heading', { name: '장바구니' })).toBeVisible()
+  })
+
   await test.step('관리자 영역: 관리자가 아니면 안내', async () => {
     await page.goto('/admin')
     await switchRole(page, '보호자')
