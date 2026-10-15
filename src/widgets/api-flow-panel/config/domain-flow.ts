@@ -178,3 +178,35 @@ export function flowOf(method: string, path: string): FlowStep[] {
   const pathname = path.split('?')[0]
   return FLOWS.find((flow) => flow.method === method && flow.pattern.test(pathname))?.steps ?? []
 }
+
+/** 주문이 취소될 때 이어지는 처리 (설계 기준: 실패 이벤트 → 주문 취소 → 보상) */
+export const ORDER_FAILURE_STEPS = {
+  stockFailed: {
+    name: 'stock.deduction-failed',
+    from: 'product',
+    to: ['order'],
+    description: '재고 부족 · 판매 중지 → 아무것도 차감하지 않고 주문 취소',
+    kind: 'event',
+  },
+  paymentFailed: {
+    name: 'payment.failed',
+    from: 'payment',
+    to: ['order'],
+    description: '잔액 부족 등으로 결제 실패 → 주문 취소',
+    kind: 'event',
+  },
+  paymentExpired: {
+    name: '결제 시간 초과',
+    from: 'order',
+    to: ['order'],
+    description: '결제 이벤트가 제한 시간 안에 오지 않아 주문 취소',
+    kind: 'event',
+  },
+  cancelled: {
+    name: 'order.cancelled',
+    from: 'order',
+    to: ['product'],
+    description: '보상: 상품이 선점한 재고를 되돌림',
+    kind: 'event',
+  },
+} satisfies Record<string, FlowStep>

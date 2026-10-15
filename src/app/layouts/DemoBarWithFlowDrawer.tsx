@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApiFlowLog } from '@/shared/api'
 import { cn } from '@/shared/lib'
-import { ApiFlowPanel } from '@/widgets/api-flow-panel'
+import { ApiFlowPanel, usePresentationMode } from '@/widgets/api-flow-panel'
 import { DemoBar } from '@/widgets/demo-bar'
 
 /**
@@ -11,6 +11,7 @@ import { DemoBar } from '@/widgets/demo-bar'
 export function DemoBarWithFlowDrawer() {
   const [open, setOpen] = useState(false)
   const count = useApiFlowLog((state) => state.logs.length)
+  const presentation = usePresentationMode((state) => state.on)
 
   return (
     <>
@@ -29,7 +30,12 @@ export function DemoBarWithFlowDrawer() {
         }
       />
       {open && (
-        <div className="fixed top-11 right-0 bottom-0 z-40 flex w-[440px] flex-col shadow-2xl">
+        <div
+          className={cn(
+            'fixed top-11 right-0 bottom-0 z-40 flex flex-col shadow-2xl',
+            presentation ? 'w-[560px]' : 'w-[440px]',
+          )}
+        >
           <button
             type="button"
             onClick={() => setOpen(false)}

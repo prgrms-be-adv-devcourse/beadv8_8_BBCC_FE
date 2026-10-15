@@ -88,7 +88,10 @@ export function ShopProductDetailPage() {
               <StateMessage tone="error">{getErrorMessage(recommendation.error)}</StateMessage>
             )}
             {recommendation.data && (
-              <SizeRecommendationSummary recommendation={recommendation.data} />
+              <SizeRecommendationSummary
+                recommendation={recommendation.data}
+                child={children.data?.find((item) => item.id === childId) ?? null}
+              />
             )}
           </Card>
 

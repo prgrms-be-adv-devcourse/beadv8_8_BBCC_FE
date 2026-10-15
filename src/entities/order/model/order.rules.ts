@@ -148,3 +148,40 @@ export function countOrdersByTab(orders: { status: OrderStatus }[]): Record<Orde
   for (const order of orders) counts[order.status] += 1
   return counts
 }
+
+export type ProcessStepState = 'done' | 'active' | 'waiting' | 'failed' | 'skipped'
+
+export type ProcessStep = {
+  label: string
+  /** 이 단계를 끝내는 서버 이벤트 (설계 기준) */
+  event: string
+  state: ProcessStepState
+  /** 실패 · 보상 설명 */
+  note?: string
+}
+
+/**
+ * 주문하기 뒤 서버 처리 단계 (주문 접수 → 재고 확보 → 예치금 결제).
+ * 응답에는 중간 단계가 없어서 결제대기면 "처리 중", 결과가 나오면 취소 사유로 멈춘 단계를 정한다
+ */
+export function orderProcess(order: Pick<Order, 'status' | 'cancelReason'>): ProcessStep[] {
+  const step = (index: number, state: ProcessStepState, note?: string): ProcessStep => ({
+    ...PROCESS[index],
+    state,
+    ...(note && { note }),
+  })
+  if (order.status === 'PAID') return [step(0, 'done'), step(1, 'done'), step(2, 'done')]
+  if (order.status === 'PENDING_PAYMENT')
+    return [step(0, 'done'), step(1, 'active'), step(2, 'waiting')]
+  if (order.cancelReason === 'OUT_OF_STOCK')
+    return [step(0, 'done'), step(1, 'failed', '구매할 수 없는 상품'), step(2, 'skipped')]
+  if (order.cancelReason === 'PAYMENT_FAILED')
+    return [step(0, 'done'), step(1, 'done', '재고 복구됨'), step(2, 'failed', '잔액 부족')]
+  return [step(0, 'done'), step(1, 'skipped'), step(2, 'failed', '시간 초과')]
+}
+
+const PROCESS = [
+  { label: '주문 접수', event: 'order.created' },
+  { label: '재고 확보', event: 'stock.deducted' },
+  { label: '예치금 결제', event: 'payment.completed' },
+] as const

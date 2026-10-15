@@ -59,7 +59,12 @@ export function ConsoleProductDetailPage() {
         {recommendation.isError && (
           <StateMessage tone="error">{getErrorMessage(recommendation.error)}</StateMessage>
         )}
-        {recommendation.data && <SizeRecommendationSummary recommendation={recommendation.data} />}
+        {recommendation.data && (
+          <SizeRecommendationSummary
+            recommendation={recommendation.data}
+            child={children.data?.find((item) => item.id === childId) ?? null}
+          />
+        )}
       </Card>
 
       <Card className="space-y-3">

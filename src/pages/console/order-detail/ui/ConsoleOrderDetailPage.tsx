@@ -4,6 +4,7 @@ import {
   canConfirmItem,
   deliveryOf,
   needsCartReview,
+  OrderProcessSteps,
   needsCharge,
   OrderDeliveryList,
   OrderItemRow,
@@ -54,6 +55,10 @@ export function ConsoleOrderDetailPage() {
           )
         }
       />
+
+      <Card>
+        <OrderProcessSteps order={order} showEvents />
+      </Card>
 
       <WalletBalanceCard
         title="내 예치금 잔액 (결제 결과가 나오면 다시 조회)"

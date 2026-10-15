@@ -3,12 +3,14 @@ import { isFailedCall, useApiFlowLog } from '@/shared/api'
 import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { buildReport, downloadText } from '../lib/report'
-import { latestActionDomains } from '../model/flow-view'
+import { domainOf } from '../config/domain-flow'
+import { latestTimeline } from '../model/event-timeline'
+import { isKeyCall, usePresentationMode } from '../model/presentation-mode'
 import { deriveStateChanges } from '../model/state-changes'
 import { CallList } from './CallList'
 import { ChangeList } from './ChangeList'
 import { ContractList } from './ContractList'
-import { DomainFlowMap } from './DomainFlowMap'
+import { EventFlowDiagram } from './EventFlowDiagram'
 import { MockSettings } from './MockSettings'
 
 type Tab = 'calls' | 'changes' | 'contract' | 'mock'
@@ -18,7 +20,10 @@ export function ApiFlowPanel() {
   const logs = useApiFlowLog((state) => state.logs)
   const clear = useApiFlowLog((state) => state.clear)
   const [tab, setTab] = useState<Tab>('calls')
-  const { called, followed } = latestActionDomains(logs)
+  const timeline = useMemo(() => latestTimeline(logs, domainOf), [logs])
+  const presentation = usePresentationMode((state) => state.on)
+  const togglePresentation = usePresentationMode((state) => state.toggle)
+  const visibleLogs = presentation ? logs.filter(isKeyCall) : logs
   const changes = useMemo(() => deriveStateChanges(logs), [logs])
   const contractLogs = logs.filter((log) => log.contractIssues.length > 0)
   // 백엔드가 필드를 더한 것(extra)은 깨지지 않으므로 따로 센다
@@ -37,17 +42,19 @@ export function ApiFlowPanel() {
   }
 
   return (
-    <aside className="flex h-full min-h-0 flex-col border-l bg-white">
-      <div className="space-y-2 border-b p-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">도메인 흐름</h2>
-          <span className="text-muted-foreground text-[11px]">■ 호출 □ 서버 이벤트로 이어짐</span>
-        </div>
-        <DomainFlowMap called={called} followed={followed} />
+    <aside
+      className={cn(
+        'flex h-full min-h-0 flex-col border-l bg-white',
+        // 발표 모드: 프로젝터에서도 읽히게 패널 전체를 키운다
+        presentation && '[zoom:1.15]',
+      )}
+    >
+      <div className="max-h-[55%] shrink-0 overflow-y-auto border-b p-3">
+        <EventFlowDiagram timeline={timeline} />
       </div>
       <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5 text-xs">
         <TabButton active={tab === 'calls'} onClick={() => setTab('calls')}>
-          호출 {logs.length}
+          호출 {presentation ? `${visibleLogs.length}/${logs.length}` : logs.length}
           {failedCount > 0 && <span className="text-destructive"> · 실패 {failedCount}</span>}
         </TabButton>
         <TabButton active={tab === 'changes'} onClick={() => setTab('changes')}>
@@ -64,6 +71,14 @@ export function ApiFlowPanel() {
           목 설정
         </TabButton>
         <div className="ml-auto flex gap-1">
+          <Button
+            size="xs"
+            variant={presentation ? 'default' : 'ghost'}
+            aria-pressed={presentation}
+            onClick={togglePresentation}
+          >
+            발표 모드
+          </Button>
           <Button size="xs" variant="ghost" onClick={exportReport} disabled={logs.length === 0}>
             기록 내보내기
           </Button>
@@ -73,7 +88,7 @@ export function ApiFlowPanel() {
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-2">
-        {tab === 'calls' && <CallList logs={logs} />}
+        {tab === 'calls' && <CallList logs={visibleLogs} />}
         {tab === 'changes' && <ChangeList changes={changes} />}
         {tab === 'contract' && <ContractList logs={contractLogs} />}
         {tab === 'mock' && <MockSettings />}

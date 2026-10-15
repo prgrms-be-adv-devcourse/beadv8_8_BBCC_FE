@@ -21,6 +21,8 @@ export {
   filterOrdersByTab,
   isPaymentDelayed,
   needsCartReview,
+  orderProcess,
+  type ProcessStep,
   unavailableLabel,
   needsCharge,
   ORDER_TABS,
@@ -38,6 +40,7 @@ export {
 } from './model/queries'
 export { OrderDeliveryList } from './ui/OrderDeliveryList'
 export { OrderItemRow } from './ui/OrderItemRow'
+export { OrderProcessSteps } from './ui/OrderProcessSteps'
 export { OrderProgressBar } from './ui/OrderProgressBar'
 export { OrderStatusBadge } from './ui/OrderStatusBadge'
 export { OrderStatusBanner } from './ui/OrderStatusBanner'

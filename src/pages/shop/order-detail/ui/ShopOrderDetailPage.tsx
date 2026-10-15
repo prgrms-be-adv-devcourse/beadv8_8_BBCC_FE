@@ -4,6 +4,7 @@ import {
   canConfirmItem,
   deliveryOf,
   needsCartReview,
+  OrderProcessSteps,
   needsCharge,
   OrderDeliveryList,
   OrderItemRow,
@@ -41,6 +42,12 @@ export function ShopOrderDetailPage() {
 
       <Card className="space-y-4 py-6">
         <OrderProgressBar {...progress} />
+        {/* 결제가 끝나기 전 · 취소됐을 때: 서버 처리 단계 (어디서 멈췄는지) */}
+        {order.status !== 'PAID' && (
+          <div className="border-t pt-4">
+            <OrderProcessSteps order={order} />
+          </div>
+        )}
         {order.status === 'PENDING_PAYMENT' && (
           <p className="text-primary text-center text-sm font-medium">
             예치금으로 결제하는 중이에요… 잠시만 기다려 주세요

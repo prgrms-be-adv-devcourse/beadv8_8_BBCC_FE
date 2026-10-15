@@ -145,7 +145,12 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
   await test.step('흐름 서랍: 쇼핑에서도 API 호출을 본다', async () => {
     await page.getByRole('button', { name: /^API 흐름 \d+/ }).click()
-    await expect(page.getByText('도메인 흐름')).toBeVisible()
+    // 서버 이벤트 흐름 그림: 주문하기 뒤 실제 결과(결제 완료)까지 이벤트 순서대로
+    await expect(page.getByRole('heading', { name: '서버 이벤트 흐름' })).toBeVisible()
+    await expect(
+      page.getByRole('img', { name: /order\.created → stock\.deducted → .* → payment\.completed/ }),
+    ).toBeVisible()
+    await expect(page.getByText(/결제 완료 · [\d.]+초/)).toBeVisible()
     await expect(page.getByText('/orders', { exact: true }).first()).toBeVisible()
     await page.getByRole('button', { name: '닫기 ✕' }).click()
   })
