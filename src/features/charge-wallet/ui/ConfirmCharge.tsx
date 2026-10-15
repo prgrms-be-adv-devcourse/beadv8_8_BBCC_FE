@@ -2,16 +2,15 @@ import { Link } from 'react-router'
 import { isChargeConfirming } from '@/entities/wallet'
 import { getErrorMessage } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useConfirmCharge } from '../model/use-charge-wallet'
 
-export function ConfirmCharge({
-  search,
-  walletHref,
-}: {
+type ConfirmChargeProps = {
   search: URLSearchParams
   walletHref: string
-}) {
+}
+
+export function ConfirmCharge({ search, walletHref }: ConfirmChargeProps) {
   const confirm = useConfirmCharge(search)
 
   if (confirm.invalidRequest)

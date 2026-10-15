@@ -10,27 +10,26 @@ import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Input, Select } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUpdateProduct } from '../model/use-manage-product'
 
-export function EditProductForm({
-  product,
-  onDone,
-}: {
+type EditProductFormProps = {
   product: ProductDetail
   onDone: () => void
-}) {
+}
+
+export function EditProductForm({ product, onDone }: EditProductFormProps) {
   const update = useUpdateProduct(product.id)
   const [form, setForm] = useState<ProductEditForm>(() => toProductEditForm(product))
   const invalid = validateProductEditForm(form)
 
-  const submit = (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (!invalid) update.mutate(form, { onSuccess: onDone })
   }
 
   return (
-    <form className="grid grid-cols-2 gap-3 border-t pt-3" onSubmit={submit}>
+    <form className="grid grid-cols-2 gap-3 border-t pt-3" onSubmit={handleSubmit}>
       <Label>
         상품명
         <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />

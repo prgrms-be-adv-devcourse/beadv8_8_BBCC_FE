@@ -1,6 +1,6 @@
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useRefreshSellerRole } from '../model/use-apply-seller'
 
 export function RefreshSellerRoleButton() {

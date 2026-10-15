@@ -1,10 +1,12 @@
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useWithdraw } from '../model/use-edit-profile'
 
+type WithdrawButtonProps = { onDone: () => void }
+
 /** 탈퇴 (기획서 8장 보완, 조건 보류 · 목) */
-export function WithdrawButton({ onDone }: { onDone: () => void }) {
+export function WithdrawButton({ onDone }: WithdrawButtonProps) {
   const withdraw = useWithdraw({ onDone })
   return (
     <div className="flex items-center gap-2">

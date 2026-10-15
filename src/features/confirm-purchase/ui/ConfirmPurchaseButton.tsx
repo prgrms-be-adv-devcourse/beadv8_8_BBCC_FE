@@ -1,15 +1,14 @@
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useConfirmPurchase } from '../model/use-confirm-purchase'
 
-export function ConfirmPurchaseButton({
-  orderId,
-  orderItemId,
-}: {
+type ConfirmPurchaseButtonProps = {
   orderId: string
   orderItemId: string
-}) {
+}
+
+export function ConfirmPurchaseButton({ orderId, orderItemId }: ConfirmPurchaseButtonProps) {
   const confirm = useConfirmPurchase(orderId)
 
   return (

@@ -3,7 +3,7 @@ import { Badge } from '@/shared/ui/badge'
 import type { ProductOption } from '../model/product'
 import { isSelectable, optionName } from '../model/product.rules'
 
-type Props = {
+type ProductOptionListProps = {
   options: ProductOption[]
   selectedId: string | null
   /** 추천 사이즈 (배지 표시) */
@@ -11,7 +11,12 @@ type Props = {
   onSelect: (optionId: string) => void
 }
 
-export function ProductOptionList({ options, selectedId, recommendedSize, onSelect }: Props) {
+export function ProductOptionList({
+  options,
+  selectedId,
+  recommendedSize,
+  onSelect,
+}: ProductOptionListProps) {
   return (
     <div className="grid grid-cols-2 gap-2">
       {options.map((option) => (

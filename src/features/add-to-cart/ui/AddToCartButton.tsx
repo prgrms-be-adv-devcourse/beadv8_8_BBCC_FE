@@ -1,10 +1,10 @@
 import { Link } from 'react-router'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useAddToCart } from '../model/use-add-to-cart'
 
-type Props = {
+type AddToCartButtonProps = {
   optionId: string | null
   /** 입을 자녀 (선택). 상세에서 고른 자녀를 그대로 넘긴다 */
   childId: string | null
@@ -14,7 +14,13 @@ type Props = {
   cartHref: string
 }
 
-export function AddToCartButton({ optionId, childId, quantity, disabled, cartHref }: Props) {
+export function AddToCartButton({
+  optionId,
+  childId,
+  quantity,
+  disabled,
+  cartHref,
+}: AddToCartButtonProps) {
   const add = useAddToCart()
 
   return (

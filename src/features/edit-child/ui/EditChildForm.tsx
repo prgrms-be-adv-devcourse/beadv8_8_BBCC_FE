@@ -9,15 +9,17 @@ import {
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUpdateChild } from '../model/use-edit-child'
 
-export function EditChildForm({ child }: { child: Child }) {
+type EditChildFormProps = { child: Child }
+
+export function EditChildForm({ child }: EditChildFormProps) {
   const update = useUpdateChild(child.id)
   const [form, setForm] = useState<ChildForm>(() => toChildForm(child))
   const [invalid, setInvalid] = useState<string | null>(null)
 
-  const submit = (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const message = validateChildForm(form, new Date().toISOString().slice(0, 10))
     setInvalid(message)
@@ -27,7 +29,7 @@ export function EditChildForm({ child }: { child: Child }) {
   return (
     <Card>
       <CardTitle className="mb-3">정보 수정</CardTitle>
-      <form onSubmit={submit}>
+      <form onSubmit={handleSubmit}>
         <ChildFormFields
           form={form}
           onChange={setForm}

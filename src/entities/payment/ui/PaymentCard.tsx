@@ -2,7 +2,7 @@ import { getErrorMessage } from '@/shared/api'
 import { cn, formatDateTime, formatWon } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { Card, CardTitle } from '@/shared/ui/card'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import {
   PAYMENT_FAILURE_LABEL,
   PAYMENT_STATUS_LABEL,
@@ -23,7 +23,7 @@ const CHECK_TITLE: Record<PaymentCheck['result'], string> = {
   INFO: '결제 확인',
 }
 
-type Props = {
+type PaymentCardProps = {
   payment: Payment | null
   check: PaymentCheck
   pending: boolean
@@ -31,7 +31,7 @@ type Props = {
 }
 
 /** 주문의 결제 기록 (결제 도메인) + 주문 상태와 맞춰 본 결과 */
-export function PaymentCard({ payment, check, pending, error }: Props) {
+export function PaymentCard({ payment, check, pending, error }: PaymentCardProps) {
   return (
     <Card className="space-y-2">
       <CardTitle>결제 내역</CardTitle>

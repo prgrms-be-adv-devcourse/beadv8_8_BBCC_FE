@@ -1,10 +1,12 @@
 import { canDecrease, type CartLine } from '@/entities/cart'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useEditCartItem } from '../model/use-edit-cart-item'
 
-export function CartItemControls({ line }: { line: CartLine }) {
+type CartItemControlsProps = { line: CartLine }
+
+export function CartItemControls({ line }: CartItemControlsProps) {
   const { changeQuantity, remove, pending, error } = useEditCartItem(line.id)
 
   return (

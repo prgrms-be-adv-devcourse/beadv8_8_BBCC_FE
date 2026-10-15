@@ -1,17 +1,15 @@
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useDeleteChild } from '../model/use-edit-child'
 
-export function DeleteChildButton({
-  childId,
-  childName,
-  onDeleted,
-}: {
+type DeleteChildButtonProps = {
   childId: string
   childName: string
   onDeleted: () => void
-}) {
+}
+
+export function DeleteChildButton({ childId, childName, onDeleted }: DeleteChildButtonProps) {
   const remove = useDeleteChild(childId, { onDeleted })
   return (
     <div className="flex items-center gap-2">

@@ -1,7 +1,9 @@
 import { Badge } from '@/shared/ui/badge'
 import { FIT_LABEL, type Fit } from '../model/recommendation'
 
-export function FitBadge({ size, fit }: { size?: string; fit: Fit }) {
+type FitBadgeProps = { size?: string; fit: Fit }
+
+export function FitBadge({ size, fit }: FitBadgeProps) {
   return (
     <Badge variant="growth">
       {size && `추천 ${size} · `}

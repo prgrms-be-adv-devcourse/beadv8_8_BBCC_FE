@@ -4,11 +4,13 @@ import { getErrorMessage } from '@/shared/api'
 import { CARRIERS } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
 import { Input, Select } from '@/shared/ui/input'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useShipOrder } from '../model/use-ship-order'
 
+type ShipOrderControlsProps = { sellerOrder: SellerOrder }
+
 /** 발송(송장 등록) → 배송 완료. 판매자 몫의 배송 1건 단위 */
-export function ShipOrderControls({ sellerOrder }: { sellerOrder: SellerOrder }) {
+export function ShipOrderControls({ sellerOrder }: ShipOrderControlsProps) {
   const { ship, deliver, pending, error } = useShipOrder(sellerOrder.id)
   const [carrier, setCarrier] = useState('CJ')
   const [trackingNumber, setTrackingNumber] = useState('123456789012')

@@ -1,14 +1,13 @@
 import { cn } from '@/shared/lib'
 import { DOMAINS, type DomainId } from '../config/domain-flow'
 
-/** 도메인 노드. 직접 호출된 도메인은 진하게, 서버 이벤트로 이어진 도메인은 테두리로 표시한다 */
-export function DomainFlowMap({
-  called,
-  followed,
-}: {
+type DomainFlowMapProps = {
   called: Set<DomainId>
   followed: Set<DomainId>
-}) {
+}
+
+/** 도메인 노드. 직접 호출된 도메인은 진하게, 서버 이벤트로 이어진 도메인은 테두리로 표시한다 */
+export function DomainFlowMap({ called, followed }: DomainFlowMapProps) {
   return (
     <div className="grid grid-cols-4 gap-1.5">
       {DOMAINS.map((domain) => (

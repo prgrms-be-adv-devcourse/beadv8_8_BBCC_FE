@@ -2,8 +2,10 @@ import { formatDateTime, formatWon } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { PAYMENT_FAILURE_LABEL, PAYMENT_STATUS_LABEL, type Payment } from '../model/payment'
 
+type PaymentRowProps = { payment: Payment }
+
 /** 결제 내역 목록 한 줄 */
-export function PaymentRow({ payment }: { payment: Payment }) {
+export function PaymentRow({ payment }: PaymentRowProps) {
   return (
     <div className="flex items-center justify-between border-t pt-2 text-sm">
       <span>

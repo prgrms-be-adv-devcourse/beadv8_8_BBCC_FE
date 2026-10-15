@@ -4,21 +4,23 @@ import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUpdateNickname } from '../model/use-edit-profile'
 
-export function EditNicknameForm({ current }: { current: string }) {
+type EditNicknameFormProps = { current: string }
+
+export function EditNicknameForm({ current }: EditNicknameFormProps) {
   const update = useUpdateNickname()
   const [nickname, setNickname] = useState(current)
   const invalid = validateNickname(nickname)
 
-  const submit = (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (!invalid) update.mutate(nickname)
   }
 
   return (
-    <form className="flex items-end gap-2" onSubmit={submit}>
+    <form className="flex items-end gap-2" onSubmit={handleSubmit}>
       <Label className="flex-1">
         닉네임 ({NICKNAME_MIN}~{NICKNAME_MAX}자)
         <Input value={nickname} onChange={(e) => setNickname(e.target.value)} />

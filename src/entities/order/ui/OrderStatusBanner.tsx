@@ -3,7 +3,7 @@ import { formatWon } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { CANCEL_REASON_LABEL, ORDER_STATUS_LABEL, type Order } from '../model/order'
 
-type Props = {
+type OrderStatusBannerProps = {
   order: Order
   /** 다시 조회 중 표시 */
   polling: boolean
@@ -13,7 +13,12 @@ type Props = {
   delayed?: boolean
 }
 
-export function OrderStatusBanner({ order, polling, cancelAction, delayed = false }: Props) {
+export function OrderStatusBanner({
+  order,
+  polling,
+  cancelAction,
+  delayed = false,
+}: OrderStatusBannerProps) {
   if (order.status === 'PENDING_PAYMENT') {
     return (
       <Card className="border-primary">

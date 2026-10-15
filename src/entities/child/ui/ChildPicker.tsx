@@ -1,7 +1,7 @@
 import { Button } from '@/shared/ui/button'
 import type { Child } from '../model/child'
 
-type Props = {
+type ChildPickerProps = {
   children: Child[]
   selectedId: string | null
   onSelect: (childId: string | null) => void
@@ -11,7 +11,13 @@ type Props = {
   label?: (child: Child) => string
 }
 
-export function ChildPicker({ children, selectedId, onSelect, noneLabel, label }: Props) {
+export function ChildPicker({
+  children,
+  selectedId,
+  onSelect,
+  noneLabel,
+  label,
+}: ChildPickerProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {noneLabel && (

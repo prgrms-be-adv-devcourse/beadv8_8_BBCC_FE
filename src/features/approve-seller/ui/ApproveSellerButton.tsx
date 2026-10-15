@@ -1,9 +1,11 @@
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useApproveSeller } from '../model/use-approve-seller'
 
-export function ApproveSellerButton({ applicationId }: { applicationId: string }) {
+type ApproveSellerButtonProps = { applicationId: string }
+
+export function ApproveSellerButton({ applicationId }: ApproveSellerButtonProps) {
   const approve = useApproveSeller()
   return (
     <div className="flex items-center gap-2">

@@ -1,10 +1,12 @@
 import { Link } from 'react-router'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useKakaoLogin } from '../model/use-kakao-login'
 
-export function KakaoCallback({ code, onSuccess }: { code: string | null; onSuccess: () => void }) {
+type KakaoCallbackProps = { code: string | null; onSuccess: () => void }
+
+export function KakaoCallback({ code, onSuccess }: KakaoCallbackProps) {
   const login = useKakaoLogin(code, { onSuccess })
 
   if (!code)

@@ -3,7 +3,7 @@ import { ChildFormFields, validateChildForm, type ChildForm } from '@/entities/c
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { DEMO_CHILD } from '../config/demo-child'
 import { useRegisterChild } from '../model/use-register-child'
 
@@ -12,7 +12,7 @@ export function RegisterChildForm() {
   const [form, setForm] = useState<ChildForm>(DEMO_CHILD)
   const [invalid, setInvalid] = useState<string | null>(null)
 
-  const submit = (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const message = validateChildForm(form, new Date().toISOString().slice(0, 10))
     setInvalid(message)
@@ -22,7 +22,7 @@ export function RegisterChildForm() {
   return (
     <Card>
       <CardTitle className="mb-3">자녀 등록</CardTitle>
-      <form onSubmit={submit}>
+      <form onSubmit={handleSubmit}>
         <ChildFormFields
           form={form}
           onChange={setForm}

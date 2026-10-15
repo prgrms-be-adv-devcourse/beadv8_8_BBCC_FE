@@ -2,14 +2,13 @@ import type { ReactNode } from 'react'
 import { formatWon } from '@/shared/lib'
 import type { Settlement } from '../model/settlement'
 
-/** 정산서 한 줄: 판매 − 수수료 = 지급 */
-export function SettlementSummary({
-  settlement,
-  action,
-}: {
+type SettlementSummaryProps = {
   settlement: Settlement
   action?: ReactNode
-}) {
+}
+
+/** 정산서 한 줄: 판매 − 수수료 = 지급 */
+export function SettlementSummary({ settlement, action }: SettlementSummaryProps) {
   return (
     <div className="text-sm">
       <div className="flex items-center justify-between">

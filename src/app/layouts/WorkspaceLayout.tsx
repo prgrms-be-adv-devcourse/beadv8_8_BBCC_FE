@@ -1,11 +1,11 @@
 import { Link, Outlet, useLocation } from 'react-router'
 import { hasRole, ROLE_LABEL, useSessionStore, type Role } from '@/entities/session'
 import { Card } from '@/shared/ui/card'
-import { SideNav, type SideNavItem } from '@/shared/ui/side-nav'
-import { DemoBarWithFlowDrawer } from './FlowDrawer'
+import { SideNav, type SideNavItem } from '@/shared/ui/SideNav'
+import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { SessionGate } from './SessionGate'
 
-type Props = {
+type WorkspaceLayoutProps = {
   title: string
   items: SideNavItem[]
   /** 이 영역을 쓰는 역할 */
@@ -17,7 +17,13 @@ type Props = {
 }
 
 /** 판매자 센터 · 관리자: 왼쪽 메뉴 + 업무 화면 */
-export function WorkspaceLayout({ title, items, role, openPaths = [], guide }: Props) {
+export function WorkspaceLayout({
+  title,
+  items,
+  role,
+  openPaths = [],
+  guide,
+}: WorkspaceLayoutProps) {
   const user = useSessionStore((state) => state.user)
   const { pathname } = useLocation()
   const blocked = !hasRole(user, role) && !openPaths.includes(pathname)

@@ -25,7 +25,7 @@ Codex는 이 파일을, Claude는 `CLAUDE.md`의 `@AGENTS.md`로 같은 내용�
 
 ## 스택
 
-React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui · TanStack Query · Zustand · axios · React Router. 테스트는 Vitest(단위) · Playwright(E2E). 이름은 변수 · 함수 camelCase, 컴포넌트 · 타입 PascalCase.
+React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui · TanStack Query · Zustand · axios · React Router. 테스트는 Vitest(단위) · Playwright(E2E). 이름 규칙은 2절 "이름 규칙".
 
 ## 0. 판단 기준 — 금지 → 승인 필요 → 자율 순서로 확인
 
@@ -51,7 +51,7 @@ React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui · TanStack Query
 | 시연 콘솔   | `/console` | 발표 · 백엔드 확인용. 단계 ①~⑦ 메뉴 + 흐름 패널 고정 + `/console/verify`                  |
 
 - 모든 영역 맨 위에 시연 막대(영역 전환 · 시연 역할 · API 흐름 버튼)를 둔다. 쇼핑 · 판매자 센터 · 관리자에서는 흐름 패널을 서랍으로 연다. 기록은 영역과 상관없이 하나다.
-- 같은 업무 화면(자녀 · 배송지 · 예치금 · 판매자 · 관리자 화면)은 영역마다 다시 만들지 않고 같은 페이지를 라우터에 함께 연결한다. 단계 번호(`step`)와 백엔드 처리 설명(`note`)은 `PageHeader`가 콘솔에서만 보여 준다. 쇼핑 홈 · 상품 상세 · 장바구니 · 주문은 쇼핑 전용 페이지(`pages/shop-*`)를 둔다.
+- 같은 업무 화면(자녀 · 배송지 · 예치금 · 판매자 · 관리자 화면)은 영역마다 다시 만들지 않고 같은 페이지를 라우터에 함께 연결한다. 단계 번호(`step`)와 백엔드 처리 설명(`note`)은 `PageHeader`가 콘솔에서만 보여 준다. 쇼핑 홈 · 상품 상세 · 장바구니 · 주문은 쇼핑(`pages/shop/*`)과 콘솔(`pages/console/*`)에 따로 두고, 로직은 기능 훅(`useCheckout` · `useOrderTracking`)을 같이 쓴다.
 - 영역마다 다른 주소가 필요한 기능(장바구니 링크, 토스 복귀 주소)은 기능이 주소를 정하지 않고 props로 받는다.
 - 화면 역할: 보호자 · 판매자 · 관리자. 시연에서는 개발용 토큰(`POST /api/v1/dev/tokens`, local 전용)으로 역할을 전환한다. 카카오 로그인은 실제 연동 확인용.
 - **기획서(1.5 주요 기능 · 8장 API 표)의 세미 · 보완 기능은 백엔드 구현 여부와 상관없이 모두 화면에 구현한다.** 백엔드 계약이 달라지면 DTO · 응답 모양 · 매퍼에서 맞춘다 (화면 · 업무 규칙은 그대로). 백엔드와 맞추는 일은 통합 테스트 때 한다.
@@ -64,7 +64,7 @@ React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui · TanStack Query
 | 레이어     | 맡는 것                                                  | Kidly 슬라이스 예                                                                                                                                                   |
 | ---------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `app`      | 라우터 · Provider · 전역 스타일 · 목 등록                | (슬라이스 없음) `providers/` · `router/` · `layouts/`(쇼핑 · 판매자 센터 · 관리자 · 콘솔) · `mocks/`                                                                |
-| `pages`    | 라우트 하나 = 슬라이스 하나. 위젯 · 기능 · 엔티티 조합만 | `shop-home` · `shop-order-detail` · `cart` · `order-detail` · `seller-orders` · `admin-members`                                                                     |
+| `pages`    | 라우트 하나 = 슬라이스 하나. 위젯 · 기능 · 엔티티 조합만 | 영역 그룹 아래에 둔다: `common/login` · `shop/order-detail` · `center/products` · `admin/members` · `console/verify`                                                |
 | `widgets`  | 여러 기능을 묶은 화면 덩어리                             | `demo-bar`(영역 전환 · 시연 역할) · `shop-header` · `api-flow-panel`(도메인 흐름도 + 호출 목록) · `demo-step-bar`(①~⑦ 메뉴) · `verification-checklist`              |
 | `features` | 사용자 행동 하나 (주로 변경 요청)                        | `auth-kakao-login` · `switch-demo-role` · `add-to-cart` · `place-order` · `confirm-purchase` · `ship-order` · `charge-wallet` · `approve-seller` · `run-settlement` |
 | `entities` | 업무 대상의 타입 · 조회 · 표시                           | `session` · `member` · `child` · `address` · `seller` · `product` · `recommendation` · `cart` · `order` · `seller-order` · `payment` · `wallet` · `settlement`      |
@@ -73,6 +73,7 @@ React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui · TanStack Query
 - 같은 레이어의 다른 슬라이스는 import하지 않는다 (`features/place-order` → `features/add-to-cart` 금지). 함께 써야 하면 위 레이어에서 조합한다.
 - `app` · `shared`는 슬라이스 없이 세그먼트로 바로 나눈다.
 - 슬라이스 이름은 kebab-case, 행동은 동사로 시작한다 (`place-order`), 대상은 명사 (`order`).
+- `pages`는 주소 영역(`routes.ts`의 `Area`)과 같은 그룹 폴더로 묶는다: `common`(로그인 · 콜백 · 404) · `shop` · `center` · `admin` · `console`. 그룹 폴더 바로 아래에는 슬라이스만 두고 공용 코드를 두지 않는다 (공용은 features · entities로). 여러 영역이 같이 쓰는 화면은 주로 쓰는 영역에 두고 라우터에서 함께 연결한다 (예: 콘솔의 자녀 화면 = `shop/children`).
 
 ### 세그먼트 (슬라이스 안)
 
@@ -105,6 +106,26 @@ React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui · TanStack Query
 
 - 슬라이스마다 `index.ts`로 밖에 공개할 것만 내보낸다. 다른 슬라이스는 `@/entities/order`처럼 `index.ts`로만 import하고 내부 경로(`@/entities/order/model/types`)를 직접 쓰지 않는다.
 - 슬라이스 안에서는 상대 경로, 슬라이스 밖은 `@/` 별칭을 쓴다.
+
+### 이름 규칙
+
+React 커뮤니티에서 가장 흔한 관례(컴포넌트 PascalCase · 그 밖의 파일 kebab-case)를 따른다.
+
+| 대상             | 규칙                                                                                                                      | 예                                                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 폴더 · 슬라이스  | kebab-case                                                                                                                | `place-order` · `pages/shop/order-detail`                                                                                    |
+| 컴포넌트 파일    | PascalCase, 파일 이름 = 컴포넌트 이름, **한 파일에 공개 컴포넌트 하나** (파일 안에서만 쓰는 작은 컴포넌트는 함께 둬도 됨) | `StopSaleButton.tsx`                                                                                                         |
+| 그 밖의 파일     | kebab-case + 역할 접미사                                                                                                  | `use-checkout.ts` · `order.dto.ts` · `order.shape.ts` · `order-api.ts` · `order.mapper.ts` · `order.rules.ts` · `queries.ts` |
+| `shared/ui`      | shadcn CLI가 만든 파일은 kebab-case 그대로(린트 제외), 직접 만든 컴포넌트는 PascalCase(린트 대상)                         | `button.tsx` · `PageHeader.tsx`                                                                                              |
+| 페이지 컴포넌트  | `{영역}{이름}Page` (`common`은 영역 없이)                                                                                 | `ShopCartPage` · `CenterProductsPage` · `ConsoleVerifyPage` · `LoginPage`                                                    |
+| 컴포넌트 · 타입  | PascalCase. 타입은 `type`만 쓴다 (`interface` 쓰지 않음, `I` 접두어 금지)                                                 | `OrderDetail`                                                                                                                |
+| props 타입       | 컴포넌트 바로 위에 `type {컴포넌트}Props` (인라인 타입 · 그냥 `Props` 금지)                                               | `type DemoBarProps = { actions?: ReactNode }`                                                                                |
+| 훅               | `use` + 동사/명사. 기능 훅 파일은 슬라이스 이름(`use-{슬라이스}.ts`)에 여러 훅을 둘 수 있다                               | `useCheckout` · `useStopSale`                                                                                                |
+| 이벤트           | 컴포넌트 안 처리 함수는 `handle*`, 받는 props는 `on*`                                                                     | `handleSubmit` · `onPlaced`                                                                                                  |
+| 불리언           | `is` · `has` · `can` · `should` 접두어 (변수 · 규칙 함수 모두)                                                            | `isSelling` · `canConfirmPurchase`                                                                                           |
+| 상수             | 고정 값 · 라벨 표는 UPPER_SNAKE_CASE, 설정 객체는 camelCase                                                               | `ORDER_STATUS_LABEL` · `paths`                                                                                               |
+| 엔티티 공개 객체 | 요청 함수 묶음 `{대상}Api`, 쿼리 키 `{대상}Keys`, 응답 모양 `{대상}Shape`                                                 | `orderApi` · `orderKeys` · `orderShape`                                                                                      |
+| DTO              | `{대상}Dto`, 요청은 `{대상}RequestDto`. 백엔드 클래스 이름에 맞춘다                                                       | `OrderDetailDto` · `SellerApplicationRequestDto`                                                                             |
 
 ### Kidly에서 정한 배치
 

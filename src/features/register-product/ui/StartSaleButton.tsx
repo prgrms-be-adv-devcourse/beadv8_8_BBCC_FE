@@ -1,9 +1,11 @@
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useStartSale } from '../model/use-register-product'
 
-export function StartSaleButton({ productId }: { productId: string }) {
+type StartSaleButtonProps = { productId: string }
+
+export function StartSaleButton({ productId }: StartSaleButtonProps) {
   const start = useStartSale()
   return (
     <div className="flex items-center gap-2">

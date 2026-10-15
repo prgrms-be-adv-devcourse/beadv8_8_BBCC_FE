@@ -5,7 +5,9 @@ import { Badge } from '@/shared/ui/badge'
 import { Card } from '@/shared/ui/card'
 import type { SellerOrder } from '../model/seller-order'
 
-export function SellerOrderCard({ order, action }: { order: SellerOrder; action?: ReactNode }) {
+type SellerOrderCardProps = { order: SellerOrder; action?: ReactNode }
+
+export function SellerOrderCard({ order, action }: SellerOrderCardProps) {
   return (
     <Card className="space-y-2">
       <div className="flex items-center justify-between">

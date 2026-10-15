@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { formatDateTime } from '@/shared/lib'
 import { BODY_TYPE_LABEL, type GrowthRecord, type GrowthSummary } from '../model/child'
 
-type Props = {
+type GrowthRecordListProps = {
   records: GrowthRecord[]
   summary: GrowthSummary
   /** 줄마다 오른쪽 동작 (예: 수정) */
@@ -10,7 +10,7 @@ type Props = {
 }
 
 /** 성장 이력: 키 · 체형이 바뀔 때마다 쌓인 기록 (최신이 위) */
-export function GrowthRecordList({ records, summary, action }: Props) {
+export function GrowthRecordList({ records, summary, action }: GrowthRecordListProps) {
   const sorted = [...records].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
   return (
     <div className="space-y-2">

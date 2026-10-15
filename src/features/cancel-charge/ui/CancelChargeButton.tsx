@@ -2,10 +2,12 @@ import type { Charge } from '@/entities/wallet'
 import { getErrorMessage } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { useCancelCharge } from '../model/use-cancel-charge'
 
-export function CancelChargeButton({ charge }: { charge: Charge }) {
+type CancelChargeButtonProps = { charge: Charge }
+
+export function CancelChargeButton({ charge }: CancelChargeButtonProps) {
   const cancel = useCancelCharge(charge.id)
 
   if (cancel.isSuccess) {

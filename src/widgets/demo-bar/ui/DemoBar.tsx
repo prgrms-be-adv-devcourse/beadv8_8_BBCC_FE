@@ -13,8 +13,10 @@ const AREA_HOME: Record<Area, string> = {
   console: paths.console.home,
 }
 
+type DemoBarProps = { actions?: ReactNode }
+
 /** 모든 영역 맨 위의 시연 도구 막대: 영역 전환 · 시연 역할 · 로그인 상태 · (오른쪽 동작) */
-export function DemoBar({ actions }: { actions?: ReactNode }) {
+export function DemoBar({ actions }: DemoBarProps) {
   const area = useArea()
   const user = useSessionStore((state) => state.user)
   const status = useSessionStore((state) => state.status)

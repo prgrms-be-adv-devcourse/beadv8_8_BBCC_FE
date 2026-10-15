@@ -62,7 +62,7 @@ FSD(Feature-Sliced Design). `app → pages → widgets → features → entities
 ```
 src/
   app/       라우터 · 레이아웃(쇼핑 · 센터 · 관리자 · 콘솔) · Provider · 목
-  pages/     화면 하나 = 슬라이스 하나
+  pages/     화면 하나 = 슬라이스 하나. 영역별로 묶음: common · shop · center · admin · console
   widgets/   시연 막대 · 쇼핑 머리말 · 흐름 패널 · 단계 메뉴 · 흐름 확인
   features/  사용자 행동 (주문하기 · 충전 · 발송 · 정지 …)
   entities/  업무 대상 (주문 · 결제 · 지갑 · 상품 · 자녀 …)

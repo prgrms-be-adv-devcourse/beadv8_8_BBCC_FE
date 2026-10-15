@@ -5,7 +5,7 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { StateMessage } from '@/shared/ui/page-header'
+import { StateMessage } from '@/shared/ui/StateMessage'
 import { DEMO_APPLICATION } from '../config/demo-application'
 import { useApplySeller } from '../model/use-apply-seller'
 
@@ -14,7 +14,7 @@ export function ApplySellerForm() {
   const [form, setForm] = useState<SellerApplicationForm>(DEMO_APPLICATION)
   const [invalid, setInvalid] = useState<string | null>(null)
 
-  const submit = (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const message = validateSellerApplicationForm(form)
     setInvalid(message)
@@ -24,7 +24,7 @@ export function ApplySellerForm() {
   return (
     <Card>
       <CardTitle className="mb-3">판매자 신청</CardTitle>
-      <form className="grid grid-cols-3 gap-3" onSubmit={submit}>
+      <form className="grid grid-cols-3 gap-3" onSubmit={handleSubmit}>
         <Label>
           상호명
           <Input
