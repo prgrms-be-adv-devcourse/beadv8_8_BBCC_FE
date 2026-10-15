@@ -56,6 +56,17 @@ const members = {
 const now = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19)
 const problem = (res, status, title, detail, instance) =>
   send(res, status, { type: 'about:blank', title, status, detail, instance })
+// 주문 BE #253: 수량 1~99, 범위 밖이면 400 INVALID_QUANTITY
+const badQuantity = (q) => !Number.isInteger(q) || q < 1 || q > 99
+const invalidQuantity = (res) =>
+  problem(
+    res,
+    400,
+    '수량이 올바르지 않습니다',
+    '수량은 1개부터 99개까지 담을 수 있습니다.',
+    '/cart/items',
+  )
+
 function send(res, status, body, headers = {}) {
   res.writeHead(status, {
     'content-type': status >= 400 ? 'application/problem+json' : 'application/json',
@@ -313,6 +324,7 @@ http
     }
     if (r('GET', /^\/wallets\/me$/)) return send(res, 200, { balance: wallets[me] ?? 0 })
     if (r('POST', /^\/cart\/items$/)) {
+      if (badQuantity(body.quantity)) return invalidQuantity(res)
       const rp = replica[body.optionId]
       if (!rp)
         return problem(
@@ -344,6 +356,7 @@ http
       return send(res, 200, { items, totalAmount: items.reduce((s, l) => s + l.lineAmount, 0) })
     }
     if ((x = r('PATCH', /^\/cart\/items\/(\d+)$/))) {
+      if (badQuantity(body.quantity)) return invalidQuantity(res)
       const l = cart.find((l) => l.cartItemId === x[1])
       l.quantity = body.quantity
       return send(res, 200, lineOf(l))

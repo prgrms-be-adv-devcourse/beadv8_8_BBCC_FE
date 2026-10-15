@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router'
+import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY } from '@/entities/cart'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
   findOption,
@@ -113,10 +114,11 @@ export function ShopProductDetailPage() {
               <span className="text-sm">수량</span>
               <Input
                 type="number"
-                min={1}
+                min={MIN_QUANTITY}
+                max={MAX_QUANTITY}
                 className="w-20"
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                onChange={(e) => setQuantity(clampQuantity(Number(e.target.value)))}
               />
               <span className="ml-auto text-xl font-extrabold">
                 {selected ? formatWon(selected.price * quantity) : '옵션을 골라 주세요'}

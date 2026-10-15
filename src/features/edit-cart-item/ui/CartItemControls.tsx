@@ -1,4 +1,4 @@
-import { canDecrease, type CartLine } from '@/entities/cart'
+import { canDecrease, canIncrease, type CartLine } from '@/entities/cart'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -23,7 +23,7 @@ export function CartItemControls({ line }: CartItemControlsProps) {
       <Button
         size="icon-sm"
         variant="outline"
-        disabled={pending}
+        disabled={pending || !canIncrease(line)}
         onClick={() => changeQuantity(line.quantity + 1)}
       >
         +
