@@ -18,7 +18,7 @@ const FAILURE_SCENARIOS = [
   [
     '결제 시간 초과',
     paths.console.orders,
-    '결제 이벤트가 오지 않으면 10분(설정값) 뒤 주문 취소(PAYMENT_EXPIRED). 짧게 보려면 백엔드 설정값을 줄인다',
+    '결제 이벤트가 오지 않으면 10분(설정값) 뒤 주문 취소(PAYMENT_EXPIRED). 짧게 보려면 백엔드 ORDER_PAYMENT_TIMEOUT(예: PT1M) · ORDER_PAYMENT_EXPIRY_INTERVAL을 줄인다',
   ],
 ]
 

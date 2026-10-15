@@ -31,8 +31,44 @@ export function unavailableLabel(item: { unavailableReason: string | null }): st
   return UNAVAILABLE_REASON_LABEL[item.unavailableReason] ?? '구매 불가'
 }
 
+/** 취소됐지만 담았던 상품이 장바구니에 그대로 있다 (BE: 결제 완료 뒤에만 뺀다) → 장바구니에서 다시 확인 */
 export function needsCartReview(order: Order): boolean {
-  return order.status === 'CANCELLED' && order.cancelReason === 'OUT_OF_STOCK'
+  return (
+    order.status === 'CANCELLED' &&
+    (order.cancelReason === 'OUT_OF_STOCK' || order.cancelReason === 'PAYMENT_EXPIRED')
+  )
+}
+
+export type PaymentDeadline = {
+  /** 마감 시각 "HH:MM" (서버 시각 그대로) */
+  time: string
+  /** 주문부터 마감까지 분. 서버 시각끼리 빼므로 시간대와 무관 */
+  minutes: number | null
+}
+
+/** 결제 마감 (BE paymentDueAt). 모르면 null */
+export function paymentDeadline(
+  order: Pick<Order, 'orderedAt' | 'paymentDueAt'>,
+): PaymentDeadline | null {
+  if (!order.paymentDueAt) return null
+  const due = parseServerTime(order.paymentDueAt)
+  const ordered = parseServerTime(order.orderedAt)
+  const minutes =
+    Number.isNaN(due) || Number.isNaN(ordered) ? null : Math.round((due - ordered) / 60_000)
+  return {
+    time: order.paymentDueAt.slice(11, 16),
+    minutes: minutes !== null && minutes > 0 ? minutes : null,
+  }
+}
+
+/** 서버 시각 문자열(시간대 없음)을 같은 기준으로 읽는다 (두 값을 빼는 데만 쓴다) */
+function parseServerTime(value: string): number {
+  return Date.parse(/[zZ]|[+-]\d\d:\d\d$/.test(value) ? value : `${value}Z`)
+}
+
+/** "10:10(주문 후 10분)" · 분을 모르면 "10:10" */
+export function paymentDeadlineLabel(deadline: PaymentDeadline): string {
+  return deadline.minutes ? `${deadline.time}(주문 후 ${deadline.minutes}분)` : deadline.time
 }
 
 export function needsCharge(order: Order): boolean {

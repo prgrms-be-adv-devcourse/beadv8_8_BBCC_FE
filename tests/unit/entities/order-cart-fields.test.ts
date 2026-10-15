@@ -4,6 +4,8 @@ import {
   CANCEL_REASON_LABEL,
   needsCartReview,
   orderTitle,
+  paymentDeadline,
+  paymentDeadlineLabel,
   unavailableLabel,
 } from '@/entities/order'
 
@@ -25,6 +27,27 @@ describe('재고 차감 실패 취소 (안 1: cancelReason만)', () => {
     expect(needsCartReview(base as never)).toBe(true)
     expect(needsCartReview({ ...base, cancelReason: 'PAYMENT_FAILED' } as never)).toBe(false)
     expect(needsCartReview({ status: 'PAID', cancelReason: null } as never)).toBe(false)
+  })
+})
+
+describe('결제 마감 지나 취소 (PAYMENT_EXPIRED)', () => {
+  it('장바구니가 남아 있어 다시 확인 링크를 보인다', () => {
+    expect(needsCartReview({ status: 'CANCELLED', cancelReason: 'PAYMENT_EXPIRED' } as never)).toBe(
+      true,
+    )
+  })
+  it('마감 시각과 주문부터 마감까지 분 (서버 시각끼리 빼서 시간대와 무관)', () => {
+    const deadline = paymentDeadline({
+      orderedAt: '2026-10-15T10:00:00',
+      paymentDueAt: '2026-10-15T10:10:00.123',
+    })
+    expect(deadline).toEqual({ time: '10:10', minutes: 10 })
+    expect(paymentDeadlineLabel(deadline!)).toBe('10:10(주문 후 10분)')
+  })
+  it('마감을 모르면 null, 분을 못 구하면 시각만', () => {
+    expect(paymentDeadline({ orderedAt: '2026-10-15T10:00:00', paymentDueAt: null })).toBeNull()
+    const deadline = paymentDeadline({ orderedAt: '?', paymentDueAt: '2026-10-15T10:10:00' })
+    expect(paymentDeadlineLabel(deadline!)).toBe('10:10')
   })
 })
 
