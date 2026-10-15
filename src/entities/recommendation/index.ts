@@ -6,6 +6,7 @@ export {
   type RecommendedProduct,
   type SizeRecommendation,
 } from './model/recommendation'
+export { toRecommendedProduct } from './model/recommendation.mapper'
 export {
   recommendationKeys,
   useRecommendedProductsQuery,

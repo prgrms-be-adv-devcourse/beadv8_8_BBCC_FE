@@ -50,6 +50,7 @@ export function ConsoleProductsPage() {
                 name={product.name}
                 meta={`${product.categoryName} · ${product.sellerName}`}
                 price={product.minPrice}
+                imageUrl={product.imageUrl}
               />
             ))
           : recommended.data?.content.map((product) => (
@@ -59,6 +60,7 @@ export function ConsoleProductsPage() {
                 name={product.name}
                 meta={`${product.categoryName} · ${product.sellerName}`}
                 price={product.minPrice}
+                imageUrl={product.imageUrl}
                 badge={<FitBadge size={product.recommendedSize} fit={product.fit} />}
               />
             ))}

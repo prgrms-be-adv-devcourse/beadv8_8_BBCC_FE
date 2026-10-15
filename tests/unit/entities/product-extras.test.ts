@@ -20,6 +20,7 @@ const product: ProductDetail = {
   sellerName: '테스트상점',
   status: 'ON_SALE',
   minPrice: 25000,
+  imageUrl: null,
   description: '면 맨투맨',
   options: [
     {

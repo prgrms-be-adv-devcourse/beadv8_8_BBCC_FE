@@ -21,6 +21,8 @@ export type ProductSummary = {
   sellerName: string
   status: ProductStatus
   minPrice: number
+  /** 대표 이미지 (S3). 없으면 null → 기본 이미지 */
+  imageUrl: string | null
 }
 
 export type ProductDetail = ProductSummary & {

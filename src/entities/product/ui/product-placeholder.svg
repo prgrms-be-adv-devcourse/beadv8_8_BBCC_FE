@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="상품 이미지 준비 중">
+  <rect width="400" height="400" fill="#f4f0f6"/>
+  <path d="M150 120 L120 132 L92 170 L122 188 L136 172 L136 290 L264 290 L264 172 L278 188 L308 170 L280 132 L250 120 C244 140 226 152 200 152 C174 152 156 140 150 120 Z"
+        fill="#ffffff" stroke="#c9b6d4" stroke-width="6" stroke-linejoin="round"/>
+  <text x="200" y="336" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#9a88a6">이미지 준비 중</text>
+</svg>
