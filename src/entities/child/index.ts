@@ -18,3 +18,10 @@ export { ChildCard } from './ui/ChildCard'
 export { ChildFormFields } from './ui/ChildFormFields'
 export { ChildPicker } from './ui/ChildPicker'
 export { GrowthRecordList } from './ui/GrowthRecordList'
+export {
+  forecastGrowth,
+  sizeBandOf,
+  type GrowthForecast,
+  type SizeBand,
+} from './model/growth-forecast'
+export { GrowthChart } from './ui/GrowthChart'

@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ChildCard,
+  GrowthChart,
   GrowthRecordList,
   summarizeGrowth,
   useChildQuery,
@@ -59,6 +60,7 @@ export function ShopChildDetailPage() {
         {growth.isError && (
           <StateMessage tone="error">{getErrorMessage(growth.error)}</StateMessage>
         )}
+        {growth.data && <GrowthChart records={growth.data} currentHeightCm={child.data.heightCm} />}
         {growth.data && (
           <GrowthRecordList
             records={growth.data}
