@@ -30,6 +30,7 @@ export function toOrder(dto: OrderDetailDto): Order {
       optionId: item.optionId,
       sellerId: item.sellerId,
       productName: item.productName,
+      optionName: item.optionName ?? null,
       size: item.size,
       unitPrice: item.unitPrice,
       quantity: item.quantity,

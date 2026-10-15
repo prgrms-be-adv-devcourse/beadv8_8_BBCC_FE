@@ -4,7 +4,7 @@ import { CartItemControls } from '@/features/edit-cart-item'
 import { PlaceOrderButton, useCheckout } from '@/features/place-order'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { formatWon } from '@/shared/lib'
+import { formatWon, optionLabel } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Select } from '@/shared/ui/input'
@@ -40,7 +40,7 @@ export function ConsoleCartPage() {
         <Card key={line.id} className="flex items-center justify-between gap-4">
           <div>
             <p className="font-medium">
-              {line.productName} · {line.size}{' '}
+              {[line.productName, optionLabel(line)].filter(Boolean).join(' · ')}{' '}
               {!line.purchasable && <Badge variant="destructive">구매 불가</Badge>}
             </p>
             <p className="text-muted-foreground text-sm">

@@ -13,7 +13,8 @@ export type SellerOrder = {
   items: {
     id: string
     productName: string
-    size: string
+    optionName: string | null
+    size: string | null
     quantity: number
     amount: number
     childLabel: string | null

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { DELIVERY_STATUS_LABEL } from '@/shared/config'
-import { formatWon } from '@/shared/lib'
+import { formatWon, optionLabel } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { ITEM_STATUS_LABEL, type OrderDelivery, type OrderItem } from '../model/order'
 
@@ -16,7 +16,7 @@ export function OrderItemRow({ item, delivery, action }: OrderItemRowProps) {
     <div className="flex items-center justify-between border-t pt-2 text-sm">
       <div>
         <p className="font-medium">
-          {item.productName} · {item.size} × {item.quantity}{' '}
+          {[item.productName, optionLabel(item)].filter(Boolean).join(' · ')} × {item.quantity}{' '}
           <Badge variant={item.status === 'CONFIRMED' ? 'success' : 'muted'}>
             {ITEM_STATUS_LABEL[item.status]}
             {item.confirmType === 'AUTO' && ' (자동)'}

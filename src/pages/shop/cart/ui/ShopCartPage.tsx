@@ -6,7 +6,7 @@ import { CartItemControls } from '@/features/edit-cart-item'
 import { PlaceOrderButton, useCheckout } from '@/features/place-order'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { formatWon } from '@/shared/lib'
+import { formatWon, optionLabel } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Select } from '@/shared/ui/input'
@@ -72,7 +72,7 @@ export function ShopCartPage() {
                 <input
                   type="checkbox"
                   className="accent-primary size-4 shrink-0"
-                  aria-label={`${line.productName} ${line.size} 주문하기`}
+                  aria-label={`${line.productName} ${optionLabel(line) ?? ''} 주문하기`}
                   checked={orderableIds.has(line.id) && isSelected(line.id)}
                   disabled={!orderableIds.has(line.id)}
                   onChange={() => toggleLine(line.id)}
@@ -88,9 +88,13 @@ export function ShopCartPage() {
                     {!line.purchasable && <Badge variant="destructive">구매 불가</Badge>}
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    사이즈 {line.size}
-                    {line.childId &&
-                      ` · ${findChild(children.data, line.childId)?.name ?? `자녀 #${line.childId}`}가 입어요`}
+                    {[
+                      optionLabel(line),
+                      line.childId &&
+                        `${findChild(children.data, line.childId)?.name ?? `자녀 #${line.childId}`}가 입어요`,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </p>
                   <p className="text-sm font-semibold">{formatWon(line.lineAmount)}</p>
                 </div>

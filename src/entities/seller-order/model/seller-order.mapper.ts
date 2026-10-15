@@ -15,6 +15,7 @@ export function toSellerOrder(dto: SellerOrderDto): SellerOrder {
     items: dto.items.map((item) => ({
       id: item.orderItemId,
       productName: item.productName,
+      optionName: item.optionName ?? null,
       size: item.size,
       quantity: item.quantity,
       amount: item.amount,
