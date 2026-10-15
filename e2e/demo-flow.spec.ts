@@ -176,8 +176,10 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
   await test.step('목 끄기 → 실제 서버로 감', async () => {
     await page.getByRole('button', { name: '목 설정' }).click()
     await page.locator('label', { hasText: '상품' }).locator('input').uncheck()
-    await page.goto('/console/products')
-    await expect(page.getByText(/없는 API GET \/products/)).toBeVisible()
+    // 판매자 상품 목록은 아직 목 → 끄면 가짜 백엔드의 없는 API 응답
+    await switchRole(page, '판매자')
+    await page.goto('/console/seller/products')
+    await expect(page.getByText(/없는 API GET \/seller\/products/)).toBeVisible()
   })
 
   expect(consoleErrors).toEqual([])
