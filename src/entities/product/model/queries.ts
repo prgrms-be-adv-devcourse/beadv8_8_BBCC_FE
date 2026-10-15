@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { productApi } from '../api/product-api'
-import type { ProductDetailDto, ProductListItemDto, SellerProductDto } from '../api/product.dto'
+import type { ProductDetailDto, ProductListItemDto } from '../api/product.dto'
 import type { Page } from '@/shared/api'
 import type { Category, ProductSearch } from './product'
 import {
@@ -11,6 +11,7 @@ import {
   toProductSearchParams,
   toProductListItem,
   toSellerProduct,
+  toSellerProductDetail,
 } from './product.mapper'
 
 export const productKeys = {
@@ -19,6 +20,7 @@ export const productKeys = {
   search: (search: ProductSearch) => ['products', 'list', search] as const,
   detail: (productId: string) => ['products', 'detail', productId] as const,
   sellerList: ['products', 'seller'] as const,
+  sellerDetail: (productId: string) => ['products', 'seller', productId] as const,
   categories: ['products', 'categories'] as const,
   categoryInputs: (categoryId: string) => ['products', 'category-inputs', categoryId] as const,
 }
@@ -76,16 +78,17 @@ export function useProductQuery(productId: string) {
 
 /** (목) 내 상품 */
 export function useSellerProductsQuery() {
-  const categories = useCategoryList()
   return useQuery({
     queryKey: productKeys.sellerList,
     queryFn: productApi.sellerList,
-    select: useCallback(
-      (page: Page<SellerProductDto>) => ({
-        ...page,
-        content: page.content.map((item) => toSellerProduct(item, categories)),
-      }),
-      [categories],
-    ),
+    select: (page) => ({ ...page, content: page.content.map(toSellerProduct) }),
+  })
+}
+
+export function useSellerProductQuery(productId: string) {
+  return useQuery({
+    queryKey: productKeys.sellerDetail(productId),
+    queryFn: () => productApi.sellerGet(productId),
+    select: toSellerProductDetail,
   })
 }

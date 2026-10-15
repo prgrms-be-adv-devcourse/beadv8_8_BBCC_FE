@@ -56,12 +56,17 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
   })
 
-  await test.step('판매자 센터: 상품 수정 · 재고 조정 · 판매 중지 → 다시 판매 (목)', async () => {
-    const mine = page.locator('[data-slot="card"]').last()
+  await test.step('판매자 센터: 재고 조정 · 판매 중지 → 다시 판매 (실제 API) · 상품 수정 (목)', async () => {
+    // 내 상품은 등록 최신순 → 방금 등록한 상품이 맨 위
+    const mine = page
+      .locator('[data-slot="card"]')
+      .filter({ hasText: /상품 #\d+ · 옵션/ })
+      .first()
+    // 수정은 목: 오류 없이 저장만 확인 (실제 목록에는 반영되지 않음)
     await mine.getByRole('button', { name: '수정' }).click()
     await mine.getByLabel('상품명').fill('데일리 맨투맨 (수정)')
     await mine.getByRole('button', { name: '수정 저장' }).click()
-    await expect(mine.getByText(/데일리 맨투맨 \(수정\)/)).toBeVisible()
+    await expect(mine.getByRole('button', { name: '수정 저장' })).toHaveCount(0)
     await mine.getByRole('button', { name: '재고 조정' }).first().click()
     await mine.getByLabel('네이비 / 110 증감 수량').fill('5')
     await mine.getByRole('button', { name: '조정', exact: true }).click()
@@ -324,13 +329,12 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByRole('link', { name: '상품 관리' }).click()
     // 목록은 실제 GET /products(BE #288), 관리자 판매 중지는 아직 목 → 버튼 옆 준비 중(목) 배지.
     // 목 판매 중지는 실제 목록에 반영되지 않으므로 오류 없이 요청이 끝나는 것까지만 본다
-    const target = page.locator('[data-slot="card"]').filter({ hasText: '밴딩 조거 팬츠 (상품 B)' })
-    await expect(target.getByText('준비 중(목)')).toBeVisible()
-    await target.getByRole('button', { name: '판매 중지' }).click()
-    await target.getByRole('textbox', { name: '판매 중지 사유' }).fill('상품 정보 허위 기재')
-    await target.getByRole('button', { name: '중지하기' }).click()
-    await expect(target.getByRole('button', { name: '중지하기' })).toBeEnabled()
-    await expect(target.getByText(/찾을 수 없/)).toHaveCount(0)
+    // 관리자 판매 중지는 실제 API(BE #315) → 판매 중 목록에서 빠진다. 이 흐름에서 등록한 상품으로 확인
+    const onSale = page.locator('[data-slot="card"]').filter({ hasText: '데일리 맨투맨' })
+    await expect(onSale.first()).toBeVisible()
+    const before = await onSale.count()
+    await onSale.first().getByRole('button', { name: '판매 중지' }).click()
+    await expect(onSale).toHaveCount(before - 1)
 
     await page.getByRole('link', { name: '전체 주문' }).click()
     await expect(page.getByText(/^주문 \d+$/).first()).toBeVisible()

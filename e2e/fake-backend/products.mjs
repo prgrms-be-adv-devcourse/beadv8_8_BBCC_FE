@@ -369,14 +369,122 @@ export function register(sellerId, body) {
   }
 }
 
-/** PUT /seller/products/{id}/sale-status. 이미 판매 중이면 그대로 200 */
+const saleStatusBody = (p) => ({ productId: p.productId, status: p.status, version: p.version })
+
+/** 판매 시작(ON_SALE) · 중지(STOPPED) 공통 (BE #315). 같은 상태면 그대로 200 */
+function applySaleStatus(p, status, byAdmin) {
+  if (status !== 'ON_SALE' && status !== 'STOPPED')
+    return {
+      status: 400,
+      detail: '판매 시작(ON_SALE)이나 판매 중지(STOPPED)만 요청할 수 있습니다.',
+    }
+  if (status === 'STOPPED') {
+    if (p.status === 'SALE_PENDING')
+      return { status: 409, detail: '판매를 시작한 상품만 판매를 중지할 수 있습니다.' }
+    if (p.status !== 'STOPPED') {
+      p.status = 'STOPPED'
+      p.version += 1
+    }
+    if (byAdmin) p.stoppedByAdmin = true
+    return { status: 200, body: saleStatusBody(p) }
+  }
+  if (p.stoppedByAdmin && !byAdmin)
+    return { status: 409, detail: '관리자가 판매중지한 상품은 다시 판매할 수 없습니다.' }
+  p.stoppedByAdmin = false
+  if (p.status !== 'ON_SALE') startSale(p)
+  return { status: 200, body: saleStatusBody(p) }
+}
+
+/** PUT /seller/products/{id}/sale-status */
 export function changeSaleStatus(sellerId, productId, body) {
   const p = products[productId]
   if (!p) return { status: 404, detail: '상품을 찾을 수 없습니다.' }
-  if (body?.status !== 'ON_SALE')
-    return { status: 400, detail: '판매 시작(ON_SALE)만 요청할 수 있습니다.' }
   if (p.sellerId !== sellerId)
-    return { status: 403, detail: '내 상품만 판매를 시작할 수 있습니다.' }
-  if (p.status !== 'ON_SALE') startSale(p)
-  return { status: 200, body: { productId: p.productId, status: p.status, version: p.version } }
+    return { status: 403, detail: '내 상품만 판매 상태를 바꿀 수 있습니다.' }
+  return applySaleStatus(p, body?.status, false)
+}
+
+/** PUT /admin/products/{id}/sale-status */
+export function adminChangeSaleStatus(productId, body) {
+  const p = products[productId]
+  if (!p) return { status: 404, detail: '상품을 찾을 수 없습니다.' }
+  return applySaleStatus(p, body?.status, true)
+}
+
+const createdAtOf = (p) =>
+  new Date(Date.UTC(2026, 9, 1) + Number(p.productId) * 60000).toISOString().slice(0, 19)
+
+/** GET /seller/products (BE SellerProductSummaryResponse). 등록 최신순 */
+export function sellerListOf(sellerId) {
+  return Object.values(products)
+    .filter((p) => p.sellerId === sellerId)
+    .sort((a, b) => Number(b.productId) - Number(a.productId))
+    .map((p) => {
+      const prices = p.options.map((o) => o.price)
+      return {
+        productId: String(p.productId),
+        name: p.name,
+        thumbnailUrl: p.imageUrls[0] ?? null,
+        status: p.status,
+        optionCount: p.options.length,
+        totalAvailableQuantity: p.options.reduce((sum, o) => sum + (stock[o.optionId] ?? 0), 0),
+        minPrice: prices.length > 0 ? Math.min(...prices) : null,
+        createdAt: createdAtOf(p),
+      }
+    })
+}
+
+/** GET /seller/products/{id} (BE SellerProductDetailResponse). 남의 상품이면 404 */
+export function sellerDetailOf(sellerId, productId) {
+  const p = products[productId]
+  if (!p || p.sellerId !== sellerId) return null
+  return {
+    productId: String(p.productId),
+    name: p.name,
+    status: p.status,
+    version: p.version,
+    options: p.options.map((o) => ({
+      optionId: String(o.optionId),
+      optionName: optionNameOf(o.valueIds),
+      price: o.price,
+      availableQuantity: stock[o.optionId] ?? 0,
+      saleStatus: 'ON_SALE',
+      skuCode: o.skuCode ?? null,
+    })),
+  }
+}
+
+const INCREASE_ONLY = ['RESTOCK']
+const DECREASE_ONLY = ['DEFECTIVE', 'LOST']
+
+/** POST /seller/options/{optionId}/inventory-adjustments (BE InventoryAdjustmentSignValidator 흉내) */
+export function adjustInventory(sellerId, optionId, body) {
+  const p = Object.values(products).find((item) =>
+    item.options.some((o) => String(o.optionId) === String(optionId)),
+  )
+  if (!p || p.sellerId !== sellerId) return { status: 404, detail: '옵션을 찾을 수 없습니다.' }
+  const option = p.options.find((o) => String(o.optionId) === String(optionId))
+  const delta = body?.deltaQuantity
+  const reason = body?.reason
+  if (!Number.isInteger(delta) || delta === 0)
+    return { status: 400, detail: '조정 수량은 0이 아닌 정수여야 합니다.' }
+  if (![...INCREASE_ONLY, ...DECREASE_ONLY, 'CORRECTION'].includes(reason))
+    return { status: 400, detail: '조정 사유를 확인해 주세요.' }
+  if (
+    (INCREASE_ONLY.includes(reason) && delta < 0) ||
+    (DECREASE_ONLY.includes(reason) && delta > 0)
+  )
+    return { status: 400, detail: '사유와 조정 방향이 맞지 않습니다.' }
+  const current = stock[option.optionId] ?? 0
+  if (current + delta < 0) return { status: 409, detail: '재고가 부족합니다.' }
+  stock[option.optionId] = current + delta
+  return {
+    status: 200,
+    body: {
+      optionId: String(option.optionId),
+      reason,
+      deltaQuantity: delta,
+      availableQuantity: stock[option.optionId],
+    },
+  }
 }

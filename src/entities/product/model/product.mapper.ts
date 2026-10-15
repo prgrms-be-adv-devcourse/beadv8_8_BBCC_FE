@@ -7,7 +7,8 @@ import type {
   ProductListItemDto,
   ProductSummaryDto,
   RegisterProductRequestDto,
-  SellerProductDto,
+  SellerProductDetailDto,
+  SellerProductSummaryDto,
   UpdateProductRequestDto,
 } from '../api/product.dto'
 import type {
@@ -23,6 +24,7 @@ import type {
   ProductSummary,
   RegisterProductForm,
   SellerProduct,
+  SellerProductDetail,
   StockStatus,
 } from './product'
 import { categoryNameOf, optionCombos, priceGroups, sizeValues } from './product.rules'
@@ -111,14 +113,30 @@ export function toProductDetail(dto: ProductDetailDto, categories: Category[] = 
   }
 }
 
-export function toSellerProduct(dto: SellerProductDto, categories: Category[] = []): SellerProduct {
+export function toSellerProduct(dto: SellerProductSummaryDto): SellerProduct {
   return {
-    ...toProductSummary(dto, categories),
+    id: dto.productId,
+    name: dto.name,
+    status: dto.status as ProductStatus,
+    imageUrl: toImageUrl(dto.thumbnailUrl),
+    optionCount: dto.optionCount,
+    totalStock: dto.totalAvailableQuantity,
+    minPrice: dto.minPrice,
+    createdAt: dto.createdAt,
+  }
+}
+
+export function toSellerProductDetail(dto: SellerProductDetailDto): SellerProductDetail {
+  return {
+    id: dto.productId,
+    name: dto.name,
+    status: dto.status as ProductStatus,
     options: dto.options.map((option) => ({
       id: option.optionId,
       name: option.optionName,
       price: option.price,
-      stock: option.stock,
+      stock: option.availableQuantity,
+      onSale: option.saleStatus === 'ON_SALE',
     })),
   }
 }
@@ -209,7 +227,7 @@ export function toRegisterProductRequest(
   }
 }
 
-export function toProductEditForm(product: SellerProduct): ProductEditForm {
+export function toProductEditForm(product: SellerProductDetail): ProductEditForm {
   return {
     name: product.name,
     prices: Object.fromEntries(product.options.map((option) => [option.id, option.price])),

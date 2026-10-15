@@ -134,9 +134,42 @@ export type ProductSummaryDto = {
   thumbnailUrl: string | null
 }
 
-/** (목) GET /seller/products 한 줄. 재고는 등록 응답 수량 + 목 조정 (모르면 null) */
-export type SellerProductDto = ProductSummaryDto & {
-  options: { optionId: string; optionName: string; price: number; stock: number | null }[]
+/** GET /seller/products 한 줄 (BE SellerProductSummaryResponse). 등록 최신순 */
+export type SellerProductSummaryDto = {
+  productId: string
+  name: string
+  thumbnailUrl: string | null
+  status: string
+  optionCount: number
+  totalAvailableQuantity: number
+  /** 옵션이 없으면 null */
+  minPrice: number | null
+  createdAt: string
+}
+
+/** GET /seller/products/{productId} (BE SellerProductDetailResponse) */
+export type SellerProductDetailDto = {
+  productId: string
+  name: string
+  status: string
+  version: number
+  options: {
+    optionId: string
+    optionName: string
+    price: number
+    availableQuantity: number
+    saleStatus: string
+    skuCode: string | null
+  }[]
+}
+
+/** POST /seller/options/{optionId}/inventory-adjustments. 늘리면 양수, 줄이면 음수 */
+export type InventoryAdjustmentRequestDto = { deltaQuantity: number; reason: string }
+export type InventoryAdjustmentResultDto = {
+  optionId: string
+  reason: string
+  deltaQuantity: number
+  availableQuantity: number
 }
 
 /** (목) PATCH /seller/products/{productId} (기획서 8장 보완) */
@@ -146,7 +179,6 @@ export type UpdateProductRequestDto = {
 }
 
 /** (목) PATCH /seller/products/{productId}/options/{optionId}/stock — 증감 수량과 사유 */
-export type AdjustStockRequestDto = { delta: number; reason: string }
 
 /** (목) GET /products 검색 조건 (빈 값은 보내지 않음) */
 /** GET /products 쿼리 (BE ProductListRequest). sort · attributes는 아직 안 씀 */

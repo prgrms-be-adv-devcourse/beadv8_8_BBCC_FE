@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   STOCK_REASON_LABEL,
   validateStockAdjustment,
-  type SellerProduct,
+  type SellerProductDetail,
   type StockReason,
 } from '@/entities/product'
 import { getErrorMessage } from '@/shared/api'
@@ -10,16 +10,14 @@ import { Button } from '@/shared/ui/button'
 import { Input, Select } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useAdjustStock } from '../model/use-manage-product'
-import { MockBadge } from '@/shared/ui/MockBadge'
 
 type AdjustStockFormProps = {
-  productId: string
-  option: SellerProduct['options'][number]
+  option: SellerProductDetail['options'][number]
 }
 
 /** 옵션 한 줄의 재고 조정: 증감 수량 + 사유 */
-export function AdjustStockForm({ productId, option }: AdjustStockFormProps) {
-  const adjust = useAdjustStock(productId, option.id)
+export function AdjustStockForm({ option }: AdjustStockFormProps) {
+  const adjust = useAdjustStock(option.id)
   const [open, setOpen] = useState(false)
   const [delta, setDelta] = useState(0)
   const [reason, setReason] = useState<StockReason>('RESTOCK')
@@ -27,12 +25,9 @@ export function AdjustStockForm({ productId, option }: AdjustStockFormProps) {
 
   if (!open) {
     return (
-      <span className="inline-flex items-center">
-        <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
-          재고 조정
-        </Button>
-        <MockBadge endpoints={['PATCH /seller/products/:productId/options/:optionId/stock']} />
-      </span>
+      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+        재고 조정
+      </Button>
     )
   }
   return (

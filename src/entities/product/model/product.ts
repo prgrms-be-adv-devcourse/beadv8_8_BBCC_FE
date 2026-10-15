@@ -65,8 +65,24 @@ export type ProductDetail = ProductSummary & {
 }
 
 /** (목) 판매자 상품 목록 한 줄. 재고는 모르면 null */
-export type SellerProduct = ProductSummary & {
-  options: { id: string; name: string; price: number; stock: number | null }[]
+/** 내 상품 목록 한 줄 (요약) */
+export type SellerProduct = {
+  id: string
+  name: string
+  status: ProductStatus
+  imageUrl: string | null
+  optionCount: number
+  totalStock: number
+  minPrice: number | null
+  createdAt: string
+}
+
+/** 내 상품 하나 (옵션별 재고) */
+export type SellerProductDetail = {
+  id: string
+  name: string
+  status: ProductStatus
+  options: { id: string; name: string; price: number; stock: number; onSale: boolean }[]
 }
 
 export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {

@@ -1,6 +1,5 @@
 import { apiClient, expectShape, type Page } from '@/shared/api'
 import type {
-  AdjustStockRequestDto,
   CategoryInputsDto,
   CategoryTreeDto,
   ProductDetailDto,
@@ -9,7 +8,10 @@ import type {
   RegisterProductRequestDto,
   RegisterProductResultDto,
   SaleStatusResultDto,
-  SellerProductDto,
+  InventoryAdjustmentRequestDto,
+  InventoryAdjustmentResultDto,
+  SellerProductDetailDto,
+  SellerProductSummaryDto,
   UpdateProductRequestDto,
 } from './product.dto'
 import {
@@ -19,10 +21,12 @@ import {
   productListPageShape,
   registerProductResultShape,
   saleStatusResultShape,
-  sellerProductPageShape,
+  inventoryAdjustmentResultShape,
+  sellerProductDetailShape,
+  sellerProductSummaryPageShape,
 } from './product.shape'
 
-// 실제: 카테고리 · 입력 항목 · 목록 · 상세 · 등록 · 판매 시작. 목: 판매자 목록 · 수정 · 판매 중지 · 재고 조정
+// 실제: 카테고리 · 입력 항목 · 목록 · 상세 · 등록 · 판매 시작 · 판매자 목록 · 상세 · 재고 조정 · 판매 중지(판매자 · 관리자). 목: 수정
 
 export const productApi = {
   categories: () =>
@@ -44,11 +48,16 @@ export const productApi = {
   /** 판매 시작 전 상품은 404 */
   get: (productId: string) =>
     apiClient.get<ProductDetailDto>(`/products/${productId}`).then(expectShape(productDetailShape)),
-  /** (목) 내 상품 */
+  /** 내 상품 요약 (등록 최신순) */
   sellerList: () =>
     apiClient
-      .get<Page<SellerProductDto>>('/seller/products', { params: { page: 0, size: 20 } })
-      .then(expectShape(sellerProductPageShape)),
+      .get<Page<SellerProductSummaryDto>>('/seller/products', { params: { page: 0, size: 50 } })
+      .then(expectShape(sellerProductSummaryPageShape)),
+  /** 내 상품 하나 (옵션별 가격 · 판매 가능 수량) */
+  sellerGet: (productId: string) =>
+    apiClient
+      .get<SellerProductDetailDto>(`/seller/products/${productId}`)
+      .then(expectShape(sellerProductDetailShape)),
   /** 판매 시작 전(SALE_PENDING)으로 등록된다 */
   register: (request: RegisterProductRequestDto) =>
     apiClient
@@ -62,12 +71,22 @@ export const productApi = {
   /** (목) 상품명 · 옵션 가격 수정 */
   update: (productId: string, request: UpdateProductRequestDto) =>
     apiClient.patch(`/seller/products/${productId}`, request),
-  /** (목) */
-  stopSale: (productId: string) => apiClient.post(`/seller/products/${productId}/stop-sale`),
-  /** (목) */
-  adjustStock: (productId: string, optionId: string, request: AdjustStockRequestDto) =>
-    apiClient.patch(`/seller/products/${productId}/options/${optionId}/stock`, request),
-  /** (목) 관리자: 정책 위반 상품 판매 중지 (사유 필수) */
-  adminStopSale: (productId: string, request: { reason: string }) =>
-    apiClient.post(`/admin/products/${productId}/stop-sale`, request),
+  /** 판매 중지 (BE #315). 다시 판매는 startSale */
+  stopSale: (productId: string) =>
+    apiClient
+      .put<SaleStatusResultDto>(`/seller/products/${productId}/sale-status`, { status: 'STOPPED' })
+      .then(expectShape(saleStatusResultShape)),
+  /** 재고 조정 (BE SellerInventoryController): 증감량 + 사유 */
+  adjustStock: (optionId: string, request: InventoryAdjustmentRequestDto) =>
+    apiClient
+      .post<InventoryAdjustmentResultDto>(
+        `/seller/options/${optionId}/inventory-adjustments`,
+        request,
+      )
+      .then(expectShape(inventoryAdjustmentResultShape)),
+  /** 관리자: 정책 위반 상품 판매 중지 (BE #315, 사유는 받지 않음). 판매자는 다시 판매할 수 없다 */
+  adminStopSale: (productId: string) =>
+    apiClient
+      .put<SaleStatusResultDto>(`/admin/products/${productId}/sale-status`, { status: 'STOPPED' })
+      .then(expectShape(saleStatusResultShape)),
 }
