@@ -12,7 +12,8 @@ const children = [],
   cart = [],
   orders = [],
   apps = [],
-  payments = []
+  payments = [],
+  charges = []
 const wallets = { 1: 100000, 2: 0, 3: 0 }
 // 관리자 회원 목록용 (기획서 7.1: 회원 1 보호자 · 2 판매자, 관리자는 목록에서 빠짐)
 const members = {
@@ -183,6 +184,14 @@ http
     }
     if (r('POST', /^\/wallets\/me\/charges\/confirm$/)) {
       wallets[me] = (wallets[me] ?? 0) + body.amount
+      charges.push({
+        chargeId: 77,
+        memberId: me,
+        orderId: body.orderId,
+        amount: body.amount,
+        status: 'DONE',
+        approvedAt: now(),
+      })
       return send(res, 200, {
         chargeId: 77,
         status: 'DONE',
@@ -190,6 +199,18 @@ http
         balance: wallets[me],
       })
     }
+    if (r('GET', /^\/wallets\/me\/charges$/))
+      return send(
+        res,
+        200,
+        page(
+          charges
+            .filter((c) => c.memberId === me)
+            .slice()
+            .reverse()
+            .map(({ memberId: _m, ...c }) => c),
+        ),
+      )
     if ((x = r('GET', /^\/wallets\/me\/charges\/(\d+)$/)))
       return send(res, 200, {
         chargeId: +x[1],

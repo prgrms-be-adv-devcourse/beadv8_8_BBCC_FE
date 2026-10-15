@@ -92,3 +92,21 @@ describe('흐름 확인: 결제 도메인 결제 기록', () => {
     expect(evaluate(check, []).state).toBe('waiting')
   })
 })
+
+describe('상태 변화: 충전 내역 목록', () => {
+  it('충전 목록 응답에서 충전별 상태를 본다', () => {
+    const changes = deriveStateChanges([
+      log({
+        path: '/wallets/me/charges',
+        responseBody: { content: [{ chargeId: 7, status: 'DONE' }] },
+      }),
+      log({
+        path: '/wallets/me/charges',
+        responseBody: { content: [{ chargeId: 7, status: 'CANCELLED' }] },
+      }),
+    ])
+    expect(changes.map((change) => `${change.resource}: ${change.from} → ${change.to}`)).toContain(
+      '충전 #7: DONE → CANCELLED',
+    )
+  })
+})

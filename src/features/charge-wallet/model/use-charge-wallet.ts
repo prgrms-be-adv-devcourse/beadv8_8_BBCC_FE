@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import {
-  rememberCharge,
   toChargeConfirmation,
   toChargePayment,
   toConfirmChargeRequest,
@@ -41,9 +40,9 @@ export function useConfirmCharge(search: URLSearchParams) {
       runWithAction('예치금 충전 승인', async () =>
         toChargeConfirmation(await walletApi.confirmCharge(request!)),
       ),
-    onSuccess: (confirmation) => {
-      rememberCharge(confirmation.chargeId)
-      void queryClient.invalidateQueries({ queryKey: walletKeys.me })
+    onSuccess: () => {
+      // 잔액 · 충전 내역 · 거래 내역 (wallet 아래 모두)
+      void queryClient.invalidateQueries({ queryKey: walletKeys.all })
     },
   })
   const { mutate } = mutation

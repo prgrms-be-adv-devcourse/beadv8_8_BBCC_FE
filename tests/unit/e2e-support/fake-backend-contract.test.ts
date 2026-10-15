@@ -18,7 +18,12 @@ import {
   sellerShape,
 } from '@/entities/seller/api/seller.shape'
 import { memberShape, tokenShape } from '@/entities/session/api/session.shape'
-import { chargeConfirmShape, chargeShape, walletShape } from '@/entities/wallet/api/wallet.shape'
+import {
+  chargeConfirmShape,
+  chargePageShape,
+  chargeShape,
+  walletShape,
+} from '@/entities/wallet/api/wallet.shape'
 import { DEMO_ADDRESS } from '@/features/manage-address/config/demo-address'
 import { DEMO_APPLICATION } from '@/features/apply-seller/config/demo-application'
 import { DEMO_CHILD } from '@/features/register-child/config/demo-child'
@@ -236,5 +241,8 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     })
     expectContract(confirmed.data, chargeConfirmShape)
     expectContract((await call('GET', '/wallets/me/charges/77', 1)).data, chargeShape)
+    const list = await call('GET', '/wallets/me/charges', 1)
+    expectContract(list.data, chargePageShape)
+    expect(list.data.content[0]).toMatchObject({ chargeId: 77, status: 'DONE' })
   })
 })

@@ -8,8 +8,8 @@ export function useCancelCharge(chargeId: string) {
   return useMutation({
     mutationFn: () => runWithAction('충전 취소', () => walletApi.cancelCharge(chargeId)),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: walletKeys.me })
-      void queryClient.invalidateQueries({ queryKey: walletKeys.charge(chargeId) })
+      // 잔액 · 충전 내역 · 거래 내역 (wallet 아래 모두)
+      void queryClient.invalidateQueries({ queryKey: walletKeys.all })
     },
   })
 }

@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { isChargeConfirming } from '@/entities/wallet'
 import { getErrorMessage } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
 import { StateMessage } from '@/shared/ui/page-header'
@@ -18,6 +19,18 @@ export function ConfirmCharge({
   if (confirm.isError)
     return <StateMessage tone="error">{getErrorMessage(confirm.error)}</StateMessage>
   if (!confirm.data) return <StateMessage>충전을 승인하는 중이에요…</StateMessage>
+  if (isChargeConfirming(confirm.data))
+    return (
+      <div className="space-y-2">
+        <p>
+          토스 결제 결과를 확인하는 중이에요 ({formatWon(confirm.data.amount)}). 충전 내역에서
+          상태를 확인해 주세요.
+        </p>
+        <Link to={walletHref} className="text-primary underline">
+          충전 내역 보기
+        </Link>
+      </div>
+    )
   return (
     <div className="space-y-2">
       <p>
