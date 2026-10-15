@@ -3,10 +3,15 @@ export type { RecommendedProductDto, SizeRecommendationDto } from './api/recomme
 export {
   type Fit,
   type RecommendedProduct,
+  type SizeNotice,
   type SizeRange,
   type SizeRecommendation,
 } from './model/recommendation'
-export { toRecommendedProduct, toSizeRecommendation } from './model/recommendation.mapper'
+export {
+  sizeRangesOf,
+  toRecommendedProduct,
+  toSizeRecommendation,
+} from './model/recommendation.mapper'
 export { useRecommendedProductsQuery, useSizeRecommendationQuery } from './model/queries'
 export { FitBadge } from './ui/FitBadge'
 export { SizeRecommendationSummary } from './ui/SizeRecommendationSummary'

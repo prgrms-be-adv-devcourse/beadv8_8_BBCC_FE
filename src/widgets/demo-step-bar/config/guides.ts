@@ -100,7 +100,8 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
       step: '③',
       actor: '보호자',
       todo: ['"추천 사이즈"를 확인하고 그 옵션을 골라요', '"장바구니 담기"를 눌러요'],
-      watch: 'GET /products/{id}/size-recommendation → 적합도 · 이유 (목), POST /cart/items',
+      watch:
+        'GET /products/{id}/size-recommendation → 추천 · 적합도 · 후보 · 안내, POST /cart/items',
       next: { label: '④ 예치금 확인', to: C.wallet },
     },
   },

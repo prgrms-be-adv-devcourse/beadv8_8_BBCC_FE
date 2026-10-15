@@ -7,8 +7,9 @@ export const sizeRecommendationShape = obj({
   childId: str,
   recommendedSize: nullable(str),
   fit: nullable(FIT),
-  reasons: arr(str),
-  sizes: arr(obj({ size: str, minHeightCm: num, maxHeightCm: num, fit: nullable(FIT) })),
+  notices: arr(obj({ code: str, message: str })),
+  candidateSizes: arr(str),
+  lastPurchasedSize: nullable(str),
 })
 
 export const recommendedProductPageShape = pageOf(

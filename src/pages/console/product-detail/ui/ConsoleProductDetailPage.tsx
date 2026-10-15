@@ -11,7 +11,11 @@ import {
   ProductSpecs,
   useProductQuery,
 } from '@/entities/product'
-import { SizeRecommendationSummary, useSizeRecommendationQuery } from '@/entities/recommendation'
+import {
+  SizeRecommendationSummary,
+  sizeRangesOf,
+  useSizeRecommendationQuery,
+} from '@/entities/recommendation'
 import { AddToCartButton } from '@/features/add-to-cart'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
@@ -63,6 +67,7 @@ export function ConsoleProductDetailPage() {
         {recommendation.data && (
           <SizeRecommendationSummary
             recommendation={recommendation.data}
+            sizes={sizeRangesOf(detail.sizeSpecs)}
             child={children.data?.find((item) => item.id === childId) ?? null}
           />
         )}

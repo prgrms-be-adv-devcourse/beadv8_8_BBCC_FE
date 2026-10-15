@@ -74,13 +74,14 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByRole('table', { name: '사이즈 정보' })).toBeVisible()
   })
 
-  await test.step('③ 자녀 맞춤 목록 → 방금 등록한 상품 상세 사이즈 추천 (목)', async () => {
+  await test.step('③ 자녀 맞춤 목록(목) → 방금 등록한 상품 상세 사이즈 추천', async () => {
     await switchRole(page, '보호자')
     await page.goto('/console/products')
     await page.getByRole('button', { name: /테스트 맞춤/ }).click()
     await expect(page.getByText(/추천 120/).first()).toBeVisible()
     await page.getByText('데일리 맨투맨', { exact: true }).first().click()
-    await expect(page.getByText('추천 사이즈')).toBeVisible()
+    // 실제 API 모양(BE #262): 추천 + 적합도 + 후보 (가짜 백엔드가 응답)
+    await expect(page.getByText(/추천 사이즈 120 .*후보 110 · 120 중/)).toBeVisible()
   })
 
   await test.step('④ 담기 → 주문하기 → 결제 완료 (시드 상품 복사본 없이, 판매 시작이 만든 복사본으로)', async () => {

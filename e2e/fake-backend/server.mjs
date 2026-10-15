@@ -1,5 +1,5 @@
 // E2E 전용 가짜 백엔드 (실제 백엔드 코드와 무관). 구현된 API의 응답 모양(DTO)만 흉내 낸다.
-// 상품은 등록 · 판매 시작 · 상세 · 카테고리만 있다(products.mjs). 상품 목록 · 추천 · 정산은 FE 목(app/mocks)이 응답한다.
+// 상품은 등록 · 판매 시작 · 상세 · 카테고리만 있다(products.mjs). 사이즈 추천은 여기서 응답하고, 상품 목록 · 자녀 맞춤 목록 · 정산은 FE 목(app/mocks)이 응답한다.
 // 응답 모양이 실제와 달라지면 FE 흐름 패널의 계약 검사로 드러난다.
 import http from 'node:http'
 import {
@@ -94,6 +94,32 @@ function who(req) {
   return JSON.parse(Buffer.from(t.split('.')[1], 'base64url'))
 }
 const detailOf = ({ memberId: _m, ...o }) => ({ ...o, orderId: String(o.orderId) })
+function sizeRecommendationOf(detail, c) {
+  const base = { productId: detail.productId, childId: String(c.id), lastPurchasedSize: null }
+  const none = (code, message) => ({
+    ...base,
+    recommendedSize: null,
+    fit: null,
+    notices: [{ code, message }],
+    candidateSizes: [],
+  })
+  if (detail.sizeFree) return none('SIZE_FREE', '사이즈 구분이 없는 상품이에요.')
+  const h = c.heightCm
+  const candidates = detail.sizeSpecs
+    .filter((s) => s.minHeightCm !== null && h >= s.minHeightCm - 2 && h <= s.maxHeightCm + 2)
+    .sort((a, b) => a.minHeightCm - b.minHeightCm)
+  if (candidates.length === 0) return none('NO_MATCHING_SIZE', '아이 키에 맞는 사이즈가 없어요.')
+  const small = c.bodyType === 'SLIM' || (c.bodyType !== 'CHUNKY' && c.preferredFit === 'SLIM')
+  const pick = small ? candidates[0] : candidates[candidates.length - 1]
+  const fit = h < pick.minHeightCm ? 'ROOMY' : h > pick.maxHeightCm ? 'TIGHT' : 'PROPER'
+  return {
+    ...base,
+    recommendedSize: pick.size,
+    fit,
+    notices: [],
+    candidateSizes: candidates.map((s) => s.size),
+  }
+}
 const childOf = ({ memberId: _m, deleted: _d, growth: _g, ...c }) => c
 const lineOf = ({ memberId: _m, ...l }) => ({ ...l, lineAmount: l.unitPrice * l.quantity })
 const myAppOf = (a) => ({
@@ -158,6 +184,17 @@ http
     }
     if (!u) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
     const me = Number(u.sub)
+    // 사이즈 추천 (BE #262). 규칙은 단순화: 키가 권장 키 ±2cm 안이면 후보, 둘 이상이면 체형 · 선호 핏으로 고름
+    if ((x = r('GET', /^\/products\/(\d+)\/size-recommendation$/))) {
+      const detail = productDetailOf(x[1])
+      if (!detail || detail.status !== 'ON_SALE')
+        return problem(res, 404, '상품을 찾을 수 없습니다', '상품을 찾을 수 없습니다.', req.url)
+      const childId = Number(url.searchParams.get('childId'))
+      const c = children.find((c) => c.id === childId && c.memberId === me && !c.deleted)
+      if (!c)
+        return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
+      return send(res, 200, sizeRecommendationOf(detail, c))
+    }
     if (r('POST', /^\/seller\/products$/)) {
       const result = register(me, body)
       return result.status === 201

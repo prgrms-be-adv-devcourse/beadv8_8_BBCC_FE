@@ -1,16 +1,26 @@
 import { cn } from '@/shared/lib'
-import { FIT_LABEL, type SizeRange } from '../model/recommendation'
+import { type Fit, FIT_LABEL, type SizeRange } from '../model/recommendation'
 
 type SizeFitChartProps = {
   sizes: SizeRange[]
   recommendedSize: string | null
+  /** 추천 사이즈의 적합도 */
+  fit: Fit | null
+  /** 추천 후보 (권장 키 ±2cm 안). 추천보다 옅게 강조한다 */
+  candidateSizes: string[]
   child: { name: string; heightCm: number }
 }
 
 const PADDING_CM = 4
 
 /** 사이즈마다 권장 키 범위를 막대로, 자녀 키를 세로선으로 겹쳐 그린다 (어느 사이즈에 드는지 한눈에) */
-export function SizeFitChart({ sizes, recommendedSize, child }: SizeFitChartProps) {
+export function SizeFitChart({
+  sizes,
+  recommendedSize,
+  fit,
+  candidateSizes,
+  child,
+}: SizeFitChartProps) {
   if (sizes.length === 0) return null
   const low = Math.min(child.heightCm, ...sizes.map((item) => item.minHeightCm)) - PADDING_CM
   const high = Math.max(child.heightCm, ...sizes.map((item) => item.maxHeightCm)) + PADDING_CM
@@ -40,6 +50,7 @@ export function SizeFitChart({ sizes, recommendedSize, child }: SizeFitChartProp
         </div>
         {sorted.map((item) => {
           const recommended = item.size === recommendedSize
+          const candidate = !recommended && candidateSizes.includes(item.size)
           return (
             <div key={item.size} className="flex items-center text-xs">
               <span className={cn('w-11 shrink-0', recommended && 'font-bold')}>{item.size}</span>
@@ -47,9 +58,9 @@ export function SizeFitChart({ sizes, recommendedSize, child }: SizeFitChartProp
                 <div
                   className={cn(
                     'absolute inset-y-0 flex items-center justify-center rounded px-1 text-[11px] whitespace-nowrap',
-                    recommended
-                      ? 'bg-highlight text-foreground font-semibold'
-                      : 'bg-primary/15 text-muted-foreground',
+                    recommended && 'bg-highlight text-foreground font-semibold',
+                    candidate && 'bg-primary/30 text-foreground',
+                    !recommended && !candidate && 'bg-primary/10 text-muted-foreground',
                   )}
                   style={{
                     left: percent(item.minHeightCm),
@@ -57,7 +68,8 @@ export function SizeFitChart({ sizes, recommendedSize, child }: SizeFitChartProp
                   }}
                 >
                   {item.minHeightCm}~{item.maxHeightCm}
-                  {recommended && item.fit && ` · ${FIT_LABEL[item.fit]}`}
+                  {recommended && fit && ` · ${FIT_LABEL[fit]}`}
+                  {candidate && ' · 후보'}
                 </div>
               </div>
             </div>
@@ -65,7 +77,7 @@ export function SizeFitChart({ sizes, recommendedSize, child }: SizeFitChartProp
         })}
       </div>
       <figcaption className="text-muted-foreground pl-11 text-[11px]">
-        막대 = 사이즈별 권장 키(cm), 세로선 = 자녀 키
+        막대 = 사이즈별 권장 키(cm), 세로선 = 자녀 키, 후보 = 키가 권장 키 ±2cm 안
       </figcaption>
     </figure>
   )
