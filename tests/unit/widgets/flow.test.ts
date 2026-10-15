@@ -114,13 +114,24 @@ describe('흐름 확인 판정', () => {
   })
   it('목으로 통과하면 표시한다', () => {
     expect(
-      evaluate(check('product-start'), [
-        log({ method: 'POST', path: '/seller/products/1/start-sale', mock: true }),
+      evaluate(check('product-register'), [
+        log({ method: 'POST', path: '/seller/products', mock: true }),
       ]),
     ).toMatchObject({
       state: 'pass',
       byMock: true,
     })
+  })
+  it('판매 시작: PUT sale-status 응답이 ON_SALE이면 통과', () => {
+    expect(
+      evaluate(check('product-start'), [
+        log({
+          method: 'PUT',
+          path: '/seller/products/7/sale-status',
+          responseBody: { productId: '7', status: 'ON_SALE', version: 1 },
+        }),
+      ]),
+    ).toMatchObject({ state: 'pass', byMock: false })
   })
   it('보호자 잔액 감소: 같은 회원 잔액이 줄면 통과', () => {
     const result = evaluate(check('buyer-balance'), [

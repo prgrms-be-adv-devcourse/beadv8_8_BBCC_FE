@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   STOCK_REASON_LABEL,
   validateStockAdjustment,
-  type ProductOption,
+  type SellerProduct,
   type StockReason,
 } from '@/entities/product'
 import { getErrorMessage } from '@/shared/api'
@@ -13,7 +13,7 @@ import { useAdjustStock } from '../model/use-manage-product'
 
 type AdjustStockFormProps = {
   productId: string
-  option: ProductOption
+  option: SellerProduct['options'][number]
 }
 
 /** 옵션 한 줄의 재고 조정: 증감 수량 + 사유 */
@@ -34,7 +34,7 @@ export function AdjustStockForm({ productId, option }: AdjustStockFormProps) {
   return (
     <span className="flex flex-wrap items-center gap-1">
       <Select
-        aria-label={`${option.size} 조정 사유`}
+        aria-label={`${option.name} 조정 사유`}
         className="h-8 w-20"
         value={reason}
         onChange={(e) => setReason(e.target.value as StockReason)}
@@ -46,7 +46,7 @@ export function AdjustStockForm({ productId, option }: AdjustStockFormProps) {
         ))}
       </Select>
       <Input
-        aria-label={`${option.size} 증감 수량`}
+        aria-label={`${option.name} 증감 수량`}
         type="number"
         className="h-8 w-20"
         value={delta}

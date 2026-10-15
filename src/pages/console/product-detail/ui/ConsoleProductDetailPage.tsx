@@ -5,7 +5,9 @@ import {
   findOption,
   isOnSale,
   PRODUCT_STATUS_LABEL,
+  productMeta,
   ProductOptionList,
+  ProductSpecs,
   useProductQuery,
 } from '@/entities/product'
 import { SizeRecommendationSummary, useSizeRecommendationQuery } from '@/entities/recommendation'
@@ -40,7 +42,9 @@ export function ConsoleProductDetailPage() {
     <div className="space-y-4">
       <PageHeader
         title={detail.name}
-        description={`${detail.categoryName} · ${detail.sellerName} · ${PRODUCT_STATUS_LABEL[detail.status]}`}
+        description={[productMeta(detail), PRODUCT_STATUS_LABEL[detail.status]]
+          .filter(Boolean)
+          .join(' · ')}
       />
 
       <Card className="border-growth space-y-3">
@@ -87,6 +91,10 @@ export function ConsoleProductDetailPage() {
           disabled={!isSelling}
           cartHref={paths.console.cart}
         />
+      </Card>
+
+      <Card>
+        <ProductSpecs product={detail} />
       </Card>
     </div>
   )

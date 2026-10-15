@@ -1,247 +1,221 @@
-import {
-  type CategoryTreeDto,
-  type ProductDetailDto,
-  type ProductSummaryDto,
-  type RegisterProductRequestDto,
-  type UpdateProductRequestDto,
+import type {
+  ProductDetailDto,
+  ProductStatus,
+  ProductSummaryDto,
+  RegisterProductRequestDto,
+  RegisterProductResultDto,
+  SaleStatusResultDto,
+  SellerProductDto,
+  UpdateProductRequestDto,
 } from '@/entities/product'
-import type { MockHandler } from '@/shared/api'
-import { loadMockState, memberIdOf, page, problem, saveMockState } from './mock-utils'
+import type { MockHandler, MockObserver, MockRequest } from '@/shared/api'
+import { getErrorStatus } from '@/shared/api'
+import { fetchReal, loadMockState, memberIdOf, page, problem, saveMockState } from './mock-utils'
 
-// 목 카테고리: 목 상품의 categoryId와 맞춘다 (상품 목을 끄면 실제 카테고리 + 실제 상품)
-const MOCK_CATEGORIES = [
-  { id: '1', name: '상의' },
-  { id: '2', name: '하의' },
-  { id: '3', name: '원피스' },
-  { id: '4', name: '아우터' },
-]
-const CATEGORY_TREE: CategoryTreeDto[] = MOCK_CATEGORIES.map((category) => ({
-  categoryId: category.id,
-  name: category.name,
-  leaf: true,
-  children: [],
-}))
+// 상품 등록 · 상세 · 판매 시작 · 카테고리는 실제 API다.
+// BE에 아직 없는 목록 · 판매자 목록 · 수정 · 판매 중지 · 재고 조정만 목으로 응답한다.
+// 목 목록은 이 탭에서 실제로 등록 · 판매 시작한 상품을 옮겨 적어 만든다 (아래 관찰자).
 
-// 기획서 7.1 시연 데이터: 상품 A(옵션 1 · 2), 상품 B(옵션 3). 옵션 ID는 주문 쪽 상품 복사본과 같아야 담기가 된다
-const INITIAL_PRODUCTS: ProductDetailDto[] = [
+type StoredProduct = {
+  productId: string
+  /** 등록한 판매자 (토큰 sub). 모르면 null */
+  sellerId: string | null
+  name: string
+  brand: string | null
+  categoryId: string
+  imageUrls: string[]
+  /** 실제 상태 (등록 · 판매 시작 응답) */
+  status: ProductStatus
+  /** 목 판매 중지 (판매자 · 관리자). 실제로 판매 시작하면 풀린다 */
+  stopped: boolean
+  options: { optionId: string; optionName: string; price: number; stock: number | null }[]
+  /**
+   * 시연 데이터 ID(기획서 7.1 상품 A · B). 실제 서버에 있을 때만 목록에 보인다 (상세를 불러 확인).
+   * 그 밖의 상품은 이 탭에서 등록했으니 있다고 본다
+   */
+  seeded?: boolean
+}
+
+const SEEDED: StoredProduct[] = [
   {
     productId: '1',
-    name: '데일리 맨투맨 (상품 A)',
-    categoryId: '1',
-    categoryName: '상의',
     sellerId: '2',
-    sellerName: '테스트상점',
+    name: '데일리 맨투맨 (상품 A)',
+    brand: null,
+    categoryId: '',
+    imageUrls: [],
     status: 'ON_SALE',
-    minPrice: 25000,
-    thumbnailUrl: null,
-    description: '부드러운 면 맨투맨',
-    options: [
-      {
-        optionId: '1',
-        color: '네이비',
-        material: '면',
-        size: '110',
-        price: 25000,
-        stock: 10,
-        minHeightCm: 105,
-        maxHeightCm: 115,
-        soldOut: false,
-      },
-      {
-        optionId: '2',
-        color: '네이비',
-        material: '면',
-        size: '120',
-        price: 25000,
-        stock: 10,
-        minHeightCm: 115,
-        maxHeightCm: 125,
-        soldOut: false,
-      },
-    ],
+    stopped: false,
+    options: [],
+    seeded: true,
   },
   {
     productId: '2',
-    name: '밴딩 조거 팬츠 (상품 B)',
-    categoryId: '2',
-    categoryName: '하의',
     sellerId: '2',
-    sellerName: '테스트상점',
+    name: '밴딩 조거 팬츠 (상품 B)',
+    brand: null,
+    categoryId: '',
+    imageUrls: [],
     status: 'ON_SALE',
-    minPrice: 30000,
-    thumbnailUrl: null,
-    description: '허리 밴딩 조거 팬츠',
-    options: [
-      {
-        optionId: '3',
-        color: '그레이',
-        material: '면',
-        size: '120',
-        price: 30000,
-        stock: 5,
-        minHeightCm: 115,
-        maxHeightCm: 125,
-        soldOut: false,
-      },
-    ],
+    stopped: false,
+    options: [],
+    seeded: true,
   },
 ]
 
-export const products: ProductDetailDto[] = loadMockState('products', INITIAL_PRODUCTS)
-const save = () => saveMockState('products', products)
+const products: StoredProduct[] = loadMockState('products.v2', SEEDED)
+const save = () => saveMockState('products.v2', products)
 
-let nextProductId = 100 + products.length
-let nextOptionId = 100 + products.flatMap((product) => product.options).length
+const statusOf = (product: StoredProduct): ProductStatus =>
+  product.stopped ? 'STOPPED' : product.status
 
-function findMine(productId: string, sellerId: string | null) {
-  return products.find((item) => item.productId === productId && item.sellerId === sellerId)
+/** 실제 상세. 없거나 판매 시작 전이면 null */
+async function loadDetail(request: MockRequest, productId: string) {
+  try {
+    return await fetchReal<ProductDetailDto>(request, `/products/${productId}`)
+  } catch (error) {
+    if (getErrorStatus(error) === 404) return null
+    throw error
+  }
+}
+
+/** 판매 중인 상품의 실제 상세. 시연 데이터 ID는 실제 서버에 없으면 뺀다 */
+export async function loadOnSaleDetails(request: MockRequest): Promise<ProductDetailDto[]> {
+  const details = await Promise.all(
+    products
+      .filter((product) => statusOf(product) === 'ON_SALE')
+      .map((product) => loadDetail(request, product.productId)),
+  )
+  return details.filter((detail): detail is ProductDetailDto => detail !== null)
+}
+
+/** 목 수정 · 재고를 실제 상세에 덧씌운다 */
+function merge(product: StoredProduct, detail: ProductDetailDto | null): SellerProductDto {
+  const options = detail
+    ? detail.options.map((option) => {
+        const stored = product.options.find((item) => item.optionId === option.optionId)
+        return {
+          optionId: option.optionId,
+          optionName: option.optionName,
+          price: stored?.price ?? option.price,
+          stock: stored?.stock ?? (option.stockStatus === 'SOLD_OUT' ? 0 : option.stockQuantity),
+        }
+      })
+    : product.options
+  const prices = options.map((option) => option.price)
+  return {
+    productId: product.productId,
+    // 이름은 등록 · 목 수정 값 (실제 상세에는 목 수정이 반영되지 않는다)
+    name: product.name,
+    brand: detail?.brand ?? product.brand,
+    categoryId: detail?.categoryId ?? product.categoryId,
+    status: statusOf(product),
+    minPrice: prices.length > 0 ? Math.min(...prices) : null,
+    thumbnailUrl: (detail?.imageUrls ?? product.imageUrls)[0] ?? null,
+    options,
+  }
+}
+
+async function listed(request: MockRequest, list: StoredProduct[]): Promise<SellerProductDto[]> {
+  const rows = await Promise.all(
+    list.map(async (product) => {
+      // 판매 시작 전 상품은 상세가 404라 등록 응답으로 보여 준다
+      const detail =
+        product.status === 'SALE_PENDING' ? null : await loadDetail(request, product.productId)
+      if (product.seeded && !detail) return null
+      return merge(product, detail)
+    }),
+  )
+  return rows.filter((row): row is SellerProductDto => row !== null)
+}
+
+const summaryOf = (row: SellerProductDto): ProductSummaryDto => ({
+  productId: row.productId,
+  name: row.name,
+  brand: row.brand,
+  categoryId: row.categoryId,
+  status: row.status,
+  minPrice: row.minPrice,
+  thumbnailUrl: row.thumbnailUrl,
+})
+
+function findMine(request: MockRequest) {
+  const sellerId = memberIdOf(request)
+  return products.find(
+    (item) => item.productId === request.params.productId && item.sellerId === sellerId,
+  )
 }
 
 function notFound(instance: string) {
   return problem(404, '찾을 수 없습니다', '상품을 찾을 수 없습니다.', instance)
 }
 
-export function summaryOf(product: ProductDetailDto): ProductSummaryDto {
-  return {
-    productId: product.productId,
-    name: product.name,
-    categoryId: product.categoryId,
-    categoryName: product.categoryName,
-    sellerId: product.sellerId,
-    sellerName: product.sellerName,
-    status: product.status,
-    minPrice: product.minPrice,
-    thumbnailUrl: product.thumbnailUrl,
-  }
-}
-
 export const productHandlers: MockHandler[] = [
-  { method: 'GET', path: '/categories', handle: () => ({ status: 200, data: CATEGORY_TREE }) },
   {
     method: 'GET',
     path: '/products',
-    handle: (request) => ({
-      status: 200,
-      data: page(
-        products
-          .filter((product) => product.status === 'ON_SALE')
-          .filter((product) => {
-            const keyword = request.query.get('keyword')
-            const categoryId = request.query.get('categoryId')
-            return (
-              (!keyword || product.name.includes(keyword)) &&
-              (!categoryId || product.categoryId === categoryId)
+    handle: async (request) => {
+      const keyword = request.query.get('keyword')
+      const categoryId = request.query.get('categoryId')
+      const rows = await listed(
+        request,
+        products.filter((product) => statusOf(product) === 'ON_SALE'),
+      )
+      return {
+        status: 200,
+        data: page(
+          rows
+            .filter(
+              (row) =>
+                (!keyword || row.name.includes(keyword)) &&
+                (!categoryId || row.categoryId === categoryId),
             )
-          })
-          .map(summaryOf),
-        request,
-      ),
-    }),
-  },
-  {
-    method: 'GET',
-    path: '/products/:productId',
-    handle: ({ params }) => {
-      const product = products.find((item) => item.productId === params.productId)
-      return product
-        ? { status: 200, data: product }
-        : problem(
-            404,
-            '찾을 수 없습니다',
-            '상품을 찾을 수 없습니다.',
-            `/api/v1/products/${params.productId}`,
-          )
+            .map(summaryOf),
+          request,
+        ),
+      }
     },
   },
   {
     method: 'GET',
     path: '/seller/products',
-    handle: (request) => ({
+    handle: async (request) => ({
       status: 200,
       data: page(
-        products.filter((product) => product.sellerId === memberIdOf(request)),
+        await listed(
+          request,
+          products.filter((product) => product.sellerId === memberIdOf(request)),
+        ),
         request,
       ),
     }),
-  },
-  {
-    method: 'POST',
-    path: '/seller/products',
-    handle: (request) => {
-      const body = request.body as RegisterProductRequestDto
-      const options = body.options.map((option) => ({
-        ...option,
-        optionId: String(nextOptionId++),
-        soldOut: option.stock <= 0,
-      }))
-      const product: ProductDetailDto = {
-        productId: String(nextProductId++),
-        name: body.name,
-        categoryId: body.categoryId,
-        categoryName:
-          MOCK_CATEGORIES.find((category) => category.id === body.categoryId)?.name ?? '',
-        sellerId: memberIdOf(request) ?? '0',
-        sellerName: '테스트상점',
-        status: 'SALE_PENDING',
-        minPrice: Math.min(...options.map((option) => option.price)),
-        thumbnailUrl: null,
-        description: body.description,
-        options,
-      }
-      products.push(product)
-      save()
-      return { status: 201, data: product }
-    },
-  },
-  {
-    method: 'POST',
-    path: '/seller/products/:productId/start-sale',
-    handle: ({ params }) => {
-      const product = products.find((item) => item.productId === params.productId)
-      if (!product) {
-        return problem(
-          404,
-          '찾을 수 없습니다',
-          '상품을 찾을 수 없습니다.',
-          `/api/v1/seller/products/${params.productId}/start-sale`,
-        )
-      }
-      product.status = 'ON_SALE'
-      save()
-      return { status: 200, data: product }
-    },
   },
   {
     method: 'PATCH',
     path: '/seller/products/:productId',
-    handle: (request) => {
-      const product = findMine(request.params.productId, memberIdOf(request))
+    handle: async (request) => {
+      const product = findMine(request)
       if (!product) return notFound(`/api/v1/seller/products/${request.params.productId}`)
       const body = request.body as UpdateProductRequestDto
       product.name = body.name
-      product.description = body.description
-      product.categoryId = body.categoryId
-      product.categoryName =
-        MOCK_CATEGORIES.find((category) => category.id === body.categoryId)?.name ??
-        product.categoryName
       for (const { optionId, price } of body.options) {
         const option = product.options.find((item) => item.optionId === optionId)
         if (option) option.price = price
+        else product.options.push({ optionId, optionName: '', price, stock: null })
       }
-      product.minPrice = Math.min(...product.options.map((option) => option.price))
       save()
-      return { status: 200, data: product }
+      return { status: 200 }
     },
   },
   {
     method: 'POST',
     path: '/seller/products/:productId/stop-sale',
     handle: (request) => {
-      const product = findMine(request.params.productId, memberIdOf(request))
+      const product = findMine(request)
       if (!product) return notFound(`/api/v1/seller/products/${request.params.productId}/stop-sale`)
-      product.status = 'STOPPED'
+      product.stopped = true
       save()
-      return { status: 200, data: product }
+      return { status: 200 }
     },
   },
   {
@@ -249,16 +223,16 @@ export const productHandlers: MockHandler[] = [
     path: '/seller/products/:productId/options/:optionId/stock',
     handle: (request) => {
       const instance = `/api/v1/seller/products/${request.params.productId}/options/${request.params.optionId}/stock`
-      const product = findMine(request.params.productId, memberIdOf(request))
+      const product = findMine(request)
       const option = product?.options.find((item) => item.optionId === request.params.optionId)
       if (!product || !option) return notFound(instance)
       const { delta } = request.body as { delta: number; reason: string }
-      if (option.stock + delta < 0)
+      const current = option.stock ?? 0
+      if (current + delta < 0)
         return problem(409, '재고가 부족합니다', '재고는 0보다 적어질 수 없습니다.', instance)
-      option.stock += delta
-      option.soldOut = option.stock === 0
+      option.stock = current + delta
       save()
-      return { status: 200, data: product }
+      return { status: 200 }
     },
   },
   {
@@ -267,9 +241,50 @@ export const productHandlers: MockHandler[] = [
     handle: (request) => {
       const product = products.find((item) => item.productId === request.params.productId)
       if (!product) return notFound(`/api/v1/admin/products/${request.params.productId}/stop-sale`)
-      product.status = 'STOPPED'
+      product.stopped = true
       save()
-      return { status: 200, data: product }
+      return { status: 200 }
+    },
+  },
+]
+
+/** 실제 등록 · 판매 시작 응답을 목 목록에 옮겨 적는다 */
+export const productObservers: MockObserver[] = [
+  {
+    method: 'POST',
+    path: '/seller/products',
+    observe: (request, response) => {
+      const body = request.body as RegisterProductRequestDto
+      const result = response.data as RegisterProductResultDto
+      products.push({
+        productId: result.productId,
+        sellerId: memberIdOf(request),
+        name: body.name,
+        brand: body.brand,
+        categoryId: String(body.categoryId),
+        imageUrls: body.imageUrls,
+        status: result.status as ProductStatus,
+        stopped: false,
+        options: result.options.map((option) => ({
+          optionId: option.optionId,
+          optionName: option.optionName,
+          price: option.price,
+          stock: option.availableQuantity,
+        })),
+      })
+      save()
+    },
+  },
+  {
+    method: 'PUT',
+    path: '/seller/products/:productId/sale-status',
+    observe: (request, response) => {
+      const result = response.data as SaleStatusResultDto
+      const product = products.find((item) => item.productId === request.params.productId)
+      if (!product) return
+      product.status = result.status as ProductStatus
+      product.stopped = false
+      save()
     },
   },
 ]

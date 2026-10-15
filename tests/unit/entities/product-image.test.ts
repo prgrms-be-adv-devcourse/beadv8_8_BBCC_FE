@@ -22,28 +22,41 @@ describe('toImageUrl: 응답의 이미지 주소를 화면에서 쓸 값으로',
 const summary: ProductSummaryDto = {
   productId: '1',
   name: '데일리 맨투맨',
+  brand: null,
   categoryId: '1',
-  categoryName: '상의',
-  sellerId: '2',
-  sellerName: '테스트상점',
   status: 'ON_SALE',
   minPrice: 25000,
   thumbnailUrl: S3,
 }
 
 describe('상품 · 추천 매퍼: thumbnailUrl → imageUrl', () => {
-  it('상품 목록 · 상세', () => {
+  it('상품 목록 · 상세 (상세는 imageUrls[0]이 대표)', () => {
     expect(toProductSummary(summary).imageUrl).toBe(S3)
     expect(toProductSummary({ ...summary, thumbnailUrl: null }).imageUrl).toBeNull()
-    expect(toProductDetail({ ...summary, description: '', options: [] }).imageUrl).toBe(S3)
+    const detail = {
+      productId: '1',
+      name: '데일리 맨투맨',
+      brand: null,
+      categoryId: '1',
+      status: 'ON_SALE',
+      sizeFree: true,
+      minPrice: null,
+      optionAttributes: [],
+      options: [],
+      productInfo: [],
+      sizeSpecs: [],
+      measurementItems: [],
+    }
+    expect(toProductDetail({ ...detail, imageUrls: [S3, 'https://x/2.jpg'] }).imageUrl).toBe(S3)
+    expect(toProductDetail({ ...detail, imageUrls: [] }).imageUrl).toBeNull()
   })
 
   it('자녀 맞춤 추천 목록', () => {
     const recommended = toRecommendedProduct({
       productId: '1',
       name: '데일리 맨투맨',
-      categoryName: '상의',
-      sellerName: '테스트상점',
+      categoryId: '1',
+      brand: null,
       minPrice: 25000,
       thumbnailUrl: ' ',
       recommendedSize: '120',

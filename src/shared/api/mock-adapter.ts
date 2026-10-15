@@ -21,11 +21,45 @@ export type MockRequest = {
 
 export type MockResult = { status: number; data?: unknown }
 
+type MockMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+
 export type MockHandler = {
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
+  method: MockMethod
   /** baseURL(/api/v1) 뒤 경로. :name은 경로 변수 */
   path: string
   handle: (request: MockRequest) => MockResult | Promise<MockResult>
+}
+
+/**
+ * 실제 서버 응답을 목 저장소에 옮겨 적는다 (예: 실제로 등록한 상품을 목 목록에 이어 붙이기).
+ * 2xx 응답만 받고, 그 도메인 목이 켜져 있을 때만 부른다. 응답을 바꾸지는 않는다
+ */
+export type MockObserver = {
+  method: MockMethod
+  path: string
+  observe: (request: MockRequest, response: { status: number; data: unknown }) => void
+}
+
+type Route = { domain: string; method: string; pattern: RegExp; keys: string[] }
+
+function toRoute(domain: string, method: string, path: string): Route {
+  const keys: string[] = []
+  const source = path.replace(/:([a-zA-Z]+)/g, (_, key: string) => {
+    keys.push(key)
+    return '([^/]+)'
+  })
+  return { domain, method, pattern: new RegExp(`^${source}$`), keys }
+}
+
+const observers: (Route & { observe: MockObserver['observe'] })[] = []
+
+export function registerMockObservers(domain: string, list: MockObserver[]) {
+  for (const observer of list) {
+    observers.push({
+      ...toRoute(domain, observer.method, observer.path),
+      observe: observer.observe,
+    })
+  }
 }
 
 const handlers: {
@@ -40,22 +74,60 @@ const handlers: {
 export function registerMockHandlers(domain: string, list: MockHandler[]) {
   useMockSettings.getState().register(domain)
   for (const handler of list) {
-    const keys: string[] = []
-    const source = handler.path.replace(/:([a-zA-Z]+)/g, (_, key: string) => {
-      keys.push(key)
-      return '([^/]+)'
-    })
-    handlers.push({
-      domain,
-      method: handler.method,
-      pattern: new RegExp(`^${source}$`),
-      keys,
-      handle: handler.handle,
-    })
+    handlers.push({ ...toRoute(domain, handler.method, handler.path), handle: handler.handle })
   }
 }
 
 const MOCK_DELAY_MS = 150
+
+function queryOf(config: InternalAxiosRequestConfig, search: string): URLSearchParams {
+  const query = new URLSearchParams(search)
+  Object.entries((config.params ?? {}) as Record<string, unknown>).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      query.set(key, String(value))
+    }
+  })
+  return query
+}
+
+function parse(data: unknown): unknown {
+  if (typeof data !== 'string' || data === '') return data ?? null
+  try {
+    return JSON.parse(data)
+  } catch {
+    return data
+  }
+}
+
+function notifyObservers(
+  config: InternalAxiosRequestConfig,
+  pathname: string,
+  search: string,
+  response: AxiosResponse,
+) {
+  const method = (config.method ?? 'get').toUpperCase()
+  const enabled = useMockSettings.getState().enabled
+  for (const observer of observers) {
+    const match =
+      enabled[observer.domain] && observer.method === method
+        ? observer.pattern.exec(pathname)
+        : null
+    if (!match || response.status < 200 || response.status >= 300) continue
+    try {
+      observer.observe(
+        {
+          params: Object.fromEntries(observer.keys.map((key, index) => [key, match[index + 1]])),
+          query: queryOf(config, search),
+          body: parse(config.data),
+          headers: config.headers,
+        },
+        { status: response.status, data: parse(response.data) },
+      )
+    } catch {
+      // 목 저장소를 못 고쳐도 실제 응답은 그대로 넘긴다
+    }
+  }
+}
 
 export function createMockAdapter(realAdapter: AxiosAdapter): AxiosAdapter {
   return async (config) => {
@@ -70,12 +142,7 @@ export function createMockAdapter(realAdapter: AxiosAdapter): AxiosAdapter {
       if (!match) {
         continue
       }
-      const query = new URLSearchParams(search)
-      Object.entries((config.params ?? {}) as Record<string, unknown>).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          query.set(key, String(value))
-        }
-      })
+      const query = queryOf(config, search)
       const params = Object.fromEntries(handler.keys.map((key, index) => [key, match[index + 1]]))
       const result = await handler.handle({
         params,
@@ -104,7 +171,9 @@ export function createMockAdapter(realAdapter: AxiosAdapter): AxiosAdapter {
       }
       return response
     }
-    return realAdapter(config)
+    const response = await realAdapter(config)
+    notifyObservers(config, pathname, search, response)
+    return response
   }
 }
 

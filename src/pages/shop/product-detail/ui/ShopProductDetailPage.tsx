@@ -5,7 +5,9 @@ import {
   findOption,
   isOnSale,
   ProductImage,
+  productMeta,
   ProductOptionList,
+  ProductSpecs,
   useProductQuery,
 } from '@/entities/product'
 import { SizeRecommendationSummary, useSizeRecommendationQuery } from '@/entities/recommendation'
@@ -53,13 +55,10 @@ export function ShopProductDetailPage() {
 
         <div className="space-y-5">
           <div>
-            <p className="text-muted-foreground text-sm">
-              {detail.sellerName} · {detail.categoryName}
-            </p>
+            <p className="text-muted-foreground text-sm">{productMeta(detail)}</p>
             <h1 className="mt-1 text-2xl font-bold">{detail.name}</h1>
-            <p className="mt-2 text-2xl font-extrabold">{formatWon(detail.minPrice)}~</p>
-            {detail.description && (
-              <p className="text-muted-foreground mt-2 text-sm">{detail.description}</p>
+            {detail.minPrice !== null && (
+              <p className="mt-2 text-2xl font-extrabold">{formatWon(detail.minPrice)}~</p>
             )}
           </div>
 
@@ -102,6 +101,8 @@ export function ShopProductDetailPage() {
               onSelect={setOptionId}
             />
           </div>
+
+          <ProductSpecs product={detail} />
 
           {/* 휴대폰에서는 수량 · 금액 · 담기를 화면 아래에 고정한다 */}
           <div className="sticky bottom-0 -mx-4 space-y-3 border-t bg-white/95 px-4 pt-3 pb-4 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:backdrop-blur-none">

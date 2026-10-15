@@ -8,33 +8,20 @@ import {
   toUpdateProductRequest,
   validateProductEditForm,
   validateStockAdjustment,
-  type ProductDetail,
+  type SellerProduct,
 } from '@/entities/product'
 import { validateBusinessName } from '@/entities/seller'
 
-const product: ProductDetail = {
+const product: SellerProduct = {
   id: '1',
   name: '데일리 맨투맨',
-  categoryId: '1',
+  brand: null,
+  categoryId: '11',
   categoryName: '상의',
-  sellerName: '테스트상점',
   status: 'ON_SALE',
   minPrice: 25000,
   imageUrl: null,
-  description: '면 맨투맨',
-  options: [
-    {
-      id: '1',
-      color: '네이비',
-      material: '면',
-      size: '110',
-      price: 25000,
-      stock: 10,
-      minHeightCm: 105,
-      maxHeightCm: 115,
-      soldOut: false,
-    },
-  ],
+  options: [{ id: '1', name: '네이비 / 110', price: 25000, stock: 10 }],
 }
 
 describe('판매 상태 전환', () => {
@@ -63,6 +50,9 @@ describe('validateStockAdjustment: 재고 조정 (사유 = BE InventoryAdjustmen
     expect(validateStockAdjustment(10, -1, 'DEFECTIVE')).toBeNull()
     expect(validateStockAdjustment(10, 1, 'LOST')).toBe('불량 · 분실은 재고를 줄일 때만 써요.')
   })
+  it('재고를 모르면(null) 0 미만 검사는 서버에 맡긴다', () => {
+    expect(validateStockAdjustment(null, -3, 'CORRECTION')).toBeNull()
+  })
   it('조정 뒤 재고가 0 미만이면 안 된다 (경계: 정확히 0은 가능)', () => {
     expect(validateStockAdjustment(10, -10, 'CORRECTION')).toBeNull()
     expect(validateStockAdjustment(10, -11, 'CORRECTION')).toBe(
@@ -75,11 +65,9 @@ describe('validateStockAdjustment: 재고 조정 (사유 = BE InventoryAdjustmen
 })
 
 describe('상품 수정', () => {
-  it('toProductEditForm: 상품명 · 카테고리 · 설명 · 옵션별 가격', () => {
+  it('toProductEditForm: 상품명 · 옵션별 가격', () => {
     expect(toProductEditForm(product)).toEqual({
       name: '데일리 맨투맨',
-      categoryId: '1',
-      description: '면 맨투맨',
       prices: { '1': 25000 },
     })
   })
@@ -87,19 +75,15 @@ describe('상품 수정', () => {
     expect(
       toUpdateProductRequest({
         name: ' 새 이름 ',
-        categoryId: '2',
-        description: '설명',
         prices: { '1': 27000 },
       }),
     ).toEqual({
       name: '새 이름',
-      categoryId: '2',
-      description: '설명',
       options: [{ optionId: '1', price: 27000 }],
     })
   })
   it('validateProductEditForm: 이름 필수 · 가격은 1원 이상 (경계)', () => {
-    const form = { name: '이름', categoryId: '1', description: '', prices: { '1': 1 } }
+    const form = { name: '이름', prices: { '1': 1 } }
     expect(validateProductEditForm(form)).toBeNull()
     expect(validateProductEditForm({ ...form, name: ' ' })).toBe('상품명을 입력해 주세요.')
     expect(validateProductEditForm({ ...form, prices: { '1': 0 } })).toBe(

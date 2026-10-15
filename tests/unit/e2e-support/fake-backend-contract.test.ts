@@ -26,7 +26,16 @@ import {
   walletLedgerPageShape,
   walletShape,
 } from '@/entities/wallet/api/wallet.shape'
+import {
+  categoryInputsShape,
+  categoryTreeShape,
+  productDetailShape,
+  registerProductResultShape,
+  saleStatusResultShape,
+} from '@/entities/product/api/product.shape'
+import { toCategoryInputs, toRegisterProductRequest } from '@/entities/product'
 import { DEMO_ADDRESS } from '@/features/manage-address/config/demo-address'
+import { demoRegisterForm } from '@/features/register-product/config/demo-product'
 import { DEMO_APPLICATION } from '@/features/apply-seller/config/demo-application'
 import { DEMO_CHILD } from '@/features/register-child/config/demo-child'
 import { arr, validate, type Shape } from '@/shared/api'
@@ -261,5 +270,70 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       { type: 'CHARGE_CANCEL', amount: -50000, refId: 77 },
       { type: 'CHARGE', amount: 50000, refId: 77 },
     ])
+  })
+})
+
+describe('상품 (실제 API): 등록 → 판매 시작 → 상세 → 시드 없이 담기', () => {
+  it('카테고리 입력 항목으로 만든 등록 요청이 받아지고, 판매 시작하면 주문 복사본이 생긴다', async () => {
+    const tree = await call('GET', '/categories', null)
+    expectContract(tree.data, categoryTreeShape)
+    const inputsResponse = await call('GET', '/categories/11/attributes', null)
+    expectContract(inputsResponse.data, categoryInputsShape)
+    const inputs = toCategoryInputs(inputsResponse.data)
+
+    const registered = await call(
+      'POST',
+      '/seller/products',
+      2,
+      toRegisterProductRequest(inputs, demoRegisterForm(inputs)),
+    )
+    expect(registered.status).toBe(201)
+    expectContract(registered.data, registerProductResultShape)
+    const { productId, options } = registered.data
+    expect(options.map((option: { optionName: string }) => option.optionName)).toEqual([
+      '네이비 / 110',
+      '네이비 / 120',
+    ])
+    // 판매 시작 전에는 상세가 404 (BE: 구매자에게 안 보임)
+    expect((await call('GET', `/products/${productId}`, null)).status).toBe(404)
+
+    const started = await call('PUT', `/seller/products/${productId}/sale-status`, 2, {
+      status: 'ON_SALE',
+    })
+    expectContract(started.data, saleStatusResultShape)
+    expect(started.data).toMatchObject({ productId, status: 'ON_SALE' })
+    // 다시 보내도 그대로 200 · 남의 상품은 403
+    expect(
+      (await call('PUT', `/seller/products/${productId}/sale-status`, 2, { status: 'ON_SALE' }))
+        .status,
+    ).toBe(200)
+    expect(
+      (await call('PUT', `/seller/products/${productId}/sale-status`, 1, { status: 'ON_SALE' }))
+        .status,
+    ).toBe(403)
+
+    const detail = await call('GET', `/products/${productId}`, null)
+    expectContract(detail.data, productDetailShape)
+
+    const optionId = options[1].optionId
+    expect(
+      (
+        await call(
+          'POST',
+          '/cart/items',
+          1,
+          toAddCartItemRequest({ optionId, childId: null, quantity: 1 }),
+        )
+      ).status,
+    ).toBeLessThan(300)
+    const cart = await call('GET', '/cart', 1)
+    const line = cart.data.items.find((item: { optionId: string }) => item.optionId === optionId)
+    expect(line).toMatchObject({ productId, optionName: '네이비 / 120', unitPrice: 25000 })
+    const placed = await call('POST', '/orders', 1, {
+      items: [{ optionId: Number(optionId), childId: null, quantity: 1, unitPrice: 25000 }],
+      shippingAddress: { recipientName: '홍길동', phone: '010', zipCode: '04524', address: '서울' },
+    })
+    expect(placed.status).toBe(201)
+    expectContract(placed.data, orderDetailShape)
   })
 })

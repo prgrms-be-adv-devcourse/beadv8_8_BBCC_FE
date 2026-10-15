@@ -10,9 +10,9 @@ export type SizeRecommendation = {
 export type RecommendedProduct = {
   id: string
   name: string
-  categoryName: string
-  sellerName: string
-  minPrice: number
+  categoryId: string
+  brand: string | null
+  minPrice: number | null
   /** 대표 이미지 (S3). 없으면 null → 기본 이미지 */
   imageUrl: string | null
   recommendedSize: string

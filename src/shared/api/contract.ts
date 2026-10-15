@@ -3,13 +3,15 @@ import { useApiFlowLog } from './api-flow-log'
 
 /**
  * 응답이 계약(DTO 모양)과 맞는지 검사한다. 화면은 매퍼가 흡수해 그대로 동작하고, 다른 곳은 흐름 패널에 표시한다.
- * 패키지 없이 쓰는 작은 모양 표기법: str · num · bool · oneOf · obj · arr · nullable
+ * 패키지 없이 쓰는 작은 모양 표기법: str · num · bool · oneOf · obj · arr · recordOf · nullable
  */
 export type Shape =
   | { kind: 'string' | 'number' | 'boolean'; nullable?: boolean }
   | { kind: 'enum'; values: readonly string[]; nullable?: boolean }
   | { kind: 'object'; fields: Record<string, Shape>; nullable?: boolean }
   | { kind: 'array'; item: Shape; nullable?: boolean }
+  /** 키를 정하지 않은 맵 (예: 실측 항목 코드 → cm) */
+  | { kind: 'record'; value: Shape; nullable?: boolean }
 
 export type ContractIssue = {
   /** 필드 경로 (예: items[0].status) */
@@ -26,6 +28,7 @@ export const bool: Shape = { kind: 'boolean' }
 export const oneOf = (values: readonly string[]): Shape => ({ kind: 'enum', values })
 export const obj = (fields: Record<string, Shape>): Shape => ({ kind: 'object', fields })
 export const arr = (item: Shape): Shape => ({ kind: 'array', item })
+export const recordOf = (value: Shape): Shape => ({ kind: 'record', value })
 export const nullable = (shape: Shape): Shape => ({ ...shape, nullable: true })
 /** 백엔드 PageResponse */
 export const pageOf = (item: Shape): Shape =>
@@ -46,7 +49,9 @@ function describe(shape: Shape): string {
         ? 'object'
         : shape.kind === 'array'
           ? 'array'
-          : shape.kind
+          : shape.kind === 'record'
+            ? 'map'
+            : shape.kind
   return shape.nullable ? `${base} | null` : base
 }
 
@@ -90,6 +95,12 @@ export function validate(value: unknown, shape: Shape, path = ''): ContractIssue
       if (!Array.isArray(value))
         return [{ path: at, type: 'type', expected: 'array', actual: typeOf(value) }]
       return value.flatMap((item, index) => validate(item, shape.item, `${path}[${index}]`))
+    case 'record':
+      if (typeOf(value) !== 'object')
+        return [{ path: at, type: 'type', expected: 'map', actual: typeOf(value) }]
+      return Object.entries(value as Record<string, unknown>).flatMap(([key, item]) =>
+        validate(item, shape.value, path ? `${path}.${key}` : key),
+      )
     case 'object': {
       if (typeOf(value) !== 'object')
         return [{ path: at, type: 'type', expected: 'object', actual: typeOf(value) }]

@@ -45,14 +45,14 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('관리자 계정으로 볼 수 있는 화면이에요.')).toBeVisible()
   })
 
-  await test.step('판매자 센터: 상품 등록 → 판매 시작 (목)', async () => {
+  await test.step('판매자 센터: 상품 등록 → 판매 시작 (실제 API)', async () => {
     await switchRole(page, '판매자')
     await page.goto('/center/products')
     await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
     // 단계 번호 · 백엔드 설명은 콘솔에서만 보인다
     await expect(page.getByText('product.changed')).toHaveCount(0)
     await page.getByRole('button', { name: '등록하기' }).click()
-    await page.getByRole('button', { name: '판매 시작' }).click()
+    await page.getByRole('button', { name: '판매 시작' }).first().click()
     await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
   })
 
@@ -63,7 +63,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await mine.getByRole('button', { name: '수정 저장' }).click()
     await expect(mine.getByText(/데일리 맨투맨 \(수정\)/)).toBeVisible()
     await mine.getByRole('button', { name: '재고 조정' }).first().click()
-    await mine.getByLabel('110 증감 수량').fill('5')
+    await mine.getByLabel('네이비 / 110 증감 수량').fill('5')
     await mine.getByRole('button', { name: '조정', exact: true }).click()
     await expect(mine.getByText('재고 15')).toBeVisible()
     await mine.getByRole('button', { name: '판매 중지' }).click()
@@ -128,7 +128,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText(/테스트에게 맞는 상품/)).toBeVisible()
     await page.getByText('데일리 맨투맨 (상품 A)').first().click()
     await expect(page.getByText('추천 사이즈')).toBeVisible()
-    await page.getByRole('button', { name: /네이비 \/ 면 \/ 120/ }).click()
+    await page.getByRole('button', { name: /네이비 \/ 120/ }).click()
     await page.getByRole('button', { name: '장바구니 담기' }).click()
     await page.getByRole('link', { name: '장바구니 보기' }).click()
     await expect(page).toHaveURL(/\/cart$/)
@@ -185,10 +185,10 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       await expect(page).toHaveURL(/\/orders\/\d+$/)
     }
     // 상품 B 재고 5개보다 많이 → 재고 부족 취소
-    await order('2', /그레이 \/ 면 \/ 120/, '6')
+    await order('2', /그레이 \/ 120/, '6')
     await expect(page.getByText('재고가 부족해요')).toBeVisible()
     // 잔액보다 큰 금액 → 결제 실패 취소 · 결제 도메인 실패 기록
-    await order('1', /네이비 \/ 면 \/ 110/, '8')
+    await order('1', /네이비 \/ 110/, '8')
     await expect(page.getByText(/예치금 결제에 실패했어요/)).toBeVisible()
     await expect(page.getByRole('status', { name: '결제 확인' })).toContainText('일치')
 
@@ -201,7 +201,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
   await test.step('쇼핑: 선택 주문 · 부족한 만큼 충전하고 돌아오기 (기획서 F05 · F06)', async () => {
     await page.goto('/products/1')
-    await page.getByRole('button', { name: /네이비 \/ 면 \/ 110/ }).click()
+    await page.getByRole('button', { name: /네이비 \/ 110/ }).click()
     await page.getByRole('spinbutton').fill('8')
     await page.getByRole('button', { name: '장바구니 담기' }).click()
     await page.getByRole('link', { name: '장바구니 보기' }).click()

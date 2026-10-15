@@ -3,15 +3,17 @@ import {
   productApi,
   productKeys,
   toRegisterProductRequest,
+  type CategoryInputs,
   type RegisterProductForm,
 } from '@/entities/product'
 import { runWithAction } from '@/shared/api'
 
-export function useRegisterProduct() {
+/** 상품 등록 → 판매 시작 전(SALE_PENDING). 응답의 productId로 판매를 시작한다 */
+export function useRegisterProduct(inputs: CategoryInputs) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (form: RegisterProductForm) =>
-      runWithAction('상품 등록', () => productApi.register(toRegisterProductRequest(form))),
+      runWithAction('상품 등록', () => productApi.register(toRegisterProductRequest(inputs, form))),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: productKeys.sellerList }),
   })
 }

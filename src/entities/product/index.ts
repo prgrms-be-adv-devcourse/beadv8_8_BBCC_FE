@@ -1,42 +1,59 @@
 export { productApi } from './api/product-api'
 /** 목 응답 작성 전용 (app/mocks) */
 export type {
+  CategoryInputsDto,
   CategoryTreeDto,
   ProductDetailDto,
-  ProductOptionDto,
   ProductSummaryDto,
   RegisterProductRequestDto,
+  RegisterProductResultDto,
+  SaleStatusResultDto,
+  SellerProductDto,
   UpdateProductRequestDto,
 } from './api/product.dto'
 export {
   PRODUCT_STATUS_LABEL,
   STOCK_REASON_LABEL,
   type Category,
+  type CategoryInputs,
+  type InputAttribute,
   type ProductDetail,
   type ProductEditForm,
   type ProductOption,
   type ProductSearch,
-  type ProductSizeRow,
   type ProductStatus,
   type ProductSummary,
   type RegisterProductForm,
+  type SellerProduct,
+  type SizeSpec,
+  type SizeSpecInput,
   type StockReason,
+  type ValueCombo,
 } from './model/product'
 export {
   toCategories,
+  toCategoryInputs,
   toProductDetail,
   toProductEditForm,
   toProductSearchParams,
   toProductSummary,
   toRegisterProductRequest,
+  toSellerProduct,
   toUpdateProductRequest,
 } from './model/product.mapper'
 export {
   canStartSale,
   canStopSale,
-  describeSizes,
+  categoryNameOf,
   findOption,
+  heightRange,
+  isFreeSize,
   isOnSale,
+  optionCombos,
+  priceGroups,
+  productMeta,
+  sizeValues,
+  stockLabel,
   validateProductEditForm,
   validateRegisterProductForm,
   validateStockAdjustment,
@@ -44,6 +61,7 @@ export {
 export {
   productKeys,
   useCategoriesQuery,
+  useCategoryInputsQuery,
   useProductQuery,
   useProductsQuery,
   useSellerProductsQuery,
@@ -51,3 +69,4 @@ export {
 export { ProductCard } from './ui/ProductCard'
 export { ProductImage } from './ui/ProductImage'
 export { ProductOptionList } from './ui/ProductOptionList'
+export { ProductSpecs } from './ui/ProductSpecs'
