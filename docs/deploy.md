@@ -55,6 +55,46 @@ fe:
 2. FE 저장소: `docker compose -f deploy/compose.rehearsal.yml up --build`
 3. http://localhost:8081 → 시연 콘솔부터 진행 (API는 Nginx가 호스트 8080으로 넘김)
 
+## Vercel 배포 (개발 확인 · 공유용)
+
+팀 배포(EC2)와 따로, 머지하면 Vercel에도 올라간다 (`.github/workflows/vercel-deploy.yml`).
+
+| 브랜치  | Vercel 환경 | 주소                            |
+| ------- | ----------- | ------------------------------- |
+| main    | Production  | https://kidly-fe.vercel.app     |
+| develop | Preview     | https://kidly-fe-dev.vercel.app |
+
+- 다시 올리려면 Actions에서 해당 브랜치로 수동 실행한다. vercel CLI로 로컬 파일을 직접 올리지 않는다
+- GitHub에 필요한 값: Secrets `VERCEL_TOKEN`, Variables `VERCEL_ORG_ID` · `VERCEL_PROJECT_ID`
+
+### 빌드 값 (Vercel 프로젝트 Settings → Environment Variables)
+
+GitHub Variables가 아니라 **Vercel 환경 변수**에서 받는다. Production과 Preview에 따로 넣을 수 있다 (Preview는 `develop` 브랜치로 한정할 수 있다). 바꾼 뒤 해당 브랜치로 다시 실행하면 반영된다.
+
+| 이름                      | Production (main)                                  | Preview (develop)                                      | 넣지 않으면                       |
+| ------------------------- | -------------------------------------------------- | ------------------------------------------------------ | --------------------------------- |
+| `VITE_USE_MOCK`           | 백엔드에 API가 다 생기면 `false`                   | 같음                                                   | 목 켜짐                           |
+| `VITE_API_BASE_URL`       | 아래 "백엔드 연결" 참고                            | 같음                                                   | 비움 (로그인 · 주문 · 결제 안 됨) |
+| `VITE_DEMO_ROLE_SWITCH`   | 연결한 백엔드에 개발 토큰이 없으면 `false`         | 같음                                                   | 켜짐                              |
+| `VITE_TOSS_CLIENT_KEY`    | 토스 테스트 클라이언트 키 (결제 담당)              | 같음                                                   | 충전 안 됨                        |
+| `VITE_KAKAO_CLIENT_ID`    | 카카오 REST API 키 (회원 담당)                     | 같음                                                   | 카카오 로그인 안 됨               |
+| `VITE_KAKAO_REDIRECT_URI` | `https://kidly-fe.vercel.app/oauth/kakao/callback` | `https://kidly-fe-dev.vercel.app/oauth/kakao/callback` | 로그인 복귀 실패                  |
+
+모두 화면에 그대로 들어가는 **공개 값**이다. 비밀 값은 넣지 않는다.
+
+### 백엔드 연결
+
+Vercel 사이트는 백엔드와 **주소가 다르다**. EC2 배포처럼 같은 주소의 `/api`가 아니라서 그대로는 CORS와 리프레시 토큰 쿠키(SameSite=Lax)가 동작하지 않는다. 둘 중 하나로 맞춘다.
+
+- **(권장) Vercel이 `/api`를 백엔드로 넘기기**: `vercel.json`에 `/api/:path*` → `https://<백엔드 주소>/api/:path*` rewrite를 더하고 `VITE_API_BASE_URL`은 비운다. 브라우저 입장에서 같은 주소라 CORS · 쿠키 설정이 필요 없다
+- **백엔드 주소를 직접 부르기**: `VITE_API_BASE_URL`에 백엔드 주소를 넣고, 백엔드에서 `cors.allowed-origins`에 위 두 주소를 허용(자격 증명 포함)하고 리프레시 토큰 쿠키를 `SameSite=None; Secure`로 바꿔야 한다
+
+### 함께 등록할 것
+
+- [ ] 카카오 개발자 콘솔 Redirect URI에 위 두 주소의 `/oauth/kakao/callback`, 백엔드 `KAKAO_REDIRECT_URI`와 맞춤
+- [ ] 토스 성공 · 실패 URL을 Vercel 주소로 쓸 수 있는지 (결제 담당)
+- [ ] 연결할 백엔드 주소와 개발 토큰 여부 (인프라 · 회원 담당)
+
 ## 배포 전 체크 (FE 밖, 담당과 맞출 것)
 
 - [ ] 도메인 · HTTPS(Certbot) · 배포 compose · EC2 반영(SSH) 담당
