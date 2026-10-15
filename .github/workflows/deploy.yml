@@ -48,6 +48,7 @@ jobs:
           build-args: |
             VITE_USE_MOCK=${{ vars.VITE_USE_MOCK || 'true' }}
             VITE_DEMO_ROLE_SWITCH=${{ vars.VITE_DEMO_ROLE_SWITCH || 'true' }}
+            VITE_DEMO_TOOLS=${{ vars.VITE_DEMO_TOOLS }}
             VITE_TOSS_CLIENT_KEY=${{ vars.VITE_TOSS_CLIENT_KEY }}
             VITE_KAKAO_CLIENT_ID=${{ vars.VITE_KAKAO_CLIENT_ID }}
             VITE_KAKAO_REDIRECT_URI=${{ vars.VITE_KAKAO_REDIRECT_URI }}
