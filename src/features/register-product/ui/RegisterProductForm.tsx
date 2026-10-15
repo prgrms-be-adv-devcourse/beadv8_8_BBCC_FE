@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import {
-  CATEGORIES,
+  type Category,
   validateRegisterProductForm,
   type ProductSizeRow,
   type RegisterProductForm as RegisterProductFormValue,
@@ -15,7 +15,12 @@ import { DEMO_PRODUCT, EMPTY_SIZE_ROW } from '../config/demo-product'
 import { useRegisterProduct } from '../model/use-register-product'
 
 /** 상품 등록 (목 API). 옵션 = 색상 × 소재 × 사이즈, 사이즈마다 권장 키 */
-export function RegisterProductForm() {
+type RegisterProductFormProps = {
+  /** 고를 수 있는 카테고리 (페이지가 카테고리 API로 불러와 넘긴다) */
+  categories: Category[]
+}
+
+export function RegisterProductForm({ categories }: RegisterProductFormProps) {
   const register = useRegisterProduct()
   const [form, setForm] = useState<RegisterProductFormValue>(DEMO_PRODUCT)
   const [invalid, setInvalid] = useState<string | null>(null)
@@ -49,9 +54,9 @@ export function RegisterProductForm() {
           <Label>
             카테고리
             <Select value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)}>
-              {CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <option key={category.id} value={category.id}>
-                  {category.name}
+                  {category.path}
                 </option>
               ))}
             </Select>

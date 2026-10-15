@@ -4,7 +4,9 @@ import {
   canStopSale,
   isOnSale,
   PRODUCT_STATUS_LABEL,
+  useCategoriesQuery,
   useSellerProductsQuery,
+  type Category,
   type ProductDetail,
 } from '@/entities/product'
 import { AdjustStockForm, EditProductForm, StopSaleButton } from '@/features/manage-product'
@@ -19,6 +21,7 @@ import { StateMessage } from '@/shared/ui/StateMessage'
 
 export function CenterProductsPage() {
   const products = useSellerProductsQuery()
+  const categories = useCategoriesQuery().data ?? []
 
   return (
     <div className="space-y-4">
@@ -28,7 +31,7 @@ export function CenterProductsPage() {
         description="상품을 등록 · 수정하고, 판매를 시작 · 중지하고, 재고를 조정해요."
         note="판매를 시작하면 상품이 product.changed 이벤트를 보내 추천 · 주문이 복사본을 저장해요. (상품 API는 목)"
       />
-      <RegisterProductForm />
+      <RegisterProductForm categories={categories} />
       <div className="space-y-2">
         <h2 className="font-semibold">내 상품</h2>
         {products.isPending && <StateMessage>불러오는 중…</StateMessage>}
@@ -37,16 +40,16 @@ export function CenterProductsPage() {
         )}
         {products.data?.content.length === 0 && <StateMessage>등록한 상품이 없어요.</StateMessage>}
         {products.data?.content.map((product) => (
-          <SellerProductRow key={product.id} product={product} />
+          <SellerProductRow key={product.id} product={product} categories={categories} />
         ))}
       </div>
     </div>
   )
 }
 
-type SellerProductRowProps = { product: ProductDetail }
+type SellerProductRowProps = { product: ProductDetail; categories: Category[] }
 
-function SellerProductRow({ product }: SellerProductRowProps) {
+function SellerProductRow({ product, categories }: SellerProductRowProps) {
   const [editing, setEditing] = useState(false)
   return (
     <Card className="space-y-2">
@@ -87,7 +90,13 @@ function SellerProductRow({ product }: SellerProductRowProps) {
           </li>
         ))}
       </ul>
-      {editing && <EditProductForm product={product} onDone={() => setEditing(false)} />}
+      {editing && (
+        <EditProductForm
+          product={product}
+          categories={categories}
+          onDone={() => setEditing(false)}
+        />
+      )}
     </Card>
   )
 }

@@ -53,12 +53,8 @@ export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
   STOPPED: '판매 중지',
 }
 
-export const CATEGORIES = [
-  { id: '1', name: '상의' },
-  { id: '2', name: '하의' },
-  { id: '3', name: '원피스' },
-  { id: '4', name: '아우터' },
-]
+/** 고를 수 있는 카테고리 (트리의 끝). path = "상위 > 하위" */
+export type Category = { id: string; name: string; path: string }
 
 /** 상품 수정 폼: 상품명 · 카테고리 · 설명 · 옵션별 가격 (재고는 재고 조정으로) */
 export type ProductEditForm = {

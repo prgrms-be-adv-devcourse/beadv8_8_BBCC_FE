@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import {
-  CATEGORIES,
+  type Category,
   toProductEditForm,
   validateProductEditForm,
   type ProductDetail,
@@ -15,10 +15,11 @@ import { useUpdateProduct } from '../model/use-manage-product'
 
 type EditProductFormProps = {
   product: ProductDetail
+  categories: Category[]
   onDone: () => void
 }
 
-export function EditProductForm({ product, onDone }: EditProductFormProps) {
+export function EditProductForm({ product, categories, onDone }: EditProductFormProps) {
   const update = useUpdateProduct(product.id)
   const [form, setForm] = useState<ProductEditForm>(() => toProductEditForm(product))
   const invalid = validateProductEditForm(form)
@@ -40,9 +41,9 @@ export function EditProductForm({ product, onDone }: EditProductFormProps) {
           value={form.categoryId}
           onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
         >
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <option key={category.id} value={category.id}>
-              {category.name}
+              {category.path}
             </option>
           ))}
         </Select>
