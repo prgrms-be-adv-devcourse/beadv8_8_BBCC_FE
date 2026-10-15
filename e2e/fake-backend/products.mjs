@@ -203,11 +203,31 @@ seed(
 export function listOf(query) {
   const keyword = (query.get('keyword') ?? '').trim()
   const categoryId = query.get('categoryId')
+  const sort = query.get('sort') ?? 'NEWEST'
+  // attributes=COLOR:101&attributes=SIZE:203 → 항목코드별 값 묶음 (같은 항목은 하나만, 다른 항목끼리는 모두)
+  const wanted = {}
+  for (const pair of query.getAll('attributes')) {
+    const [code, valueId] = pair.split(':')
+    ;(wanted[code] ??= []).push(Number(valueId))
+  }
+  const codeOf = (valueId) => attrs[values[valueId]?.attributeId]?.code
+  const matches = (p) =>
+    Object.entries(wanted).every(([code, ids]) =>
+      p.options.some((o) => o.valueIds.some((v) => codeOf(v) === code && ids.includes(Number(v)))),
+    )
+  const minPriceOf = (p) => Math.min(...p.options.map((o) => o.price))
   return Object.values(products)
     .filter((p) => p.status === 'ON_SALE')
     .filter((p) => !keyword || p.name.includes(keyword))
     .filter((p) => !categoryId || categoryId === '10' || String(p.categoryId) === categoryId)
-    .sort((a, b) => Number(b.productId) - Number(a.productId))
+    .filter(matches)
+    .sort((a, b) =>
+      sort === 'PRICE_ASC'
+        ? minPriceOf(a) - minPriceOf(b)
+        : sort === 'PRICE_DESC'
+          ? minPriceOf(b) - minPriceOf(a)
+          : Number(b.productId) - Number(a.productId),
+    )
     .map((p) => ({
       productId: p.productId,
       name: p.name,

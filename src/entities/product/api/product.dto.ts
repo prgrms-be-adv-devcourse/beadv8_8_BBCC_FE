@@ -150,4 +150,10 @@ export type AdjustStockRequestDto = { delta: number; reason: string }
 
 /** (목) GET /products 검색 조건 (빈 값은 보내지 않음) */
 /** GET /products 쿼리 (BE ProductListRequest). sort · attributes는 아직 안 씀 */
-export type ProductSearchParamsDto = { keyword?: string; categoryId?: string }
+export type ProductSearchParamsDto = {
+  keyword?: string
+  categoryId?: string
+  sort?: string
+  /** "항목코드:값ID" 목록, 20개까지 */
+  attributes?: string[]
+}
