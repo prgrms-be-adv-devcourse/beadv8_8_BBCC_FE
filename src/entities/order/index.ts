@@ -1,5 +1,5 @@
 export { orderApi } from './api/order-api'
-export type { AdminOrderDto } from './api/order.dto'
+export type { AdminOrderDto, OrderDetailDto } from './api/order.dto'
 export {
   CANCEL_REASON_LABEL,
   type AdminOrder,

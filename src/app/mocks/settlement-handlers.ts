@@ -1,23 +1,14 @@
+import type { OrderDetailDto } from '@/entities/order'
 import type { SettlementDetailDto, SettlementTargetDto } from '@/entities/settlement'
-import type { MockHandler } from '@/shared/api'
+import type { MockHandler, MockObserver } from '@/shared/api'
 import { loadMockState, memberIdOf, now, page, problem, saveMockState } from './mock-utils'
 
 const FEE_RATE = 0.1
 
-// 기획서 7.1 카드별 추가 데이터: 판매자 2의 정산 대상 1건 (25,000원)
+// 정산 대상 = 실제 주문에서 구매확정된 주문상품 (아래 관찰자가 주문 상세 응답에서 옮겨 적는다)
 const targets: (SettlementTargetDto & { sellerId: string })[] = loadMockState(
-  'settlement-targets',
-  [
-    {
-      targetId: '1',
-      orderItemId: '1',
-      productName: '데일리 맨투맨 (상품 A) 110',
-      amount: 25000,
-      confirmedAt: '2026-10-13T10:00:00',
-      settled: false,
-      sellerId: '2',
-    },
-  ],
+  'settlement-targets-v2',
+  [],
 )
 const settlements: SettlementDetailDto[] = loadMockState<SettlementDetailDto[]>(
   'settlements-v2',
@@ -143,7 +134,7 @@ export const settlementHandlers: MockHandler[] = [
         settlements.push(settlement)
         created.push(settlement)
       }
-      saveMockState('settlement-targets', targets)
+      saveMockState('settlement-targets-v2', targets)
       saveMockState('settlements-v2', settlements)
       return {
         status: 200,
@@ -153,6 +144,37 @@ export const settlementHandlers: MockHandler[] = [
           settlements: created.map(withoutItems),
         },
       }
+    },
+  },
+]
+
+/**
+ * 주문 상세 실제 응답에서 구매확정된 주문상품을 정산 대상으로 옮긴다 (정산 API가 없어 구매확정 이벤트 대신).
+ * 같은 주문상품은 한 번만 넣는다
+ */
+export const settlementObservers: MockObserver[] = [
+  {
+    method: 'GET',
+    path: '/orders/:orderId',
+    observe: (_request, response) => {
+      if (response.status !== 200) return
+      const order = response.data as OrderDetailDto
+      let added = false
+      for (const item of order.items ?? []) {
+        if (item.status !== 'CONFIRMED' || !item.confirmedAt) continue
+        if (targets.some((target) => target.orderItemId === String(item.orderItemId))) continue
+        targets.push({
+          targetId: String(targets.length + 1),
+          orderItemId: String(item.orderItemId),
+          productName: [item.productName, item.optionName].filter(Boolean).join(' '),
+          amount: item.amount,
+          confirmedAt: item.confirmedAt,
+          settled: false,
+          sellerId: String(item.sellerId),
+        })
+        added = true
+      }
+      if (added) saveMockState('settlement-targets-v2', targets)
     },
   },
 ]

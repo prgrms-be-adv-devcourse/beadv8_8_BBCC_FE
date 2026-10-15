@@ -112,15 +112,21 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText(/구매확정$/).first()).toBeVisible()
   })
 
-  await test.step('⑦ 정산 실행 → 정산서 (목)', async () => {
+  await test.step('⑦ 정산 실행 → 정산서 (목, ⑥에서 구매확정한 주문상품으로)', async () => {
     await switchRole(page, '관리자')
     await page.goto('/console/admin/settlements')
+    // 기본으로 오늘 구매확정분까지 포함 → 방금 구매확정한 상품이 정산된다
+    await expect(
+      page.getByRole('checkbox', { name: '오늘 구매확정분까지 포함 (시연용)' }),
+    ).toBeChecked()
     await page.getByRole('button', { name: '정산 실행' }).click()
-    await expect(page.getByText(/지급 22,500원/)).toBeVisible()
+    await expect(page.getByText(/판매자 1명 정산 완료 · 판매자 \d+ 지급 [\d,]+원/)).toBeVisible()
     await switchRole(page, '판매자')
     await page.goto('/console/seller/settlements')
+    await expect(page.getByText(/데일리 맨투맨 네이비 \/ 120 · 구매확정/)).toBeVisible()
+    await expect(page.getByText('정산됨')).toBeVisible()
     await page.getByRole('button', { name: '상세' }).click()
-    await expect(page.getByText(/구매확정 2026-10-13/).nth(1)).toBeVisible()
+    await expect(page.getByText(/데일리 맨투맨 네이비 \/ 120 · [\d,]+원 · 구매확정/)).toBeVisible()
   })
 
   await test.step('④ 충전 승인(토스 복귀) → 충전 취소', async () => {
