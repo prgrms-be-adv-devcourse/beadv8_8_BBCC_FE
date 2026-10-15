@@ -1,28 +1,18 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
 import { Link, useParams } from 'react-router'
 import {
   buildOrderTimeline,
   canConfirmItem,
   deliveryOf,
-  isPaymentDelayed,
   needsCharge,
   OrderDeliveryList,
   OrderItemRow,
   OrderStatusBanner,
   OrderTimeline,
-  paymentPendingMs,
-  useOrderQuery,
 } from '@/entities/order'
-import {
-  checkOrderPayment,
-  findPaymentOfOrder,
-  PaymentCard,
-  paymentKeys,
-  usePaymentsQuery,
-} from '@/entities/payment'
-import { useWalletQuery, WalletBalanceCard, walletKeys } from '@/entities/wallet'
+import { PaymentCard } from '@/entities/payment'
+import { useWalletQuery, WalletBalanceCard } from '@/entities/wallet'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
+import { useOrderTracking } from '@/features/track-order'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { formatDateTime, formatWon } from '@/shared/lib'
@@ -31,27 +21,13 @@ import { PageHeader, StateMessage } from '@/shared/ui/page-header'
 
 export function OrderDetailPage() {
   const { orderId = '' } = useParams()
-  const query = useOrderQuery(orderId)
+  const { query, payments, payment, paymentCheck, delayed } = useOrderTracking(orderId)
   const wallet = useWalletQuery()
-  const queryClient = useQueryClient()
-  const status = query.data?.status
-  const awaiting = query.data?.status === 'PENDING_PAYMENT'
-  // 결제 결과가 나온 뒤에만 결제 도메인 기록을 조회한다 (처리 중에는 기록이 없거나 반영 전)
-  const payments = usePaymentsQuery({ enabled: query.isSuccess && !awaiting })
-
-  // 결제 결과가 나오면 잔액을 다시 조회해 예치금 차감을 화면과 흐름 패널(상태 변화)에서 확인한다
-  useEffect(() => {
-    if (status && status !== 'PENDING_PAYMENT') {
-      void queryClient.invalidateQueries({ queryKey: walletKeys.me })
-      void queryClient.invalidateQueries({ queryKey: paymentKeys.list })
-    }
-  }, [status, queryClient])
 
   if (query.isPending) return <StateMessage>불러오는 중…</StateMessage>
   if (query.isError) return <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>
 
   const order = query.data
-  const payment = findPaymentOfOrder(payments.data, order.id)
   return (
     <div className="space-y-4">
       <PageHeader
@@ -61,10 +37,7 @@ export function OrderDetailPage() {
       <OrderStatusBanner
         order={order}
         polling={query.isFetching}
-        delayed={
-          order.status === 'PENDING_PAYMENT' &&
-          isPaymentDelayed(paymentPendingMs(order.id, query.dataUpdatedAt))
-        }
+        delayed={delayed}
         cancelAction={
           needsCharge(order) && (
             <Link to={paths.console.wallet} className="text-primary text-sm underline">
@@ -81,12 +54,14 @@ export function OrderDetailPage() {
         error={wallet.error}
       />
 
-      <PaymentCard
-        payment={payment}
-        check={checkOrderPayment(order, payment)}
-        pending={payments.isLoading}
-        error={payments.error}
-      />
+      {paymentCheck && (
+        <PaymentCard
+          payment={payment}
+          check={paymentCheck}
+          pending={payments.isLoading}
+          error={payments.error}
+        />
+      )}
 
       <Card>
         <CardTitle className="mb-2">진행 (상태 변화)</CardTitle>
