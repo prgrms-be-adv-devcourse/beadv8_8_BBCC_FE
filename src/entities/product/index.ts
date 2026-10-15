@@ -1,6 +1,7 @@
 export { productApi } from './api/product-api'
 /** 목 응답 작성 전용 (app/mocks) */
 export type {
+  CategoryTreeDto,
   ProductDetailDto,
   ProductOptionDto,
   ProductSummaryDto,
@@ -8,9 +9,9 @@ export type {
   UpdateProductRequestDto,
 } from './api/product.dto'
 export {
-  CATEGORIES,
   PRODUCT_STATUS_LABEL,
   STOCK_REASON_LABEL,
+  type Category,
   type ProductDetail,
   type ProductEditForm,
   type ProductOption,
@@ -22,6 +23,7 @@ export {
   type StockReason,
 } from './model/product'
 export {
+  toCategories,
   toProductDetail,
   toProductEditForm,
   toProductSearchParams,
@@ -41,6 +43,7 @@ export {
 } from './model/product.rules'
 export {
   productKeys,
+  useCategoriesQuery,
   useProductQuery,
   useProductsQuery,
   useSellerProductsQuery,

@@ -32,3 +32,13 @@ export const productDetailShape = obj({
 
 export const productPageShape = pageOf(obj(summaryFields))
 export const productDetailPageShape = pageOf(productDetailShape)
+
+/** 카테고리 트리: 세 단계까지 모양을 본다 (더 깊은 단계는 검사하지 않음) */
+const categoryNode = (depth: number): ReturnType<typeof obj> =>
+  obj({
+    categoryId: str,
+    name: str,
+    leaf: bool,
+    ...(depth > 0 ? { children: arr(categoryNode(depth - 1)) } : {}),
+  })
+export const categoryTreeShape = arr(categoryNode(3))

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ApiCallLog } from '@/shared/api'
+import { domainOf } from '@/widgets/api-flow-panel/config/domain-flow'
 import { latestActionDomains } from '@/widgets/api-flow-panel/model/flow-view'
 import { deriveStateChanges } from '@/widgets/api-flow-panel/model/state-changes'
 import { VERIFICATION_CHECKS } from '@/widgets/verification-checklist/config/checks'
@@ -161,5 +162,13 @@ describe('흐름 확인: 결제 완료 지연 근거', () => {
         log({ path: '/orders/6', startedAt: at(45), responseBody: order('PAID') }),
       ]).state,
     ).toBe('pass')
+  })
+})
+
+describe('domainOf: 상품 도메인 경로', () => {
+  it('카테고리 · 관리자 상품도 상품 도메인', () => {
+    expect(domainOf('/categories')).toBe('product')
+    expect(domainOf('/categories/3/attributes')).toBe('product')
+    expect(domainOf('/admin/products/1/stop-sale')).toBe('product')
   })
 })

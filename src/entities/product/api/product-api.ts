@@ -1,17 +1,26 @@
 import { apiClient, expectShape, type Page } from '@/shared/api'
 import type {
   AdjustStockRequestDto,
+  CategoryTreeDto,
   ProductDetailDto,
   ProductSearchParamsDto,
   ProductSummaryDto,
   RegisterProductRequestDto,
   UpdateProductRequestDto,
 } from './product.dto'
-import { productDetailPageShape, productDetailShape, productPageShape } from './product.shape'
+import {
+  categoryTreeShape,
+  productDetailPageShape,
+  productDetailShape,
+  productPageShape,
+} from './product.shape'
 
 // 상품 API는 백엔드에 아직 없다 (모두 목 응답). 경로는 기획서 8장 상품 표
 
 export const productApi = {
+  /** 카테고리 트리 (BE에 있음. 상품 목이 켜져 있으면 목 카테고리) */
+  categories: () =>
+    apiClient.get<CategoryTreeDto[]>('/categories').then(expectShape(categoryTreeShape)),
   /** 판매 중인 상품. 검색어 · 카테고리로 거른다 */
   list: (search: ProductSearchParamsDto = {}) =>
     apiClient

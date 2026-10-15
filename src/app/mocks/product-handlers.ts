@@ -1,5 +1,5 @@
 import {
-  CATEGORIES,
+  type CategoryTreeDto,
   type ProductDetailDto,
   type ProductSummaryDto,
   type RegisterProductRequestDto,
@@ -7,6 +7,20 @@ import {
 } from '@/entities/product'
 import type { MockHandler } from '@/shared/api'
 import { loadMockState, memberIdOf, page, problem, saveMockState } from './mock-utils'
+
+// 목 카테고리: 목 상품의 categoryId와 맞춘다 (상품 목을 끄면 실제 카테고리 + 실제 상품)
+const MOCK_CATEGORIES = [
+  { id: '1', name: '상의' },
+  { id: '2', name: '하의' },
+  { id: '3', name: '원피스' },
+  { id: '4', name: '아우터' },
+]
+const CATEGORY_TREE: CategoryTreeDto[] = MOCK_CATEGORIES.map((category) => ({
+  categoryId: category.id,
+  name: category.name,
+  leaf: true,
+  children: [],
+}))
 
 // 기획서 7.1 시연 데이터: 상품 A(옵션 1 · 2), 상품 B(옵션 3). 옵션 ID는 주문 쪽 상품 복사본과 같아야 담기가 된다
 const INITIAL_PRODUCTS: ProductDetailDto[] = [
@@ -102,6 +116,7 @@ export function summaryOf(product: ProductDetailDto): ProductSummaryDto {
 }
 
 export const productHandlers: MockHandler[] = [
+  { method: 'GET', path: '/categories', handle: () => ({ status: 200, data: CATEGORY_TREE }) },
   {
     method: 'GET',
     path: '/products',
@@ -163,7 +178,8 @@ export const productHandlers: MockHandler[] = [
         productId: String(nextProductId++),
         name: body.name,
         categoryId: body.categoryId,
-        categoryName: CATEGORIES.find((category) => category.id === body.categoryId)?.name ?? '',
+        categoryName:
+          MOCK_CATEGORIES.find((category) => category.id === body.categoryId)?.name ?? '',
         sellerId: memberIdOf(request) ?? '0',
         sellerName: '테스트상점',
         status: 'SALE_PENDING',
@@ -206,7 +222,8 @@ export const productHandlers: MockHandler[] = [
       product.description = body.description
       product.categoryId = body.categoryId
       product.categoryName =
-        CATEGORIES.find((category) => category.id === body.categoryId)?.name ?? product.categoryName
+        MOCK_CATEGORIES.find((category) => category.id === body.categoryId)?.name ??
+        product.categoryName
       for (const { optionId, price } of body.options) {
         const option = product.options.find((item) => item.optionId === optionId)
         if (option) option.price = price

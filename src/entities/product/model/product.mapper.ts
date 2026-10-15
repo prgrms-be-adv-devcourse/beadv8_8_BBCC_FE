@@ -1,5 +1,6 @@
 import { toImageUrl } from '@/shared/lib'
 import type {
+  CategoryTreeDto,
   ProductDetailDto,
   ProductOptionDto,
   ProductSearchParamsDto,
@@ -8,6 +9,7 @@ import type {
   UpdateProductRequestDto,
 } from '../api/product.dto'
 import type {
+  Category,
   ProductDetail,
   ProductEditForm,
   ProductSearch,
@@ -89,4 +91,14 @@ export function toProductSearchParams(search: ProductSearch): ProductSearchParam
   if (search.keyword.trim()) params.keyword = search.keyword.trim()
   if (search.categoryId) params.categoryId = search.categoryId
   return params
+}
+
+/** 카테고리 트리 → 고를 수 있는 끝 카테고리 목록 (순서 유지, 경로 이름 포함) */
+export function toCategories(tree: CategoryTreeDto[], parents: string[] = []): Category[] {
+  return tree.flatMap((node) => {
+    const path = [...parents, node.name]
+    return node.leaf || node.children.length === 0
+      ? [{ id: node.categoryId, name: node.name, path: path.join(' > ') }]
+      : toCategories(node.children, path)
+  })
 }

@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
-import { CATEGORIES, ProductCard, useProductsQuery, type ProductSearch } from '@/entities/product'
+import {
+  ProductCard,
+  useCategoriesQuery,
+  useProductsQuery,
+  type ProductSearch,
+} from '@/entities/product'
 import { FitBadge, useRecommendedProductsQuery } from '@/entities/recommendation'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { getErrorMessage } from '@/shared/api'
@@ -19,6 +24,7 @@ export function ShopHomePage() {
   const [keyword, setKeyword] = useState('')
   const [search, setSearch] = useState<ProductSearch>({ keyword: '', categoryId: null })
   const all = useProductsQuery(search)
+  const categories = useCategoriesQuery()
   const recommended = useRecommendedProductsQuery(childId)
   const query = childId === null ? all : recommended
   const child = children.data?.find((item) => item.id === childId)
@@ -78,7 +84,7 @@ export function ShopHomePage() {
           >
             전체 카테고리
           </Button>
-          {CATEGORIES.map((category) => (
+          {categories.data?.map((category) => (
             <Button
               key={category.id}
               size="sm"

@@ -52,3 +52,11 @@ export type AdjustStockRequestDto = { delta: number; reason: string }
 
 /** GET /products 검색 조건 (빈 값은 보내지 않음) */
 export type ProductSearchParamsDto = { keyword?: string; categoryId?: string }
+
+/** GET /categories (BE CategoryTreeResponse). leaf = 더 나뉘지 않는 카테고리 */
+export type CategoryTreeDto = {
+  categoryId: string
+  name: string
+  leaf: boolean
+  children: CategoryTreeDto[]
+}
