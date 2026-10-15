@@ -8,14 +8,21 @@ import { Card, CardTitle } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import type { ChargeReturn } from '../lib/charge-return'
 import { useRequestCharge } from '../model/use-charge-wallet'
 
-type ChargeFormProps = { returnTo: { successPath: string; failPath: string } }
+type ChargeFormProps = {
+  returnTo: { successPath: string; failPath: string }
+  /** 처음 채울 금액 (예: 주문서의 부족 금액) */
+  initialAmount?: number
+  /** 충전 승인 뒤 돌아갈 화면 */
+  afterCharge?: ChargeReturn | null
+}
 
 /** returnTo: 토스 결제창에서 돌아올 화면 (영역마다 다르다) */
-export function ChargeForm({ returnTo }: ChargeFormProps) {
-  const charge = useRequestCharge(returnTo)
-  const [amount, setAmount] = useState(50_000)
+export function ChargeForm({ returnTo, initialAmount, afterCharge = null }: ChargeFormProps) {
+  const charge = useRequestCharge(returnTo, afterCharge)
+  const [amount, setAmount] = useState(initialAmount ?? 50_000)
   const invalid = validateChargeAmount(amount)
 
   return (
@@ -38,6 +45,11 @@ export function ChargeForm({ returnTo }: ChargeFormProps) {
           {formatWon(amount)} 충전하기
         </Button>
       </div>
+      {afterCharge && (
+        <p className="text-muted-foreground mt-2 text-sm">
+          충전이 끝나면 &quot;{afterCharge.label}&quot;를 눌러 돌아갈 수 있어요.
+        </p>
+      )}
       {!env.tossClientKey && (
         <StateMessage tone="error">VITE_TOSS_CLIENT_KEY가 없어 결제창을 열 수 없어요.</StateMessage>
       )}

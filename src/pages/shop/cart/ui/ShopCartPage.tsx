@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router'
+import { orderableLines } from '@/entities/cart'
 import { findChild, useChildrenQuery } from '@/entities/child'
 import { CartItemControls } from '@/features/edit-cart-item'
 import { PlaceOrderButton, useCheckout } from '@/features/place-order'
@@ -10,12 +11,30 @@ import { Card, CardTitle } from '@/shared/ui/card'
 import { Select } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
-/** 장바구니 + 주문서 (배송지 · 예치금 잔액 확인 → 주문하기) */
+/** 장바구니 + 주문서: 주문할 상품 선택 → 배송지 · 예치금 잔액 확인 → 주문하기 (기획서 F05 · F06) */
 export function ShopCartPage() {
   const navigate = useNavigate()
-  const { cart, addresses, wallet, lines, orderAmount, address, selectAddress, shortage } =
-    useCheckout()
+  const {
+    cart,
+    addresses,
+    wallet,
+    lines,
+    orderAmount,
+    address,
+    selectAddress,
+    shortage,
+    chargeAmount,
+    isSelected,
+    toggleLine,
+    allSelected,
+    toggleAll,
+  } = useCheckout()
   const children = useChildrenQuery()
+  const orderableIds = new Set(cart.data ? orderableLines(cart.data).map((line) => line.id) : [])
+  const chargeHref =
+    chargeAmount === null
+      ? paths.shop.wallet
+      : `${paths.shop.wallet}?amount=${chargeAmount}&return=${encodeURIComponent(paths.shop.cart)}`
 
   return (
     <div className="space-y-4">
@@ -34,8 +53,26 @@ export function ShopCartPage() {
       {cart.data && cart.data.lines.length > 0 && (
         <div className="grid items-start gap-6 md:grid-cols-[1fr_320px]">
           <div className="space-y-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                className="accent-primary size-4"
+                checked={allSelected}
+                disabled={orderableIds.size === 0}
+                onChange={toggleAll}
+              />
+              전체 선택 ({lines.length}/{orderableIds.size})
+            </label>
             {cart.data.lines.map((line) => (
               <Card key={line.id} className="flex items-center gap-4">
+                <input
+                  type="checkbox"
+                  className="accent-primary size-4 shrink-0"
+                  aria-label={`${line.productName} ${line.size} 주문하기`}
+                  checked={orderableIds.has(line.id) && isSelected(line.id)}
+                  disabled={!orderableIds.has(line.id)}
+                  onChange={() => toggleLine(line.id)}
+                />
                 <div className="bg-muted size-16 shrink-0 rounded-lg" />
                 <div className="flex-1">
                   <p className="font-medium">
@@ -74,7 +111,7 @@ export function ShopCartPage() {
             </div>
             <div className="space-y-1 border-t pt-3 text-sm">
               <div className="flex justify-between">
-                <span>상품 금액</span>
+                <span>선택한 상품 {lines.length}개</span>
                 <span>{formatWon(orderAmount)}</span>
               </div>
               <div className="flex justify-between">
@@ -99,8 +136,10 @@ export function ShopCartPage() {
             {shortage > 0 && (
               <StateMessage tone="error">
                 잔액이 {formatWon(shortage)} 부족해요. 이대로 주문하면 결제에 실패해요.{' '}
-                <Link to={paths.shop.wallet} className="underline">
-                  충전하기
+                <Link to={chargeHref} className="font-semibold underline">
+                  {chargeAmount === null
+                    ? '충전하기'
+                    : `${formatWon(chargeAmount)} 충전하고 돌아오기`}
                 </Link>
               </StateMessage>
             )}

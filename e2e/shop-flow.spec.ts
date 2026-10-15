@@ -184,6 +184,46 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.goto('/')
   })
 
+  await test.step('쇼핑: 선택 주문 · 부족한 만큼 충전하고 돌아오기 (기획서 F05 · F06)', async () => {
+    await page.goto('/products/1')
+    await page.getByRole('button', { name: /네이비 \/ 면 \/ 110/ }).click()
+    await page.getByRole('spinbutton').fill('8')
+    await page.getByRole('button', { name: '장바구니 담기' }).click()
+    await page.getByRole('link', { name: '장바구니 보기' }).click()
+
+    // 잔액보다 큰 금액 → 부족 금액을 천 원 단위로 채워 충전하러 가는 링크
+    const charge = page.getByRole('link', { name: /충전하고 돌아오기/ })
+    await expect(charge).toHaveAttribute('href', /\/my\/wallet\?amount=\d+000&return=%2Fcart/)
+
+    // 선택을 빼면 주문할 상품이 없어 주문하기가 막힌다
+    await page.getByRole('checkbox', { name: /데일리 맨투맨.*110 주문하기/ }).uncheck()
+    await expect(page.getByText('선택한 상품 0개')).toBeVisible()
+    await expect(page.getByRole('button', { name: /주문하기/ })).toBeDisabled()
+    await page.getByRole('checkbox', { name: /전체 선택/ }).check()
+    await expect(page.getByText('선택한 상품 1개')).toBeVisible()
+
+    // 예치금 화면: 금액이 채워져 있고, 충전 뒤 주문서로 돌아갈 수 있다고 안내
+    await charge.click()
+    await expect(page.getByRole('spinbutton')).not.toHaveValue('50000')
+    await expect(page.getByText(/"주문서로 돌아가기"를 눌러 돌아갈 수 있어요/)).toBeVisible()
+
+    // 토스에서 돌아온 승인 화면 (결제창 이동 대신 저장 값으로 흉내) → 주문서로 돌아가기
+    await page.evaluate(() =>
+      sessionStorage.setItem(
+        'kidly.charge-return',
+        JSON.stringify({ path: '/cart', label: '주문서로 돌아가기' }),
+      ),
+    )
+    await page.goto('/my/wallet/charge/success?paymentKey=pk&orderId=toss-88&amount=1000')
+    await page.getByRole('link', { name: '주문서로 돌아가기' }).click()
+    await expect(page).toHaveURL(/\/cart$/)
+
+    // 다음 단계에 남지 않게 장바구니를 비운다
+    await page.getByRole('button', { name: '빼기' }).click()
+    await expect(page.getByText('장바구니가 비었어요.')).toBeVisible()
+    await page.goto('/')
+  })
+
   await test.step('마이페이지 · 주문 내역', async () => {
     await page.getByRole('link', { name: '마이페이지' }).click()
     await expect(page.getByText('예치금').first()).toBeVisible()

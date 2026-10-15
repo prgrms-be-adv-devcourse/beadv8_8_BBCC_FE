@@ -1,9 +1,11 @@
+import { useSearchParams } from 'react-router'
 import {
   canCancelCharge,
   ChargeRow,
   useChargeHistoryQuery,
   useWalletQuery,
   useWalletTransactionsQuery,
+  validateChargeAmount,
   WalletBalanceCard,
   WalletTransactionList,
 } from '@/entities/wallet'
@@ -11,7 +13,7 @@ import { CancelChargeButton } from '@/features/cancel-charge'
 import { ChargeForm } from '@/features/charge-wallet'
 import { getErrorMessage } from '@/shared/api'
 import { walletPathsOf } from '@/shared/config'
-import { useArea } from '@/shared/lib'
+import { safeReturnPath, useArea } from '@/shared/lib'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -21,6 +23,12 @@ export function ShopWalletPage() {
   const walletPaths = walletPathsOf(useArea())
   const charges = useChargeHistoryQuery()
   const transactions = useWalletTransactionsQuery()
+  // 주문서에서 "충전하고 돌아오기"로 왔으면 금액을 채우고, 승인 뒤 돌아갈 화면을 넘긴다
+  const [search] = useSearchParams()
+  const requested = Number(search.get('amount'))
+  const initialAmount = validateChargeAmount(requested) === null ? requested : undefined
+  const returnPath = safeReturnPath(search.get('return'))
+  const afterCharge = returnPath ? { path: returnPath, label: '주문서로 돌아가기' } : null
 
   return (
     <div className="space-y-4">
@@ -32,7 +40,10 @@ export function ShopWalletPage() {
       />
       <WalletBalanceCard wallet={wallet.data} pending={wallet.isPending} error={wallet.error} />
       <ChargeForm
+        key={`${initialAmount ?? ''}-${returnPath ?? ''}`}
         returnTo={{ successPath: walletPaths.chargeSuccess, failPath: walletPaths.chargeFail }}
+        initialAmount={initialAmount}
+        afterCharge={afterCharge}
       />
       <Card className="space-y-2">
         <CardTitle>충전 내역</CardTitle>
