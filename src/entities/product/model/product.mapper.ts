@@ -4,6 +4,7 @@ import type {
   CategoryTreeDto,
   ProductDetailDto,
   ProductSearchParamsDto,
+  ProductListItemDto,
   ProductSummaryDto,
   RegisterProductRequestDto,
   SellerProductDto,
@@ -15,6 +16,7 @@ import type {
   InputAttribute,
   ProductDetail,
   ProductEditForm,
+  ProductListItem,
   ProductOption,
   ProductSearch,
   ProductStatus,
@@ -24,6 +26,18 @@ import type {
   StockStatus,
 } from './product'
 import { categoryNameOf, optionCombos, priceGroups, sizeValues } from './product.rules'
+
+export function toProductListItem(dto: ProductListItemDto): ProductListItem {
+  return {
+    id: dto.productId,
+    name: dto.name,
+    imageUrl: toImageUrl(dto.thumbnailUrl),
+    businessName: dto.businessName?.trim() || null,
+    minPrice: dto.minPrice,
+    soldOut: dto.soldOut,
+    sizeFree: dto.sizeFree,
+  }
+}
 
 export function toProductSummary(
   dto: ProductSummaryDto,

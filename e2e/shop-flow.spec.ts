@@ -105,7 +105,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('배송지 수정')).toHaveCount(0)
   })
 
-  await test.step('쇼핑: 상품 검색 · 카테고리 (목)', async () => {
+  await test.step('쇼핑: 상품 검색 · 카테고리 (GET /products, 가짜 백엔드)', async () => {
     await page.getByRole('link', { name: 'Kidly', exact: true }).click()
     await page.getByRole('textbox', { name: '상품 검색' }).fill('조거')
     await page.getByRole('button', { name: '검색' }).click()
@@ -287,11 +287,15 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('판매자 자격 정지', { exact: true })).toBeVisible()
 
     await page.getByRole('link', { name: '상품 관리' }).click()
-    const target = page.locator('[data-slot="card"]').filter({ hasText: '데일리 맨투맨 (수정)' })
+    // 목록은 실제 GET /products(BE #288), 관리자 판매 중지는 아직 목 → 버튼 옆 준비 중(목) 배지.
+    // 목 판매 중지는 실제 목록에 반영되지 않으므로 오류 없이 요청이 끝나는 것까지만 본다
+    const target = page.locator('[data-slot="card"]').filter({ hasText: '밴딩 조거 팬츠 (상품 B)' })
+    await expect(target.getByText('준비 중(목)')).toBeVisible()
     await target.getByRole('button', { name: '판매 중지' }).click()
     await target.getByRole('textbox', { name: '판매 중지 사유' }).fill('상품 정보 허위 기재')
     await target.getByRole('button', { name: '중지하기' }).click()
-    await expect(page.getByText('데일리 맨투맨 (수정)')).toHaveCount(0)
+    await expect(target.getByRole('button', { name: '중지하기' })).toBeEnabled()
+    await expect(target.getByText(/찾을 수 없/)).toHaveCount(0)
 
     await page.getByRole('link', { name: '전체 주문' }).click()
     await expect(page.getByText(/^주문 \d+$/).first()).toBeVisible()

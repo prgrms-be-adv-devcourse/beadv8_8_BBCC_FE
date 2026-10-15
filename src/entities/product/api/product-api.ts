@@ -4,8 +4,8 @@ import type {
   CategoryInputsDto,
   CategoryTreeDto,
   ProductDetailDto,
+  ProductListItemDto,
   ProductSearchParamsDto,
-  ProductSummaryDto,
   RegisterProductRequestDto,
   RegisterProductResultDto,
   SaleStatusResultDto,
@@ -16,13 +16,13 @@ import {
   categoryInputsShape,
   categoryTreeShape,
   productDetailShape,
-  productPageShape,
+  productListPageShape,
   registerProductResultShape,
   saleStatusResultShape,
   sellerProductPageShape,
 } from './product.shape'
 
-// 실제: 카테고리 · 입력 항목 · 상세 · 등록 · 판매 시작. 목: 목록 · 판매자 목록 · 수정 · 판매 중지 · 재고 조정
+// 실제: 카테고리 · 입력 항목 · 목록 · 상세 · 등록 · 판매 시작. 목: 판매자 목록 · 수정 · 판매 중지 · 재고 조정
 
 export const productApi = {
   categories: () =>
@@ -32,11 +32,11 @@ export const productApi = {
     apiClient
       .get<CategoryInputsDto>(`/categories/${categoryId}/attributes`)
       .then(expectShape(categoryInputsShape)),
-  /** (목) 판매 중인 상품. 검색어 · 카테고리로 거른다 */
+  /** 판매 중인 상품 (품절 포함, 최신순). 검색어 · 카테고리로 거른다. 로그인 없이 된다 */
   list: (search: ProductSearchParamsDto = {}) =>
     apiClient
-      .get<Page<ProductSummaryDto>>('/products', { params: { ...search, page: 0, size: 20 } })
-      .then(expectShape(productPageShape)),
+      .get<Page<ProductListItemDto>>('/products', { params: { ...search, page: 0, size: 20 } })
+      .then(expectShape(productListPageShape)),
   /** 판매 시작 전 상품은 404 */
   get: (productId: string) =>
     apiClient.get<ProductDetailDto>(`/products/${productId}`).then(expectShape(productDetailShape)),

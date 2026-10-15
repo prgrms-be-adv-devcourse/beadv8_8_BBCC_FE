@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { productApi } from '../api/product-api'
-import type { ProductDetailDto, ProductSummaryDto, SellerProductDto } from '../api/product.dto'
+import type { ProductDetailDto, ProductListItemDto, SellerProductDto } from '../api/product.dto'
 import type { Page } from '@/shared/api'
 import type { Category, ProductSearch } from './product'
 import {
@@ -9,7 +9,7 @@ import {
   toCategoryInputs,
   toProductDetail,
   toProductSearchParams,
-  toProductSummary,
+  toProductListItem,
   toSellerProduct,
 } from './product.mapper'
 
@@ -53,19 +53,15 @@ export function useCategoryInputsQuery(categoryId: string) {
 
 const NO_SEARCH: ProductSearch = { keyword: '', categoryId: null }
 
-/** (목) 판매 중인 상품 (검색어 · 카테고리) */
+/** 판매 중인 상품 (검색어 · 카테고리, BE GET /products) */
 export function useProductsQuery(search: ProductSearch = NO_SEARCH) {
-  const categories = useCategoryList()
   return useQuery({
     queryKey: productKeys.search(search),
     queryFn: () => productApi.list(toProductSearchParams(search)),
-    select: useCallback(
-      (page: Page<ProductSummaryDto>) => ({
-        ...page,
-        content: page.content.map((item) => toProductSummary(item, categories)),
-      }),
-      [categories],
-    ),
+    select: (page: Page<ProductListItemDto>) => ({
+      ...page,
+      content: page.content.map(toProductListItem),
+    }),
   })
 }
 

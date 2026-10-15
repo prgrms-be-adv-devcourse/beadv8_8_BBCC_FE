@@ -4,6 +4,7 @@ import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
   categoryNameOf,
   ProductCard,
+  listItemMeta,
   productMeta,
   useCategoriesQuery,
   useProductsQuery,
@@ -144,7 +145,7 @@ export function ShopHomePage() {
                   key={product.id}
                   to={paths.shop.product(product.id)}
                   name={product.name}
-                  meta={productMeta(product)}
+                  meta={listItemMeta(product)}
                   price={product.minPrice}
                   imageUrl={product.imageUrl}
                 />
