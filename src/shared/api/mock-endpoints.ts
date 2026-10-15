@@ -22,8 +22,8 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'GET',
     path: '/products',
-    source: 'mock',
-    backend: 'BE #288 · #291 develop 머지(10/15). 응답 모양이 달라 매퍼 전환 필요',
+    source: 'real',
+    backend: 'BE #288 · #291 develop 머지(10/15) → 실제 (FE #93)',
     screens: '쇼핑 홈 · 콘솔 상품 · 관리자 상품(판매 중지)',
   },
   {

@@ -1,10 +1,11 @@
 // E2E 전용 가짜 백엔드 (실제 백엔드 코드와 무관). 구현된 API의 응답 모양(DTO)만 흉내 낸다.
-// 상품은 등록 · 판매 시작 · 상세 · 카테고리만 있다(products.mjs). 사이즈 추천은 여기서 응답하고, 상품 목록 · 자녀 맞춤 목록 · 정산은 FE 목(app/mocks)이 응답한다.
+// 상품은 등록 · 판매 시작 · 상세 · 카테고리만 있다(products.mjs). 상품 목록 · 사이즈 추천은 여기서 응답하고, 판매자 상품 목록 · 자녀 맞춤 목록 · 정산은 FE 목(app/mocks)이 응답한다.
 // 응답 모양이 실제와 달라지면 FE 흐름 패널의 계약 검사로 드러난다.
 import http from 'node:http'
 import {
   categoryInputs,
   categoryTree,
+  listOf as productListOf,
   changeSaleStatus,
   detailOf as productDetailOf,
   register,
@@ -176,6 +177,7 @@ http
         ? send(res, 200, inputs)
         : problem(res, 404, '찾을 수 없습니다', '카테고리를 찾을 수 없습니다.', req.url)
     }
+    if (r('GET', /^\/products$/)) return send(res, 200, page(productListOf(url.searchParams)))
     if ((x = r('GET', /^\/products\/(\d+)$/))) {
       const detail = productDetailOf(x[1])
       return detail

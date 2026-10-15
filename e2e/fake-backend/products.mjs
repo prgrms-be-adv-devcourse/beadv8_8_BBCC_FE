@@ -196,6 +196,29 @@ seed(
   ],
 )
 
+/**
+ * GET /products (BE ProductListItemResponse). 판매 중만, 품절도 남는다, 최신순.
+ * keyword는 상품명 포함, categoryId는 그 카테고리 또는 상위(의류 10)
+ */
+export function listOf(query) {
+  const keyword = (query.get('keyword') ?? '').trim()
+  const categoryId = query.get('categoryId')
+  return Object.values(products)
+    .filter((p) => p.status === 'ON_SALE')
+    .filter((p) => !keyword || p.name.includes(keyword))
+    .filter((p) => !categoryId || categoryId === '10' || String(p.categoryId) === categoryId)
+    .sort((a, b) => Number(b.productId) - Number(a.productId))
+    .map((p) => ({
+      productId: p.productId,
+      name: p.name,
+      thumbnailUrl: p.imageUrls[0] ?? null,
+      businessName: '테스트상점',
+      minPrice: Math.min(...p.options.map((o) => o.price)),
+      soldOut: p.options.every((o) => (stock[o.optionId] ?? 0) <= 0),
+      sizeFree: !p.options.some((o) => sizeOf(o.valueIds)),
+    }))
+}
+
 export function detailOf(productId) {
   const p = products[productId]
   if (!p || p.status === 'SALE_PENDING') return null

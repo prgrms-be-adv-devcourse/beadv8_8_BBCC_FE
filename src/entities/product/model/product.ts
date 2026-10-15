@@ -20,6 +20,19 @@ export type ProductOption = {
   maxHeightCm: number | null
 }
 
+/** 상품 목록 카드 (BE GET /products) */
+export type ProductListItem = {
+  id: string
+  name: string
+  /** 대표 이미지. 없으면 null → 기본 이미지 */
+  imageUrl: string | null
+  /** 판매자 상호명. 없으면 null */
+  businessName: string | null
+  minPrice: number
+  soldOut: boolean
+  sizeFree: boolean
+}
+
 export type ProductSummary = {
   id: string
   name: string

@@ -1,5 +1,6 @@
 // 실제 API: 상세 · 등록 · 판매 시작 · 카테고리 · 카테고리 입력 항목 (BE in/** record 그대로)
-// 목: 목록 · 판매자 상품 목록 · 수정 · 재고 조정 · 판매 중지 (BE에 아직 없음, 모양은 FE가 정함)
+// 실제 API: 상품 목록 GET /products (BE #288 · #291)
+// 목: 판매자 상품 목록 · 수정 · 재고 조정 · 판매 중지 (모양은 FE가 정함)
 
 /** GET /products/{productId} (BE ProductDetailResponse). 판매 시작 전 상품은 404 */
 export type ProductDetailDto = {
@@ -109,7 +110,20 @@ export type CategoryInputsDto = {
   measurementItems: { code: string; name: string; unit: string }[]
 }
 
-/** (목) GET /products 한 줄 */
+/** GET /products 한 줄 (BE ProductListItemResponse). 판매 중 상품만, 품절도 남는다 */
+export type ProductListItemDto = {
+  productId: string
+  name: string
+  /** 없으면 null */
+  thumbnailUrl: string | null
+  /** 판매자 상호명. 없으면 null */
+  businessName: string | null
+  minPrice: number
+  soldOut: boolean
+  sizeFree: boolean
+}
+
+/** (목) 판매자 상품 목록 · 목 상품 저장소 한 줄 */
 export type ProductSummaryDto = {
   productId: string
   name: string
@@ -135,4 +149,5 @@ export type UpdateProductRequestDto = {
 export type AdjustStockRequestDto = { delta: number; reason: string }
 
 /** (목) GET /products 검색 조건 (빈 값은 보내지 않음) */
+/** GET /products 쿼리 (BE ProductListRequest). sort · attributes는 아직 안 씀 */
 export type ProductSearchParamsDto = { keyword?: string; categoryId?: string }

@@ -105,7 +105,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('배송지 수정')).toHaveCount(0)
   })
 
-  await test.step('쇼핑: 상품 검색 · 카테고리 (목)', async () => {
+  await test.step('쇼핑: 상품 검색 · 카테고리 (GET /products, 가짜 백엔드)', async () => {
     await page.getByRole('link', { name: 'Kidly', exact: true }).click()
     await page.getByRole('textbox', { name: '상품 검색' }).fill('조거')
     await page.getByRole('button', { name: '검색' }).click()

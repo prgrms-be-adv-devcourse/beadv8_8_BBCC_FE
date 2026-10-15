@@ -15,6 +15,11 @@ export function categoryNameOf(categoryId: string, categories: Category[]): stri
 }
 
 /** 카드 아래 줄: 카테고리 · 브랜드 (없는 값은 뺀다) */
+/** 목록 카드 보조 문구: 상호명 · 품절 */
+export function listItemMeta(item: { businessName: string | null; soldOut: boolean }): string {
+  return [item.businessName, item.soldOut ? '품절' : null].filter(Boolean).join(' · ')
+}
+
 export function productMeta(product: { categoryName: string; brand: string | null }): string {
   return [product.categoryName, product.brand].filter(Boolean).join(' · ')
 }

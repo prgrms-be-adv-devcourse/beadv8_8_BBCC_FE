@@ -86,7 +86,17 @@ const summaryFields = {
   thumbnailUrl: nullable(str),
 }
 
-export const productPageShape = pageOf(obj(summaryFields))
+export const productListPageShape = pageOf(
+  obj({
+    productId: str,
+    name: str,
+    thumbnailUrl: nullable(str),
+    businessName: nullable(str),
+    minPrice: num,
+    soldOut: bool,
+    sizeFree: bool,
+  }),
+)
 export const sellerProductPageShape = pageOf(
   obj({
     ...summaryFields,
