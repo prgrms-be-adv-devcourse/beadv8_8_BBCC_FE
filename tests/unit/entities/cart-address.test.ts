@@ -8,6 +8,8 @@ import {
 } from '@/entities/address'
 import {
   canDecrease,
+  canIncrease,
+  clampQuantity,
   orderableLines,
   sumLineAmount,
   toAddCartItemRequest,
@@ -50,6 +52,15 @@ describe('장바구니 규칙', () => {
   it('수량 1에서는 더 줄일 수 없다 (경계)', () => {
     expect(canDecrease(line({ quantity: 1 }))).toBe(false)
     expect(canDecrease(line({ quantity: 2 }))).toBe(true)
+    expect(canIncrease(line({ quantity: 98 }))).toBe(true)
+    expect(canIncrease(line({ quantity: 99 }))).toBe(false)
+  })
+
+  it('수량 입력은 1~99 정수로 (주문 BE #253)', () => {
+    expect(clampQuantity(0)).toBe(1)
+    expect(clampQuantity(150)).toBe(99)
+    expect(clampQuantity(3.7)).toBe(3)
+    expect(clampQuantity(Number.NaN)).toBe(1)
   })
   it('담기 요청은 ID를 숫자로 보낸다', () => {
     expect(toAddCartItemRequest({ optionId: '2', childId: '1', quantity: 3 })).toEqual({

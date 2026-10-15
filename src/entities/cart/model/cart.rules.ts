@@ -9,8 +9,22 @@ export function sumLineAmount(lines: CartLine[]): number {
   return lines.reduce((sum, line) => sum + line.lineAmount, 0)
 }
 
+/** 주문 BE #253: 수량은 1~99, 범위 밖이면 400 INVALID_QUANTITY */
+export const MIN_QUANTITY = 1
+export const MAX_QUANTITY = 99
+
+/** 입력값을 1~99 정수로 (숫자가 아니면 1) */
+export function clampQuantity(value: number): number {
+  if (!Number.isFinite(value)) return MIN_QUANTITY
+  return Math.min(MAX_QUANTITY, Math.max(MIN_QUANTITY, Math.trunc(value)))
+}
+
 export function canDecrease(line: CartLine): boolean {
-  return line.quantity > 1
+  return line.quantity > MIN_QUANTITY
+}
+
+export function canIncrease(line: CartLine): boolean {
+  return line.quantity < MAX_QUANTITY
 }
 
 /** 주문할 줄: 주문할 수 있는 줄 중 선택을 빼지 않은 것 (새로 담은 줄은 선택된 채로 시작) */

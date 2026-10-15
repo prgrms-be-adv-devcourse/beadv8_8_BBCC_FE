@@ -3,8 +3,12 @@ export type { Cart, CartLine } from './model/cart'
 export { toAddCartItemRequest } from './model/cart.mapper'
 export {
   canDecrease,
+  canIncrease,
+  clampQuantity,
   groupBySeller,
   isAllSelected,
+  MAX_QUANTITY,
+  MIN_QUANTITY,
   orderableLines,
   selectedLines,
   sumLineAmount,
