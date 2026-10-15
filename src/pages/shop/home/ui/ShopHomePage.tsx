@@ -25,9 +25,11 @@ export function ShopHomePage() {
 
   return (
     <div className="space-y-8">
-      <section className="from-primary/15 to-growth/30 rounded-2xl bg-gradient-to-r px-8 py-10">
+      <section className="from-primary/15 to-growth/30 rounded-2xl bg-gradient-to-r px-5 py-7 md:px-8 md:py-10">
         <p className="text-primary text-sm font-semibold">브랜드마다 다른 사이즈, 이제 고민 끝</p>
-        <h1 className="mt-2 text-3xl font-extrabold">우리 아이에게 맞는 사이즈를 알려 드려요</h1>
+        <h1 className="mt-2 text-2xl font-extrabold text-balance md:text-3xl">
+          우리 아이에게 맞는 사이즈를 알려 드려요
+        </h1>
         <p className="text-muted-foreground mt-2">
           자녀의 키 · 몸무게로 상품마다 추천 사이즈와 적합도를 보여 줘요.
         </p>

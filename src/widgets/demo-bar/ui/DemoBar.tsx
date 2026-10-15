@@ -22,7 +22,7 @@ export function DemoBar({ actions }: DemoBarProps) {
   const status = useSessionStore((state) => state.status)
 
   return (
-    <div className="flex h-11 shrink-0 items-center gap-3 border-b bg-slate-900 px-4 text-white">
+    <div className="flex h-11 shrink-0 items-center gap-3 overflow-x-auto border-b bg-slate-900 px-4 whitespace-nowrap text-white [&>*]:shrink-0">
       <span className="text-xs font-semibold text-slate-400">시연</span>
       <nav className="flex gap-1">
         {(Object.keys(AREA_HOME) as Area[]).map((key) => (

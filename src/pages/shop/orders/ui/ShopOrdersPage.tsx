@@ -1,27 +1,66 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
-import { OrderStatusBadge, useOrdersQuery } from '@/entities/order'
+import {
+  countOrdersByTab,
+  filterOrdersByTab,
+  ORDER_TABS,
+  OrderStatusBadge,
+  useOrdersQuery,
+  type OrderTab,
+} from '@/entities/order'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { formatDateTime, formatWon } from '@/shared/lib'
+import { cn, formatDateTime, formatWon } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
+/** 내 주문 (기획서 F08): 상태 탭 → 주문 카드 → 주문 상세 */
 export function ShopOrdersPage() {
   const orders = useOrdersQuery()
+  const [tab, setTab] = useState<OrderTab>('ALL')
+  const all = orders.data?.content ?? []
+  const counts = countOrdersByTab(all)
+  const visible = filterOrdersByTab(all, tab)
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">주문 내역</h1>
+      <div role="tablist" aria-label="주문 상태" className="flex gap-2 overflow-x-auto">
+        {ORDER_TABS.map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            role="tab"
+            aria-selected={tab === item.value}
+            onClick={() => setTab(item.value)}
+            className={cn(
+              'shrink-0 rounded-full border px-3 py-1 text-sm',
+              tab === item.value
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'hover:border-primary bg-white',
+            )}
+          >
+            {item.label} {counts[item.value]}
+          </button>
+        ))}
+      </div>
       {orders.isPending && <StateMessage>불러오는 중…</StateMessage>}
       {orders.isError && <StateMessage tone="error">{getErrorMessage(orders.error)}</StateMessage>}
-      {orders.data?.content.length === 0 && (
+      {orders.data && visible.length === 0 && (
         <Card className="py-10 text-center">
-          <p className="text-muted-foreground">주문한 상품이 없어요.</p>
+          <p className="text-muted-foreground">
+            {tab === 'ALL' ? '주문한 상품이 없어요.' : '이 상태의 주문이 없어요.'}
+          </p>
+          {tab === 'ALL' && (
+            <Link to={paths.shop.home} className="text-primary mt-2 inline-block underline">
+              상품 보러 가기
+            </Link>
+          )}
         </Card>
       )}
-      {orders.data?.content.map((order) => (
+      {visible.map((order) => (
         <Link key={order.id} to={paths.shop.order(order.id)} className="block">
-          <Card className="hover:border-primary flex items-center justify-between transition-colors">
+          <Card className="hover:border-primary flex flex-wrap items-center justify-between gap-3 transition-colors">
             <div>
               <p className="text-muted-foreground text-sm">{formatDateTime(order.orderedAt)}</p>
               <p className="font-semibold">주문번호 {order.id}</p>

@@ -65,7 +65,14 @@ export function ShopProductDetailPage() {
 
           <Card className="border-growth space-y-3">
             <p className="font-semibold">누가 입나요? 자녀를 고르면 사이즈를 추천해요</p>
-            {children.data?.length === 0 ? (
+            {!user ? (
+              <Link
+                to={loginPath(location.pathname + location.search)}
+                className="text-primary text-sm underline"
+              >
+                로그인하면 자녀별 추천 사이즈를 알려 드려요
+              </Link>
+            ) : children.data?.length === 0 ? (
               <Link to={paths.shop.children} className="text-primary text-sm underline">
                 자녀를 등록하면 맞는 사이즈를 알려 드려요
               </Link>
@@ -96,36 +103,40 @@ export function ShopProductDetailPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 border-t pt-4">
-            <span className="text-sm">수량</span>
-            <Input
-              type="number"
-              min={1}
-              className="w-20"
-              value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-            />
-            <span className="ml-auto text-xl font-extrabold">
-              {selected ? formatWon(selected.price * quantity) : '옵션을 골라 주세요'}
-            </span>
+          {/* 휴대폰에서는 수량 · 금액 · 담기를 화면 아래에 고정한다 */}
+          <div className="sticky bottom-0 -mx-4 space-y-3 border-t bg-white/95 px-4 pt-3 pb-4 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:backdrop-blur-none">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">수량</span>
+              <Input
+                type="number"
+                min={1}
+                className="w-20"
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+              />
+              <span className="ml-auto text-xl font-extrabold">
+                {selected ? formatWon(selected.price * quantity) : '옵션을 골라 주세요'}
+              </span>
+            </div>
+            {!isSelling && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}
+            {user ? (
+              <AddToCartButton
+                optionId={optionId}
+                childId={childId}
+                quantity={quantity}
+                disabled={!isSelling}
+                cartHref={paths.shop.cart}
+                continueHref={paths.shop.home}
+              />
+            ) : (
+              <Link
+                to={loginPath(location.pathname + location.search)}
+                className="bg-primary text-primary-foreground block rounded-lg py-3 text-center font-semibold"
+              >
+                로그인하고 담기
+              </Link>
+            )}
           </div>
-          {!isSelling && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}
-          {user ? (
-            <AddToCartButton
-              optionId={optionId}
-              childId={childId}
-              quantity={quantity}
-              disabled={!isSelling}
-              cartHref={paths.shop.cart}
-            />
-          ) : (
-            <Link
-              to={loginPath(location.pathname + location.search)}
-              className="bg-primary text-primary-foreground block rounded-lg py-3 text-center font-semibold"
-            >
-              로그인하고 담기
-            </Link>
-          )}
         </div>
       </div>
     </div>

@@ -10,7 +10,7 @@ export function ShopLayout() {
     <div className="bg-muted/30 flex min-h-svh flex-col">
       <DemoBarWithFlowDrawer />
       <ShopHeader />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6 md:py-8">
         <SessionGate>
           <ShopLoginRedirect>
             <Outlet />

@@ -128,6 +128,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* 한국어는 낱말 단위로 줄바꿈 ("사이즈를"이 "사"/"이즈를"로 갈리지 않게) */
+    word-break: keep-all;
   }
   html {
     @apply font-sans;
