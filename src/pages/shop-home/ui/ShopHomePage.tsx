@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
-import { ProductCard, useProductsQuery } from '@/entities/product'
+import { CATEGORIES, ProductCard, useProductsQuery, type ProductSearch } from '@/entities/product'
 import { FitBadge, useRecommendedProductsQuery } from '@/entities/recommendation'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
+import { Button } from '@/shared/ui/button'
+import { Input } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/page-header'
 
 /** 쇼핑 첫 화면: 자녀를 고르면 맞는 사이즈가 판매 중인 상품만 보여 준다 */
@@ -14,7 +16,9 @@ export function ShopHomePage() {
   const isBuyer = hasRole(user, 'BUYER')
   const children = useChildrenQuery({ enabled: isBuyer })
   const [childId, setChildId] = useState<string | null>(null)
-  const all = useProductsQuery()
+  const [keyword, setKeyword] = useState('')
+  const [search, setSearch] = useState<ProductSearch>({ keyword: '', categoryId: null })
+  const all = useProductsQuery(search)
   const recommended = useRecommendedProductsQuery(childId)
   const query = childId === null ? all : recommended
   const child = children.data?.find((item) => item.id === childId)
@@ -45,10 +49,54 @@ export function ShopHomePage() {
         )}
       </section>
 
+      {childId === null && (
+        <section className="flex flex-wrap items-center gap-2">
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setSearch({ ...search, keyword })
+            }}
+          >
+            <Input
+              aria-label="상품 검색"
+              placeholder="상품 이름으로 찾기"
+              className="w-64 bg-white"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+            />
+            <Button type="submit" variant="outline">
+              검색
+            </Button>
+          </form>
+          <Button
+            size="sm"
+            variant={search.categoryId === null ? 'default' : 'outline'}
+            onClick={() => setSearch({ ...search, categoryId: null })}
+          >
+            전체 카테고리
+          </Button>
+          {CATEGORIES.map((category) => (
+            <Button
+              key={category.id}
+              size="sm"
+              variant={search.categoryId === category.id ? 'default' : 'outline'}
+              onClick={() => setSearch({ ...search, categoryId: category.id })}
+            >
+              {category.name}
+            </Button>
+          ))}
+        </section>
+      )}
+
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-bold">
-            {child ? `${child.name}에게 맞는 상품` : '전체 상품'}
+            {child
+              ? `${child.name}에게 맞는 상품`
+              : search.keyword || search.categoryId
+                ? '검색 결과'
+                : '전체 상품'}
           </h2>
           {isBuyer && (children.data?.length ?? 0) > 0 && (
             <ChildPicker
@@ -67,7 +115,11 @@ export function ShopHomePage() {
           <StateMessage>맞는 사이즈가 판매 중인 상품이 없어요.</StateMessage>
         )}
         {childId === null && all.data?.content.length === 0 && (
-          <StateMessage>아직 판매 중인 상품이 없어요.</StateMessage>
+          <StateMessage>
+            {search.keyword || search.categoryId
+              ? '조건에 맞는 상품이 없어요.'
+              : '아직 판매 중인 상품이 없어요.'}
+          </StateMessage>
         )}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {childId === null
