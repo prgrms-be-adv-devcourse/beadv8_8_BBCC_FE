@@ -6,7 +6,7 @@ import type {
   ConfirmChargeRequestDto,
   ConfirmChargeResultDto,
   WalletBalanceDto,
-  WalletTransactionDto,
+  WalletLedgerDto,
 } from './wallet.dto'
 import {
   chargeCancelShape,
@@ -15,7 +15,7 @@ import {
   chargeRequestShape,
   chargeShape,
   walletShape,
-  walletTransactionPageShape,
+  walletLedgerPageShape,
 } from './wallet.shape'
 
 const CHARGES = '/wallets/me/charges'
@@ -27,13 +27,13 @@ export const walletApi = {
     apiClient
       .get<Page<ChargeDetailDto>>(CHARGES, { params: { page: 0, size: 20 } })
       .then(expectShape(chargePageShape)),
-  /** 예치금 거래 내역 (기획서 8장 보완). 백엔드에 아직 없어 목 응답이다 */
+  /** 예치금 거래 내역 (BE 입출금 원장, 최신순) */
   listTransactions: () =>
     apiClient
-      .get<Page<WalletTransactionDto>>('/wallets/me/transactions', {
+      .get<Page<WalletLedgerDto>>('/wallets/me/ledgers', {
         params: { page: 0, size: 50 },
       })
-      .then(expectShape(walletTransactionPageShape)),
+      .then(expectShape(walletLedgerPageShape)),
   getCharge: (chargeId: string) =>
     apiClient.get<ChargeDetailDto>(`${CHARGES}/${chargeId}`).then(expectShape(chargeShape)),
   /** 금액 범위(1천 원 ~ 100만 원)는 서버가 확인한다 */

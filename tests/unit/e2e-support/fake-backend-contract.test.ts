@@ -23,6 +23,7 @@ import {
   chargeConfirmShape,
   chargePageShape,
   chargeShape,
+  walletLedgerPageShape,
   walletShape,
 } from '@/entities/wallet/api/wallet.shape'
 import { DEMO_ADDRESS } from '@/features/manage-address/config/demo-address'
@@ -251,5 +252,14 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const cancelled = await call('POST', '/wallets/me/charges/77/cancel', 1)
     expectContract(cancelled.data, chargeCancelShape)
     expect(cancelled.data).toMatchObject({ chargeId: 77, status: 'CANCELLED', amount: 50000 })
+  })
+
+  it('예치금 거래 내역 (BE WalletLedgerResponse): 충전 + · 충전 취소 −, 최신이 위', async () => {
+    const list = await call('GET', '/wallets/me/ledgers', 1)
+    expectContract(list.data, walletLedgerPageShape)
+    expect(list.data.content.slice(0, 2)).toMatchObject([
+      { type: 'CHARGE_CANCEL', amount: -50000, refId: 77 },
+      { type: 'CHARGE', amount: 50000, refId: 77 },
+    ])
   })
 })

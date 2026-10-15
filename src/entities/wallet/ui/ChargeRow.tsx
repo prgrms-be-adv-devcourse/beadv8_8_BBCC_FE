@@ -9,7 +9,10 @@ export function ChargeRow({ charge, action }: ChargeRowProps) {
   return (
     <div className="flex items-center justify-between border-t pt-2 text-sm">
       <span>
-        충전 #{charge.id} · {formatWon(charge.amount)} · {formatDateTime(charge.approvedAt)}{' '}
+        충전 #{charge.id} · {formatWon(charge.amount)} ·{' '}
+        {charge.approvedAt
+          ? `${formatDateTime(charge.approvedAt)} 승인`
+          : `${formatDateTime(charge.createdAt)} 요청`}{' '}
         <Badge variant={charge.status === 'DONE' ? 'success' : 'muted'}>
           {CHARGE_STATUS_LABEL[charge.status]}
         </Badge>
