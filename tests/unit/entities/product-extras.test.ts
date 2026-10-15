@@ -8,20 +8,15 @@ import {
   toUpdateProductRequest,
   validateProductEditForm,
   validateStockAdjustment,
-  type SellerProduct,
+  type SellerProductDetail,
 } from '@/entities/product'
 import { validateBusinessName } from '@/entities/seller'
 
-const product: SellerProduct = {
+const product: SellerProductDetail = {
   id: '1',
   name: '데일리 맨투맨',
-  brand: null,
-  categoryId: '11',
-  categoryName: '상의',
   status: 'ON_SALE',
-  minPrice: 25000,
-  imageUrl: null,
-  options: [{ id: '1', name: '네이비 / 110', price: 25000, stock: 10 }],
+  options: [{ id: '1', name: '네이비 / 110', price: 25000, stock: 10, onSale: true }],
 }
 
 describe('판매 상태 전환', () => {

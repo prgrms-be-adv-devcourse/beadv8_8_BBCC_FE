@@ -76,16 +76,6 @@ export const categoryInputsShape = obj({
   measurementItems: arr(measurementItem),
 })
 
-const summaryFields = {
-  productId: str,
-  name: str,
-  brand: nullable(str),
-  categoryId: str,
-  status: STATUS,
-  minPrice: nullable(num),
-  thumbnailUrl: nullable(str),
-}
-
 export const productListPageShape = pageOf(
   obj({
     productId: str,
@@ -95,12 +85,6 @@ export const productListPageShape = pageOf(
     minPrice: num,
     soldOut: bool,
     sizeFree: bool,
-  }),
-)
-export const sellerProductPageShape = pageOf(
-  obj({
-    ...summaryFields,
-    options: arr(obj({ optionId: str, optionName: str, price: num, stock: nullable(num) })),
   }),
 )
 
@@ -113,3 +97,38 @@ const categoryNode = (depth: number): ReturnType<typeof obj> =>
     ...(depth > 0 ? { children: arr(categoryNode(depth - 1)) } : {}),
   })
 export const categoryTreeShape = arr(categoryNode(3))
+
+export const sellerProductSummaryPageShape = pageOf(
+  obj({
+    productId: str,
+    name: str,
+    thumbnailUrl: nullable(str),
+    status: STATUS,
+    optionCount: num,
+    totalAvailableQuantity: num,
+    minPrice: nullable(num),
+    createdAt: str,
+  }),
+)
+export const sellerProductDetailShape = obj({
+  productId: str,
+  name: str,
+  status: STATUS,
+  version: num,
+  options: arr(
+    obj({
+      optionId: str,
+      optionName: str,
+      price: num,
+      availableQuantity: num,
+      saleStatus: str,
+      skuCode: nullable(str),
+    }),
+  ),
+})
+export const inventoryAdjustmentResultShape = obj({
+  optionId: str,
+  reason: str,
+  deltaQuantity: num,
+  availableQuantity: num,
+})

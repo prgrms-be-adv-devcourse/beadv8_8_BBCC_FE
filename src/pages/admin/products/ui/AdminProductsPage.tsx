@@ -6,7 +6,7 @@ import { Card } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
-/** 관리자: 판매 중인 상품을 보고 정책 위반 상품을 판매 중지 (기획서 8장 보완 · 목) */
+/** 관리자: 판매 중인 상품을 보고 정책 위반 상품을 판매 중지 (기획서 8장 보완, BE #315) */
 export function AdminProductsPage() {
   const products = useProductsQuery()
 
@@ -15,8 +15,8 @@ export function AdminProductsPage() {
       <PageHeader
         mockEndpoints={['GET /products']}
         title="상품 관리"
-        description="판매 중인 상품을 보고, 정책을 어긴 상품은 사유를 남기고 판매를 중지해요."
-        note="POST /admin/products/{id}/stop-sale은 백엔드에 없어 목이에요. 중지하면 product.changed로 추천 · 주문 복사본이 바뀌어요."
+        description="판매 중인 상품을 보고, 정책을 어긴 상품은 판매를 중지해요."
+        note="PUT /admin/products/{id}/sale-status (STOPPED). 관리자가 중지한 상품은 판매자가 다시 판매할 수 없어요. 판매 중지 사유는 백엔드가 받지 않아요."
       />
       {products.isPending && <StateMessage>불러오는 중…</StateMessage>}
       {products.isError && (

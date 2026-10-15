@@ -33,12 +33,12 @@ export function useStopSale(productId: string) {
 }
 
 /** 재고 조정 (증감 + 사유). 0이 되면 품절 */
-export function useAdjustStock(productId: string, optionId: string) {
+export function useAdjustStock(optionId: string) {
   const onSuccess = useInvalidateProducts()
   return useMutation({
     mutationFn: ({ delta, reason }: { delta: number; reason: StockReason }) =>
       runWithAction('재고 조정', () =>
-        productApi.adjustStock(productId, optionId, { delta, reason }),
+        productApi.adjustStock(optionId, { deltaQuantity: delta, reason }),
       ),
     onSuccess,
   })
@@ -48,8 +48,7 @@ export function useAdjustStock(productId: string, optionId: string) {
 export function useAdminStopSale(productId: string) {
   const onSuccess = useInvalidateProducts()
   return useMutation({
-    mutationFn: (reason: string) =>
-      runWithAction('관리자 판매 중지', () => productApi.adminStopSale(productId, { reason })),
+    mutationFn: () => runWithAction('관리자 판매 중지', () => productApi.adminStopSale(productId)),
     onSuccess,
   })
 }

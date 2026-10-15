@@ -8,7 +8,6 @@ export type {
   RegisterProductRequestDto,
   RegisterProductResultDto,
   SaleStatusResultDto,
-  SellerProductDto,
   UpdateProductRequestDto,
 } from './api/product.dto'
 export {
@@ -28,6 +27,7 @@ export {
   type ProductSummary,
   type RegisterProductForm,
   type SellerProduct,
+  type SellerProductDetail,
   type SizeSpec,
   type SizeSpecInput,
   type StockReason,
@@ -66,6 +66,7 @@ export {
   useCategoryInputsQuery,
   useProductQuery,
   useProductsQuery,
+  useSellerProductQuery,
   useSellerProductsQuery,
 } from './model/queries'
 export { ProductCard } from './ui/ProductCard'

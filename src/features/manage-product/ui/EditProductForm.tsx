@@ -3,7 +3,7 @@ import {
   toProductEditForm,
   validateProductEditForm,
   type ProductEditForm,
-  type SellerProduct,
+  type SellerProductDetail,
 } from '@/entities/product'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
@@ -11,10 +11,9 @@ import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUpdateProduct } from '../model/use-manage-product'
-import { MockBadge } from '@/shared/ui/MockBadge'
 
 type EditProductFormProps = {
-  product: SellerProduct
+  product: SellerProductDetail
   onDone: () => void
 }
 
@@ -30,10 +29,6 @@ export function EditProductForm({ product, onDone }: EditProductFormProps) {
 
   return (
     <form className="grid grid-cols-2 gap-3 border-t pt-3" onSubmit={handleSubmit}>
-      <MockBadge
-        endpoints={['PATCH /seller/products/:productId']}
-        className="col-span-2 ml-0 justify-self-start"
-      />
       <Label>
         상품명
         <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
