@@ -1,0 +1,64 @@
+name: Vercel Preview
+
+# 백엔드 없이 화면 전체를 보는 미리보기(목 백엔드, VITE_MOCK_BACKEND=true)를 Vercel에 올린다.
+# - develop에 머지되면 develop 기준으로 production(https://kidly-fe.vercel.app)에 배포
+# - 다시 올려야 하면 Actions에서 develop으로 수동 실행. vercel CLI로 로컬 파일을 직접 올리지 않는다
+# 필요한 값: Secrets VERCEL_TOKEN, Variables VERCEL_ORG_ID · VERCEL_PROJECT_ID (Settings → Secrets and variables → Actions)
+# 팀 배포(EC2 · GHCR)는 deploy.yml이 맡는다. 이 워크플로는 시연 미리보기 전용이다
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 머지가 이어지면 마지막 것만 올린다
+concurrency:
+  group: vercel-preview
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Vercel 값 확인
+        id: ready
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::notice::VERCEL_TOKEN · VERCEL_ORG_ID · VERCEL_PROJECT_ID가 없어 배포를 건너뜁니다"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.ready.outputs.ok == 'true'
+
+      - uses: actions/setup-node@v7
+        if: steps.ready.outputs.ok == 'true'
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 빌드 (목 백엔드)
+        if: steps.ready.outputs.ok == 'true'
+        env:
+          VITE_USE_MOCK: 'true'
+          VITE_MOCK_BACKEND: 'true'
+          VITE_DEMO_ROLE_SWITCH: 'true'
+        run: |
+          npx --yes vercel@64.2.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@64.2.0 build --prod --token="$VERCEL_TOKEN"
+
+      - name: 배포
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          url=$(npx --yes vercel@64.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "::notice::배포됨 $url"
