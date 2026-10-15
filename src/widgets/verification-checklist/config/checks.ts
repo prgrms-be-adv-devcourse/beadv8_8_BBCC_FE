@@ -362,3 +362,93 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     logs: balanceChange('2', 'up'),
   },
 ]
+
+// ── 기획서 2.1 취소 · 실패 시나리오 (정상 흐름 다음). 정상 흐름 판정과 따로 센다 ──
+
+const orderDetailLogs = (logs: ApiCallLog[]) =>
+  logs.filter(
+    (log) => log.method === 'GET' && /^\/orders\/[^/]+$/.test(log.path.split('?')[0]) && ok2xx(log),
+  )
+
+/** 이 이유로 취소된 주문 상세가 보이면 통과. 안 보이면 대기 (재현하지 않은 시나리오) */
+function cancelledWith(reason: string): LogsCheck {
+  return (logs) => {
+    const hit = orderDetailLogs(logs).findLast(
+      (log) => body(log).status === 'CANCELLED' && body(log).cancelReason === reason,
+    )
+    return hit
+      ? {
+          pass: true,
+          evidence: `${hit.startedAt.slice(11, 19)} GET ${hit.path} → CANCELLED (${reason})`,
+        }
+      : null
+  }
+}
+
+/** 잔액 부족으로 취소된 주문 ↔ 결제 도메인 FAILED(INSUFFICIENT_BALANCE) 기록 */
+const paymentFailedRecorded: LogsCheck = (logs) => {
+  const failedOrders = new Set(
+    orderDetailLogs(logs)
+      .filter(
+        (log) => body(log).status === 'CANCELLED' && body(log).cancelReason === 'PAYMENT_FAILED',
+      )
+      .map((log) => String(body(log).orderId)),
+  )
+  const paymentsLog = logs.findLast(
+    (log) => log.method === 'GET' && log.path.split('?')[0] === '/payments' && ok2xx(log),
+  )
+  if (failedOrders.size === 0 || !paymentsLog) return null
+  const payments = (body(paymentsLog).content as Body[] | undefined) ?? []
+  for (const orderId of failedOrders) {
+    const payment = payments.find((item) => String(item.orderId) === orderId)
+    if (payment?.status === 'FAILED' && payment.failureCode === 'INSUFFICIENT_BALANCE') {
+      return {
+        pass: true,
+        evidence: `주문 #${orderId} ↔ 결제 #${String(payment.paymentId)} FAILED (INSUFFICIENT_BALANCE)`,
+      }
+    }
+  }
+  return {
+    pass: false,
+    evidence: `잔액 부족 취소 주문 #${[...failedOrders].join(', #')}의 실패 결제 기록이 결제 목록에 없음`,
+  }
+}
+
+export const FAILURE_CHECKS: VerificationCheck[] = [
+  {
+    id: 'cancel-payment-failed',
+    step: '취소',
+    title: '잔액 부족 → 주문 취소',
+    expected: '주문 상세 CANCELLED (PAYMENT_FAILED), 예치금은 빠지지 않음',
+    role: '보호자',
+    screen: paths.console.cart,
+    logs: cancelledWith('PAYMENT_FAILED'),
+  },
+  {
+    id: 'payment-failed-record',
+    step: '취소',
+    title: '결제 도메인 실패 기록',
+    expected: 'GET /payments에 그 주문의 FAILED (INSUFFICIENT_BALANCE)',
+    role: '보호자',
+    screen: paths.console.orders,
+    logs: paymentFailedRecorded,
+  },
+  {
+    id: 'cancel-out-of-stock',
+    step: '취소',
+    title: '재고 부족 → 주문 취소 · 재고 복구',
+    expected: '주문 상세 CANCELLED (OUT_OF_STOCK)',
+    role: '보호자',
+    screen: paths.console.cart,
+    logs: cancelledWith('OUT_OF_STOCK'),
+  },
+  {
+    id: 'cancel-expired',
+    step: '취소',
+    title: '결제 제한 시간 초과 → 주문 취소',
+    expected: '주문 상세 CANCELLED (PAYMENT_EXPIRED), 10분 (설정값)',
+    role: '보호자',
+    screen: paths.console.orders,
+    logs: cancelledWith('PAYMENT_EXPIRED'),
+  },
+]

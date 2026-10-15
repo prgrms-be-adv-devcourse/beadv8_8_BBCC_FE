@@ -32,6 +32,8 @@ const members = {
     suspendedAt: null,
   },
 }
+// 상품 쪽 재고 (기획서 7.1: 상품 A 옵션 1 · 2 각 10, 상품 B 옵션 3은 5)
+const stock = { 1: 10, 2: 10, 3: 5 }
 const replica = {
   1: { productId: 1, name: '데일리 맨투맨 (상품 A)', size: '110', price: 25000, sellerId: 2 },
   2: { productId: 1, name: '데일리 맨투맨 (상품 A)', size: '120', price: 25000, sellerId: 2 },
@@ -332,7 +334,16 @@ http
       orders.push(o)
       for (let i = cart.length - 1; i >= 0; i--) if (cart[i].memberId === me) cart.splice(i, 1)
       setTimeout(() => {
+        // 상품: 하나라도 부족하면 아무것도 차감하지 않고 주문 취소 (기획서 4장)
+        if (o.items.some((it) => (stock[it.optionId] ?? 0) < it.quantity)) {
+          o.status = 'CANCELLED'
+          o.cancelReason = 'OUT_OF_STOCK'
+          return
+        }
+        o.items.forEach((it) => (stock[it.optionId] -= it.quantity))
         if ((wallets[me] ?? 0) < o.totalAmount) {
+          // 결제 실패 → 주문 취소 · 재고 복구
+          o.items.forEach((it) => (stock[it.optionId] += it.quantity))
           o.status = 'CANCELLED'
           o.cancelReason = 'PAYMENT_FAILED'
           // 백엔드: 잔액 부족만 실패 결제를 저장한다

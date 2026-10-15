@@ -135,7 +135,8 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
   await test.step('흐름 확인: 정산 목 때문에 판매자 지갑 적립만 대기', async () => {
     await page.goto('/console/verify')
     await expect(page.getByText('통과 20')).toBeVisible()
-    await expect(page.getByText('실패 0')).toBeVisible()
+    // 첫 구역 = 정상 흐름 ①~⑦ (아래 취소 · 실패 시나리오 구역과 따로 센다)
+    await expect(page.getByText('실패 0').first()).toBeVisible()
   })
 
   await test.step('흐름 패널: 상태 변화 · 계약 불일치 없음', async () => {
