@@ -21,6 +21,7 @@ export function AdminOrdersPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        mockEndpoints={['GET /admin/orders']}
         title="전체 주문"
         description="모든 회원의 주문을 상태별로 봐요."
         note="GET /admin/orders는 백엔드에 없어 목이에요. 이 탭에서 각 회원이 받은 주문 응답으로 만들어요."

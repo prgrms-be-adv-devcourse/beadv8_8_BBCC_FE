@@ -13,6 +13,7 @@ export function AdminProductsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        mockEndpoints={['GET /products']}
         title="상품 관리"
         description="판매 중인 상품을 보고, 정책을 어긴 상품은 사유를 남기고 판매를 중지해요."
         note="POST /admin/products/{id}/stop-sale은 백엔드에 없어 목이에요. 중지하면 product.changed로 추천 · 주문 복사본이 바뀌어요."

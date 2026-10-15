@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUpdateBusinessName } from '../model/use-edit-seller-info'
+import { MockBadge } from '@/shared/ui/MockBadge'
 
 type EditBusinessNameFormProps = { current: string; onDone: () => void }
 
@@ -35,6 +36,7 @@ export function EditBusinessNameForm({ current, onDone }: EditBusinessNameFormPr
       </Button>
       {name && invalid && <StateMessage tone="error">{invalid}</StateMessage>}
       {update.isError && <StateMessage tone="error">{getErrorMessage(update.error)}</StateMessage>}
+      <MockBadge endpoints={['PATCH /seller/me']} />
     </form>
   )
 }

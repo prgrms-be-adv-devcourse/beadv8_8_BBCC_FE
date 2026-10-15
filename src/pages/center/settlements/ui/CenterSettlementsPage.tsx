@@ -15,6 +15,7 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { MockBadge } from '@/shared/ui/MockBadge'
 
 export function CenterSettlementsPage() {
   const targets = useSettlementTargetsQuery()
@@ -36,7 +37,10 @@ export function CenterSettlementsPage() {
         error={wallet.error}
       />
       <Card className="space-y-2">
-        <CardTitle>정산 대상</CardTitle>
+        <CardTitle>
+          정산 대상
+          <MockBadge endpoints={['GET /seller/settlement-targets']} />
+        </CardTitle>
         {targets.isError && (
           <StateMessage tone="error">{getErrorMessage(targets.error)}</StateMessage>
         )}
@@ -56,7 +60,10 @@ export function CenterSettlementsPage() {
         ))}
       </Card>
       <Card className="space-y-2">
-        <CardTitle>내 정산서</CardTitle>
+        <CardTitle>
+          내 정산서
+          <MockBadge endpoints={['GET /seller/settlements']} />
+        </CardTitle>
         {settlements.isError && (
           <StateMessage tone="error">{getErrorMessage(settlements.error)}</StateMessage>
         )}

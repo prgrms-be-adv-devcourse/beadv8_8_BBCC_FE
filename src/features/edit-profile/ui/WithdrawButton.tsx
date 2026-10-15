@@ -2,6 +2,7 @@ import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useWithdraw } from '../model/use-edit-profile'
+import { MockBadge } from '@/shared/ui/MockBadge'
 
 type WithdrawButtonProps = { onDone: () => void }
 
@@ -21,6 +22,7 @@ export function WithdrawButton({ onDone }: WithdrawButtonProps) {
       >
         탈퇴하기
       </Button>
+      <MockBadge endpoints={['DELETE /members/me']} />
       {withdraw.isError && (
         <StateMessage tone="error">{getErrorMessage(withdraw.error)}</StateMessage>
       )}

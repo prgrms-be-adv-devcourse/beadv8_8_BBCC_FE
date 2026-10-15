@@ -10,6 +10,7 @@ import { Button } from '@/shared/ui/button'
 import { Input, Select } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useAdjustStock } from '../model/use-manage-product'
+import { MockBadge } from '@/shared/ui/MockBadge'
 
 type AdjustStockFormProps = {
   productId: string
@@ -26,9 +27,12 @@ export function AdjustStockForm({ productId, option }: AdjustStockFormProps) {
 
   if (!open) {
     return (
-      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
-        재고 조정
-      </Button>
+      <span className="inline-flex items-center">
+        <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+          재고 조정
+        </Button>
+        <MockBadge endpoints={['PATCH /seller/products/:productId/options/:optionId/stock']} />
+      </span>
     )
   }
   return (

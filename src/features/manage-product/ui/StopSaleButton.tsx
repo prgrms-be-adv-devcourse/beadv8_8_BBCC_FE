@@ -2,6 +2,7 @@ import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useStopSale } from '../model/use-manage-product'
+import { MockBadge } from '@/shared/ui/MockBadge'
 
 type StopSaleButtonProps = { productId: string }
 
@@ -22,6 +23,7 @@ export function StopSaleButton({ productId }: StopSaleButtonProps) {
       >
         판매 중지
       </Button>
+      <MockBadge endpoints={['POST /seller/products/:productId/stop-sale']} />
       {stop.isError && <StateMessage tone="error">{getErrorMessage(stop.error)}</StateMessage>}
     </span>
   )

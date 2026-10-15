@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { settlementPeriodEnd } from '../lib/period-end'
 import { useRunSettlement } from '../model/use-run-settlement'
+import { MockBadge } from '@/shared/ui/MockBadge'
 
 export function RunSettlementButton() {
   const run = useRunSettlement()
@@ -28,6 +29,7 @@ export function RunSettlementButton() {
       >
         정산 실행
       </Button>
+      <MockBadge endpoints={['POST /admin/settlements/run']} />
       <label className="text-muted-foreground flex items-center gap-2 text-xs">
         <input
           type="checkbox"

@@ -26,6 +26,9 @@ export function ConsoleProductsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        mockEndpoints={[
+          childId === null ? 'GET /products' : 'GET /children/:childId/recommended-products',
+        ]}
         title="상품"
         step="③"
         note="자녀를 고르면 추천이 자기 복사본(자녀 · 상품)으로 맞는 사이즈가 있는 상품만 보여 줘요."

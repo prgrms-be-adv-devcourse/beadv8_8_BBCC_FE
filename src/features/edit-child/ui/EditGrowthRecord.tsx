@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/button'
 import { Input, Select } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUpdateGrowthRecord } from '../model/use-edit-child'
+import { MockBadge } from '@/shared/ui/MockBadge'
 
 type EditGrowthRecordProps = { childId: string; record: GrowthRecord }
 
@@ -18,9 +19,12 @@ export function EditGrowthRecord({ childId, record }: EditGrowthRecordProps) {
 
   if (!open) {
     return (
-      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
-        수정
-      </Button>
+      <span className="inline-flex items-center">
+        <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+          수정
+        </Button>
+        <MockBadge endpoints={['PATCH /children/:childId/growth-records/:recordId']} />
+      </span>
     )
   }
   return (

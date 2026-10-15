@@ -18,6 +18,7 @@ import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { MockBadge } from '@/shared/ui/MockBadge'
 
 export function CenterProductsPage() {
   const products = useSellerProductsQuery()
@@ -34,7 +35,10 @@ export function CenterProductsPage() {
       />
       <RegisterProductForm productHref={(id) => productHref(id)} />
       <div className="space-y-2">
-        <h2 className="font-semibold">내 상품</h2>
+        <h2 className="font-semibold">
+          내 상품
+          <MockBadge endpoints={['GET /seller/products']} />
+        </h2>
         {products.isPending && <StateMessage>불러오는 중…</StateMessage>}
         {products.isError && (
           <StateMessage tone="error">{getErrorMessage(products.error)}</StateMessage>
