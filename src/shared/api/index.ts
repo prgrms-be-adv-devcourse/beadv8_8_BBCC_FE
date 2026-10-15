@@ -20,6 +20,7 @@ export { getErrorMessage, getErrorStatus, type ProblemDetail } from './problem-d
 export type { Page } from './types'
 export {
   registerMockHandlers,
+  isMockActive,
   registerMockObservers,
   type MockHandler,
   type MockObserver,
@@ -27,3 +28,9 @@ export {
   type MockResult,
 } from './mock-adapter'
 export { useMockSettings } from './mock-settings'
+export {
+  endpointOf,
+  MOCK_ENDPOINTS,
+  type EndpointSource,
+  type MockEndpoint,
+} from './mock-endpoints'
