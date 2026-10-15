@@ -30,7 +30,7 @@ test('연결 점검: 조회 API 결과 표 · 역할 건너뜀 · 목 API 백엔
 
   // 목 조회 API: 가짜 백엔드에 없는 것은 "BE 아직 없음"
   await page.getByRole('button', { name: '백엔드에 물어보기' }).click()
-  await expect(page.getByRole('listitem', { name: '목 API GET /admin/orders' })).toContainText(
+  await expect(page.getByRole('listitem', { name: '목 API GET /admin/settlements' })).toContainText(
     'BE 아직 없음',
   )
   await expect(page.getByRole('listitem', { name: '목 API PATCH /seller/me' })).toContainText(
