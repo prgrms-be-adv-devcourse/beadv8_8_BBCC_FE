@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router'
+import { env } from '@/shared/config'
 import { ShopHeader } from '@/widgets/shop-header'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { TopProgressBar } from './TopProgressBar'
@@ -20,7 +21,7 @@ export function ShopLayout() {
         </SessionGate>
       </main>
       <footer className="text-muted-foreground border-t bg-white py-6 text-center text-xs">
-        Kidly · 팀 블루블랙치킨고양이 · 세미 프로젝트 시연용
+        Kidly · 팀 블루블랙치킨고양이{env.demoRoleSwitch && ' · 세미 프로젝트 시연용'}
       </footer>
     </div>
   )

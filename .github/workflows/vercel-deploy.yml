@@ -58,7 +58,7 @@ jobs:
       # 값을 바꾼 뒤 해당 브랜치로 다시 실행하면 반영된다. 값이 없으면 앱 기본값을 쓴다
       # - VITE_USE_MOCK: false면 백엔드에 없는 API의 목(상품 목록 · 정산 등)을 끈다 (없으면 켜짐)
       # - VITE_API_BASE_URL: 실제 백엔드 주소 (없으면 비움). 그 서버의 CORS에 이 사이트 주소를 허용해야 한다
-      # - VITE_DEMO_ROLE_SWITCH: false면 시연 역할 전환을 감춘다 (없으면 켜짐. 개발용 토큰이 없는 백엔드면 false)
+      # - VITE_DEMO_ROLE_SWITCH: false면 시연 기능(역할 전환 · 시연 콘솔 · API 흐름 · 시연용 문구)을 감춘다 (없으면 켜짐. 개발용 토큰이 없는 백엔드면 false)
       # - VITE_TOSS_CLIENT_KEY · VITE_KAKAO_CLIENT_ID · VITE_KAKAO_REDIRECT_URI: 충전 · 카카오 로그인에 쓴다 (없으면 그 기능이 동작하지 않는다)
       - name: 빌드
         if: steps.ready.outputs.ok == 'true'
