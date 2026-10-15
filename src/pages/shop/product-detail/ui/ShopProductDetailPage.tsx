@@ -10,6 +10,7 @@ import {
   ProductOptionList,
   ProductSpecs,
   useProductQuery,
+  WearPreview,
 } from '@/entities/product'
 import {
   SizeRecommendationSummary,
@@ -43,6 +44,7 @@ export function ShopProductDetailPage() {
     return <StateMessage tone="error">{getErrorMessage(product.error)}</StateMessage>
 
   const detail = product.data
+  const pickedChild = children.data?.find((item) => item.id === childId) ?? null
   const selected = findOption(detail, optionId)
   const isSelling = isOnSale(detail)
 
@@ -96,7 +98,14 @@ export function ShopProductDetailPage() {
               <SizeRecommendationSummary
                 recommendation={recommendation.data}
                 sizes={sizeRangesOf(detail.sizeSpecs)}
-                child={children.data?.find((item) => item.id === childId) ?? null}
+                child={pickedChild}
+              />
+            )}
+            {pickedChild && (
+              <WearPreview
+                specs={detail.sizeSpecs}
+                child={pickedChild}
+                initialSize={recommendation.data?.recommendedSize}
               />
             )}
           </Card>

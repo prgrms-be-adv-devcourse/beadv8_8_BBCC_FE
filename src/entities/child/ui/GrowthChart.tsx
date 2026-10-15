@@ -16,8 +16,9 @@ export function GrowthChart({ records, currentHeightCm }: GrowthChartProps) {
   const sorted = [...records].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt))
   const forecast = forecastGrowth(sorted, currentHeightCm)
   const heights = [currentHeightCm, ...sorted.map((record) => record.heightCm)]
-  const low = sizeBandOf(Math.min(...heights)).minCm
-  const high = sizeBandOf(Math.max(...heights)).maxCm + (forecast.monthsToNext !== null ? 10 : 0)
+  // 위아래로 한 구간씩 더 보여 지금 구간이 어디쯤인지 보이게 한다
+  const low = sizeBandOf(Math.min(...heights)).minCm - 10
+  const high = sizeBandOf(Math.max(...heights)).maxCm + 10
   const times = sorted.map((record) => Date.parse(record.recordedAt))
   const start = times[0] ?? 0
   const lastTime = times.at(-1) ?? start
@@ -39,7 +40,7 @@ export function GrowthChart({ records, currentHeightCm }: GrowthChartProps) {
         viewBox={`0 0 ${W} ${H}`}
         role="img"
         aria-label={`키 기록 ${sorted.length}개, 지금 ${currentHeightCm}cm는 ${forecast.band.size} 사이즈 구간`}
-        className="w-full"
+        className="h-auto w-full max-w-md"
       >
         {bands.map((size, index) => (
           <g key={size}>
