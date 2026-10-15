@@ -81,6 +81,12 @@ export function ConsoleHomePage() {
         >
           흐름 확인에서 판정 보기
         </Link>
+        <Link
+          to={paths.console.connect}
+          className="text-primary mt-2 ml-3 inline-block text-xs underline"
+        >
+          백엔드 연결 점검
+        </Link>
       </Card>
     </div>
   )

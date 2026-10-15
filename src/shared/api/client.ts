@@ -15,6 +15,8 @@ declare module 'axios' {
     logId?: number
     /** 정상 흐름에서도 오는 오류 응답. 흐름 패널에 "예상됨"으로 표시하고 실패로 세지 않는다 */
     expected?: ExpectedResponse
+    /** true면 목 핸들러를 건너뛰고 실제 서버로 보낸다 (연결 점검) */
+    skipMock?: boolean
   }
 }
 

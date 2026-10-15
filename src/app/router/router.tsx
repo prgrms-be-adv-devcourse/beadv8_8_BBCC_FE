@@ -214,6 +214,12 @@ export const router = createBrowserRouter(
           ),
         },
         {
+          path: rel(paths.console.home, paths.console.connect),
+          ...page(() =>
+            import('@/pages/console/connect').then((m) => ({ Component: m.ConsoleConnectPage })),
+          ),
+        },
+        {
           path: rel(paths.console.home, paths.console.verify),
           ...page(() =>
             import('@/pages/console/verify').then((m) => ({ Component: m.ConsoleVerifyPage })),
