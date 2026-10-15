@@ -4,7 +4,8 @@ export type CartLine = {
   optionId: string
   productId: string
   productName: string
-  size: string
+  optionName: string | null
+  size: string | null
   /** 입을 자녀 (선택) */
   childId: string | null
   quantity: number

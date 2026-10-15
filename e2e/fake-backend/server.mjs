@@ -35,9 +35,30 @@ const members = {
 // 상품 쪽 재고 (기획서 7.1: 상품 A 옵션 1 · 2 각 10, 상품 B 옵션 3은 5)
 const stock = { 1: 10, 2: 10, 3: 5 }
 const replica = {
-  1: { productId: 1, name: '데일리 맨투맨 (상품 A)', size: '110', price: 25000, sellerId: 2 },
-  2: { productId: 1, name: '데일리 맨투맨 (상품 A)', size: '120', price: 25000, sellerId: 2 },
-  3: { productId: 2, name: '조거', size: '120', price: 30000, sellerId: 2 },
+  1: {
+    productId: 1,
+    name: '데일리 맨투맨 (상품 A)',
+    optionName: '네이비 / 110',
+    size: '110',
+    price: 25000,
+    sellerId: 2,
+  },
+  2: {
+    productId: 1,
+    name: '데일리 맨투맨 (상품 A)',
+    optionName: '네이비 / 120',
+    size: '120',
+    price: 25000,
+    sellerId: 2,
+  },
+  3: {
+    productId: 2,
+    name: '조거',
+    optionName: '그레이 / 120',
+    size: '120',
+    price: 30000,
+    sellerId: 2,
+  },
 }
 const now = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19)
 const problem = (res, status, title, detail, instance) =>
@@ -271,6 +292,7 @@ http
         optionId: String(body.optionId),
         productId: String(rp.productId),
         productName: rp.name,
+        optionName: rp.optionName,
         size: rp.size,
         childId: body.childId ? String(body.childId) : null,
         quantity: body.quantity,
@@ -315,6 +337,7 @@ http
           optionId: String(it.optionId),
           sellerId: String(rp.sellerId),
           productName: rp.name,
+          optionName: rp.optionName,
           size: rp.size,
           unitPrice: it.unitPrice,
           quantity: it.quantity,

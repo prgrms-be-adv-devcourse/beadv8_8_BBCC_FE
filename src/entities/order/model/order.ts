@@ -11,7 +11,8 @@ export type OrderItem = {
   optionId: string
   sellerId: string
   productName: string
-  size: string
+  optionName: string | null
+  size: string | null
   unitPrice: number
   quantity: number
   amount: number

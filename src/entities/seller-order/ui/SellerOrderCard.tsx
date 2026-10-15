@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { carrierName, DELIVERY_STATUS_LABEL } from '@/shared/config'
-import { formatDateTime, formatWon } from '@/shared/lib'
+import { formatDateTime, formatWon, optionLabel } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { Card } from '@/shared/ui/card'
 import type { SellerOrder } from '../model/seller-order'
@@ -20,7 +20,8 @@ export function SellerOrderCard({ order, action }: SellerOrderCardProps) {
       <ul className="text-sm">
         {order.items.map((item) => (
           <li key={item.id}>
-            {item.productName} · {item.size} × {item.quantity} = {formatWon(item.amount)}
+            {[item.productName, optionLabel(item)].filter(Boolean).join(' · ')} × {item.quantity} ={' '}
+            {formatWon(item.amount)}
             {item.childLabel && ` · ${item.childLabel}`}
           </li>
         ))}

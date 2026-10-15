@@ -7,6 +7,7 @@ const item = (over: Partial<OrderItem> = {}): OrderItem => ({
   optionId: '1',
   sellerId: '2',
   productName: '맨투맨',
+  optionName: '네이비 / 120',
   size: '120',
   unitPrice: 1000,
   quantity: 1,

@@ -6,7 +6,10 @@ export type OrderItemDto = {
   optionId: string
   sellerId: string
   productName: string
-  size: string
+  /** 옵션 이름 (BE #221, 옛 주문상품은 null) */
+  optionName: string | null
+  /** 사이즈가 없는 상품은 null */
+  size: string | null
   unitPrice: number
   quantity: number
   amount: number

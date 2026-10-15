@@ -8,6 +8,7 @@ const line = (id: string, patch: Partial<CartLine> = {}): CartLine => ({
   optionId: `o${id}`,
   productId: 'p1',
   productName: '데일리 맨투맨',
+  optionName: '네이비 / 120',
   size: '120',
   childId: null,
   quantity: 1,

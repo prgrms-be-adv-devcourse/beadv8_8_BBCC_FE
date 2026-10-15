@@ -20,6 +20,7 @@ const line = (patch: Partial<CartLine>): CartLine => ({
   optionId: '2',
   productId: '1',
   productName: '맨투맨',
+  optionName: '네이비 / 120',
   size: '120',
   childId: null,
   quantity: 1,

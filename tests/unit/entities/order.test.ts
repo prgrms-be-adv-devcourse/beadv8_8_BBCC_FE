@@ -29,6 +29,7 @@ const dto = {
       optionId: '2',
       sellerId: '2',
       productName: '데일리 맨투맨',
+      optionName: '네이비 / 120',
       size: '120',
       unitPrice: 25000,
       quantity: 1,
