@@ -3,8 +3,13 @@ import { Button } from '@/shared/ui/button'
 import { DEMO_ACCOUNTS } from '../config/demo-accounts'
 import { useSwitchDemoRole } from '../model/use-switch-demo-role'
 
+type SwitchDemoRoleProps = {
+  /** 역할을 바꾼 뒤 (예: 로그인 화면에서 원래 화면으로 돌아가기) */
+  onSwitched?: () => void
+}
+
 /** 시연용: 개발용 토큰(local 전용)으로 보호자 · 판매자 · 관리자를 바로 바꾼다 */
-export function SwitchDemoRole() {
+export function SwitchDemoRole({ onSwitched }: SwitchDemoRoleProps = {}) {
   const switchRole = useSwitchDemoRole()
 
   return (
@@ -16,7 +21,7 @@ export function SwitchDemoRole() {
           size="sm"
           variant={switchRole.currentMemberId === account.memberId ? 'default' : 'outline'}
           disabled={switchRole.isPending}
-          onClick={() => switchRole.mutate(account)}
+          onClick={() => switchRole.mutate(account, { onSuccess: onSwitched })}
         >
           {account.label}
         </Button>

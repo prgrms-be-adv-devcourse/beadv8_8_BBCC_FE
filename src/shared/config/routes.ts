@@ -1,4 +1,5 @@
 // 화면 주소는 여기서만 정한다. 화면 · 기능은 문자열 대신 이 값을 쓴다.
+import { safeReturnPath } from '../lib/return-path'
 
 /** 화면 영역: 쇼핑(보호자) · 판매자 센터 · 관리자 · 시연 콘솔 */
 export type Area = 'shop' | 'center' | 'admin' | 'console'
@@ -101,4 +102,16 @@ export function memberPathsOf(area: Area) {
     addresses: base.addresses,
     profile: base.profile,
   }
+}
+
+/** 로그인해야 볼 수 있는 쇼핑 화면: 장바구니 · 주문 · 마이페이지(자녀 · 배송지 · 예치금 포함). 홈 · 상품은 누구나 */
+export function shopNeedsLogin(pathname: string): boolean {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  return [paths.shop.cart, paths.shop.orders, paths.shop.my].some((prefix) => under(prefix, path))
+}
+
+/** 로그인 화면 주소. next = 로그인 뒤 돌아올 화면 (앱 안 주소만) */
+export function loginPath(next: string | null): string {
+  const target = safeReturnPath(next)
+  return target ? `${paths.login}?next=${encodeURIComponent(target)}` : paths.login
 }

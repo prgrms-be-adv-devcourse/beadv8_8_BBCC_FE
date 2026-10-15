@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { areaOf, memberPathsOf, paths } from '@/shared/config'
+import { areaOf, loginPath, memberPathsOf, paths, shopNeedsLogin } from '@/shared/config'
 
 describe('areaOf: 주소로 화면 영역을 나눈다', () => {
   it.each([
@@ -79,5 +79,40 @@ describe('상품 보완 화면 주소', () => {
   it('관리자 상품 관리는 관리자 영역과 콘솔에 있다', () => {
     expect(paths.admin.products).toBe('/admin/products')
     expect(paths.console.adminProducts).toBe('/console/admin/products')
+  })
+})
+
+describe('shopNeedsLogin: 로그인해야 볼 수 있는 쇼핑 화면', () => {
+  it.each([
+    [paths.shop.cart, true],
+    [paths.shop.orders, true],
+    [paths.shop.order('3'), true],
+    [paths.shop.my, true],
+    [paths.shop.wallet, true],
+    [paths.shop.chargeSuccess, true],
+    [paths.shop.child('1'), true],
+    [paths.shop.home, false],
+    [paths.shop.product('1'), false],
+    [paths.login, false],
+    [paths.kakaoCallback, false],
+    ['/없는-주소', false],
+  ] as const)('%s → %s', (pathname, expected) => {
+    expect(shopNeedsLogin(pathname)).toBe(expected)
+  })
+
+  it('끝의 /도 같은 화면으로 본다', () => {
+    expect(shopNeedsLogin('/cart/')).toBe(true)
+    expect(shopNeedsLogin('/my/')).toBe(true)
+  })
+})
+
+describe('loginPath: 로그인 뒤 돌아올 주소를 담는다', () => {
+  it('next에 주소 · 검색값을 그대로 담는다', () => {
+    expect(loginPath('/products/1?childId=2')).toBe('/login?next=%2Fproducts%2F1%3FchildId%3D2')
+  })
+
+  it('돌아올 곳이 없거나 앱 밖 주소면 로그인 화면만', () => {
+    expect(loginPath(null)).toBe('/login')
+    expect(loginPath('https://evil.example')).toBe('/login')
   })
 })

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router'
+import { Link, useLocation, useParams, useSearchParams } from 'react-router'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
   findOption,
@@ -9,9 +9,10 @@ import {
   useProductQuery,
 } from '@/entities/product'
 import { SizeRecommendationSummary, useSizeRecommendationQuery } from '@/entities/recommendation'
+import { useSessionStore } from '@/entities/session'
 import { AddToCartButton } from '@/features/add-to-cart'
 import { getErrorMessage } from '@/shared/api'
-import { paths } from '@/shared/config'
+import { loginPath, paths } from '@/shared/config'
 import { formatWon } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
@@ -20,8 +21,11 @@ import { StateMessage } from '@/shared/ui/StateMessage'
 export function ShopProductDetailPage() {
   const { productId = '' } = useParams()
   const [search] = useSearchParams()
+  const location = useLocation()
+  const user = useSessionStore((state) => state.user)
   const product = useProductQuery(productId)
-  const children = useChildrenQuery()
+  // 로그인 전에는 자녀를 부르지 않는다 (상품은 누구나 본다)
+  const children = useChildrenQuery({ enabled: Boolean(user) })
   const [childId, setChildId] = useState<string | null>(search.get('childId'))
   const recommendation = useSizeRecommendationQuery(productId, childId)
   const [optionId, setOptionId] = useState<string | null>(null)
@@ -106,13 +110,22 @@ export function ShopProductDetailPage() {
             </span>
           </div>
           {!isSelling && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}
-          <AddToCartButton
-            optionId={optionId}
-            childId={childId}
-            quantity={quantity}
-            disabled={!isSelling}
-            cartHref={paths.shop.cart}
-          />
+          {user ? (
+            <AddToCartButton
+              optionId={optionId}
+              childId={childId}
+              quantity={quantity}
+              disabled={!isSelling}
+              cartHref={paths.shop.cart}
+            />
+          ) : (
+            <Link
+              to={loginPath(location.pathname + location.search)}
+              className="bg-primary text-primary-foreground block rounded-lg py-3 text-center font-semibold"
+            >
+              로그인하고 담기
+            </Link>
+          )}
         </div>
       </div>
     </div>
