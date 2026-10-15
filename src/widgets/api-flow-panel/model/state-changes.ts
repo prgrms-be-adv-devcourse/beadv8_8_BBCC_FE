@@ -63,6 +63,12 @@ function observe(log: ApiCallLog): Observation[] {
       value: String(order.status),
     }))
   }
+  if (path === '/wallets/me/charges' && Array.isArray(body.content)) {
+    return (body.content as Json[]).map((item) => ({
+      resource: `충전 #${item.chargeId}`,
+      value: String(item.status),
+    }))
+  }
   if (/^\/wallets\/me\/charges\/[^/]+$/.test(path) && 'chargeId' in body) {
     return [{ resource: `충전 #${body.chargeId}`, value: String(body.status) }]
   }
