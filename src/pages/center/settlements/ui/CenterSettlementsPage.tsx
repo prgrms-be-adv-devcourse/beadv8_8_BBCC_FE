@@ -26,11 +26,11 @@ export function CenterSettlementsPage() {
       <PageHeader
         title="정산"
         step="⑦"
-        description="구매확정된 판매 금액에서 수수료를 빼고 지갑에 적립돼요."
-        note="구매확정된 주문상품이 정산 대상이 되고, 정산하면 수수료 10%를 뺀 금액이 판매자 지갑에 적립돼요. (정산 API는 목)"
+        description="구매확정된 판매 금액에서 수수료를 빼고 예치금으로 입금돼요."
+        note="구매확정된 주문상품이 정산 대상이 되고, 정산하면 수수료 10%를 뺀 금액이 판매자 예치금으로 입금돼요. 정산 API는 아직 목이라 정산서는 보이지만, 예치금 잔액 · 입출금 내역에는 백엔드 정산 API가 생겨야 반영돼요."
       />
       <WalletBalanceCard
-        title="내 예치금 지갑 (실제 API)"
+        title="내 예치금 지갑 (실제 API · 정산 입금은 아직 반영 안 됨)"
         wallet={wallet.data}
         pending={wallet.isPending}
         error={wallet.error}
