@@ -4,6 +4,7 @@ import { useArea } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { SideNav, type SideNavItem } from '@/shared/ui/SideNav'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
+import { TopProgressBar } from './TopProgressBar'
 import { SessionGate } from './SessionGate'
 
 type WorkspaceLayoutProps = {
@@ -35,6 +36,7 @@ export function WorkspaceLayout({
     <div className="flex h-svh flex-col">
       <DemoBarWithFlowDrawer />
       <div data-area={area} className="flex min-h-0 flex-1">
+        <TopProgressBar />
         <SideNav title={title} items={items} tone={area === 'admin' ? 'dark' : 'light'} />
         <main className="bg-muted/30 flex-1 overflow-y-auto px-8 py-6">
           <div className="mx-auto max-w-4xl">

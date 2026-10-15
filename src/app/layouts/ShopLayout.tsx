@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router'
 import { ShopHeader } from '@/widgets/shop-header'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
+import { TopProgressBar } from './TopProgressBar'
 import { SessionGate } from './SessionGate'
 import { ShopLoginRedirect } from './ShopLoginRedirect'
 
@@ -9,6 +10,7 @@ export function ShopLayout() {
   return (
     <div className="bg-muted/30 flex min-h-svh flex-col">
       <DemoBarWithFlowDrawer />
+      <TopProgressBar />
       <ShopHeader />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6 md:py-8">
         <SessionGate>
