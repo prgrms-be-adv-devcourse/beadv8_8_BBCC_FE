@@ -227,6 +227,8 @@ export function toProductSearchParams(search: ProductSearch): ProductSearchParam
   const params: ProductSearchParamsDto = {}
   if (search.keyword.trim()) params.keyword = search.keyword.trim()
   if (search.categoryId) params.categoryId = search.categoryId
+  if (search.sort && search.sort !== 'NEWEST') params.sort = search.sort
+  if (search.attributes?.length) params.attributes = search.attributes.slice(0, 20)
   return params
 }
 

@@ -105,7 +105,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('배송지 수정')).toHaveCount(0)
   })
 
-  await test.step('쇼핑: 상품 검색 · 카테고리 (GET /products, 가짜 백엔드)', async () => {
+  await test.step('쇼핑: 상품 검색 · 카테고리 · 정렬 · 옵션 거르기 (GET /products, 가짜 백엔드)', async () => {
     await page.getByRole('link', { name: 'Kidly', exact: true }).click()
     await page.getByRole('textbox', { name: '상품 검색' }).fill('조거')
     await page.getByRole('button', { name: '검색' }).click()
@@ -116,6 +116,25 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByRole('button', { name: '상의', exact: true }).click()
     await expect(page.getByText('데일리 맨투맨 (상품 A)')).toBeVisible()
     await expect(page.getByText('밴딩 조거 팬츠 (상품 B)')).toHaveCount(0)
+    await page.getByRole('button', { name: '전체 카테고리' }).click()
+
+    // 정렬 (BE sort): 낮은 가격순이면 A(25,000원)가 B(30,000원)보다 앞
+    await page.getByRole('combobox', { name: '정렬' }).selectOption('PRICE_ASC')
+    const names = page.getByText(/\(상품 [AB]\)$/)
+    await expect(names.first()).toHaveText('데일리 맨투맨 (상품 A)')
+    await page.getByRole('combobox', { name: '정렬' }).selectOption('PRICE_DESC')
+    await expect(names.first()).toHaveText('밴딩 조거 팬츠 (상품 B)')
+    await page.getByRole('combobox', { name: '정렬' }).selectOption('NEWEST')
+
+    // 옵션 값 거르기 (BE attributes): 하의 + 색상 그레이 → B만, 네이비로 바꾸면 없음
+    await page.getByRole('button', { name: '하의', exact: true }).click()
+    const color = page.getByRole('group', { name: '색상 거르기' })
+    await color.getByRole('button', { name: '그레이' }).click()
+    await expect(page.getByText('밴딩 조거 팬츠 (상품 B)')).toBeVisible()
+    await color.getByRole('button', { name: '그레이' }).click()
+    await color.getByRole('button', { name: '네이비' }).click()
+    await expect(page.getByText('조건에 맞는 상품이 없어요.')).toBeVisible()
+    await page.getByRole('button', { name: '거르기 지우기' }).click()
     await page.getByRole('button', { name: '전체 카테고리' }).click()
   })
 

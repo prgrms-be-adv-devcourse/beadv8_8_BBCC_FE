@@ -266,3 +266,26 @@ describe('toProductDetail (BE ProductDetailResponse)', () => {
     expect(detail.sizeSpecs[0].measurements).toEqual([{ name: '총장', unit: 'cm', value: 42 }])
   })
 })
+
+describe('상품 목록 쿼리 (BE ProductListRequest)', () => {
+  it('최신순은 보내지 않고, 정렬 · 옵션 값은 그대로 (20개까지)', async () => {
+    const { toProductSearchParams } = await import('@/entities/product')
+    expect(
+      toProductSearchParams({ keyword: ' 맨투맨 ', categoryId: null, sort: 'NEWEST' }),
+    ).toEqual({
+      keyword: '맨투맨',
+    })
+    expect(
+      toProductSearchParams({
+        keyword: '',
+        categoryId: '11',
+        sort: 'PRICE_ASC',
+        attributes: Array.from({ length: 25 }, (_, i) => `SIZE:${i + 1}`),
+      }),
+    ).toEqual({
+      categoryId: '11',
+      sort: 'PRICE_ASC',
+      attributes: Array.from({ length: 20 }, (_, i) => `SIZE:${i + 1}`),
+    })
+  })
+})

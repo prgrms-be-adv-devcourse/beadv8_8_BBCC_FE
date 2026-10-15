@@ -18,6 +18,7 @@ import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { MockBadge } from '@/shared/ui/MockBadge'
+import { ProductFilterBar } from './ProductFilterBar'
 
 /** 쇼핑 첫 화면: 자녀를 고르면 맞는 사이즈가 판매 중인 상품만 보여 준다 */
 export function ShopHomePage() {
@@ -84,7 +85,7 @@ export function ShopHomePage() {
           <Button
             size="sm"
             variant={search.categoryId === null ? 'default' : 'outline'}
-            onClick={() => setSearch({ ...search, categoryId: null })}
+            onClick={() => setSearch({ ...search, categoryId: null, attributes: [] })}
           >
             전체 카테고리
           </Button>
@@ -93,11 +94,14 @@ export function ShopHomePage() {
               key={category.id}
               size="sm"
               variant={search.categoryId === category.id ? 'default' : 'outline'}
-              onClick={() => setSearch({ ...search, categoryId: category.id })}
+              onClick={() => setSearch({ ...search, categoryId: category.id, attributes: [] })}
             >
               {category.name}
             </Button>
           ))}
+          <div className="basis-full">
+            <ProductFilterBar search={search} onChange={setSearch} />
+          </div>
         </section>
       )}
 
@@ -106,7 +110,7 @@ export function ShopHomePage() {
           <h2 className="text-xl font-bold">
             {child
               ? `${child.name}에게 맞는 상품`
-              : search.keyword || search.categoryId
+              : search.keyword || search.categoryId || search.attributes?.length
                 ? '검색 결과'
                 : '전체 상품'}
             <MockBadge
