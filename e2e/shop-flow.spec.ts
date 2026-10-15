@@ -152,6 +152,15 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText(/테스트에게 맞는 상품/)).toBeVisible()
     await page.getByText('데일리 맨투맨 (상품 A)').first().click()
     await expect(page.getByText('추천 사이즈')).toBeVisible()
+    // 착용 미리보기: 추천 사이즈로 시작, 사이즈를 바꾸면 그림 · 문구가 바뀐다
+    await expect(
+      page.getByRole('img', { name: /키 118cm에 120 사이즈: 엉덩이를 덮어요/ }),
+    ).toBeVisible()
+    await page
+      .getByRole('group', { name: '미리볼 사이즈' })
+      .getByRole('button', { name: '110' })
+      .click()
+    await expect(page.getByRole('img', { name: /키 118cm에 110 사이즈/ })).toBeVisible()
     await page.getByRole('button', { name: /네이비 \/ 120/ }).click()
     await page.getByRole('button', { name: '장바구니 담기' }).click()
     await page.getByRole('link', { name: '장바구니 보기' }).click()
