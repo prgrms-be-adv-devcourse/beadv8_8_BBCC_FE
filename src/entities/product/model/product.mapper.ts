@@ -140,6 +140,9 @@ export function toCategoryInputs(dto: CategoryInputsDto): CategoryInputs {
   }
 }
 
+/** 화면의 문자열 ID → 요청의 숫자 ID */
+const toIds = (ids: string[]): number[] => ids.map(Number)
+
 /** 폼 → BE ProductRegisterRequest. 옵션은 고른 값의 모든 조합, 가격은 가격 구분 항목 묶음마다 */
 export function toRegisterProductRequest(
   inputs: CategoryInputs,
@@ -154,11 +157,11 @@ export function toRegisterProductRequest(
       const input = form.info[attribute.id]
       if (attribute.values.length > 0) {
         return input?.valueId
-          ? [{ attributeId: attribute.id, valueIds: [input.valueId], text: null }]
+          ? [{ attributeId: Number(attribute.id), valueIds: toIds([input.valueId]), text: null }]
           : []
       }
       const text = input?.text.trim() ?? ''
-      return text ? [{ attributeId: attribute.id, valueIds: [], text }] : []
+      return text ? [{ attributeId: Number(attribute.id), valueIds: [], text }] : []
     },
   )
   return {
@@ -170,18 +173,18 @@ export function toRegisterProductRequest(
     imageUrls,
     attributes,
     options: optionCombos(inputs, form).map((combo) => ({
-      valueIds: combo.valueIds,
+      valueIds: toIds(combo.valueIds),
       initialQuantity: form.stocks[combo.key] ?? 0,
       skuCode: null,
     })),
     prices: priceGroups(inputs, form).map((group) => ({
-      valueIds: group.valueIds,
+      valueIds: toIds(group.valueIds),
       price: form.prices[group.key] ?? 0,
     })),
     sizeSpecs: sizeValues(inputs, form).map((value) => {
       const spec = form.sizeSpecs[value.id]
       return {
-        sizeValueId: value.id,
+        sizeValueId: Number(value.id),
         minHeightCm: spec?.minHeightCm || null,
         maxHeightCm: spec?.maxHeightCm || null,
         measurements: Object.fromEntries(

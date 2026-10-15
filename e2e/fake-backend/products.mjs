@@ -254,6 +254,15 @@ export function register(sellerId, body) {
   const categoryId = Number(body.categoryId)
   if (!leaves[categoryId]) return { status: 404, detail: '카테고리를 찾을 수 없습니다.' }
   if (!body.name?.trim()) return { status: 400, detail: '상품명을 입력해 주세요.' }
+  // BE ProductRegisterRequest는 ID를 Long으로 받는다. 문자열로 오면 막아 FE 회귀를 E2E가 잡게 한다
+  const sent = [
+    ...body.attributes.flatMap((a) => [a.attributeId, ...a.valueIds]),
+    ...body.options.flatMap((o) => o.valueIds),
+    ...body.prices.flatMap((g) => g.valueIds),
+    ...body.sizeSpecs.map((s) => s.sizeValueId),
+  ]
+  if (sent.some((id) => typeof id !== 'number'))
+    return { status: 400, detail: '항목 · 값 ID는 숫자로 보내 주세요.' }
   const ids = (list) => list.map(Number)
   const options = body.options.map((o) => {
     const valueIds = ids(o.valueIds)

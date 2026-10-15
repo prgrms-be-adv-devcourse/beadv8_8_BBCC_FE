@@ -127,15 +127,15 @@ describe('toRegisterProductRequest (BE ProductRegisterRequest)', () => {
       categoryId: 11,
       thumbnailUrl: 'https://cdn/a-1.jpg',
       imageUrls: ['https://cdn/a-1.jpg', 'https://cdn/a-2.jpg'],
-      attributes: [{ attributeId: '3', valueIds: ['301'], text: null }],
+      attributes: [{ attributeId: 3, valueIds: [301], text: null }],
       options: [
-        { valueIds: ['101', '202'], initialQuantity: 10, skuCode: null },
-        { valueIds: ['101', '203'], initialQuantity: 0, skuCode: null },
+        { valueIds: [101, 202], initialQuantity: 10, skuCode: null },
+        { valueIds: [101, 203], initialQuantity: 0, skuCode: null },
       ],
       prices: [{ valueIds: [], price: 25000 }],
     })
     expect(request.sizeSpecs[0]).toEqual({
-      sizeValueId: '202',
+      sizeValueId: 202,
       minHeightCm: 105,
       maxHeightCm: 115,
       measurements: { TOTAL_LENGTH: 42, CHEST_WIDTH: 34 },
