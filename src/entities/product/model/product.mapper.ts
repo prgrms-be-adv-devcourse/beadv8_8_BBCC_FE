@@ -1,3 +1,4 @@
+import { toImageUrl } from '@/shared/lib'
 import type {
   ProductDetailDto,
   ProductOptionDto,
@@ -25,6 +26,7 @@ export function toProductSummary(dto: ProductSummaryDto): ProductSummary {
     sellerName: dto.sellerName,
     status: dto.status as ProductStatus,
     minPrice: dto.minPrice,
+    imageUrl: toImageUrl(dto.thumbnailUrl),
   }
 }
 

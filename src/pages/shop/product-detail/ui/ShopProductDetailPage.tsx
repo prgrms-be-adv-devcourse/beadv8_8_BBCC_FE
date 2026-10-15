@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
-import { findOption, isOnSale, ProductOptionList, useProductQuery } from '@/entities/product'
+import {
+  findOption,
+  isOnSale,
+  ProductImage,
+  ProductOptionList,
+  useProductQuery,
+} from '@/entities/product'
 import { SizeRecommendationSummary, useSizeRecommendationQuery } from '@/entities/recommendation'
 import { AddToCartButton } from '@/features/add-to-cart'
 import { getErrorMessage } from '@/shared/api'
@@ -35,9 +41,11 @@ export function ShopProductDetailPage() {
         ← 상품 목록
       </Link>
       <div className="grid gap-8 md:grid-cols-2">
-        <div className="bg-muted text-muted-foreground flex aspect-square items-center justify-center rounded-2xl">
-          상품 이미지
-        </div>
+        <ProductImage
+          src={detail.imageUrl}
+          alt={detail.name}
+          className="aspect-square rounded-2xl"
+        />
 
         <div className="space-y-5">
           <div>

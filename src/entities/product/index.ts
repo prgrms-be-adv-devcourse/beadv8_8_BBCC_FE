@@ -22,8 +22,10 @@ export {
   type StockReason,
 } from './model/product'
 export {
+  toProductDetail,
   toProductEditForm,
   toProductSearchParams,
+  toProductSummary,
   toRegisterProductRequest,
   toUpdateProductRequest,
 } from './model/product.mapper'
@@ -44,4 +46,5 @@ export {
   useSellerProductsQuery,
 } from './model/queries'
 export { ProductCard } from './ui/ProductCard'
+export { ProductImage } from './ui/ProductImage'
 export { ProductOptionList } from './ui/ProductOptionList'
