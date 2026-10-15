@@ -159,6 +159,31 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.locator('[aria-current="step"]')).toHaveText('5')
   })
 
+  await test.step('취소 · 실패: 재고 부족 → 잔액 부족 (기획서 2.1)', async () => {
+    const order = async (productId: string, option: RegExp, quantity: string) => {
+      await page.goto(`/products/${productId}`)
+      await page.getByRole('button', { name: option }).click()
+      await page.getByRole('spinbutton').fill(quantity)
+      await page.getByRole('button', { name: '장바구니 담기' }).click()
+      await page.getByRole('link', { name: '장바구니 보기' }).click()
+      await page.getByRole('button', { name: /주문하기/ }).click()
+      await expect(page).toHaveURL(/\/orders\/\d+$/)
+    }
+    // 상품 B 재고 5개보다 많이 → 재고 부족 취소
+    await order('2', /그레이 \/ 면 \/ 120/, '6')
+    await expect(page.getByText('재고가 부족해요')).toBeVisible()
+    // 잔액보다 큰 금액 → 결제 실패 취소 · 결제 도메인 실패 기록
+    await order('1', /네이비 \/ 면 \/ 110/, '8')
+    await expect(page.getByText(/예치금 결제에 실패했어요/)).toBeVisible()
+    await expect(page.getByRole('status', { name: '결제 확인' })).toContainText('일치')
+
+    await page.goto('/console/verify')
+    const failure = page.getByRole('region', { name: '취소 · 실패 시나리오' })
+    await expect(failure.getByText('통과 3')).toBeVisible()
+    await expect(failure.getByText('실패 0')).toBeVisible()
+    await page.goto('/')
+  })
+
   await test.step('마이페이지 · 주문 내역', async () => {
     await page.getByRole('link', { name: '마이페이지' }).click()
     await expect(page.getByText('예치금').first()).toBeVisible()

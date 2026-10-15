@@ -4,6 +4,24 @@ import { paths } from '@/shared/config'
 import { Card } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/page-header'
 
+const FAILURE_SCENARIOS = [
+  [
+    '잔액 부족',
+    paths.console.products,
+    '상품 상세에서 수량을 늘려 잔액보다 큰 금액을 주문 → 주문 취소(PAYMENT_FAILED) · 결제 카드 FAILED · 예치금 그대로',
+  ],
+  [
+    '재고 부족',
+    paths.console.products,
+    '재고보다 많은 수량을 주문 → 주문 취소(OUT_OF_STOCK) · 재고 복구 (실제 백엔드는 상품의 재고 차감 연결 필요)',
+  ],
+  [
+    '결제 시간 초과',
+    paths.console.orders,
+    '결제 이벤트가 오지 않으면 10분(설정값) 뒤 주문 취소(PAYMENT_EXPIRED). 짧게 보려면 백엔드 설정값을 줄인다',
+  ],
+]
+
 const SCENARIO = [
   ['보호자', paths.console.children, '① 자녀 등록 (테스트 · 115cm · 보통 · 여유)'],
   ['보호자', paths.console.addresses, '① 배송지 등록'],
@@ -41,6 +59,28 @@ export function HomePage() {
             </li>
           ))}
         </ol>
+      </Card>
+      <Card>
+        <p className="mb-2 text-sm font-semibold">취소 · 실패 시나리오 (기획서 2.1)</p>
+        <ul className="space-y-1 text-sm">
+          {FAILURE_SCENARIOS.map(([name, to, how]) => (
+            <li key={name}>
+              <Link
+                to={to}
+                className="hover:text-primary font-medium underline-offset-2 hover:underline"
+              >
+                {name}
+              </Link>
+              <span className="text-muted-foreground"> — {how}</span>
+            </li>
+          ))}
+        </ul>
+        <Link
+          to={paths.console.verify}
+          className="text-primary mt-2 inline-block text-xs underline"
+        >
+          흐름 확인에서 판정 보기
+        </Link>
       </Card>
     </div>
   )
