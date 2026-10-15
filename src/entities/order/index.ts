@@ -16,13 +16,17 @@ export { toAdminOrder, toOrder, toPlaceOrderRequest } from './model/order.mapper
 export {
   buildOrderTimeline,
   canConfirmItem,
+  countOrdersByTab,
   deliveryOf,
+  filterOrdersByTab,
   isAwaitingPayment,
   isPaymentDelayed,
   needsCharge,
+  ORDER_TABS,
   orderProgress,
   PAYMENT_DELAY_MS,
   paymentPollInterval,
+  type OrderTab,
 } from './model/order.rules'
 export {
   orderKeys,

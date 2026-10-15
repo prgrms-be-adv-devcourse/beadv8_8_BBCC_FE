@@ -1,5 +1,11 @@
 import { carrierName } from '@/shared/config'
-import { CANCEL_REASON_LABEL, type Order, type OrderItem, type OrderTimelineEvent } from './order'
+import {
+  CANCEL_REASON_LABEL,
+  type Order,
+  type OrderItem,
+  type OrderStatus,
+  type OrderTimelineEvent,
+} from './order'
 
 /** 결제 처리 중이면 서버 이벤트(재고 차감 → 예치금 결제)가 끝나기를 기다리며 다시 조회한다 */
 export function isAwaitingPayment(order: Order): boolean {
@@ -101,4 +107,32 @@ export function isPaymentDelayed(pendingMs: number): boolean {
 /** 결제 처리 중 다시 조회 간격: 처음 30초는 1초, 그 뒤 10초 (흐름 기록이 조회로 덮이지 않게) */
 export function paymentPollInterval(pendingMs: number): number {
   return isPaymentDelayed(pendingMs) ? 10_000 : 1_000
+}
+
+/** 주문 내역 탭: 전체 + 주문 상태별 */
+export type OrderTab = 'ALL' | OrderStatus
+
+export const ORDER_TABS: { value: OrderTab; label: string }[] = [
+  { value: 'ALL', label: '전체' },
+  { value: 'PENDING_PAYMENT', label: '결제 처리 중' },
+  { value: 'PAID', label: '결제 완료' },
+  { value: 'CANCELLED', label: '취소' },
+]
+
+export function filterOrdersByTab<T extends { status: OrderStatus }>(
+  orders: T[],
+  tab: OrderTab,
+): T[] {
+  return tab === 'ALL' ? orders : orders.filter((order) => order.status === tab)
+}
+
+export function countOrdersByTab(orders: { status: OrderStatus }[]): Record<OrderTab, number> {
+  const counts: Record<OrderTab, number> = {
+    ALL: orders.length,
+    PENDING_PAYMENT: 0,
+    PAID: 0,
+    CANCELLED: 0,
+  }
+  for (const order of orders) counts[order.status] += 1
+  return counts
 }

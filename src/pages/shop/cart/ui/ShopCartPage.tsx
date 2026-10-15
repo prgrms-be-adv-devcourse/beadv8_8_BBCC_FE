@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router'
 import { orderableLines } from '@/entities/cart'
 import { findChild, useChildrenQuery } from '@/entities/child'
+import { ProductImage } from '@/entities/product'
 import { CartItemControls } from '@/features/edit-cart-item'
 import { PlaceOrderButton, useCheckout } from '@/features/place-order'
 import { getErrorMessage } from '@/shared/api'
@@ -64,7 +65,10 @@ export function ShopCartPage() {
               전체 선택 ({lines.length}/{orderableIds.size})
             </label>
             {cart.data.lines.map((line) => (
-              <Card key={line.id} className="flex items-center gap-4">
+              <Card
+                key={line.id}
+                className="flex flex-wrap items-center gap-3 sm:flex-nowrap sm:gap-4"
+              >
                 <input
                   type="checkbox"
                   className="accent-primary size-4 shrink-0"
@@ -73,8 +77,12 @@ export function ShopCartPage() {
                   disabled={!orderableIds.has(line.id)}
                   onChange={() => toggleLine(line.id)}
                 />
-                <div className="bg-muted size-16 shrink-0 rounded-lg" />
-                <div className="flex-1">
+                <ProductImage
+                  src={null}
+                  alt={line.productName}
+                  className="size-16 shrink-0 rounded-lg"
+                />
+                <div className="min-w-0 flex-1 basis-48">
                   <p className="font-medium">
                     {line.productName}{' '}
                     {!line.purchasable && <Badge variant="destructive">구매 불가</Badge>}
@@ -86,12 +94,14 @@ export function ShopCartPage() {
                   </p>
                   <p className="text-sm font-semibold">{formatWon(line.lineAmount)}</p>
                 </div>
-                <CartItemControls line={line} />
+                <div className="ml-auto">
+                  <CartItemControls line={line} />
+                </div>
               </Card>
             ))}
           </div>
 
-          <Card className="sticky top-4 space-y-4">
+          <Card className="space-y-4 md:sticky md:top-4">
             <CardTitle>주문서</CardTitle>
             <div className="space-y-1">
               <p className="text-sm font-medium">배송지</p>

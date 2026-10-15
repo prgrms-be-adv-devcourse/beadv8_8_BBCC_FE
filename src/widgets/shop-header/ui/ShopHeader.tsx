@@ -16,14 +16,17 @@ export function ShopHeader() {
   const { pathname, search } = useLocation()
   return (
     <header className="border-b bg-white">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-6">
-        <Link to={paths.shop.home} className="text-primary text-2xl font-extrabold tracking-tight">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 md:h-16 md:gap-8 md:px-6">
+        <Link
+          to={paths.shop.home}
+          className="text-primary shrink-0 text-xl font-extrabold tracking-tight md:text-2xl"
+        >
           Kidly
         </Link>
-        <span className="text-muted-foreground hidden text-sm md:inline">
+        <span className="text-muted-foreground hidden text-sm lg:inline">
           우리 아이에게 맞는 사이즈를 알려 주는 키즈 패션 마켓
         </span>
-        <nav className="ml-auto flex gap-5 text-sm">
+        <nav className="ml-auto flex gap-3 overflow-x-auto text-sm whitespace-nowrap md:gap-5">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
