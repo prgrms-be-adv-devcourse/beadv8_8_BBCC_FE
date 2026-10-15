@@ -144,7 +144,18 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
 
   await test.step('흐름 확인: 정산 목 때문에 판매자 지갑 적립만 대기', async () => {
     await page.goto('/console/verify')
-    await expect(page.getByText('통과 20')).toBeVisible()
+    try {
+      await expect(page.getByText('통과 20')).toBeVisible()
+    } catch (error) {
+      // CI에서 원인을 바로 보이게: 통과하지 못한 항목을 오류 메시지에 붙인다
+      const pending = await page
+        .locator('[data-slot="card"]')
+        .filter({ has: page.getByText(/^(대기|실패)$/) })
+        .allInnerTexts()
+      throw new Error(`${(error as Error).message}\n통과 못 한 항목: ${JSON.stringify(pending)}`, {
+        cause: error,
+      })
+    }
     // 첫 구역 = 정상 흐름 ①~⑦ (아래 취소 · 실패 시나리오 구역과 따로 센다)
     await expect(page.getByText('실패 0').first()).toBeVisible()
   })
