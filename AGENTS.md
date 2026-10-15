@@ -63,11 +63,11 @@ React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui · TanStack Query
 
 | 레이어     | 맡는 것                                                  | Kidly 슬라이스 예                                                                                                                                                   |
 | ---------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app`      | 라우터 · Provider · 전역 스타일 · 목 등록                | (슬라이스 없음) `providers/` · `router/` · `layouts/`(화면 + 흐름 패널 2단) · `mocks/`                                                                              |
-| `pages`    | 라우트 하나 = 슬라이스 하나. 위젯 · 기능 · 엔티티 조합만 | `product-detail` · `cart` · `order-detail` · `seller-orders` · `admin-settlement`                                                                                   |
-| `widgets`  | 여러 기능을 묶은 화면 덩어리                             | `header` · `api-flow-panel`(도메인 흐름도 + 호출 목록) · `demo-step-bar`(①~⑦ 메뉴)                                                                                  |
+| `app`      | 라우터 · Provider · 전역 스타일 · 목 등록                | (슬라이스 없음) `providers/` · `router/` · `layouts/`(쇼핑 · 판매자 센터 · 관리자 · 콘솔) · `mocks/`                                                                |
+| `pages`    | 라우트 하나 = 슬라이스 하나. 위젯 · 기능 · 엔티티 조합만 | `shop-home` · `shop-order-detail` · `cart` · `order-detail` · `seller-orders` · `admin-members`                                                                     |
+| `widgets`  | 여러 기능을 묶은 화면 덩어리                             | `demo-bar`(영역 전환 · 시연 역할) · `shop-header` · `api-flow-panel`(도메인 흐름도 + 호출 목록) · `demo-step-bar`(①~⑦ 메뉴) · `verification-checklist`              |
 | `features` | 사용자 행동 하나 (주로 변경 요청)                        | `auth-kakao-login` · `switch-demo-role` · `add-to-cart` · `place-order` · `confirm-purchase` · `ship-order` · `charge-wallet` · `approve-seller` · `run-settlement` |
-| `entities` | 업무 대상의 타입 · 조회 · 표시                           | `session` · `member` · `child` · `address` · `seller` · `product` · `cart` · `order` · `delivery` · `wallet` · `charge` · `settlement`                              |
+| `entities` | 업무 대상의 타입 · 조회 · 표시                           | `session` · `member` · `child` · `address` · `seller` · `product` · `recommendation` · `cart` · `order` · `seller-order` · `payment` · `wallet` · `settlement`      |
 | `shared`   | 업무를 모르는 공통 코드                                  | `api` · `ui` · `lib` · `config`                                                                                                                                     |
 
 - 같은 레이어의 다른 슬라이스는 import하지 않는다 (`features/place-order` → `features/add-to-cart` 금지). 함께 써야 하면 위 레이어에서 조합한다.
