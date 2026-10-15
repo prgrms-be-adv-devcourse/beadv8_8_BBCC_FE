@@ -10,8 +10,8 @@ export function toRecommendedProduct(dto: RecommendedProductDto): RecommendedPro
   return {
     id: dto.productId,
     name: dto.name,
-    categoryName: dto.categoryName,
-    sellerName: dto.sellerName,
+    categoryId: dto.categoryId,
+    brand: dto.brand?.trim() || null,
     minPrice: dto.minPrice,
     imageUrl: toImageUrl(dto.thumbnailUrl),
     recommendedSize: dto.recommendedSize,

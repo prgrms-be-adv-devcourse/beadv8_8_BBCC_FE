@@ -8,7 +8,8 @@ type ProductCardProps = {
   to: string
   name: string
   meta: string
-  price: number
+  /** 옵션이 없으면 null */
+  price: number | null
   /** 대표 이미지 (S3). 없으면 기본 이미지 */
   imageUrl: string | null
   /** 오른쪽 아래 표시 (예: 추천 사이즈 배지) */
@@ -23,7 +24,7 @@ export function ProductCard({ to, name, meta, price, imageUrl, badge }: ProductC
         <p className="font-medium">{name}</p>
         <p className="text-muted-foreground text-xs">{meta}</p>
         <div className="flex items-center justify-between">
-          <span className="font-semibold">{formatWon(price)}</span>
+          <span className="font-semibold">{price === null ? '—' : formatWon(price)}</span>
           {badge}
         </div>
       </Card>

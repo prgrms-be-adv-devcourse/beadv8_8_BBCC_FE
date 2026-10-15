@@ -1,57 +1,81 @@
-// 상품 API는 백엔드에 아직 없다(목 응답). 모양은 기획서 8장 product.changed data + 1.5(옵션 = 색상 × 소재 × 사이즈)
+// 실제 API: 상세 · 등록 · 판매 시작 · 카테고리 · 카테고리 입력 항목 (BE in/** record 그대로)
+// 목: 목록 · 판매자 상품 목록 · 수정 · 재고 조정 · 판매 중지 (BE에 아직 없음, 모양은 FE가 정함)
 
-export type ProductOptionDto = {
-  optionId: string
-  color: string
-  material: string
-  size: string
-  price: number
-  stock: number
-  minHeightCm: number
-  maxHeightCm: number
-  soldOut: boolean
-}
-
-/** GET /products 한 줄 */
-export type ProductSummaryDto = {
+/** GET /products/{productId} (BE ProductDetailResponse). 판매 시작 전 상품은 404 */
+export type ProductDetailDto = {
   productId: string
   name: string
+  brand: string | null
   categoryId: string
-  categoryName: string
-  sellerId: string
-  sellerName: string
   status: string
-  minPrice: number
-  thumbnailUrl: string | null
+  sizeFree: boolean
+  /** 옵션이 없으면 null */
+  minPrice: number | null
+  imageUrls: string[]
+  optionAttributes: {
+    attributeId: string
+    code: string
+    name: string
+    values: { valueId: string; value: string; colorCode: string | null }[]
+  }[]
+  options: {
+    optionId: string
+    optionName: string
+    valueIds: string[]
+    price: number
+    purchasable: boolean
+    /** AVAILABLE · LOW · SOLD_OUT */
+    stockStatus: string
+    /** LOW일 때만 값이 있다 */
+    stockQuantity: number | null
+  }[]
+  productInfo: { code: string; name: string; value: string | null }[]
+  sizeSpecs: {
+    size: string
+    minHeightCm: number | null
+    maxHeightCm: number | null
+    /** 실측 항목 코드 → cm */
+    measurements: Record<string, number>
+  }[]
+  measurementItems: { code: string; name: string; unit: string }[]
 }
 
-/** GET /products/{productId} · GET /seller/products 한 줄 */
-export type ProductDetailDto = ProductSummaryDto & {
-  description: string
-  options: ProductOptionDto[]
-}
-
-/** POST /seller/products */
+/** POST /seller/products (BE ProductRegisterRequest). ID는 문자열로 보내도 BE가 숫자로 받는다 */
 export type RegisterProductRequestDto = {
   name: string
-  categoryId: string
-  description: string
-  options: Omit<ProductOptionDto, 'optionId' | 'soldOut'>[]
+  brand: string | null
+  categoryId: number
+  description: string | null
+  thumbnailUrl: string | null
+  imageUrls: string[]
+  attributes: { attributeId: string; valueIds: string[]; text: string | null }[]
+  options: { valueIds: string[]; initialQuantity: number; skuCode: string | null }[]
+  prices: { valueIds: string[]; price: number }[]
+  sizeSpecs: {
+    sizeValueId: string
+    minHeightCm: number | null
+    maxHeightCm: number | null
+    measurements: Record<string, number>
+  }[]
 }
 
-/** PATCH /seller/products/{productId} (기획서 8장 보완) */
-export type UpdateProductRequestDto = {
-  name: string
-  categoryId: string
-  description: string
-  options: { optionId: string; price: number }[]
+/** POST /seller/products → 201 (BE ProductRegisterResponse, Location에도 productId) */
+export type RegisterProductResultDto = {
+  productId: string
+  status: string
+  version: number
+  options: {
+    optionId: string
+    optionName: string
+    price: number
+    availableQuantity: number
+    saleStatus: string
+    skuCode: string | null
+  }[]
 }
 
-/** PATCH /seller/products/{productId}/options/{optionId}/stock — 증감 수량과 사유 */
-export type AdjustStockRequestDto = { delta: number; reason: string }
-
-/** GET /products 검색 조건 (빈 값은 보내지 않음) */
-export type ProductSearchParamsDto = { keyword?: string; categoryId?: string }
+/** PUT /seller/products/{productId}/sale-status (BE ProductSaleStatusResponse) */
+export type SaleStatusResultDto = { productId: string; status: string; version: number }
 
 /** GET /categories (BE CategoryTreeResponse). leaf = 더 나뉘지 않는 카테고리 */
 export type CategoryTreeDto = {
@@ -60,3 +84,54 @@ export type CategoryTreeDto = {
   leaf: boolean
   children: CategoryTreeDto[]
 }
+
+/** GET /categories/{categoryId}/attributes (BE CategoryInputsResponse) */
+export type CategoryInputsDto = {
+  categoryId: string
+  categoryName: string
+  productTypeId: string
+  productTypeName: string
+  attributes: {
+    attributeId: string
+    code: string
+    name: string
+    /** 예: PALETTE · LIST · TEXT */
+    inputType: string
+    /** OPTION · INFO */
+    role: string
+    required: boolean
+    sizeRole: boolean
+    priceAffecting: boolean
+    /** 직접 입력 항목이면 빈 목록 */
+    values: { valueId: string; value: string; colorCode: string | null }[]
+  }[]
+  measurementItems: { code: string; name: string; unit: string }[]
+}
+
+/** (목) GET /products 한 줄 */
+export type ProductSummaryDto = {
+  productId: string
+  name: string
+  brand: string | null
+  categoryId: string
+  status: string
+  minPrice: number | null
+  thumbnailUrl: string | null
+}
+
+/** (목) GET /seller/products 한 줄. 재고는 등록 응답 수량 + 목 조정 (모르면 null) */
+export type SellerProductDto = ProductSummaryDto & {
+  options: { optionId: string; optionName: string; price: number; stock: number | null }[]
+}
+
+/** (목) PATCH /seller/products/{productId} (기획서 8장 보완) */
+export type UpdateProductRequestDto = {
+  name: string
+  options: { optionId: string; price: number }[]
+}
+
+/** (목) PATCH /seller/products/{productId}/options/{optionId}/stock — 증감 수량과 사유 */
+export type AdjustStockRequestDto = { delta: number; reason: string }
+
+/** (목) GET /products 검색 조건 (빈 값은 보내지 않음) */
+export type ProductSearchParamsDto = { keyword?: string; categoryId?: string }

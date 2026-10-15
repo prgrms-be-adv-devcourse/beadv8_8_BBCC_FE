@@ -226,10 +226,14 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     id: 'product-start',
     step: '②',
     title: '판매 시작',
-    expected: 'POST .../start-sale 2xx',
+    expected: 'PUT .../sale-status → ON_SALE',
     role: '판매자',
     screen: paths.console.sellerProducts,
-    call: { method: 'POST', pattern: /^\/seller\/products\/[^/]+\/start-sale$/ },
+    call: {
+      method: 'PUT',
+      pattern: /^\/seller\/products\/[^/]+\/sale-status$/,
+      expect: (log) => body(log).status === 'ON_SALE',
+    },
   },
   {
     id: 'size-recommend',

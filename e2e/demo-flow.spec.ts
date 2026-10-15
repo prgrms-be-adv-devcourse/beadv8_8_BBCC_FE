@@ -58,25 +58,33 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText('승인됨')).toBeVisible()
   })
 
-  await test.step('② 상품 등록 → 판매 시작 (목)', async () => {
+  await test.step('② 상품 등록 → 판매 시작 (실제 API: 카테고리 입력 항목 · 등록 · sale-status)', async () => {
     await switchRole(page, '판매자')
     await page.goto('/console/seller/products')
+    // 카테고리 입력 항목을 받아 시연 값(네이비 · 110 / 120 · 면)으로 채운 폼
+    await expect(page.getByRole('checkbox', { name: '네이비' })).toBeChecked()
+    await expect(page.getByLabel('네이비 / 120 재고')).toHaveValue('10')
     await page.getByRole('button', { name: '등록하기' }).click()
-    await page.getByRole('button', { name: '판매 시작' }).click()
+    await expect(page.getByText(/상품 #\d+를 등록했어요/)).toBeVisible()
+    await page.getByRole('button', { name: '판매 시작' }).first().click()
     await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
+    // 판매 시작 → 상세로 이어진다 (실제 상세 API)
+    await page.getByRole('link', { name: '상품 상세 보기' }).click()
+    await expect(page.getByRole('heading', { name: '데일리 맨투맨', exact: true })).toBeVisible()
+    await expect(page.getByRole('table', { name: '사이즈 정보' })).toBeVisible()
   })
 
-  await test.step('③ 자녀 맞춤 목록 → 상세 사이즈 추천 (목)', async () => {
+  await test.step('③ 자녀 맞춤 목록 → 방금 등록한 상품 상세 사이즈 추천 (목)', async () => {
     await switchRole(page, '보호자')
     await page.goto('/console/products')
     await page.getByRole('button', { name: /테스트 맞춤/ }).click()
     await expect(page.getByText(/추천 120/).first()).toBeVisible()
-    await page.getByText('데일리 맨투맨 (상품 A)').first().click()
+    await page.getByText('데일리 맨투맨', { exact: true }).first().click()
     await expect(page.getByText('추천 사이즈')).toBeVisible()
   })
 
-  await test.step('④ 담기 → 주문하기 → 결제 완료(서버 이벤트)', async () => {
-    await page.getByRole('button', { name: /네이비 \/ 면 \/ 120/ }).click()
+  await test.step('④ 담기 → 주문하기 → 결제 완료 (시드 상품 복사본 없이, 판매 시작이 만든 복사본으로)', async () => {
+    await page.getByRole('button', { name: /네이비 \/ 120/ }).click()
     await page.getByRole('button', { name: '장바구니 담기' }).click()
     await expect(page.getByText('담았어요')).toBeVisible()
     await page.goto('/console/cart')
@@ -136,7 +144,18 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
 
   await test.step('흐름 확인: 정산 목 때문에 판매자 지갑 적립만 대기', async () => {
     await page.goto('/console/verify')
-    await expect(page.getByText('통과 20')).toBeVisible()
+    try {
+      await expect(page.getByText('통과 20')).toBeVisible()
+    } catch (error) {
+      // CI에서 원인을 바로 보이게: 통과하지 못한 항목을 오류 메시지에 붙인다
+      const pending = await page
+        .locator('[data-slot="card"]')
+        .filter({ has: page.getByText(/^(대기|실패)$/) })
+        .allInnerTexts()
+      throw new Error(`${(error as Error).message}\n통과 못 한 항목: ${JSON.stringify(pending)}`, {
+        cause: error,
+      })
+    }
     // 첫 구역 = 정상 흐름 ①~⑦ (아래 취소 · 실패 시나리오 구역과 따로 센다)
     await expect(page.getByText('실패 0').first()).toBeVisible()
   })

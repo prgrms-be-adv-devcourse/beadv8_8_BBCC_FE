@@ -74,8 +74,8 @@ const FLOWS: { method: string; pattern: RegExp; steps: FlowStep[] }[] = [
     ],
   },
   {
-    method: 'POST',
-    pattern: /^\/seller\/products\/[^/]+\/start-sale$/,
+    method: 'PUT',
+    pattern: /^\/seller\/products\/[^/]+\/sale-status$/,
     steps: [
       {
         name: 'product.changed',

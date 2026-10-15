@@ -1,50 +1,59 @@
 export type ProductStatus = 'SALE_PENDING' | 'ON_SALE' | 'STOPPED'
 
+export type StockStatus = 'AVAILABLE' | 'LOW' | 'SOLD_OUT'
+
+/** 구매자가 고르는 옵션 (BE 상세 options) */
 export type ProductOption = {
   id: string
-  color: string
-  material: string
-  size: string
+  /** 예: "네이비 / 120" */
+  name: string
+  /** 사이즈 항목의 값. 사이즈가 없는 상품이면 null */
+  size: string | null
   price: number
-  stock: number
-  /** 이 사이즈의 권장 키 범위 (cm) */
-  minHeightCm: number
-  maxHeightCm: number
+  /** 살 수 없음(판매 상태 · 재고 0) */
   soldOut: boolean
+  stockStatus: StockStatus
+  /** 남은 수량. 적을 때(LOW)만 있다 */
+  stockQuantity: number | null
+  /** 이 사이즈의 권장 키 범위 (cm). 없으면 null */
+  minHeightCm: number | null
+  maxHeightCm: number | null
 }
 
 export type ProductSummary = {
   id: string
   name: string
+  brand: string | null
   categoryId: string
+  /** /categories 트리에서 찾은 이름. 못 찾으면 빈 문자열 */
   categoryName: string
-  sellerName: string
   status: ProductStatus
-  minPrice: number
+  /** 옵션이 없으면 null */
+  minPrice: number | null
   /** 대표 이미지 (S3). 없으면 null → 기본 이미지 */
   imageUrl: string | null
 }
 
-export type ProductDetail = ProductSummary & {
-  description: string
-  options: ProductOption[]
-}
-
-/** 상품 등록 폼 값: 색상 · 소재 하나 + 사이즈 줄 여러 개 */
-export type ProductSizeRow = {
+/** 사이즈별 실측 · 권장 키 */
+export type SizeSpec = {
   size: string
-  minHeightCm: number
-  maxHeightCm: number
-  price: number
-  stock: number
+  minHeightCm: number | null
+  maxHeightCm: number | null
+  measurements: { name: string; unit: string; value: number | null }[]
 }
 
-export type RegisterProductForm = {
-  name: string
-  categoryId: string
-  color: string
-  material: string
-  sizes: ProductSizeRow[]
+export type ProductDetail = ProductSummary & {
+  imageUrls: string[]
+  sizeFree: boolean
+  options: ProductOption[]
+  /** 상품 정보 항목 (예: 주요소재). 입력하지 않았으면 value null */
+  info: { name: string; value: string | null }[]
+  sizeSpecs: SizeSpec[]
+}
+
+/** (목) 판매자 상품 목록 한 줄. 재고는 모르면 null */
+export type SellerProduct = ProductSummary & {
+  options: { id: string; name: string; price: number; stock: number | null }[]
 }
 
 export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
@@ -56,11 +65,64 @@ export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
 /** 고를 수 있는 카테고리 (트리의 끝). path = "상위 > 하위" */
 export type Category = { id: string; name: string; path: string }
 
-/** 상품 수정 폼: 상품명 · 카테고리 · 설명 · 옵션별 가격 (재고는 재고 조정으로) */
+/** 등록 폼 항목 하나 (BE CategoryInputsResponse.InputAttribute) */
+export type InputAttribute = {
+  id: string
+  code: string
+  name: string
+  inputType: string
+  required: boolean
+  sizeRole: boolean
+  priceAffecting: boolean
+  /** 직접 입력 항목이면 빈 목록 */
+  values: { id: string; name: string; colorCode: string | null }[]
+}
+
+/** 카테고리에 맞는 등록 폼 구성 */
+export type CategoryInputs = {
+  categoryId: string
+  categoryName: string
+  /** 옵션 항목 (예: 색상 · 사이즈). 고른 값의 모든 조합이 옵션이 된다 */
+  optionAttributes: InputAttribute[]
+  /** 정보 항목 (예: 주요소재 · 혼용률) */
+  infoAttributes: InputAttribute[]
+  /** 사이즈마다 넣을 실측 항목 */
+  measurementItems: { code: string; name: string; unit: string }[]
+}
+
+/** 사이즈 하나의 권장 키 · 실측 입력 */
+export type SizeSpecInput = {
+  minHeightCm: number
+  maxHeightCm: number
+  /** 실측 항목 코드 → cm */
+  measurements: Record<string, number>
+}
+
+/** 상품 등록 폼 값 */
+export type RegisterProductForm = {
+  name: string
+  brand: string
+  /** 이미지 주소, 한 줄에 하나 */
+  imageUrlsText: string
+  categoryId: string
+  /** 정보 항목 ID → 고른 값 ID(목록 항목) 또는 직접 입력 값 */
+  info: Record<string, { valueId: string; text: string }>
+  /** 옵션 항목 ID → 고른 값 ID들 */
+  optionValues: Record<string, string[]>
+  /** 옵션 조합 키 → 처음 재고 */
+  stocks: Record<string, number>
+  /** 가격 묶음 키 → 판매가 */
+  prices: Record<string, number>
+  /** 사이즈 값 ID → 권장 키 · 실측 */
+  sizeSpecs: Record<string, SizeSpecInput>
+}
+
+/** 옵션 조합 · 가격 묶음 한 줄 (폼이 고른 값에서 계산) */
+export type ValueCombo = { key: string; valueIds: string[]; label: string }
+
+/** (목) 상품 수정 폼: 상품명 · 옵션별 가격 (재고는 재고 조정으로) */
 export type ProductEditForm = {
   name: string
-  categoryId: string
-  description: string
   /** optionId → 가격 */
   prices: Record<string, number>
 }

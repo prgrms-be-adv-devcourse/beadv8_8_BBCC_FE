@@ -10,6 +10,7 @@ export {
   obj,
   oneOf,
   pageOf,
+  recordOf,
   str,
   validate,
   type ContractIssue,
@@ -24,7 +25,9 @@ export {
 export type { Page } from './types'
 export {
   registerMockHandlers,
+  registerMockObservers,
   type MockHandler,
+  type MockObserver,
   type MockRequest,
   type MockResult,
 } from './mock-adapter'

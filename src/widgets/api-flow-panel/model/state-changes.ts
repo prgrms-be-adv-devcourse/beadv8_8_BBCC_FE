@@ -87,6 +87,13 @@ function observe(log: ApiCallLog): Observation[] {
       value: String(item.status),
     }))
   }
+  const saleStatus = /^\/seller\/products\/([^/]+)\/sale-status$/.exec(path)
+  if (saleStatus && typeof body.status === 'string') {
+    return [{ resource: `상품 #${saleStatus[1]}`, value: body.status }]
+  }
+  if (path === '/seller/products' && log.method === 'POST' && typeof body.productId === 'string') {
+    return [{ resource: `상품 #${body.productId}`, value: String(body.status) }]
+  }
   if (path === '/seller/products' && Array.isArray(body.content)) {
     return (body.content as Json[]).map((item) => ({
       resource: `상품 #${item.productId}`,

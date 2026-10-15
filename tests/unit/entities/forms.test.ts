@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { validateChildForm, type ChildForm } from '@/entities/child'
-import {
-  toRegisterProductRequest,
-  validateRegisterProductForm,
-  type RegisterProductForm,
-} from '@/entities/product'
 import { validateSellerApplicationForm } from '@/entities/seller'
 
 const TODAY = '2026-10-15'
@@ -66,46 +61,6 @@ describe('판매자 신청 검증', () => {
     ).not.toBeNull()
     expect(
       validateSellerApplicationForm({ ...base, businessRegistrationNumber: '123-45-67890' }),
-    ).not.toBeNull()
-  })
-})
-
-describe('상품 등록', () => {
-  const product: RegisterProductForm = {
-    name: '맨투맨',
-    categoryId: '1',
-    color: '네이비',
-    material: '면',
-    sizes: [{ size: '110', minHeightCm: 105, maxHeightCm: 115, price: 25000, stock: 10 }],
-  }
-  it('정상 입력은 통과하고, 옵션마다 색상 · 소재를 붙여 보낸다', () => {
-    expect(validateRegisterProductForm(product)).toBeNull()
-    expect(toRegisterProductRequest(product).options[0]).toMatchObject({
-      size: '110',
-      color: '네이비',
-      material: '면',
-    })
-  })
-  it('권장 키 범위가 뒤집히면 막는다 (같은 값은 허용)', () => {
-    const row = product.sizes[0]
-    expect(
-      validateRegisterProductForm({
-        ...product,
-        sizes: [{ ...row, minHeightCm: 115, maxHeightCm: 115 }],
-      }),
-    ).toBeNull()
-    expect(
-      validateRegisterProductForm({
-        ...product,
-        sizes: [{ ...row, minHeightCm: 116, maxHeightCm: 115 }],
-      }),
-    ).not.toBeNull()
-  })
-  it('재고는 0까지 허용 (경계)', () => {
-    const row = product.sizes[0]
-    expect(validateRegisterProductForm({ ...product, sizes: [{ ...row, stock: 0 }] })).toBeNull()
-    expect(
-      validateRegisterProductForm({ ...product, sizes: [{ ...row, stock: -1 }] }),
     ).not.toBeNull()
   })
 })

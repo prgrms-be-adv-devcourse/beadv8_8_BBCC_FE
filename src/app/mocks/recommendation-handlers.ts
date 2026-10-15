@@ -1,17 +1,56 @@
 import type { ChildProfileDto } from '@/entities/child'
-import type { ProductOptionDto } from '@/entities/product'
+import { type ProductDetailDto, toProductDetail } from '@/entities/product'
 import type { RecommendedProductDto, SizeRecommendationDto } from '@/entities/recommendation'
 import type { MockHandler, MockRequest } from '@/shared/api'
 import { getErrorStatus } from '@/shared/api'
 import { fetchReal, page, problem } from './mock-utils'
-import { products } from './product-handlers'
+import { loadOnSaleDetails } from './product-handlers'
+
+/** 추천에 쓰는 사이즈 줄: 실제 상세의 옵션 + 실측 권장 키 (권장 키가 없는 옵션은 뺀다) */
+type SizeOption = {
+  size: string
+  minHeightCm: number
+  maxHeightCm: number
+  soldOut: boolean
+}
+
+function sizeOptionsOf(detail: ProductDetailDto): SizeOption[] {
+  const rows = toProductDetail(detail).options.flatMap((option) =>
+    option.size !== null && option.minHeightCm !== null && option.maxHeightCm !== null
+      ? [
+          {
+            size: option.size,
+            minHeightCm: option.minHeightCm,
+            maxHeightCm: option.maxHeightCm,
+            soldOut: option.soldOut,
+          },
+        ]
+      : [],
+  )
+  // 색상만 다른 같은 사이즈는 한 줄로 (하나라도 살 수 있으면 살 수 있음)
+  const bySize = new Map<string, SizeOption>()
+  for (const row of rows) {
+    const previous = bySize.get(row.size)
+    bySize.set(row.size, previous ? { ...previous, soldOut: previous.soldOut && row.soldOut } : row)
+  }
+  return [...bySize.values()]
+}
+
+async function loadProduct(request: MockRequest, productId: string) {
+  try {
+    return await fetchReal<ProductDetailDto>(request, `/products/${productId}`)
+  } catch (error) {
+    if (getErrorStatus(error) === 404) return null
+    throw error
+  }
+}
 
 const MARGIN_CM = 2
 
 // 기획서 2.1 추천 규칙 · 적합도를 단순하게 옮긴 목 (몸무게로 체형 판정은 생략, 입력된 체형만 사용)
 type Fit = 'ROOMY' | 'PROPER' | 'TIGHT'
 
-function fitOf(height: number, option: ProductOptionDto): Fit {
+function fitOf(height: number, option: SizeOption): Fit {
   if (height < option.minHeightCm) return 'ROOMY'
   if (height > option.maxHeightCm) return 'TIGHT'
   const nearLow = height - option.minHeightCm <= MARGIN_CM
@@ -22,7 +61,7 @@ function fitOf(height: number, option: ProductOptionDto): Fit {
   return 'PROPER'
 }
 
-function recommend(child: ChildProfileDto, options: ProductOptionDto[]) {
+function recommend(child: ChildProfileDto, options: SizeOption[]) {
   const height = child.heightCm
   const candidates = options
     .filter(
@@ -77,20 +116,21 @@ export const recommendationHandlers: MockHandler[] = [
     path: '/products/:productId/size-recommendation',
     handle: async (request) => {
       const instance = `/api/v1/products/${request.params.productId}/size-recommendation`
-      const product = products.find((item) => item.productId === request.params.productId)
+      const product = await loadProduct(request, request.params.productId)
       const childId = request.query.get('childId') ?? ''
       const child = await loadChild(request, childId)
       if (!product || !child) {
         return problem(404, '찾을 수 없습니다', '상품 또는 자녀를 찾을 수 없습니다.', instance)
       }
-      const { option, reasons } = recommend(child, product.options)
+      const options = sizeOptionsOf(product)
+      const { option, reasons } = recommend(child, options)
       const data: SizeRecommendationDto = {
         productId: product.productId,
         childId,
         recommendedSize: option?.size ?? null,
         fit: option ? fitOf(child.heightCm, option) : null,
         reasons,
-        sizes: product.options.map((item) => {
+        sizes: options.map((item) => {
           const inRange =
             child.heightCm >= item.minHeightCm - MARGIN_CM &&
             child.heightCm <= item.maxHeightCm + MARGIN_CM
@@ -118,28 +158,28 @@ export const recommendationHandlers: MockHandler[] = [
           `/api/v1/children/${request.params.childId}/recommended-products`,
         )
       }
-      const content: RecommendedProductDto[] = products
-        .filter((product) => product.status === 'ON_SALE')
-        .flatMap((product) => {
+      const content: RecommendedProductDto[] = (await loadOnSaleDetails(request)).flatMap(
+        (product) => {
           const { option } = recommend(
             child,
-            product.options.filter((item) => !item.soldOut),
+            sizeOptionsOf(product).filter((item) => !item.soldOut),
           )
           return option
             ? [
                 {
                   productId: product.productId,
                   name: product.name,
-                  categoryName: product.categoryName,
-                  sellerName: product.sellerName,
+                  categoryId: product.categoryId,
+                  brand: product.brand,
                   minPrice: product.minPrice,
-                  thumbnailUrl: product.thumbnailUrl,
+                  thumbnailUrl: product.imageUrls[0] ?? null,
                   recommendedSize: option.size,
                   fit: fitOf(child.heightCm, option),
                 },
               ]
             : []
-        })
+        },
+      )
       return { status: 200, data: page(content, request) }
     },
   },

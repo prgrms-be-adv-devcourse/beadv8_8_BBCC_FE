@@ -1,7 +1,16 @@
 // E2E 전용 가짜 백엔드 (실제 백엔드 코드와 무관). 구현된 API의 응답 모양(DTO)만 흉내 낸다.
-// 상품 · 추천 · 정산은 FE 목(app/mocks)이 응답하므로 여기에는 없다.
+// 상품은 등록 · 판매 시작 · 상세 · 카테고리만 있다(products.mjs). 상품 목록 · 추천 · 정산은 FE 목(app/mocks)이 응답한다.
 // 응답 모양이 실제와 달라지면 FE 흐름 패널의 계약 검사로 드러난다.
 import http from 'node:http'
+import {
+  categoryInputs,
+  categoryTree,
+  changeSaleStatus,
+  detailOf as productDetailOf,
+  register,
+  replica,
+  stock,
+} from './products.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
@@ -44,40 +53,13 @@ const members = {
     suspendedAt: null,
   },
 }
-// 상품 쪽 재고 (기획서 7.1: 상품 A 옵션 1 · 2 각 10, 상품 B 옵션 3은 5)
-const stock = { 1: 10, 2: 10, 3: 5 }
-const replica = {
-  1: {
-    productId: 1,
-    name: '데일리 맨투맨 (상품 A)',
-    optionName: '네이비 / 110',
-    size: '110',
-    price: 25000,
-    sellerId: 2,
-  },
-  2: {
-    productId: 1,
-    name: '데일리 맨투맨 (상품 A)',
-    optionName: '네이비 / 120',
-    size: '120',
-    price: 25000,
-    sellerId: 2,
-  },
-  3: {
-    productId: 2,
-    name: '조거',
-    optionName: '그레이 / 120',
-    size: '120',
-    price: 30000,
-    sellerId: 2,
-  },
-}
 const now = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19)
 const problem = (res, status, title, detail, instance) =>
   send(res, status, { type: 'about:blank', title, status, detail, instance })
-function send(res, status, body) {
+function send(res, status, body, headers = {}) {
   res.writeHead(status, {
     'content-type': status >= 400 ? 'application/problem+json' : 'application/json',
+    ...headers,
   })
   res.end(body === undefined ? '' : JSON.stringify(body))
 }
@@ -121,7 +103,7 @@ http
     res.setHeader('access-control-allow-origin', req.headers.origin || '*')
     res.setHeader('access-control-allow-credentials', 'true')
     res.setHeader('access-control-allow-headers', 'authorization,content-type')
-    res.setHeader('access-control-allow-methods', 'GET,POST,PATCH,DELETE,OPTIONS')
+    res.setHeader('access-control-allow-methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
     if (req.method === 'OPTIONS') return send(res, 204)
     let raw = ''
     for await (const c of req) raw += c
@@ -139,8 +121,34 @@ http
     if (r('POST', /^\/auth\/reissue$/))
       return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
     if (r('POST', /^\/auth\/logout$/)) return send(res, 204)
+    // 공개 API: 카테고리 · 입력 항목 · 상품 상세
+    if (r('GET', /^\/categories$/)) return send(res, 200, categoryTree)
+    if ((x = r('GET', /^\/categories\/(\d+)\/attributes$/))) {
+      const inputs = categoryInputs(+x[1])
+      return inputs
+        ? send(res, 200, inputs)
+        : problem(res, 404, '찾을 수 없습니다', '카테고리를 찾을 수 없습니다.', req.url)
+    }
+    if ((x = r('GET', /^\/products\/(\d+)$/))) {
+      const detail = productDetailOf(x[1])
+      return detail
+        ? send(res, 200, detail)
+        : problem(res, 404, '찾을 수 없습니다', '상품을 찾을 수 없습니다.', req.url)
+    }
     if (!u) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
     const me = Number(u.sub)
+    if (r('POST', /^\/seller\/products$/)) {
+      const result = register(me, body)
+      return result.status === 201
+        ? send(res, 201, result.body, { location: result.location })
+        : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
+    }
+    if ((x = r('PUT', /^\/seller\/products\/(\d+)\/sale-status$/))) {
+      const result = changeSaleStatus(me, x[1], body)
+      return result.status === 200
+        ? send(res, 200, result.body)
+        : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
+    }
     if (r('GET', /^\/members\/me$/))
       return problem(res, 404, '찾을 수 없습니다', '회원을 찾을 수 없습니다.', req.url)
     if (r('GET', /^\/children$/))

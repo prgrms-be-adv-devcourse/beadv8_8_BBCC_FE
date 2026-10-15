@@ -1,4 +1,4 @@
-import { useProductsQuery } from '@/entities/product'
+import { productMeta, useProductsQuery } from '@/entities/product'
 import { AdminStopSaleForm } from '@/features/manage-product'
 import { getErrorMessage } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
@@ -25,10 +25,10 @@ export function AdminProductsPage() {
       {products.data?.content.map((product) => (
         <Card key={product.id} className="flex flex-wrap items-center gap-3 text-sm">
           <span className="font-medium">{product.name}</span>
-          <span className="text-muted-foreground">
-            {product.categoryName} · {product.sellerName}
-          </span>
-          <span className="ml-auto">{formatWon(product.minPrice)}~</span>
+          <span className="text-muted-foreground">{productMeta(product)}</span>
+          {product.minPrice !== null && (
+            <span className="ml-auto">{formatWon(product.minPrice)}~</span>
+          )}
           <AdminStopSaleForm productId={product.id} />
         </Card>
       ))}

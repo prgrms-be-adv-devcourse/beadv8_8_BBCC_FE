@@ -1,78 +1,200 @@
 import { toImageUrl } from '@/shared/lib'
 import type {
+  CategoryInputsDto,
   CategoryTreeDto,
   ProductDetailDto,
-  ProductOptionDto,
   ProductSearchParamsDto,
   ProductSummaryDto,
   RegisterProductRequestDto,
+  SellerProductDto,
   UpdateProductRequestDto,
 } from '../api/product.dto'
 import type {
   Category,
+  CategoryInputs,
+  InputAttribute,
   ProductDetail,
   ProductEditForm,
-  ProductSearch,
   ProductOption,
+  ProductSearch,
   ProductStatus,
   ProductSummary,
   RegisterProductForm,
+  SellerProduct,
+  StockStatus,
 } from './product'
+import { categoryNameOf, optionCombos, priceGroups, sizeValues } from './product.rules'
 
-export function toProductSummary(dto: ProductSummaryDto): ProductSummary {
+export function toProductSummary(
+  dto: ProductSummaryDto,
+  categories: Category[] = [],
+): ProductSummary {
   return {
     id: dto.productId,
     name: dto.name,
+    brand: dto.brand?.trim() || null,
     categoryId: dto.categoryId,
-    categoryName: dto.categoryName,
-    sellerName: dto.sellerName,
+    categoryName: categoryNameOf(dto.categoryId, categories),
     status: dto.status as ProductStatus,
     minPrice: dto.minPrice,
     imageUrl: toImageUrl(dto.thumbnailUrl),
   }
 }
 
-function toProductOption(dto: ProductOptionDto): ProductOption {
-  return {
-    id: dto.optionId,
-    color: dto.color,
-    material: dto.material,
-    size: dto.size,
-    price: dto.price,
-    stock: dto.stock,
-    minHeightCm: dto.minHeightCm,
-    maxHeightCm: dto.maxHeightCm,
-    soldOut: dto.soldOut,
-  }
+/** 사이즈 항목: 실측(sizeSpecs)의 사이즈 이름을 값으로 가진 옵션 항목. 실측이 없으면 코드에 SIZE가 든 항목 */
+function sizeAttributeOf(dto: ProductDetailDto) {
+  const sizes = new Set(dto.sizeSpecs.map((spec) => spec.size))
+  return (
+    dto.optionAttributes.find((attribute) =>
+      attribute.values.some((value) => sizes.has(value.value)),
+    ) ?? dto.optionAttributes.find((attribute) => /SIZE/i.test(attribute.code))
+  )
 }
 
-export function toProductDetail(dto: ProductDetailDto): ProductDetail {
+export function toProductDetail(dto: ProductDetailDto, categories: Category[] = []): ProductDetail {
+  const sizeAttribute = sizeAttributeOf(dto)
+  const sizeNameById = new Map(sizeAttribute?.values.map((value) => [value.valueId, value.value]))
+  const specBySize = new Map(dto.sizeSpecs.map((spec) => [spec.size, spec]))
+  const options: ProductOption[] = dto.options.map((option) => {
+    const sizeValueId = option.valueIds.find((valueId) => sizeNameById.has(valueId))
+    const size = sizeValueId ? (sizeNameById.get(sizeValueId) ?? null) : null
+    const spec = size ? specBySize.get(size) : undefined
+    return {
+      id: option.optionId,
+      name: option.optionName,
+      size,
+      price: option.price,
+      soldOut: !option.purchasable,
+      stockStatus: option.stockStatus as StockStatus,
+      stockQuantity: option.stockQuantity,
+      minHeightCm: spec?.minHeightCm ?? null,
+      maxHeightCm: spec?.maxHeightCm ?? null,
+    }
+  })
   return {
-    ...toProductSummary(dto),
-    description: dto.description,
-    options: dto.options.map(toProductOption),
-  }
-}
-
-export function toRegisterProductRequest(form: RegisterProductForm): RegisterProductRequestDto {
-  return {
-    name: form.name.trim(),
-    categoryId: form.categoryId,
-    description: '',
-    options: form.sizes.map((row) => ({
-      ...row,
-      size: row.size.trim(),
-      color: form.color,
-      material: form.material,
+    id: dto.productId,
+    name: dto.name,
+    brand: dto.brand?.trim() || null,
+    categoryId: dto.categoryId,
+    categoryName: categoryNameOf(dto.categoryId, categories),
+    status: dto.status as ProductStatus,
+    minPrice: dto.minPrice,
+    imageUrl: toImageUrl(dto.imageUrls[0] ?? null),
+    imageUrls: dto.imageUrls,
+    sizeFree: dto.sizeFree,
+    options,
+    info: dto.productInfo.map((item) => ({ name: item.name, value: item.value })),
+    sizeSpecs: dto.sizeSpecs.map((spec) => ({
+      size: spec.size,
+      minHeightCm: spec.minHeightCm,
+      maxHeightCm: spec.maxHeightCm,
+      measurements: dto.measurementItems.map((item) => ({
+        name: item.name,
+        unit: item.unit,
+        value: spec.measurements[item.code] ?? null,
+      })),
     })),
   }
 }
 
-export function toProductEditForm(product: ProductDetail): ProductEditForm {
+export function toSellerProduct(dto: SellerProductDto, categories: Category[] = []): SellerProduct {
+  return {
+    ...toProductSummary(dto, categories),
+    options: dto.options.map((option) => ({
+      id: option.optionId,
+      name: option.optionName,
+      price: option.price,
+      stock: option.stock,
+    })),
+  }
+}
+
+function toInputAttribute(dto: CategoryInputsDto['attributes'][number]): InputAttribute {
+  return {
+    id: dto.attributeId,
+    code: dto.code,
+    name: dto.name,
+    inputType: dto.inputType,
+    required: dto.required,
+    sizeRole: dto.sizeRole,
+    priceAffecting: dto.priceAffecting,
+    values: dto.values.map((value) => ({
+      id: value.valueId,
+      name: value.value,
+      colorCode: value.colorCode,
+    })),
+  }
+}
+
+export function toCategoryInputs(dto: CategoryInputsDto): CategoryInputs {
+  return {
+    categoryId: dto.categoryId,
+    categoryName: dto.categoryName,
+    optionAttributes: dto.attributes
+      .filter((attribute) => attribute.role === 'OPTION')
+      .map(toInputAttribute),
+    infoAttributes: dto.attributes
+      .filter((attribute) => attribute.role === 'INFO')
+      .map(toInputAttribute),
+    measurementItems: dto.measurementItems,
+  }
+}
+
+/** 폼 → BE ProductRegisterRequest. 옵션은 고른 값의 모든 조합, 가격은 가격 구분 항목 묶음마다 */
+export function toRegisterProductRequest(
+  inputs: CategoryInputs,
+  form: RegisterProductForm,
+): RegisterProductRequestDto {
+  const imageUrls = form.imageUrlsText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const attributes = inputs.infoAttributes.flatMap<RegisterProductRequestDto['attributes'][number]>(
+    (attribute) => {
+      const input = form.info[attribute.id]
+      if (attribute.values.length > 0) {
+        return input?.valueId
+          ? [{ attributeId: attribute.id, valueIds: [input.valueId], text: null }]
+          : []
+      }
+      const text = input?.text.trim() ?? ''
+      return text ? [{ attributeId: attribute.id, valueIds: [], text }] : []
+    },
+  )
+  return {
+    name: form.name.trim(),
+    brand: form.brand.trim() || null,
+    categoryId: Number(form.categoryId),
+    description: null,
+    thumbnailUrl: imageUrls[0] ?? null,
+    imageUrls,
+    attributes,
+    options: optionCombos(inputs, form).map((combo) => ({
+      valueIds: combo.valueIds,
+      initialQuantity: form.stocks[combo.key] ?? 0,
+      skuCode: null,
+    })),
+    prices: priceGroups(inputs, form).map((group) => ({
+      valueIds: group.valueIds,
+      price: form.prices[group.key] ?? 0,
+    })),
+    sizeSpecs: sizeValues(inputs, form).map((value) => {
+      const spec = form.sizeSpecs[value.id]
+      return {
+        sizeValueId: value.id,
+        minHeightCm: spec?.minHeightCm || null,
+        maxHeightCm: spec?.maxHeightCm || null,
+        measurements: Object.fromEntries(
+          inputs.measurementItems.map((item) => [item.code, spec?.measurements[item.code] ?? 0]),
+        ),
+      }
+    }),
+  }
+}
+
+export function toProductEditForm(product: SellerProduct): ProductEditForm {
   return {
     name: product.name,
-    categoryId: product.categoryId,
-    description: product.description,
     prices: Object.fromEntries(product.options.map((option) => [option.id, option.price])),
   }
 }
@@ -80,8 +202,6 @@ export function toProductEditForm(product: ProductDetail): ProductEditForm {
 export function toUpdateProductRequest(form: ProductEditForm): UpdateProductRequestDto {
   return {
     name: form.name.trim(),
-    categoryId: form.categoryId,
-    description: form.description,
     options: Object.entries(form.prices).map(([optionId, price]) => ({ optionId, price })),
   }
 }

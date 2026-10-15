@@ -15,9 +15,9 @@ export type SizeRecommendationDto = {
 export type RecommendedProductDto = {
   productId: string
   name: string
-  categoryName: string
-  sellerName: string
-  minPrice: number
+  categoryId: string
+  brand: string | null
+  minPrice: number | null
   thumbnailUrl: string | null
   recommendedSize: string
   fit: string
