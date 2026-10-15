@@ -48,11 +48,12 @@ export type RegisterProductRequestDto = {
   description: string | null
   thumbnailUrl: string | null
   imageUrls: string[]
-  attributes: { attributeId: string; valueIds: string[]; text: string | null }[]
-  options: { valueIds: string[]; initialQuantity: number; skuCode: string | null }[]
-  prices: { valueIds: string[]; price: number }[]
+  // ID는 숫자로 보낸다 (BE ProductRegisterRequest가 Long으로 받음). 화면 상태값은 문자열 그대로
+  attributes: { attributeId: number; valueIds: number[]; text: string | null }[]
+  options: { valueIds: number[]; initialQuantity: number; skuCode: string | null }[]
+  prices: { valueIds: number[]; price: number }[]
   sizeSpecs: {
-    sizeValueId: string
+    sizeValueId: number
     minHeightCm: number | null
     maxHeightCm: number | null
     measurements: Record<string, number>
