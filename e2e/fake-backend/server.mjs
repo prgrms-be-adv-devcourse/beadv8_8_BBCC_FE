@@ -389,6 +389,7 @@ http
         optionId: String(body.optionId),
         productId: String(rp.productId),
         sellerId: String(rp.sellerId),
+        sellerName: '테스트상점',
         productName: rp.name,
         optionName: rp.optionName,
         size: rp.size,
@@ -435,6 +436,7 @@ http
           productId: String(rp.productId),
           optionId: String(it.optionId),
           sellerId: String(rp.sellerId),
+          sellerName: '테스트상점',
           productName: rp.name,
           optionName: rp.optionName,
           size: rp.size,
@@ -566,6 +568,7 @@ http
                 [...o.items].sort((a, b) => Number(a.orderItemId) - Number(b.orderItemId))[0]
                   ?.productName ?? null,
               itemCount: o.items.length,
+              sellerName: o.items[0]?.sellerName ?? null,
             })),
         ),
       )

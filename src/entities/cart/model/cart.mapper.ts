@@ -8,6 +8,7 @@ export function toCart(dto: CartDto): Cart {
       optionId: item.optionId,
       productId: item.productId,
       sellerId: item.sellerId ?? null,
+      sellerName: item.sellerName?.trim() || null,
       productName: item.productName,
       optionName: item.optionName ?? null,
       size: item.size,

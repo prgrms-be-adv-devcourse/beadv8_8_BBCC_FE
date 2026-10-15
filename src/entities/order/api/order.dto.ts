@@ -22,6 +22,8 @@ export type OrderItemDto = {
    * OUT_OF_STOCK · PRODUCT_NOT_ON_SALE · OPTION_NOT_ON_SALE, 그 밖의 값도 올 수 있다
    */
   unavailableReason?: string | null
+  /** 판매자의 지금 상호명 (BE #311). 판매자 정보가 아직 없으면 null */
+  sellerName?: string | null
   child: {
     childId: string
     name: string
@@ -62,6 +64,8 @@ export type OrderSummaryDto = {
   representativeProductName: string | null
   /** 주문상품 수 (행 수, 수량 합 아님). 찾지 못하면 0 */
   itemCount: number
+  /** 대표 주문상품 판매자의 지금 상호명 (BE #311). 없으면 null */
+  sellerName?: string | null
 }
 
 /** POST /orders */

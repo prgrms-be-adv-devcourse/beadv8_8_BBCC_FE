@@ -11,6 +11,7 @@ const order = (id: string, status: OrderSummary['status']): OrderSummary => ({
   status,
   totalAmount: 25000,
   title: null,
+  sellerName: null,
   orderedAt: '2026-10-15T10:00:00',
 })
 const orders = [

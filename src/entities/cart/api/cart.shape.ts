@@ -7,6 +7,7 @@ export const cartShape = obj({
       optionId: str,
       productId: str,
       sellerId: nullable(str),
+      sellerName: nullable(str),
       productName: str,
       optionName: nullable(str),
       size: nullable(str),

@@ -22,6 +22,8 @@ export type OrderItem = {
   confirmType: ConfirmType | null
   /** 재고 차감 실패로 살 수 없던 이유 (주문상품 단위). 없으면 null → 표시 없음 */
   unavailableReason: string | null
+  /** 판매자 상호명. 모르면 null */
+  sellerName: string | null
   /** 주문 당시 자녀 정보. 고르지 않았으면 null */
   child: { id: string; name: string; heightCm: number; weightKg: number } | null
 }
@@ -30,6 +32,8 @@ export type OrderItem = {
 export type OrderDelivery = {
   id: string
   sellerId: string
+  /** 그 판매자 주문상품의 상호명. 모르면 null */
+  sellerName: string | null
   status: DeliveryStatus
   carrier: string | null
   trackingNumber: string | null
@@ -57,6 +61,8 @@ export type OrderSummary = {
   orderedAt: string
   /** 대표 상품 (예: "데일리 맨투맨 외 1건"). 상품명을 모르면 null */
   title: string | null
+  /** 대표 상품 판매자 상호명. 모르면 null */
+  sellerName: string | null
 }
 
 /** 상태 변화 순서 한 줄 */

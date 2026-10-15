@@ -14,7 +14,7 @@ export function OrderDeliveryList({ order }: OrderDeliveryListProps) {
       {order.deliveries.map((delivery) => (
         <div key={delivery.id} className="flex justify-between border-t pt-2 text-sm">
           <span>
-            판매자 {delivery.sellerId} · 판매 주문 #{delivery.id}
+            {delivery.sellerName ?? `판매자 ${delivery.sellerId}`} · 판매 주문 #{delivery.id}
           </span>
           <span>
             <Badge>{DELIVERY_STATUS_LABEL[delivery.status]}</Badge>{' '}

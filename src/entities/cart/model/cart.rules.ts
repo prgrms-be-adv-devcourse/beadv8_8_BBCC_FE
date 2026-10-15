@@ -38,7 +38,13 @@ export function isAllSelected(cart: Cart, excludedIds: ReadonlySet<string>): boo
   return orderable.length > 0 && orderable.every((line) => !excludedIds.has(line.id))
 }
 
-export type SellerGroup = { sellerId: string | null; lines: CartLine[] }
+export type SellerGroup = { sellerId: string | null; sellerName: string | null; lines: CartLine[] }
+
+/** 묶음 이름: 상호명 → 없으면 판매자 번호 → 판매자를 모르면 "판매자 정보 없음" */
+export function sellerGroupLabel(group: Pick<SellerGroup, 'sellerId' | 'sellerName'>): string {
+  if (group.sellerName) return group.sellerName
+  return group.sellerId === null ? '판매자 정보 없음' : `판매자 #${group.sellerId}`
+}
 
 /** 판매자별 묶음 (기획서 F05). 처음 나온 순서를 지키고, 판매자를 모르는 줄은 맨 뒤 한 묶음 */
 export function groupBySeller(lines: CartLine[]): SellerGroup[] {
@@ -50,7 +56,11 @@ export function groupBySeller(lines: CartLine[]): SellerGroup[] {
   const known = [...groups].filter(([sellerId]) => sellerId !== null)
   const unknown = groups.get(null)
   return [
-    ...known.map(([sellerId, group]) => ({ sellerId, lines: group })),
-    ...(unknown ? [{ sellerId: null, lines: unknown }] : []),
+    ...known.map(([sellerId, group]) => ({
+      sellerId,
+      sellerName: group.find((line) => line.sellerName)?.sellerName ?? null,
+      lines: group,
+    })),
+    ...(unknown ? [{ sellerId: null, sellerName: null, lines: unknown }] : []),
   ]
 }

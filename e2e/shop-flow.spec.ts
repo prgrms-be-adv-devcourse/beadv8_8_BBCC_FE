@@ -165,6 +165,8 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByRole('button', { name: '장바구니 담기' }).click()
     await page.getByRole('link', { name: '장바구니 보기' }).click()
     await expect(page).toHaveURL(/\/cart$/)
+    // 판매자별 묶음 이름은 상호명 (BE sellerName)
+    await expect(page.getByRole('region', { name: '테스트상점' })).toBeVisible()
   })
 
   await test.step('쇼핑: 주문하기 → 진행 막대가 결제 완료로', async () => {

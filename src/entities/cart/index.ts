@@ -11,6 +11,7 @@ export {
   MIN_QUANTITY,
   orderableLines,
   selectedLines,
+  sellerGroupLabel,
   sumLineAmount,
 } from './model/cart.rules'
 export { cartKeys, useCartQuery } from './model/queries'
