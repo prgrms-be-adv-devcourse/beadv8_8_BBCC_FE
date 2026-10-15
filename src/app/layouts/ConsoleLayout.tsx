@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router'
 import { ApiFlowPanel } from '@/widgets/api-flow-panel'
 import { DemoBar } from '@/widgets/demo-bar'
+import { TopProgressBar } from './TopProgressBar'
 import { DemoGuide, DemoStepBar } from '@/widgets/demo-step-bar'
 import { SessionGate } from './SessionGate'
 
@@ -9,6 +10,7 @@ export function ConsoleLayout() {
   return (
     <div className="flex h-svh flex-col">
       <DemoBar />
+      <TopProgressBar />
       <DemoStepBar />
       <div className="grid min-h-0 flex-1 grid-cols-[1fr_440px]">
         <main className="overflow-y-auto px-6 py-6">
