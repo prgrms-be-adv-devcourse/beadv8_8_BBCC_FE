@@ -1,6 +1,6 @@
 name: Vercel Preview
 
-# 화면 미리보기를 Vercel에 올린다. 기본은 백엔드 없이 전체 목(VITE_MOCK_BACKEND=true)이고, 아래 빌드 단계의 Variables로 바꾼다.
+# 화면 미리보기를 Vercel에 올린다. 빌드 값은 아래 빌드 단계의 Variables로 바꾼다.
 # - develop에 머지되면 develop 기준으로 production(https://kidly-fe.vercel.app)에 배포
 # - 다시 올려야 하면 Actions에서 develop으로 수동 실행. vercel CLI로 로컬 파일을 직접 올리지 않는다
 # 필요한 값: Secrets VERCEL_TOKEN, Variables VERCEL_ORG_ID · VERCEL_PROJECT_ID (Settings → Secrets and variables → Actions)
@@ -47,15 +47,13 @@ jobs:
           node-version: 24
           cache: npm
 
-      # 목 설정은 저장소 Variables로 바꾼다 (없으면 아래 기본값). 바꾼 뒤 이 워크플로를 develop으로 다시 실행하면 반영된다
-      # - VERCEL_MOCK_BACKEND: true면 백엔드 없이 전체 목 (기본 true). 실제 백엔드가 생기면 false + VERCEL_API_BASE_URL
-      # - VERCEL_USE_MOCK: false면 도메인 목(상품 목록 · 정산 등)도 끈다 (기본 true)
+      # 빌드 값은 저장소 Variables로 바꾼다 (없으면 아래 기본값). 바꾼 뒤 이 워크플로를 develop으로 다시 실행하면 반영된다
+      # - VERCEL_USE_MOCK: false면 백엔드에 없는 API의 목(상품 목록 · 정산 등)을 끈다 (기본 true)
       # - VERCEL_API_BASE_URL: 실제 백엔드 주소 (기본 비움). 그 서버의 CORS에 이 사이트 주소를 허용해야 한다
       # - VERCEL_DEMO_ROLE_SWITCH: false면 시연 역할 전환을 감춘다 (기본 true. 개발용 토큰이 없는 백엔드면 false)
       - name: 빌드
         if: steps.ready.outputs.ok == 'true'
         env:
-          VITE_MOCK_BACKEND: ${{ vars.VERCEL_MOCK_BACKEND || 'true' }}
           VITE_USE_MOCK: ${{ vars.VERCEL_USE_MOCK || 'true' }}
           VITE_API_BASE_URL: ${{ vars.VERCEL_API_BASE_URL }}
           VITE_DEMO_ROLE_SWITCH: ${{ vars.VERCEL_DEMO_ROLE_SWITCH || 'true' }}
@@ -67,4 +65,4 @@ jobs:
         if: steps.ready.outputs.ok == 'true'
         run: |
           url=$(npx --yes vercel@64.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
-          echo "::notice::배포됨 $url (목 백엔드 ${{ vars.VERCEL_MOCK_BACKEND || 'true' }} · 도메인 목 ${{ vars.VERCEL_USE_MOCK || 'true' }} · API ${{ vars.VERCEL_API_BASE_URL || '없음' }})"
+          echo "::notice::배포됨 $url (목 ${{ vars.VERCEL_USE_MOCK || 'true' }} · API ${{ vars.VERCEL_API_BASE_URL || '없음' }})"
