@@ -1,10 +1,10 @@
-name: Vercel Preview
+name: Vercel Deploy
 
-# 화면 미리보기를 Vercel에 올린다. 빌드 값은 아래 빌드 단계의 Variables로 바꾼다.
+# FE를 Vercel production(https://kidly-fe.vercel.app)에 배포한다. 빌드 값은 아래 빌드 단계의 Variables로 바꾼다.
 # - develop에 머지되면 develop 기준으로 production(https://kidly-fe.vercel.app)에 배포
 # - 다시 올려야 하면 Actions에서 develop으로 수동 실행. vercel CLI로 로컬 파일을 직접 올리지 않는다
 # 필요한 값: Secrets VERCEL_TOKEN, Variables VERCEL_ORG_ID · VERCEL_PROJECT_ID (Settings → Secrets and variables → Actions)
-# 팀 배포(EC2 · GHCR)는 deploy.yml이 맡는다. 이 워크플로는 시연 미리보기 전용이다
+# 팀 배포(EC2 · GHCR)는 deploy.yml이 맡는다. 이 워크플로는 Vercel 배포만 맡는다 (PR별 Preview 배포는 하지 않는다)
 
 on:
   push:
@@ -16,7 +16,7 @@ permissions:
 
 # 머지가 이어지면 마지막 것만 올린다
 concurrency:
-  group: vercel-preview
+  group: vercel-deploy
   cancel-in-progress: true
 
 jobs:
