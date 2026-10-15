@@ -13,9 +13,12 @@ const AREA_HOME: Record<Area, string> = {
   console: paths.console.home,
 }
 
+// 시연 도구를 끈 배포에서는 시연 콘솔로 가는 메뉴를 빼고 쇼핑 · 판매자 센터 · 관리자만 둔다
+const AREAS = (Object.keys(AREA_HOME) as Area[]).filter((key) => env.demoTools || key !== 'console')
+
 type DemoBarProps = { actions?: ReactNode }
 
-/** 모든 영역 맨 위의 시연 도구 막대: 영역 전환 · 시연 역할 · 로그인 상태 · (오른쪽 동작) */
+/** 모든 영역 맨 위의 막대: 영역 전환 · 시연 역할 · 로그인 상태 · (오른쪽 동작). 시연 도구를 끄면 시연 표시와 시연 콘솔 메뉴를 뺀다 */
 export function DemoBar({ actions }: DemoBarProps) {
   const area = useArea()
   const user = useSessionStore((state) => state.user)
@@ -23,9 +26,9 @@ export function DemoBar({ actions }: DemoBarProps) {
 
   return (
     <div className="flex h-11 shrink-0 items-center gap-3 overflow-x-auto border-b bg-slate-900 px-4 whitespace-nowrap text-white [&>*]:shrink-0">
-      <span className="text-xs font-semibold text-slate-400">시연</span>
+      {env.demoTools && <span className="text-xs font-semibold text-slate-400">시연</span>}
       <nav className="flex gap-1">
-        {(Object.keys(AREA_HOME) as Area[]).map((key) => (
+        {AREAS.map((key) => (
           <NavLink
             key={key}
             to={AREA_HOME[key]}

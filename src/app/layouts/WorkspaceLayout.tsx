@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router'
 import { hasRole, ROLE_LABEL, useSessionStore, type Role } from '@/entities/session'
+import { env, paths } from '@/shared/config'
 import { useArea } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { SideNav, type SideNavItem } from '@/shared/ui/SideNav'
@@ -46,9 +47,19 @@ export function WorkspaceLayout({
                   <p className="font-semibold">
                     {ROLE_LABEL[role]} 계정으로 볼 수 있는 화면이에요.
                   </p>
-                  <p className="text-muted-foreground text-sm">
-                    위의 시연 역할에서 {ROLE_LABEL[role]}를 고르세요.
-                  </p>
+                  {env.demoRoleSwitch ? (
+                    <p className="text-muted-foreground text-sm">
+                      위의 시연 역할에서 {ROLE_LABEL[role]}를 고르세요.
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">
+                      {ROLE_LABEL[role]} 계정으로{' '}
+                      <Link to={paths.login} className="text-primary underline">
+                        로그인
+                      </Link>
+                      하세요.
+                    </p>
+                  )}
                   {guide && (
                     <Link to={guide.to} className="text-primary text-sm underline">
                       {guide.label}
