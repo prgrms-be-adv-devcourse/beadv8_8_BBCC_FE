@@ -188,6 +188,13 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await order('2', /그레이 \/ 120/, '6')
     await expect(page.getByText(/구매할 수 없는 상품이 있어/)).toBeVisible()
     await expect(page.getByRole('link', { name: '장바구니에서 다시 확인하기' })).toBeVisible()
+    // 주문상품 단위 이유 (BE 예정 items[].unavailableReason, 가짜 백엔드는 지금 보냄)
+    await expect(page.getByText('재고 부족', { exact: true })).toBeVisible()
+    // 취소돼도 장바구니는 남아 있다 → 다시 확인하고 뺀다
+    await page.getByRole('link', { name: '장바구니에서 다시 확인하기' }).click()
+    await expect(page).toHaveURL(/\/cart$/)
+    await page.getByRole('button', { name: '빼기' }).first().click()
+    await expect(page.getByText('장바구니가 비었어요.')).toBeVisible()
     // 잔액보다 큰 금액 → 결제 실패 취소 · 결제 도메인 실패 기록
     await order('1', /네이비 \/ 110/, '8')
     await expect(page.getByText(/예치금 결제에 실패했어요/)).toBeVisible()
@@ -201,11 +208,9 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
   })
 
   await test.step('쇼핑: 선택 주문 · 부족한 만큼 충전하고 돌아오기 (기획서 F05 · F06)', async () => {
-    await page.goto('/products/1')
-    await page.getByRole('button', { name: /네이비 \/ 110/ }).click()
-    await page.getByRole('spinbutton').fill('8')
-    await page.getByRole('button', { name: '장바구니 담기' }).click()
-    await page.getByRole('link', { name: '장바구니 보기' }).click()
+    // 결제에 실패한 주문의 상품(110 × 8)은 장바구니에 그대로 남아 있다 (BE: 결제 완료 뒤에만 뺀다)
+    await page.goto('/cart')
+    await expect(page.getByRole('checkbox', { name: /데일리 맨투맨.*110 주문하기/ })).toBeVisible()
 
     // 잔액보다 큰 금액 → 부족 금액을 천 원 단위로 채워 충전하러 가는 링크
     const charge = page.getByRole('link', { name: /충전하고 돌아오기/ })

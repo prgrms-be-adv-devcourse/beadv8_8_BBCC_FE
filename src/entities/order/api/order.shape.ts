@@ -25,6 +25,8 @@ const orderItemShape = obj({
   deliveredAt: nullable(str),
   confirmedAt: nullable(str),
   confirmType: nullable(oneOf(['DIRECT', 'AUTO'])),
+  // BE 예정 필드: 아직 없는 응답도 통과 (nullable은 빠진 필드를 허용), 모르는 값도 받는다
+  unavailableReason: nullable(str),
   child: nullable(
     obj({ childId: str, name: str, heightCm: num, weightKg: num, bodyType: nullable(str) }),
   ),

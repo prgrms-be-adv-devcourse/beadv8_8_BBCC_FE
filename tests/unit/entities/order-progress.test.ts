@@ -16,6 +16,7 @@ const item = (over: Partial<OrderItem> = {}): OrderItem => ({
   deliveredAt: null,
   confirmedAt: null,
   confirmType: null,
+  unavailableReason: null,
   child: null,
   ...over,
 })

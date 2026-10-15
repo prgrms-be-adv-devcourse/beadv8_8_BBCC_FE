@@ -376,6 +376,8 @@ http
           productName: rp.name,
           optionName: rp.optionName,
           size: rp.size,
+          // 재고 차감 실패 때만 값 (BE 예정: OUT_OF_STOCK · PRODUCT_NOT_ON_SALE · OPTION_NOT_ON_SALE)
+          unavailableReason: null,
           unitPrice: it.unitPrice,
           quantity: it.quantity,
           amount: it.unitPrice * it.quantity,
@@ -407,12 +409,14 @@ http
         deliveries: [],
       }
       orders.push(o)
-      for (let i = cart.length - 1; i >= 0; i--) if (cart[i].memberId === me) cart.splice(i, 1)
       setTimeout(() => {
-        // 상품: 하나라도 부족하면 아무것도 차감하지 않고 주문 취소 (기획서 4장)
-        if (o.items.some((it) => (stock[it.optionId] ?? 0) < it.quantity)) {
+        // 상품: 하나라도 부족하면 아무것도 차감하지 않고 주문 취소 (기획서 4장).
+        // 장바구니는 그대로 남는다 (BE: 결제 완료 뒤 주문한 줄만 빠진다)
+        const short = o.items.filter((it) => (stock[it.optionId] ?? 0) < it.quantity)
+        if (short.length > 0) {
           o.status = 'CANCELLED'
           o.cancelReason = 'OUT_OF_STOCK'
+          short.forEach((it) => (it.unavailableReason = 'OUT_OF_STOCK'))
           return
         }
         o.items.forEach((it) => (stock[it.optionId] -= it.quantity))
@@ -456,6 +460,10 @@ http
           })),
         })
         o.status = 'PAID'
+        // 결제 완료 → 주문한 옵션의 장바구니 줄만 뺀다
+        const ordered = new Set(o.items.map((it) => String(it.optionId)))
+        for (let i = cart.length - 1; i >= 0; i--)
+          if (cart[i].memberId === me && ordered.has(String(cart[i].optionId))) cart.splice(i, 1)
         o.deliveries = [
           {
             sellerOrderId: String(nid()),

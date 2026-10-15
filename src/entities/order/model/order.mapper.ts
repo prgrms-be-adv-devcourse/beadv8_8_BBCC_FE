@@ -39,6 +39,7 @@ export function toOrder(dto: OrderDetailDto): Order {
       deliveredAt: item.deliveredAt,
       confirmedAt: item.confirmedAt,
       confirmType: item.confirmType as ConfirmType | null,
+      unavailableReason: item.unavailableReason ?? null,
       child: item.child && {
         id: item.child.childId,
         name: item.child.name,

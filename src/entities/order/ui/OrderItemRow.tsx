@@ -3,24 +3,31 @@ import { DELIVERY_STATUS_LABEL } from '@/shared/config'
 import { formatWon, optionLabel } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { ITEM_STATUS_LABEL, type OrderDelivery, type OrderItem } from '../model/order'
+import { unavailableLabel } from '../model/order.rules'
 
 type OrderItemRowProps = {
   item: OrderItem
   delivery: OrderDelivery | null
+  /** 취소된 주문이면 주문상품 상태(주문됨)는 감춘다 */
+  cancelled?: boolean
   /** 오른쪽 동작 (예: 구매확정 버튼) */
   action?: ReactNode
 }
 
-export function OrderItemRow({ item, delivery, action }: OrderItemRowProps) {
+export function OrderItemRow({ item, delivery, cancelled = false, action }: OrderItemRowProps) {
+  const unavailable = unavailableLabel(item)
   return (
     <div className="flex items-center justify-between border-t pt-2 text-sm">
       <div>
         <p className="font-medium">
           {[item.productName, optionLabel(item)].filter(Boolean).join(' · ')} × {item.quantity}{' '}
-          <Badge variant={item.status === 'CONFIRMED' ? 'success' : 'muted'}>
-            {ITEM_STATUS_LABEL[item.status]}
-            {item.confirmType === 'AUTO' && ' (자동)'}
-          </Badge>
+          {!cancelled && (
+            <Badge variant={item.status === 'CONFIRMED' ? 'success' : 'muted'}>
+              {ITEM_STATUS_LABEL[item.status]}
+              {item.confirmType === 'AUTO' && ' (자동)'}
+            </Badge>
+          )}{' '}
+          {unavailable && <Badge variant="highlight">{unavailable}</Badge>}
         </p>
         <p className="text-muted-foreground">
           {formatWon(item.unitPrice)} × {item.quantity} = {formatWon(item.amount)}

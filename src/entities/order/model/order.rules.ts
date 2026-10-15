@@ -1,6 +1,7 @@
 import { carrierName } from '@/shared/config'
 import {
   CANCEL_REASON_LABEL,
+  UNAVAILABLE_REASON_LABEL,
   type Order,
   type OrderItem,
   type OrderStatus,
@@ -24,6 +25,12 @@ export function deliveryOf(order: Order, item: OrderItem) {
 
 /** 잔액 부족으로 취소된 주문이면 충전으로 안내한다 */
 /** 구매할 수 없는 상품(재고 부족 · 판매 중지)으로 취소: 장바구니에 남아 있으니 다시 확인하게 한다 */
+/** 주문상품의 구매 불가 표시. 이유가 없으면 null (표시 안 함) */
+export function unavailableLabel(item: { unavailableReason: string | null }): string | null {
+  if (!item.unavailableReason) return null
+  return UNAVAILABLE_REASON_LABEL[item.unavailableReason] ?? '구매 불가'
+}
+
 export function needsCartReview(order: Order): boolean {
   return order.status === 'CANCELLED' && order.cancelReason === 'OUT_OF_STOCK'
 }
