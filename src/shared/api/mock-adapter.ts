@@ -5,6 +5,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios'
+import { endpointOf } from './mock-endpoints'
 import { useMockSettings } from './mock-settings'
 
 /**
@@ -64,18 +65,38 @@ export function registerMockObservers(domain: string, list: MockObserver[]) {
 
 const handlers: {
   domain: string
+  path: string
   method: string
   pattern: RegExp
   keys: string[]
   handle: MockHandler['handle']
 }[] = []
 
-/** domain: 흐름 패널에서 켜고 끄는 단위 (예: 상품). 꺼진 도메인은 실제 서버로 보낸다 */
+/**
+ * domain: 흐름 패널에서 켜고 끄는 단위 (예: 상품). 꺼진 도메인은 실제 서버로 보낸다.
+ * mock-endpoints에서 'real'로 바꾼 엔드포인트는 등록하지 않는다 (늘 실제 서버)
+ */
 export function registerMockHandlers(domain: string, list: MockHandler[]) {
   useMockSettings.getState().register(domain)
   for (const handler of list) {
-    handlers.push({ ...toRoute(domain, handler.method, handler.path), handle: handler.handle })
+    if (endpointOf(handler.method, handler.path)?.source !== 'mock') continue
+    handlers.push({
+      ...toRoute(domain, handler.method, handler.path),
+      path: handler.path,
+      handle: handler.handle,
+    })
   }
+}
+
+/** 이 엔드포인트가 지금 목으로 응답하는지 (등록됐고 도메인이 켜져 있음). 화면 배지용 */
+export function isMockActive(
+  method: string,
+  path: string,
+  enabled: Record<string, boolean> = useMockSettings.getState().enabled,
+): boolean {
+  return handlers.some(
+    (handler) => handler.method === method && handler.path === path && enabled[handler.domain],
+  )
 }
 
 const MOCK_DELAY_MS = 150
