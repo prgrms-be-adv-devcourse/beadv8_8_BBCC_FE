@@ -59,13 +59,14 @@ fe:
 
 팀 배포(EC2)와 따로, 머지하면 Vercel에도 올라간다 (`.github/workflows/vercel-deploy.yml`).
 
-| 브랜치  | Vercel 환경 | 주소                            |
-| ------- | ----------- | ------------------------------- |
-| main    | Production  | https://kidly-fe.vercel.app     |
-| develop | Preview     | https://kidly-fe-dev.vercel.app |
+| 브랜치  | Vercel 환경 | 주소                                                       |
+| ------- | ----------- | ---------------------------------------------------------- |
+| main    | Production  | https://kidly-fe.vercel.app · https://kidly.kro.kr         |
+| develop | Preview     | https://kidly-fe-dev.vercel.app · https://dev.kidly.kro.kr |
 
 - 다시 올리려면 Actions에서 해당 브랜치로 수동 실행한다. vercel CLI로 로컬 파일을 직접 올리지 않는다
 - GitHub에 필요한 값: Secrets `VERCEL_TOKEN`, Variables `VERCEL_ORG_ID` · `VERCEL_PROJECT_ID`
+- 도메인(내도메인.한국): `kidly.kro.kr`은 Vercel 프로젝트 Production 도메인, `dev.kidly.kro.kr`은 develop 브랜치 도메인이다. 프로젝트가 Git 연동이 아니라서 develop 배포마다 워크플로가 `dev.kidly.kro.kr` 별칭도 붙인다
 
 ### 빌드 값 (Vercel 프로젝트 Settings → Environment Variables)
 

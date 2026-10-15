@@ -2,7 +2,7 @@ name: Vercel Deploy
 
 # FE를 Vercel에 배포한다. 브랜치마다 고정 주소가 하나씩 있다
 # - main 머지    → production  https://kidly-fe.vercel.app      (발표 · 공유용)
-# - develop 머지 → preview + 별칭 https://kidly-fe-dev.vercel.app (개발 확인용)
+# - develop 머지 → preview + 별칭 https://kidly-fe-dev.vercel.app · https://dev.kidly.kro.kr (개발 확인용)
 # 다시 올려야 하면 Actions에서 해당 브랜치로 수동 실행한다. vercel CLI로 로컬 파일을 직접 올리지 않는다
 # 필요한 값: Secrets VERCEL_TOKEN, Variables VERCEL_ORG_ID · VERCEL_PROJECT_ID (Settings → Secrets and variables → Actions)
 # 빌드 값(VITE_*)은 Vercel 프로젝트 Settings → Environment Variables에서 정한다. Production = main, Preview = develop
@@ -32,6 +32,8 @@ jobs:
       # main = production, develop = preview (+ 고정 별칭)
       VERCEL_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
       DEV_ALIAS: kidly-fe-dev.vercel.app
+      # 개발 도메인. Vercel에서 develop 브랜치 도메인으로 지정해 운영 배포가 가져가지 않는다
+      DEV_DOMAIN: dev.kidly.kro.kr
     steps:
       - name: Vercel 값 확인
         id: ready
@@ -83,9 +85,18 @@ jobs:
             found=$(curl -sS --fail-with-body -H "$auth" "$api/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID") ||
               { echo "$found"; exit 1; }
             deployment=$(jq -r .id <<< "$found")
-            curl -sS --fail-with-body -X POST -H "$auth" -H "content-type: application/json" \
-              "$api/v2/deployments/$deployment/aliases?teamId=$VERCEL_ORG_ID" \
-              -d "{\"alias\":\"$DEV_ALIAS\"}"
-            echo
+            set_alias() {
+              curl -sS --fail-with-body -X POST -H "$auth" -H "content-type: application/json" \
+                "$api/v2/deployments/$deployment/aliases?teamId=$VERCEL_ORG_ID" \
+                -d "{\"alias\":\"$1\"}" || return 1
+              echo
+            }
+            set_alias "$DEV_ALIAS"
             echo "::notice::develop 배포됨 https://$DEV_ALIAS ($url)"
+            # 개발 도메인은 DNS 확인(내도메인.한국 TXT · CNAME)이 끝나기 전에는 실패한다. 그동안은 경고만 남기고 배포는 성공으로 둔다
+            if set_alias "$DEV_DOMAIN"; then
+              echo "::notice::개발 도메인 연결됨 https://$DEV_DOMAIN"
+            else
+              echo "::warning::$DEV_DOMAIN 연결 실패 (DNS 확인 전이면 정상). Vercel 프로젝트 Settings → Domains에서 확인한다"
+            fi
           fi
