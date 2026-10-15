@@ -1,3 +1,4 @@
+export { sessionApi } from './api/session-api'
 export {
   ROLE_LABEL,
   type DemoAccount,

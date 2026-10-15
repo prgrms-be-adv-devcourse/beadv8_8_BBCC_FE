@@ -61,6 +61,7 @@ export const paths = {
   console: {
     home: C,
     verify: `${C}/verify`,
+    connect: `${C}/connect`,
     children: `${C}/children`,
     child: (id: string) => `${C}/children/${id}`,
     profile: `${C}/profile`,

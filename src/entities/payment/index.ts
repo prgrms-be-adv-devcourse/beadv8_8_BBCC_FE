@@ -1,3 +1,4 @@
+export { paymentApi } from './api/payment-api'
 /** 목 응답 작성 전용 (app/mocks) */
 export type { AdminPaymentDto, PaymentDetailDto, PaymentSummaryDto } from './api/payment.dto'
 export {

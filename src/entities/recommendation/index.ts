@@ -1,3 +1,4 @@
+export { recommendationApi } from './api/recommendation-api'
 /** 목 응답 작성 전용 (app/mocks) */
 export type { RecommendedProductDto, SizeRecommendationDto } from './api/recommendation.dto'
 export {
