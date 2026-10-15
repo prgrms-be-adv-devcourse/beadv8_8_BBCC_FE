@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { groupBySeller, type CartLine } from '@/entities/cart'
-import { CANCEL_REASON_LABEL, needsCartReview, orderTitle } from '@/entities/order'
+import {
+  CANCEL_REASON_LABEL,
+  needsCartReview,
+  orderTitle,
+  unavailableLabel,
+} from '@/entities/order'
 
 describe('주문 목록 대표 상품 (BE #243 representativeProductName · itemCount)', () => {
   it('한 건이면 상품명만, 여러 건이면 "외 N건"', () => {
@@ -45,5 +50,15 @@ describe('장바구니 판매자별 묶음 (BE #243 sellerId)', () => {
       ['5', ['3']],
       [null, ['2']],
     ])
+  })
+})
+
+describe('주문상품 구매 불가 표시 (안 2, BE 예정 items[].unavailableReason)', () => {
+  it('알려진 이유는 이름으로, 모르는 값은 "구매 불가", 없으면 표시 안 함', () => {
+    expect(unavailableLabel({ unavailableReason: 'OUT_OF_STOCK' })).toBe('재고 부족')
+    expect(unavailableLabel({ unavailableReason: 'PRODUCT_NOT_ON_SALE' })).toBe('판매 중지')
+    expect(unavailableLabel({ unavailableReason: 'OPTION_NOT_ON_SALE' })).toBe('옵션 판매 중지')
+    expect(unavailableLabel({ unavailableReason: 'SOMETHING_NEW' })).toBe('구매 불가')
+    expect(unavailableLabel({ unavailableReason: null })).toBeNull()
   })
 })

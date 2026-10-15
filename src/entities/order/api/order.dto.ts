@@ -17,6 +17,11 @@ export type OrderItemDto = {
   deliveredAt: string | null
   confirmedAt: string | null
   confirmType: string | null
+  /**
+   * 재고 차감 실패로 살 수 없던 이유 (BE 예정 필드, 주문상품 단위). 없으면 null.
+   * OUT_OF_STOCK · PRODUCT_NOT_ON_SALE · OPTION_NOT_ON_SALE, 그 밖의 값도 올 수 있다
+   */
+  unavailableReason?: string | null
   child: {
     childId: string
     name: string

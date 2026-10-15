@@ -83,6 +83,7 @@ export function ConsoleOrderDetailPage() {
             key={item.id}
             item={item}
             delivery={deliveryOf(order, item)}
+            cancelled={order.status === 'CANCELLED'}
             action={
               canConfirmItem(item) && (
                 <ConfirmPurchaseButton orderId={order.id} orderItemId={item.id} />

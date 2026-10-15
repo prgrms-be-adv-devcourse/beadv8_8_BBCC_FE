@@ -20,6 +20,8 @@ export type OrderItem = {
   deliveredAt: string | null
   confirmedAt: string | null
   confirmType: ConfirmType | null
+  /** 재고 차감 실패로 살 수 없던 이유 (주문상품 단위). 없으면 null → 표시 없음 */
+  unavailableReason: string | null
   /** 주문 당시 자녀 정보. 고르지 않았으면 null */
   child: { id: string; name: string; heightCm: number; weightKg: number } | null
 }
@@ -74,6 +76,13 @@ export const CANCEL_REASON_LABEL: Record<CancelReason, string> = {
   OUT_OF_STOCK: '구매할 수 없는 상품이 있어 주문이 취소됐어요.',
   PAYMENT_FAILED: '예치금 결제에 실패했어요 (잔액 부족 등)',
   PAYMENT_EXPIRED: '결제 제한 시간(10분)이 지났어요',
+}
+
+/** 주문상품 단위 구매 불가 이유 (BE items[].unavailableReason). 모르는 값은 "구매 불가" */
+export const UNAVAILABLE_REASON_LABEL: Record<string, string> = {
+  OUT_OF_STOCK: '재고 부족',
+  PRODUCT_NOT_ON_SALE: '판매 중지',
+  OPTION_NOT_ON_SALE: '옵션 판매 중지',
 }
 
 export const ITEM_STATUS_LABEL: Record<OrderItemStatus, string> = {

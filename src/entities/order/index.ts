@@ -21,6 +21,7 @@ export {
   filterOrdersByTab,
   isPaymentDelayed,
   needsCartReview,
+  unavailableLabel,
   needsCharge,
   ORDER_TABS,
   orderProgress,
