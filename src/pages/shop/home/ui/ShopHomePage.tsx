@@ -16,6 +16,7 @@ import { paths } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { MockBadge } from '@/shared/ui/MockBadge'
 
 /** 쇼핑 첫 화면: 자녀를 고르면 맞는 사이즈가 판매 중인 상품만 보여 준다 */
 export function ShopHomePage() {
@@ -107,6 +108,11 @@ export function ShopHomePage() {
               : search.keyword || search.categoryId
                 ? '검색 결과'
                 : '전체 상품'}
+            <MockBadge
+              endpoints={[
+                childId === null ? 'GET /products' : 'GET /children/:childId/recommended-products',
+              ]}
+            />
           </h2>
           {isBuyer && (children.data?.length ?? 0) > 0 && (
             <ChildPicker

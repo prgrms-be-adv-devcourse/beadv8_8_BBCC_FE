@@ -17,6 +17,7 @@ export function AdminPaymentsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        mockEndpoints={['GET /admin/payments']}
         title="전체 결제 · 환불"
         description="모든 회원의 주문 결제 · 환불 기록을 봐요."
         note="GET /admin/payments는 백엔드에 없어 목이에요. 이 탭에서 각 회원이 받은 결제 내역 응답으로 만들어요."

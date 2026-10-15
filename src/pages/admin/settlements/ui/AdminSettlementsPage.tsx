@@ -18,6 +18,7 @@ export function AdminSettlementsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        mockEndpoints={['GET /admin/settlements', 'POST /admin/settlements/run']}
         title="정산"
         step="⑦"
         description="정산을 실행하고, 판매자별 정산 결과를 봐요. 지갑 적립에 실패한 정산은 재처리해요."

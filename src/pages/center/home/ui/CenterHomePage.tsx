@@ -11,6 +11,7 @@ import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { MockBadge } from '@/shared/ui/MockBadge'
 
 /** 판매자 센터 첫 화면: 오늘 할 일 */
 export function CenterHomePage() {
@@ -25,7 +26,12 @@ export function CenterHomePage() {
     { to: paths.center.orders, label: '발송할 주문', value: summary?.toShip, strong: true },
     { to: paths.center.orders, label: '배송 중', value: summary?.shipping },
     { to: paths.center.orders, label: '배송 완료', value: summary?.delivered },
-    { to: paths.center.products, label: '판매 중 상품', value: onSaleCount },
+    {
+      to: paths.center.products,
+      label: '판매 중 상품',
+      value: onSaleCount,
+      mock: 'GET /seller/products',
+    },
   ]
 
   return (
@@ -69,7 +75,10 @@ export function CenterHomePage() {
         {tiles.map((tile) => (
           <Link key={tile.label} to={tile.to}>
             <Card className="hover:border-primary space-y-1 transition-colors">
-              <p className="text-muted-foreground text-sm">{tile.label}</p>
+              <p className="text-muted-foreground text-sm">
+                {tile.label}
+                {'mock' in tile && tile.mock && <MockBadge endpoints={[tile.mock]} />}
+              </p>
               <p className={tile.strong ? 'text-primary text-3xl font-bold' : 'text-3xl font-bold'}>
                 {tile.value ?? '…'}
               </p>
