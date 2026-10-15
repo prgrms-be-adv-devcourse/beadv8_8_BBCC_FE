@@ -3,6 +3,7 @@ import { useSessionStore } from '@/entities/session'
 import { paths } from '@/shared/config'
 import { Card } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { ResetDemoButton } from '@/features/reset-demo'
 
 const FAILURE_SCENARIOS = [
   [
@@ -41,6 +42,7 @@ export function ConsoleHomePage() {
     <div className="space-y-4">
       <PageHeader
         title="Kidly 시연"
+        actions={<ResetDemoButton />}
         description="우리 아이에게 맞는 사이즈를 알려 주는 키즈 패션 마켓. 화면을 누르면 오른쪽에 호출한 API와 서버에서 이어지는 이벤트가 쌓여요."
       />
       <Card>
