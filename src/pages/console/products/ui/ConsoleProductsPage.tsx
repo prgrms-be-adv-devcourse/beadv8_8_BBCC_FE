@@ -1,14 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
-import {
-  categoryNameOf,
-  ProductCard,
-  listItemMeta,
-  productMeta,
-  useCategoriesQuery,
-  useProductsQuery,
-} from '@/entities/product'
+import { ProductCard, listItemMeta, useProductsQuery } from '@/entities/product'
 import { FitBadge, useRecommendedProductsQuery } from '@/entities/recommendation'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
@@ -20,7 +13,6 @@ export function ConsoleProductsPage() {
   const children = useChildrenQuery()
   const [childId, setChildId] = useState<string | null>(null)
   const all = useProductsQuery()
-  const categories = useCategoriesQuery().data ?? []
   const recommended = useRecommendedProductsQuery(childId)
   const query = childId === null ? all : recommended
 
@@ -69,13 +61,10 @@ export function ConsoleProductsPage() {
                 key={product.id}
                 to={paths.console.product(product.id, childId)}
                 name={product.name}
-                meta={productMeta({
-                  categoryName: categoryNameOf(product.categoryId, categories),
-                  brand: product.brand,
-                })}
+                meta={product.businessName ?? ''}
                 price={product.minPrice}
                 imageUrl={product.imageUrl}
-                badge={<FitBadge size={product.recommendedSize} fit={product.fit} />}
+                badge={<FitBadge size={product.recommendedSize} />}
               />
             ))}
       </div>

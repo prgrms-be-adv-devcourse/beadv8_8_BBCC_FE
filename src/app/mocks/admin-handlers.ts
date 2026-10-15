@@ -21,7 +21,7 @@ export function ordersSeenInLogs(logs: ApiCallLog[]): AdminOrderDto[] {
     if (!('orderId' in body) || !Array.isArray(body.items)) continue
     orders.set(String(body.orderId), {
       orderId: String(body.orderId),
-      memberId: Number(log.actor),
+      memberId: String(log.actor),
       status: String(body.status),
       cancelReason: (body.cancelReason as string | null) ?? null,
       totalAmount: Number(body.totalAmount),

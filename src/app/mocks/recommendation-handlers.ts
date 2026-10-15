@@ -38,20 +38,7 @@ function sizeOptionsOf(detail: ProductDetailDto): SizeOption[] {
 
 const MARGIN_CM = 2
 
-// 기획서 2.1 추천 규칙 · 적합도를 단순하게 옮긴 목 (몸무게로 체형 판정은 생략, 입력된 체형만 사용)
-type Fit = 'ROOMY' | 'PROPER' | 'TIGHT'
-
-function fitOf(height: number, option: SizeOption): Fit {
-  if (height < option.minHeightCm) return 'ROOMY'
-  if (height > option.maxHeightCm) return 'TIGHT'
-  const nearLow = height - option.minHeightCm <= MARGIN_CM
-  const nearHigh = option.maxHeightCm - height <= MARGIN_CM
-  if (nearLow && nearHigh) return 'PROPER'
-  if (nearLow) return 'ROOMY'
-  if (nearHigh) return 'TIGHT'
-  return 'PROPER'
-}
-
+// 기획서 2.1 추천 규칙을 단순하게 옮긴 목 (몸무게로 체형 판정은 생략, 입력된 체형만 사용)
 function recommend(child: ChildProfileDto, options: SizeOption[]) {
   const height = child.heightCm
   const candidates = options
@@ -127,12 +114,10 @@ export const recommendationHandlers: MockHandler[] = [
                 {
                   productId: product.productId,
                   name: product.name,
-                  categoryId: product.categoryId,
-                  brand: product.brand,
-                  minPrice: product.minPrice,
                   thumbnailUrl: product.imageUrls[0] ?? null,
+                  businessName: null,
+                  minPrice: product.minPrice,
                   recommendedSize: option.size,
-                  fit: fitOf(child.heightCm, option),
                 },
               ]
             : []

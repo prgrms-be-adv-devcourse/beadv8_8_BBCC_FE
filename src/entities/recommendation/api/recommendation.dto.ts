@@ -1,4 +1,4 @@
-// 사이즈 추천은 실제 API(BE #262). 자녀 맞춤 목록은 백엔드에 아직 없다(목 응답). 값 이름은 백엔드 recommend 도메인(Fit · SizeNotice)을 따른다
+// 사이즈 추천(BE #262) · 자녀 맞춤 목록(BE #316) 모두 실제 API. 값 이름은 백엔드 recommend 도메인(Fit · SizeNotice)을 따른다
 
 /** GET /products/{productId}/size-recommendation?childId= */
 export type SizeRecommendationDto = {
@@ -20,10 +20,10 @@ export type SizeRecommendationDto = {
 export type RecommendedProductDto = {
   productId: string
   name: string
-  categoryId: string
-  brand: string | null
-  minPrice: number | null
   thumbnailUrl: string | null
-  recommendedSize: string
-  fit: string
+  /** 판매자 상호명. 아직 모르면 null */
+  businessName: string | null
+  minPrice: number | null
+  /** 사이즈 무관 상품이면 null */
+  recommendedSize: string | null
 }

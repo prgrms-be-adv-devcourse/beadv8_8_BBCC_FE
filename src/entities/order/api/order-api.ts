@@ -21,10 +21,9 @@ export const orderApi = {
   confirmItem: (orderId: string, orderItemId: string) =>
     apiClient.post(`/orders/${orderId}/items/${orderItemId}/confirm`),
   /** 관리자 전체 주문 (기획서 8장 보완). 백엔드에 아직 없어 목 응답이다 */
-  adminList: (status: string | null) =>
+  /** 최근 주문부터 (BE는 상태로 거르지 않는다 → 화면에서 거른다) */
+  adminList: () =>
     apiClient
-      .get<Page<AdminOrderDto>>('/admin/orders', {
-        params: { status: status ?? undefined, page: 0, size: 50 },
-      })
+      .get<Page<AdminOrderDto>>('/admin/orders', { params: { page: 0, size: 100 } })
       .then(expectShape(adminOrderPageShape)),
 }

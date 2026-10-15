@@ -55,13 +55,13 @@ describe('상품 · 추천 매퍼: thumbnailUrl → imageUrl', () => {
     const recommended = toRecommendedProduct({
       productId: '1',
       name: '데일리 맨투맨',
-      categoryId: '1',
-      brand: null,
-      minPrice: 25000,
       thumbnailUrl: ' ',
-      recommendedSize: '120',
-      fit: 'GOOD',
+      businessName: ' 테스트상점 ',
+      minPrice: 25000,
+      recommendedSize: null,
     })
     expect(recommended.imageUrl).toBeNull()
+    expect(recommended.businessName).toBe('테스트상점')
+    expect(recommended.recommendedSize).toBeNull()
   })
 })

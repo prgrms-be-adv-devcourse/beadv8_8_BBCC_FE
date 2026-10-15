@@ -70,7 +70,7 @@ export const orderPageShape = pageOf(
 export const adminOrderPageShape = pageOf(
   obj({
     orderId: str,
-    memberId: num,
+    memberId: str,
     status: oneOf(ORDER_STATUS),
     cancelReason: nullable(oneOf(['OUT_OF_STOCK', 'PAYMENT_FAILED', 'PAYMENT_EXPIRED'])),
     totalAmount: num,
