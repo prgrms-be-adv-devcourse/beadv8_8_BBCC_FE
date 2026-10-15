@@ -1,28 +1,17 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
 import { Link, useParams } from 'react-router'
 import {
   CANCEL_REASON_LABEL,
   canConfirmItem,
   deliveryOf,
-  isPaymentDelayed,
   needsCharge,
   OrderDeliveryList,
   OrderItemRow,
   OrderProgressBar,
   orderProgress,
-  paymentPendingMs,
-  useOrderQuery,
 } from '@/entities/order'
-import {
-  checkOrderPayment,
-  findPaymentOfOrder,
-  PaymentCard,
-  paymentKeys,
-  usePaymentsQuery,
-} from '@/entities/payment'
-import { walletKeys } from '@/entities/wallet'
+import { PaymentCard } from '@/entities/payment'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
+import { useOrderTracking } from '@/features/track-order'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { formatDateTime, formatWon } from '@/shared/lib'
@@ -31,27 +20,13 @@ import { StateMessage } from '@/shared/ui/page-header'
 
 export function ShopOrderDetailPage() {
   const { orderId = '' } = useParams()
-  const query = useOrderQuery(orderId)
-  const queryClient = useQueryClient()
-  const status = query.data?.status
-  const awaiting = query.data?.status === 'PENDING_PAYMENT'
-  // 결제 결과가 나온 뒤에만 결제 도메인 기록을 조회한다 (처리 중에는 기록이 없거나 반영 전)
-  const payments = usePaymentsQuery({ enabled: query.isSuccess && !awaiting })
-
-  // 결제 결과가 나오면 예치금 잔액이 바뀌었으므로 다음 조회 때 새로 받는다
-  useEffect(() => {
-    if (status && status !== 'PENDING_PAYMENT') {
-      void queryClient.invalidateQueries({ queryKey: walletKeys.me })
-      void queryClient.invalidateQueries({ queryKey: paymentKeys.list })
-    }
-  }, [status, queryClient])
+  const { query, payments, payment, paymentCheck, delayed } = useOrderTracking(orderId)
 
   if (query.isPending) return <StateMessage>불러오는 중…</StateMessage>
   if (query.isError) return <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>
 
   const order = query.data
   const progress = orderProgress(order)
-  const payment = findPaymentOfOrder(payments.data, order.id)
 
   return (
     <div className="space-y-4">
@@ -70,13 +45,12 @@ export function ShopOrderDetailPage() {
             예치금으로 결제하는 중이에요… 잠시만 기다려 주세요
           </p>
         )}
-        {order.status === 'PENDING_PAYMENT' &&
-          isPaymentDelayed(paymentPendingMs(order.id, query.dataUpdatedAt)) && (
-            <p role="alert" className="text-destructive text-center text-sm">
-              결제가 평소보다 오래 걸리고 있어요. 10분 안에 결제되지 않으면 주문이 자동으로 취소되고
-              예치금은 빠져나가지 않아요.
-            </p>
-          )}
+        {delayed && (
+          <p role="alert" className="text-destructive text-center text-sm">
+            결제가 평소보다 오래 걸리고 있어요. 10분 안에 결제되지 않으면 주문이 자동으로 취소되고
+            예치금은 빠져나가지 않아요.
+          </p>
+        )}
         {order.status === 'CANCELLED' && (
           <div className="space-y-1 text-center text-sm">
             <p>
@@ -112,12 +86,14 @@ export function ShopOrderDetailPage() {
         </div>
       </Card>
 
-      <PaymentCard
-        payment={payment}
-        check={checkOrderPayment(order, payment)}
-        pending={payments.isLoading}
-        error={payments.error}
-      />
+      {paymentCheck && (
+        <PaymentCard
+          payment={payment}
+          check={paymentCheck}
+          pending={payments.isLoading}
+          error={payments.error}
+        />
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="space-y-1 text-sm">

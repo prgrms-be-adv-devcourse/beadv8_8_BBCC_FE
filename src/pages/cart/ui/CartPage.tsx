@@ -1,11 +1,7 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { pickShippingAddress, useAddressesQuery } from '@/entities/address'
-import { orderableLines, sumLineAmount, useCartQuery } from '@/entities/cart'
 import { findChild, useChildrenQuery } from '@/entities/child'
-import { shortageOf, useWalletQuery } from '@/entities/wallet'
 import { CartItemControls } from '@/features/edit-cart-item'
-import { PlaceOrderButton } from '@/features/place-order'
+import { PlaceOrderButton, useCheckout } from '@/features/place-order'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { formatWon } from '@/shared/lib'
@@ -17,16 +13,9 @@ import { PageHeader, StateMessage } from '@/shared/ui/page-header'
 /** 장바구니 + 주문서 (배송지 선택 · 잔액 확인 · 주문하기) */
 export function CartPage() {
   const navigate = useNavigate()
-  const cart = useCartQuery()
-  const addresses = useAddressesQuery()
-  const wallet = useWalletQuery()
+  const { cart, addresses, wallet, lines, orderAmount, address, selectAddress, shortage } =
+    useCheckout()
   const children = useChildrenQuery()
-  const [addressId, setAddressId] = useState<string | null>(null)
-
-  const lines = cart.data ? orderableLines(cart.data) : []
-  const orderAmount = sumLineAmount(lines)
-  const address = pickShippingAddress(addresses.data ?? [], addressId)
-  const shortage = shortageOf(wallet.data?.balance, orderAmount)
 
   return (
     <div className="space-y-4">
@@ -74,7 +63,7 @@ export function CartPage() {
                 배송지를 먼저 등록해 주세요
               </Link>
             ) : (
-              <Select value={address?.id ?? ''} onChange={(e) => setAddressId(e.target.value)}>
+              <Select value={address?.id ?? ''} onChange={(e) => selectAddress(e.target.value)}>
                 {addresses.data?.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.recipientName} · {item.roadAddress} {item.isDefault ? '(기본)' : ''}
