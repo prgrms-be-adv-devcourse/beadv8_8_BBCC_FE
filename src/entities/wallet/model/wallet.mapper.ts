@@ -4,7 +4,7 @@ import type {
   ChargeRequestResultDto,
   ConfirmChargeRequestDto,
   ConfirmChargeResultDto,
-  WalletTransactionDto,
+  WalletLedgerDto,
 } from '../api/wallet.dto'
 import type {
   Charge,
@@ -22,6 +22,7 @@ export function toCharge(dto: ChargeDetailDto): Charge {
     amount: dto.amount,
     status: dto.status as ChargeStatus,
     approvedAt: dto.approvedAt,
+    createdAt: dto.createdAt,
   }
 }
 
@@ -55,13 +56,13 @@ export function toConfirmChargeRequest(search: URLSearchParams): ConfirmChargeRe
   return paymentKey && orderId && amount > 0 ? { paymentKey, orderId, amount } : null
 }
 
-export function toWalletTransaction(dto: WalletTransactionDto): WalletTransaction {
+export function toWalletTransaction(dto: WalletLedgerDto): WalletTransaction {
   return {
-    id: String(dto.transactionId),
+    id: String(dto.ledgerId),
     type: dto.type as WalletTxType,
     amount: dto.amount,
     balanceAfter: dto.balanceAfter,
-    refId: String(dto.refId),
+    refId: dto.refId === null ? null : String(dto.refId),
     createdAt: dto.createdAt,
     deposit: dto.amount > 0,
   }

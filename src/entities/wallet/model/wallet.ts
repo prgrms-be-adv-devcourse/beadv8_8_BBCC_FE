@@ -8,6 +8,8 @@ export type Charge = {
   amount: number
   status: ChargeStatus
   approvedAt: string | null
+  /** 충전 요청 시각 */
+  createdAt: string
 }
 
 /** 토스 결제창에 넘길 값 */
@@ -40,7 +42,8 @@ export const CHARGE_STATUS_LABEL: Record<ChargeStatus, string> = {
 }
 
 /** 예치금 거래 종류 (BE WalletLedgerType) */
-export type WalletTxType = 'CHARGE' | 'CHARGE_CANCEL' | 'PAYMENT' | 'REFUND' | 'SETTLEMENT'
+export type WalletTxType =
+  'CHARGE' | 'CHARGE_CANCEL' | 'CHARGE_CANCEL_REVERT' | 'PAYMENT' | 'REFUND' | 'SETTLEMENT'
 
 /** 예치금 거래 한 줄 (잔액이 바뀔 때마다 쌓이는 원장) */
 export type WalletTransaction = {
@@ -49,8 +52,8 @@ export type WalletTransaction = {
   /** 입금은 양수, 출금은 음수 */
   amount: number
   balanceAfter: number
-  /** 원인 ID (충전 · 결제 · 환불 · 정산) */
-  refId: string
+  /** 원인 ID (충전 · 결제 · 환불 · 정산). 없으면 null */
+  refId: string | null
   createdAt: string
   deposit: boolean
 }
@@ -58,6 +61,7 @@ export type WalletTransaction = {
 export const WALLET_TX_LABEL: Record<WalletTxType, string> = {
   CHARGE: '충전',
   CHARGE_CANCEL: '충전 취소',
+  CHARGE_CANCEL_REVERT: '충전 취소 되돌림',
   PAYMENT: '주문 결제',
   REFUND: '환불',
   SETTLEMENT: '정산 적립',

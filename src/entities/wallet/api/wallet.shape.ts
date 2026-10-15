@@ -8,6 +8,7 @@ export const chargeShape = obj({
   amount: num,
   status: oneOf(['PENDING', 'CONFIRMING', 'DONE', 'CANCELLING', 'CANCELLED', 'FAILED', 'EXPIRED']),
   approvedAt: nullable(str),
+  createdAt: str,
 })
 
 export const chargeRequestShape = obj({ chargeId: num, orderId: str, amount: num, expiresAt: str })
@@ -26,13 +27,20 @@ export const chargeCancelShape = obj({
   balance: nullable(num),
 })
 
-export const walletTransactionPageShape = pageOf(
+export const walletLedgerPageShape = pageOf(
   obj({
-    transactionId: num,
-    type: oneOf(['CHARGE', 'CHARGE_CANCEL', 'PAYMENT', 'REFUND', 'SETTLEMENT']),
+    ledgerId: num,
+    type: oneOf([
+      'CHARGE',
+      'CHARGE_CANCEL',
+      'CHARGE_CANCEL_REVERT',
+      'PAYMENT',
+      'REFUND',
+      'SETTLEMENT',
+    ]),
     amount: num,
     balanceAfter: num,
-    refId: num,
+    refId: nullable(num),
     createdAt: str,
   }),
 )

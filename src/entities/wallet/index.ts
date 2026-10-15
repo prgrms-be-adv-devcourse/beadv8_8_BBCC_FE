@@ -1,6 +1,4 @@
 export { walletApi } from './api/wallet-api'
-/** 목 응답 작성 전용 (app/mocks) */
-export type { ChargeDetailDto, WalletTransactionDto } from './api/wallet.dto'
 export {
   CHARGE_STATUS_LABEL,
   type Charge,

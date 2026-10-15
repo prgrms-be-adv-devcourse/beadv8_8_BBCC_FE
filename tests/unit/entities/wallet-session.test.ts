@@ -37,10 +37,18 @@ describe('토스 복귀 값 → 승인 요청', () => {
 
 describe('예치금 규칙', () => {
   it('충전 완료된 건만 취소할 수 있다', () => {
-    expect(canCancelCharge({ id: '1', amount: 1000, status: 'DONE', approvedAt: null })).toBe(true)
-    expect(canCancelCharge({ id: '1', amount: 1000, status: 'CANCELLED', approvedAt: null })).toBe(
-      false,
-    )
+    expect(
+      canCancelCharge({ id: '1', amount: 1000, status: 'DONE', approvedAt: null, createdAt: '' }),
+    ).toBe(true)
+    expect(
+      canCancelCharge({
+        id: '1',
+        amount: 1000,
+        status: 'CANCELLED',
+        approvedAt: null,
+        createdAt: '',
+      }),
+    ).toBe(false)
   })
   it('잔액이 주문 금액보다 모자란 만큼 (같으면 0, 경계)', () => {
     expect(shortageOf(100_000, 125_000)).toBe(25_000)

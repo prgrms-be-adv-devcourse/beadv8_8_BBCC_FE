@@ -36,7 +36,7 @@ export function ShopWalletPage() {
         title="예치금"
         step="④"
         description="주문은 예치금으로 결제돼요. 토스 테스트 결제로 충전해요."
-        note="충전은 토스 테스트 결제로 하고, 돌아오면 서버가 토스에 승인을 요청해요. 충전 취소는 토스 결제 취소예요. 거래 내역은 백엔드에 없어 목이에요."
+        note="충전은 토스 테스트 결제로 하고, 돌아오면 서버가 토스에 승인을 요청해요. 충전 취소는 토스 결제 취소예요."
       />
       <WalletBalanceCard wallet={wallet.data} pending={wallet.isPending} error={wallet.error} />
       <ChargeForm

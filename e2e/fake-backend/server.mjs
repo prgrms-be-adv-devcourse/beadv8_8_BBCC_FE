@@ -15,6 +15,18 @@ const children = [],
   payments = [],
   charges = []
 const wallets = { 1: 100000, 2: 0, 3: 0 }
+// BE WalletLedger: 잔액이 바뀔 때마다 한 줄 (출금은 음수)
+const ledgers = []
+const ledger = (memberId, type, amount, refId) =>
+  ledgers.push({
+    ledgerId: ledgers.length + 1,
+    memberId,
+    type,
+    amount,
+    balanceAfter: wallets[memberId] ?? 0,
+    refId,
+    createdAt: now(),
+  })
 // 관리자 회원 목록용 (기획서 7.1: 회원 1 보호자 · 2 판매자, 관리자는 목록에서 빠짐)
 const members = {
   1: {
@@ -214,7 +226,9 @@ http
         amount: body.amount,
         status: 'DONE',
         approvedAt: now(),
+        createdAt: now(),
       })
+      ledger(me, 'CHARGE', body.amount, 77)
       return send(res, 200, {
         chargeId: 77,
         status: 'DONE',
@@ -230,6 +244,7 @@ http
       if (!c) return problem(res, 409, 'Conflict', '취소할 수 없는 충전이에요.')
       c.status = 'CANCELLED'
       wallets[me] = (wallets[me] ?? 0) - c.amount
+      ledger(me, 'CHARGE_CANCEL', -c.amount, c.chargeId)
       return send(res, 200, {
         chargeId: c.chargeId,
         status: 'CANCELLED',
@@ -256,7 +271,20 @@ http
         amount: 50000,
         status: 'DONE',
         approvedAt: now(),
+        createdAt: now(),
       })
+    if (r('GET', /^\/wallets\/me\/ledgers$/))
+      return send(
+        res,
+        200,
+        page(
+          ledgers
+            .filter((l) => l.memberId === me)
+            .slice()
+            .reverse()
+            .map(({ memberId: _m, ...l }) => l),
+        ),
+      )
     if (r('GET', /^\/payments$/))
       return send(
         res,
@@ -400,8 +428,10 @@ http
           return
         }
         wallets[me] -= o.totalAmount
+        const paymentId = nid()
+        ledger(me, 'PAYMENT', -o.totalAmount, paymentId)
         payments.push({
-          paymentId: nid(),
+          paymentId,
           memberId: me,
           orderId: o.orderId,
           amount: o.totalAmount,

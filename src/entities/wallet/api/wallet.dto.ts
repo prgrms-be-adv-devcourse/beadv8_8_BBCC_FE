@@ -9,6 +9,8 @@ export type ChargeDetailDto = {
   amount: number
   status: string
   approvedAt: string | null
+  /** 충전 요청 시각 */
+  createdAt: string
 }
 
 /** POST /wallets/me/charges → 토스 결제창에 넘길 값 */
@@ -36,12 +38,12 @@ export type ChargeCancelResultDto = {
   balance: number | null
 }
 
-/** GET /wallets/me/transactions 한 줄 (기획서 8장 보완 · BE 미구현 → 목, 모양은 BE WalletLedger) */
-export type WalletTransactionDto = {
-  transactionId: number
+/** GET /wallets/me/ledgers 한 줄 (BE WalletLedgerResponse). 출금은 amount가 음수 */
+export type WalletLedgerDto = {
+  ledgerId: number
   type: string
   amount: number
   balanceAfter: number
-  refId: number
+  refId: number | null
   createdAt: string
 }
