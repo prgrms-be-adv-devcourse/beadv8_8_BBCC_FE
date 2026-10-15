@@ -19,7 +19,7 @@ const targets: (SettlementTargetDto & { sellerId: string })[] = loadMockState(
     },
   ],
 )
-export const settlements: SettlementDetailDto[] = loadMockState<SettlementDetailDto[]>(
+const settlements: SettlementDetailDto[] = loadMockState<SettlementDetailDto[]>(
   'settlements-v2',
   [],
 )

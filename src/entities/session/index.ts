@@ -9,7 +9,6 @@ export {
 export {
   refreshSession,
   restoreSession,
-  signIn,
   signInAsDemo,
   signInWithKakao,
   signOut,

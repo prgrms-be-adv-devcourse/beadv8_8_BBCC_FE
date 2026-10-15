@@ -1,7 +1,7 @@
 import type { ApiCallLog } from '@/shared/api'
 import { domainOf, flowOf, type DomainId, type FlowStep } from '../config/domain-flow'
 
-export function isSuccess(log: ApiCallLog): boolean {
+function isSuccess(log: ApiCallLog): boolean {
   return log.status !== null && log.status < 400
 }
 

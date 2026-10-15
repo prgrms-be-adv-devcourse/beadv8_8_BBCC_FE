@@ -35,6 +35,7 @@ export const sellerOrderPageShape = pageOf(
   }),
 )
 
+/** POST /seller/orders/{id}/ship · /deliver (BE DeliveryResponse) */
 export const deliveryShape = obj({
   sellerOrderId: str,
   orderId: str,

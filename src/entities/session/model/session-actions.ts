@@ -6,7 +6,7 @@ import { toDevTokenRequest, toMember } from './session.mapper'
 import { useSessionStore } from './session-store'
 
 /** 받은 Access Token으로 로그인 상태를 만든다 (토큰 저장 → 내 정보 조회) */
-export async function signIn(accessToken: string) {
+async function signIn(accessToken: string) {
   const store = useSessionStore.getState()
   store.setAccessToken(accessToken)
   try {

@@ -1,7 +1,7 @@
 import type { Charge } from './wallet'
 
-export const CHARGE_MIN = 1_000
-export const CHARGE_MAX = 1_000_000
+const CHARGE_MIN = 1_000
+const CHARGE_MAX = 1_000_000
 
 export function validateChargeAmount(amount: number): string | null {
   if (!Number.isInteger(amount) || amount < CHARGE_MIN || amount > CHARGE_MAX) {

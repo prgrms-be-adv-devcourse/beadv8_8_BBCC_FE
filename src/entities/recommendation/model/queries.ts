@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { recommendationApi } from '../api/recommendation-api'
 import { toRecommendedProduct, toSizeRecommendation } from './recommendation.mapper'
 
-export const recommendationKeys = {
+const recommendationKeys = {
   size: (productId: string, childId: string) =>
     ['recommendation', 'size', productId, childId] as const,
   products: (childId: string) => ['recommendation', 'products', childId] as const,

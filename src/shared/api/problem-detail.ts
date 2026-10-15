@@ -9,7 +9,7 @@ export type ProblemDetail = {
   instance: string
 }
 
-export function isProblemDetail(value: unknown): value is ProblemDetail {
+function isProblemDetail(value: unknown): value is ProblemDetail {
   return typeof value === 'object' && value !== null && 'status' in value && 'title' in value
 }
 
