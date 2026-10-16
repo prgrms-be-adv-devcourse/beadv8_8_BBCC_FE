@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { Link } from 'react-router'
-import { ChildPicker, useChildrenQuery } from '@/entities/child'
+import { useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router'
+import { ChildPicker, sizeBandOf, useChildrenQuery } from '@/entities/child'
 import {
   ProductCard,
   listItemMeta,
@@ -8,118 +8,107 @@ import {
   useProductsQuery,
   type ProductSearch,
 } from '@/entities/product'
-import { FitBadge, useRecommendedProductsQuery } from '@/entities/recommendation'
+import { useRecommendedProductsQuery } from '@/entities/recommendation'
 import { hasRole, useSessionStore } from '@/entities/session'
+import { QuickHeightForm } from '@/features/edit-child'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { Button } from '@/shared/ui/button'
-import { Input } from '@/shared/ui/input'
-import { StateMessage } from '@/shared/ui/StateMessage'
+import { Badge } from '@/shared/ui/badge'
 import { MockBadge } from '@/shared/ui/MockBadge'
+import { StateMessage } from '@/shared/ui/StateMessage'
+import { CategoryCircles } from './CategoryCircles'
+import { FitPassportCard } from './FitPassportCard'
 import { ProductFilterBar } from './ProductFilterBar'
+import { SizeHero } from './SizeHero'
 
-/** 쇼핑 첫 화면: 자녀를 고르면 맞는 사이즈가 판매 중인 상품만 보여 준다 */
+/**
+ * 쇼핑 첫 화면 (디자인 E안): 자녀 추천 사이즈 · Fit Passport · 카테고리 · 사이즈 재고 상품.
+ * 검색어는 머리말 검색창이 주소(?q=)에 싣는다. 자녀를 고르면 맞는 사이즈가 판매 중인 상품만 보여 준다
+ */
 export function ShopHomePage() {
   const user = useSessionStore((state) => state.user)
   const isBuyer = hasRole(user, 'BUYER')
   const children = useChildrenQuery({ enabled: isBuyer })
-  const [childId, setChildId] = useState<string | null>(null)
-  const [keyword, setKeyword] = useState('')
-  const [search, setSearch] = useState<ProductSearch>({ keyword: '', categoryId: null })
+  const [params] = useSearchParams()
+  const keyword = params.get('q') ?? ''
+  const [filters, setFilters] = useState<Omit<ProductSearch, 'keyword'>>({ categoryId: null })
+  const search: ProductSearch = { ...filters, keyword }
+  const [pickedChildId, setChildId] = useState<string | null>(null)
+  // 검색 중에는 전체 상품에서 찾는다
+  const childId = keyword ? null : pickedChildId
+  const [heroIndex, setHeroIndex] = useState(0)
   const all = useProductsQuery(search)
   const categories = useCategoriesQuery()
   const recommended = useRecommendedProductsQuery(childId)
   const query = childId === null ? all : recommended
-  const child = children.data?.find((item) => item.id === childId)
+  const kids = children.data ?? []
+  const child = kids.find((item) => item.id === childId)
+  const heroChild = kids.length > 0 ? kids[heroIndex % kids.length] : null
+  const listRef = useRef<HTMLElement>(null)
+
+  const shopHeroSize = () => {
+    if (!heroChild) return
+    setChildId(heroChild.id)
+    listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
-    <div className="space-y-8">
-      <section className="from-primary/15 to-growth/30 rounded-2xl bg-gradient-to-r px-5 py-7 md:px-8 md:py-10">
-        <p className="text-primary text-sm font-semibold">브랜드마다 다른 사이즈, 이제 고민 끝</p>
-        <h1 className="mt-2 text-2xl font-extrabold text-balance md:text-3xl">
-          우리 아이에게 맞는 사이즈를 알려 드려요
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          자녀의 키 · 몸무게로 상품마다 추천 사이즈와 적합도를 보여 줘요.
-        </p>
-        {isBuyer && children.data?.length === 0 && (
-          <Link
-            to={paths.shop.children}
-            className="bg-primary text-primary-foreground mt-4 inline-block rounded-lg px-4 py-2 text-sm font-semibold"
-          >
-            자녀 등록하고 맞춤 상품 보기
-          </Link>
-        )}
-        {!user && (
-          <Link
-            to={paths.login}
-            className="bg-primary text-primary-foreground mt-4 inline-block rounded-lg px-4 py-2 text-sm font-semibold"
-          >
-            로그인하기
-          </Link>
-        )}
-      </section>
+    <div className="space-y-12">
+      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+        <SizeHero
+          child={heroChild}
+          loggedIn={!!user}
+          onShopSize={shopHeroSize}
+          onNextChild={kids.length > 1 ? () => setHeroIndex((index) => index + 1) : null}
+        />
+        <FitPassportCard child={heroChild} />
+      </div>
 
-      {childId === null && (
-        <section className="flex flex-wrap items-center gap-2">
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault()
-              setSearch({ ...search, keyword })
-            }}
-          >
-            <Input
-              aria-label="상품 검색"
-              placeholder="상품 이름으로 찾기"
-              className="w-64 bg-white"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-            />
-            <Button type="submit" variant="outline">
-              검색
-            </Button>
-          </form>
-          <Button
-            size="sm"
-            variant={search.categoryId === null ? 'default' : 'outline'}
-            onClick={() => setSearch({ ...search, categoryId: null, attributes: [] })}
-          >
-            전체 카테고리
-          </Button>
-          {categories.data?.map((category) => (
-            <Button
-              key={category.id}
-              size="sm"
-              variant={search.categoryId === category.id ? 'default' : 'outline'}
-              onClick={() => setSearch({ ...search, categoryId: category.id, attributes: [] })}
-            >
-              {category.name}
-            </Button>
-          ))}
-          <div className="basis-full">
-            <ProductFilterBar search={search} onChange={setSearch} />
+      <CategoryCircles
+        categories={categories.data ?? []}
+        selectedId={filters.categoryId}
+        onSelect={(categoryId) => {
+          setChildId(null)
+          setFilters({ ...filters, categoryId, attributes: [] })
+        }}
+      />
+
+      <section ref={listRef} className="scroll-mt-28 space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-primary text-xs font-bold tracking-widest">
+              {child
+                ? `SIZE ${sizeBandOf(child.heightCm).size} IN STOCK`
+                : keyword
+                  ? 'SEARCH'
+                  : 'ALL PRODUCTS'}
+            </p>
+            <h2 className="text-2xl font-extrabold">
+              {child
+                ? `${child.name}에게 맞는 상품`
+                : keyword || filters.categoryId || filters.attributes?.length
+                  ? '검색 결과'
+                  : '전체 상품'}
+              <MockBadge
+                endpoints={[
+                  childId === null
+                    ? 'GET /products'
+                    : 'GET /children/:childId/recommended-products',
+                ]}
+              />
+            </h2>
+            {keyword && (
+              <p className="text-muted-foreground mt-1 text-sm">
+                "{keyword}" 검색 결과 ·{' '}
+                <Link to={paths.shop.home} className="underline">
+                  검색 지우기
+                </Link>
+              </p>
+            )}
           </div>
-        </section>
-      )}
-
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-bold">
-            {child
-              ? `${child.name}에게 맞는 상품`
-              : search.keyword || search.categoryId || search.attributes?.length
-                ? '검색 결과'
-                : '전체 상품'}
-            <MockBadge
-              endpoints={[
-                childId === null ? 'GET /products' : 'GET /children/:childId/recommended-products',
-              ]}
-            />
-          </h2>
-          {isBuyer && (children.data?.length ?? 0) > 0 && (
+          {isBuyer && kids.length > 0 && !keyword && (
             <ChildPicker
-              children={children.data ?? []}
+              children={kids}
               selectedId={childId}
               onSelect={setChildId}
               noneLabel="전체"
@@ -127,6 +116,18 @@ export function ShopHomePage() {
             />
           )}
         </div>
+        {childId === null && (
+          <ProductFilterBar
+            search={search}
+            onChange={(next) =>
+              setFilters({
+                categoryId: next.categoryId,
+                sort: next.sort,
+                attributes: next.attributes,
+              })
+            }
+          />
+        )}
         {query.isPending && childId !== null && <StateMessage>맞는 상품을 찾는 중…</StateMessage>}
         {query.isPending && childId === null && <StateMessage>불러오는 중…</StateMessage>}
         {query.isError && <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>}
@@ -135,7 +136,7 @@ export function ShopHomePage() {
         )}
         {childId === null && all.data?.content.length === 0 && (
           <StateMessage>
-            {search.keyword || search.categoryId
+            {keyword || filters.categoryId
               ? '조건에 맞는 상품이 없어요.'
               : '아직 판매 중인 상품이 없어요.'}
           </StateMessage>
@@ -160,10 +161,44 @@ export function ShopHomePage() {
                   meta={product.businessName ?? ''}
                   price={product.minPrice}
                   imageUrl={product.imageUrl}
-                  badge={<FitBadge size={product.recommendedSize} />}
+                  badge={
+                    <Badge variant="growth">
+                      {product.recommendedSize
+                        ? `${product.recommendedSize} 잘 맞아요`
+                        : '사이즈 무관'}
+                    </Badge>
+                  }
                 />
               ))}
         </div>
+      </section>
+
+      {heroChild && (
+        <section className="bg-growth-soft flex flex-col gap-4 rounded-3xl p-6 md:flex-row md:items-center md:p-8">
+          <div className="flex-1">
+            <h2 className="text-growth-deep text-xl font-extrabold">작아진 옷, 키만 알려주세요</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {heroChild.name}의 키를 새로 기록하면 Fit Passport에 쌓이고, 추천 사이즈와 상품 목록이
+              바로 바뀌어요.
+            </p>
+          </div>
+          <QuickHeightForm child={heroChild} className="md:w-96" />
+        </section>
+      )}
+
+      <section className="bg-primary-deep text-primary-foreground flex flex-col gap-4 rounded-3xl p-6 md:flex-row md:items-center md:p-8">
+        <div className="flex-1">
+          <h2 className="text-xl font-extrabold">키즈 브랜드 입점 모집</h2>
+          <p className="mt-1 text-sm opacity-80">
+            상품 등록부터 정산까지 Kidly 판매자 센터에서 관리하세요.
+          </p>
+        </div>
+        <Link
+          to={paths.center.apply}
+          className="bg-highlight text-highlight-foreground self-start rounded-full px-6 py-2.5 text-sm font-bold md:self-auto"
+        >
+          입점 신청
+        </Link>
       </section>
     </div>
   )
