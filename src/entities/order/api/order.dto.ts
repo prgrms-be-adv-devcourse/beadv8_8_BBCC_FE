@@ -85,3 +85,35 @@ export type AdminOrderDto = {
   orderedAt: string
   itemCount: number
 }
+
+/** GET /orders/{orderId}/timeline 단계 안의 한 건 (BE #352). 발송 · 배송 완료는 판매자별, 구매확정은 주문상품별 */
+export type OrderTimelineDetailDto = {
+  status: string
+  at: string | null
+  // 발송 · 배송 완료
+  sellerOrderId?: string | null
+  sellerId?: string | null
+  sellerName?: string | null
+  // 구매확정
+  orderItemId?: string | null
+  productName?: string | null
+  confirmType?: string | null
+}
+
+/** GET /orders/{orderId}/timeline (BE #352, 참모 결정 10/16). steps는 순서 있는 배열 (개수 가정 없음) */
+export type OrderTimelineDto = {
+  orderId: string
+  status: string
+  currentStep: string | null
+  cancelReason: string | null
+  paymentDueAt: string | null
+  steps: {
+    step: string
+    status: string
+    /** DONE이면 마지막 건이 완료된 시각, 그 밖에는 null */
+    at: string | null
+    /** 시각을 다른 값으로 대신했다 (취소 시각 = updatedAt) */
+    approximate: boolean
+    details: OrderTimelineDetailDto[]
+  }[]
+}

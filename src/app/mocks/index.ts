@@ -1,6 +1,7 @@
 import { registerMockHandlers } from '@/shared/api'
 import { adminHandlers } from './admin-handlers'
 import { memberHandlers } from './member-handlers'
+import { orderHandlers } from './order-handlers'
 import { productHandlers } from './product-handlers'
 
 /**
@@ -9,6 +10,7 @@ import { productHandlers } from './product-handlers'
  */
 export function setupMocks() {
   registerMockHandlers('상품', productHandlers)
+  registerMockHandlers('주문 타임라인', orderHandlers)
   registerMockHandlers('회원 보완 (탈퇴 · 이력 · 판매자 정보)', memberHandlers)
   registerMockHandlers('관리자 전체 조회', adminHandlers)
 }

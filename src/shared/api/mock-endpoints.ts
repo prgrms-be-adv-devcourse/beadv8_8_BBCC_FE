@@ -76,6 +76,14 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     backend: 'BE #316 develop 머지(10/16) → 실제 (FE #117)',
     screens: '쇼핑 홈 · 콘솔 상품(자녀 맞춤)',
   },
+  // 주문
+  {
+    method: 'GET',
+    path: '/orders/:orderId/timeline',
+    source: 'mock',
+    backend: 'BE #352 계약 확정(10/16), 구현 전 → 주문 상세 · 결제로 만든 목 (FE #124)',
+    screens: '주문 상세(처리 과정)',
+  },
   // 정산 (BE SellerSettlementController · AdminSettlementController, FE #119). 관리자 정산서 목록 · 재처리는 BE에 없어 화면에서 뺌
   {
     method: 'GET',

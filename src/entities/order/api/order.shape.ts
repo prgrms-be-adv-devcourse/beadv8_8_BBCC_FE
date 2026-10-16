@@ -1,4 +1,4 @@
-import { arr, nullable, num, obj, oneOf, pageOf, str } from '@/shared/api'
+import { arr, bool, nullable, num, obj, oneOf, pageOf, str } from '@/shared/api'
 
 const ORDER_STATUS = ['PENDING_PAYMENT', 'PAID', 'CANCELLED']
 const DELIVERY_STATUS = ['READY', 'SHIPPING', 'DELIVERED']
@@ -78,3 +78,32 @@ export const adminOrderPageShape = pageOf(
     itemCount: num,
   }),
 )
+
+// GET /orders/{orderId}/timeline (BE #352). 단계 · 취소 사유는 늘어날 수 있어 글자로 받는다
+export const orderTimelineShape = obj({
+  orderId: str,
+  status: oneOf(ORDER_STATUS),
+  currentStep: nullable(str),
+  cancelReason: nullable(str),
+  paymentDueAt: nullable(str),
+  steps: arr(
+    obj({
+      step: str,
+      status: oneOf(['DONE', 'PARTIAL', 'WAITING', 'NOT_APPLICABLE']),
+      at: nullable(str),
+      approximate: bool,
+      details: arr(
+        obj({
+          status: oneOf(['DONE', 'WAITING', 'NOT_APPLICABLE']),
+          at: nullable(str),
+          sellerOrderId: nullable(str),
+          sellerId: nullable(str),
+          sellerName: nullable(str),
+          orderItemId: nullable(str),
+          productName: nullable(str),
+          confirmType: nullable(oneOf(['DIRECT', 'AUTO'])),
+        }),
+      ),
+    }),
+  ),
+})
