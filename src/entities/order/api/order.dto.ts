@@ -100,7 +100,7 @@ export type OrderTimelineDetailDto = {
   confirmType?: string | null
 }
 
-/** GET /orders/{orderId}/timeline (BE #352, 참모 결정 10/16). steps는 순서 있는 배열 (개수 가정 없음) */
+/** GET /orders/{orderId}/timeline (BE #352, 10/16 확정 계약). steps는 순서 있는 배열 (개수 가정 없음) */
 export type OrderTimelineDto = {
   orderId: string
   status: string
