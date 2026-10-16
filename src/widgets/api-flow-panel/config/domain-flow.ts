@@ -17,8 +17,8 @@ export const DOMAINS: { id: DomainId; name: string; external?: boolean }[] = [
 
 /** API 경로 → 처리하는 도메인. 위에서부터 먼저 맞는 것 */
 const PATH_DOMAINS: [RegExp, DomainId][] = [
-  // 브라우저가 서명된 주소로 직접 올리는 S3 (목 업로드 주소 포함)
-  [/^(https:\/\/[^/]+\.amazonaws\.com\/|mock-upload:\/\/)/, 's3'],
+  // 브라우저가 서명된 주소로 직접 올리는 S3
+  [/^https:\/\/[^/]+\.amazonaws\.com\//, 's3'],
   [/^\/products\/[^/]+\/size-recommendation/, 'recommend'],
   [/^\/children\/[^/]+\/recommended-products/, 'recommend'],
   [/^\/((seller|admin)\/)?(products|product-images)|^\/categories/, 'product'],

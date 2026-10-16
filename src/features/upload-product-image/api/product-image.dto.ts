@@ -1,4 +1,4 @@
-// 실제 API(BE #373 진행 중): POST /seller/product-images/upload-urls. 머지 전에는 목으로 응답한다
+// 실제 API(BE SellerProductImageController, #390): POST /seller/product-images/upload-urls
 
 /** 계약 값 (BE ProductImageFormat · ProductImageUpload). 서버가 같은 값으로 400을 낸다 */
 export const PRODUCT_IMAGE_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const

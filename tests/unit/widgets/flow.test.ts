@@ -291,11 +291,10 @@ describe('domainOf: 상품 도메인 경로', () => {
 })
 
 describe('S3: 브라우저가 직접 올리는 외부 저장소', () => {
-  it.each([
-    'https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com/dev/products/7/a.jpg',
-    'mock-upload://dev/products/7/a.jpg',
-  ])('업로드 주소 %s는 S3', (path) => {
-    expect(domainOf(path)).toBe('s3')
+  it('업로드 주소는 S3', () => {
+    expect(
+      domainOf('https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com/dev/products/7/a.jpg'),
+    ).toBe('s3')
   })
   it('업로드 주소 발급 뒤 서버는 서명만 하고 브라우저가 S3에 직접 올린다 (설계 기준)', () => {
     expect(flowOf('POST', '/seller/product-images/upload-urls')).toMatchObject([

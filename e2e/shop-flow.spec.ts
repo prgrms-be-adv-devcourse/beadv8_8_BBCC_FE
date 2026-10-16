@@ -10,7 +10,7 @@ const NICKNAME = {
   관리자: '관리자 · 회원 3',
 } as const
 
-/** 목 업로드가 돌려주는 저장 주소. 확장자는 발급 때 보낸 형식(줄인 결과 JPG)에서 정해진다 */
+/** 가짜 백엔드가 발급하는 저장 주소. 확장자는 발급 때 보낸 형식(줄인 결과 JPG)에서 정해진다 */
 const BUCKET_IMAGE =
   /^https:\/\/team04-kidly-s3\.s3\.ap-northeast-2\.amazonaws\.com\/dev\/products\/\d+\/[\w-]+\.jpg$/
 
@@ -48,9 +48,19 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       warnings.push(message.text())
   })
   await acceptConfirms(page)
-  // 목 업로드의 저장 주소는 S3에 파일이 없다. 외부로 나가지 않게 막으면 화면은 기본 이미지를 보여 준다
+  // S3는 브라우저가 직접 부른다. 외부로 나가지 않게 가로채서, 업로드(PUT)는 받아 주고
+  // 이미지 조회는 막는다 (파일이 없으므로 화면은 기본 이미지를 보여 준다)
   await page.route('https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com/**', (route) =>
-    route.abort(),
+    route.request().method() === 'GET'
+      ? route.abort()
+      : route.fulfill({
+          status: 200,
+          headers: {
+            'access-control-allow-origin': '*',
+            'access-control-allow-methods': 'PUT',
+            'access-control-allow-headers': '*',
+          },
+        }),
   )
 
   await test.step('로그인 전: 상품은 보고, 장바구니는 로그인 뒤 원래 화면으로 (기획서 F01 · F03)', async () => {
@@ -80,12 +90,19 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
     // 단계 번호 · 백엔드 설명은 콘솔에서만 보인다
     await expect(page.getByText('product.changed')).toHaveCount(0)
-    // 긴 변 2400px PNG를 고르면 JPG로 줄여 발급받는다 (발급은 목, 목 업로드 주소라 S3로는 보내지 않음)
+    // 긴 변 2400px PNG를 고르면 JPG로 줄여 발급받고(가짜 백엔드), 받은 주소로 S3에 PUT한다
+    const uploaded = page.waitForRequest(
+      (request) => request.method() === 'PUT' && request.url().includes('X-Amz-Signature='),
+    )
     await page.getByLabel(/상품 사진/).setInputFiles({
       name: 'photo.png',
       mimeType: 'image/png',
       buffer: await pngOf(page, 2400, 1200),
     })
+    // 서명에 맞게 줄인 형식을 그대로 보내고, 토큰은 S3로 보내지 않는다
+    const put = await uploaded
+    expect(put.headers()['content-type']).toBe('image/jpeg')
+    expect(put.headers().authorization).toBeUndefined()
     await expect(page.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
     await expect(page.getByText('대표', { exact: true })).toBeVisible()
     const registering = page.waitForRequest(

@@ -3,7 +3,6 @@ import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { MockBadge } from '@/shared/ui/MockBadge'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUploadProductImage } from '../model/use-upload-product-image'
 
@@ -36,10 +35,7 @@ export function ProductImageUploader({
   return (
     <div className="space-y-2">
       <Label>
-        <span>
-          상품 사진 (JPG · PNG · WEBP, 10장까지 · 첫 사진이 대표)
-          <MockBadge endpoints={['POST /seller/product-images/upload-urls']} />
-        </span>
+        상품 사진 (JPG · PNG · WEBP, 10장까지 · 첫 사진이 대표)
         <Input
           type="file"
           accept="image/jpeg,image/png,image/webp"
