@@ -1,6 +1,7 @@
-// 가짜 백엔드의 상품 도메인: 카테고리 · 입력 항목 · 등록 · 판매 시작 · 상세 (BE in/** 응답 모양만 흉내).
+// 가짜 백엔드의 상품 도메인: 카테고리 · 입력 항목 · 등록 · 판매 시작 · 상세 · 이미지 업로드 주소 발급 (BE in/** 응답 모양만 흉내).
 // 기준 데이터는 BE 테스트 픽스처(의류 > 상의 · 하의, 색상 · 사이즈 옵션, 주요소재 · 혼용률 정보, 실측)를 따른다.
 // 판매를 시작하면 주문 도메인 상품 복사본(replica)과 재고(stock)를 만든다 (product.changed 흉내).
+import { randomUUID } from 'node:crypto'
 
 const attrs = {
   1: {
@@ -487,4 +488,40 @@ export function adjustInventory(sellerId, optionId, body) {
       availableQuantity: stock[option.optionId],
     },
   }
+}
+
+// 상품 이미지 업로드 주소 발급 (BE SellerProductImageController · ProductImageUploadUrlRequest)
+// 저장 주소는 실제 버킷 모양이고, 업로드 주소는 그 뒤에 가짜 서명을 붙인다. S3 PUT은 E2E가 브라우저에서 가로챈다
+const BUCKET_URL = 'https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com'
+const IMAGE_EXTENSIONS = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
+const IMAGE_MAX_BYTES = 10 * 1024 * 1024
+const UPLOAD_URL_TTL_MS = 5 * 60 * 1000
+const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000
+
+function invalidImageUploadDetail(files) {
+  if (!Array.isArray(files)) return 'files: 이미지 목록을 넣어 주세요.'
+  if (files.length < 1 || files.length > 10)
+    return 'files: 이미지는 한 번에 1장 이상 10장 이하로 요청해 주세요.'
+  for (const [index, file] of files.entries()) {
+    if (!IMAGE_EXTENSIONS[file.contentType])
+      return `files[${index}].contentType: jpeg, png, webp 이미지만 올릴 수 있습니다.`
+    if (!(file.contentLength >= 1 && file.contentLength <= IMAGE_MAX_BYTES))
+      return `files[${index}].contentLength: 이미지는 한 장에 1바이트 이상 10MB 이하로 올려 주세요.`
+  }
+  return null
+}
+
+export function issueImageUploadUrls(sellerId, body) {
+  const detail = invalidImageUploadDetail(body?.files)
+  if (detail) return { status: 400, detail }
+  // BE는 서울 시간을 시간대 없이 준다 (LocalDateTime)
+  const expiresAt = new Date(Date.now() + UPLOAD_URL_TTL_MS + SEOUL_OFFSET_MS)
+    .toISOString()
+    .slice(0, 19)
+  const uploads = body.files.map((file) => {
+    const imageUrl = `${BUCKET_URL}/dev/products/${sellerId}/${randomUUID()}.${IMAGE_EXTENSIONS[file.contentType]}`
+    const signature = `X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=300&X-Amz-Signature=fake`
+    return { uploadUrl: `${imageUrl}?${signature}`, imageUrl, expiresAt }
+  })
+  return { status: 200, body: { uploads } }
 }

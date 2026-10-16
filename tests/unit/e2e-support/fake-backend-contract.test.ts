@@ -38,6 +38,7 @@ import { DEMO_ADDRESS } from '@/features/manage-address/config/demo-address'
 import { demoRegisterForm } from '@/features/register-product/config/demo-product'
 import { DEMO_APPLICATION } from '@/features/apply-seller/config/demo-application'
 import { DEMO_CHILD } from '@/features/register-child/config/demo-child'
+import { productImageUploadUrlsShape } from '@/features/upload-product-image'
 import { arr, validate, type Shape } from '@/shared/api'
 
 // E2E가 쓰는 가짜 백엔드의 응답이 FE 계약(응답 모양)과 같은지 확인한다.
@@ -291,6 +292,50 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       { type: 'CHARGE_CANCEL', amount: -50000, refId: 77 },
       { type: 'CHARGE', amount: 50000, refId: 77 },
     ])
+  })
+})
+
+describe('상품 이미지 업로드 주소 발급 (BE SellerProductImageController)', () => {
+  const S3_IMAGE =
+    /^https:\/\/team04-kidly-s3\.s3\.ap-northeast-2\.amazonaws\.com\/dev\/products\/2\/[\w-]+\.(jpg|webp)$/
+  const jpeg = { contentType: 'image/jpeg', contentLength: 1000 }
+
+  it('판매자는 요청 순서대로 업로드 주소 · 저장 주소 · 서울 시간 만료 시각을 받는다', async () => {
+    const issued = await call('POST', '/seller/product-images/upload-urls', 2, {
+      files: [jpeg, { contentType: 'image/webp', contentLength: 2000 }],
+    })
+    expect(issued.status).toBe(200)
+    expectContract(issued.data, productImageUploadUrlsShape)
+    const uploads = issued.data.uploads as {
+      uploadUrl: string
+      imageUrl: string
+      expiresAt: string
+    }[]
+    expect(uploads.map((upload) => upload.imageUrl.split('.').at(-1))).toEqual(['jpg', 'webp'])
+    for (const upload of uploads) {
+      expect(upload.imageUrl).toMatch(S3_IMAGE)
+      expect(upload.uploadUrl.startsWith(`${upload.imageUrl}?`)).toBe(true)
+      expect(upload.expiresAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
+    }
+  })
+
+  it.each([
+    [null, 401],
+    [1, 403],
+  ])('회원 %s는 %i', async (as, status) => {
+    const issued = await call('POST', '/seller/product-images/upload-urls', as, { files: [jpeg] })
+    expect(issued.status).toBe(status)
+  })
+
+  it('형식이 틀리면 400, detail은 "필드: 메시지"', async () => {
+    const issued = await call('POST', '/seller/product-images/upload-urls', 2, {
+      files: [jpeg, { contentType: 'image/svg+xml', contentLength: 1000 }],
+    })
+    expect(issued.status).toBe(400)
+    expect(issued.data).toMatchObject({
+      title: '잘못된 요청입니다',
+      detail: 'files[1].contentType: jpeg, png, webp 이미지만 올릴 수 있습니다.',
+    })
   })
 })
 
