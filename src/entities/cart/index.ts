@@ -14,4 +14,4 @@ export {
   sellerGroupLabel,
   sumLineAmount,
 } from './model/cart.rules'
-export { cartKeys, useCartQuery } from './model/queries'
+export { cartKeys, useCartCount, useCartQuery } from './model/queries'

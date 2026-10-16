@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { useAddressesQuery } from '@/entities/address'
 import { useChildrenQuery } from '@/entities/child'
+import { countOrdersByTab, ORDER_TABS, useOrdersQuery } from '@/entities/order'
 import { PaymentRow, usePaymentsQuery } from '@/entities/payment'
 import { describeUser, hasRole, useSessionStore } from '@/entities/session'
 import { useWalletQuery } from '@/entities/wallet'
@@ -18,6 +19,7 @@ export function ShopMyPage() {
   const addresses = useAddressesQuery()
   const wallet = useWalletQuery()
   const payments = usePaymentsQuery({ enabled: Boolean(user) })
+  const orders = useOrdersQuery()
 
   if (!user) {
     return (
@@ -59,6 +61,31 @@ export function ShopMyPage() {
         <h1 className="text-2xl font-bold">마이페이지</h1>
         <p className="text-muted-foreground text-sm">{describeUser(user)}</p>
       </div>
+      <section aria-label="주문 상태 요약" className="rounded-2xl border bg-white p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-bold">주문 상태</h2>
+          <Link to={paths.shop.orders} className="text-muted-foreground text-xs underline">
+            전체 보기
+          </Link>
+        </div>
+        <div className="grid grid-cols-4 divide-x text-center">
+          {ORDER_TABS.map((tab) => {
+            const counts = countOrdersByTab(orders.data?.content ?? [])
+            return (
+              <Link
+                key={tab.value}
+                to={
+                  tab.value === 'ALL' ? paths.shop.orders : `${paths.shop.orders}?tab=${tab.value}`
+                }
+                className="hover:text-primary space-y-1 px-2"
+              >
+                <p className="text-2xl font-extrabold">{orders.data ? counts[tab.value] : '…'}</p>
+                <p className="text-muted-foreground text-xs">{tab.label}</p>
+              </Link>
+            )
+          })}
+        </div>
+      </section>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         {tiles.map((tile) => (
           <Link key={tile.to} to={tile.to}>

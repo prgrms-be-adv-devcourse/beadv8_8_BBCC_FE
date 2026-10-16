@@ -134,6 +134,8 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
     // 정렬 (BE sort): 낮은 가격순이면 A(25,000원)가 B(30,000원)보다 앞
     await page.getByRole('combobox', { name: '정렬' }).selectOption('PRICE_ASC')
+    // 거르기는 주소에 남는다 (상세에서 뒤로 와도 유지)
+    await expect(page).toHaveURL(/sort=PRICE_ASC/)
     const names = page.getByText(/\(상품 [AB]\)$/)
     await expect(names.first()).toHaveText('데일리 맨투맨 (상품 A)')
     await page.getByRole('combobox', { name: '정렬' }).selectOption('PRICE_DESC')
@@ -173,6 +175,8 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('img', { name: /키 118cm에 110 사이즈/ })).toBeVisible()
     await page.getByRole('button', { name: /네이비 \/ 120/ }).click()
     await page.getByRole('button', { name: '장바구니 담기' }).click()
+    // 머리말 장바구니 개수 배지
+    await expect(page.getByRole('link', { name: /장바구니 \d+개/ })).toBeVisible()
     await page.getByRole('link', { name: '장바구니 보기' }).click()
     await expect(page).toHaveURL(/\/cart$/)
     // 판매자별 묶음 이름은 상호명 (BE sellerName)
@@ -327,7 +331,14 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('예치금').first()).toBeVisible()
     await expect(page.getByText('최근 결제 내역')).toBeVisible()
     await expect(page.getByText('결제 완료').first()).toBeVisible()
-    await page.getByRole('link', { name: '주문 내역' }).first().click()
+    // 주문 상태 요약 → 그 탭으로 바로
+    const summary = page.getByRole('region', { name: '주문 상태 요약' })
+    await summary.getByRole('link', { name: /결제 완료/ }).click()
+    await expect(page).toHaveURL(/\/orders\?tab=PAID$/)
+    await expect(page.getByRole('tab', { name: /결제 완료/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
     await expect(page.getByText(/주문번호/).first()).toBeVisible()
   })
 

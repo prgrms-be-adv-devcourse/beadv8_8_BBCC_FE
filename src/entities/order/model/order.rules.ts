@@ -221,3 +221,8 @@ const PROCESS = [
   { label: '재고 확보', event: 'stock.deducted' },
   { label: '예치금 결제', event: 'payment.completed' },
 ] as const
+
+/** 주소의 ?tab= → 주문 탭 (모르는 값은 전체) */
+export function orderTabOf(value: string | null): OrderTab {
+  return ORDER_TABS.some((tab) => tab.value === value) ? (value as OrderTab) : 'ALL'
+}

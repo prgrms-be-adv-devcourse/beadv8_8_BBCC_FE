@@ -29,6 +29,7 @@ export {
   unavailableLabel,
   needsCharge,
   ORDER_TABS,
+  orderTabOf,
   orderProgress,
   PAYMENT_DELAY_MS,
   paymentPollInterval,

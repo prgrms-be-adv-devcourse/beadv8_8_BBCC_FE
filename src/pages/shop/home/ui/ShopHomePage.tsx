@@ -4,6 +4,9 @@ import { ChildPicker, sizeBandOf, useChildrenQuery } from '@/entities/child'
 import {
   ProductCard,
   listItemMeta,
+  readProductFilters,
+  writeProductFilters,
+  type ProductFilters,
   useCategoriesQuery,
   useProductsQuery,
   type ProductSearch,
@@ -30,11 +33,20 @@ export function ShopHomePage() {
   const user = useSessionStore((state) => state.user)
   const isBuyer = hasRole(user, 'BUYER')
   const children = useChildrenQuery({ enabled: isBuyer })
-  const [params] = useSearchParams()
+  // 검색어(q) · 거르기(cat · sort · attr) · 자녀 맞춤(child)은 주소에 둔다 → 상세에서 뒤로 와도 그대로
+  const [params, setParams] = useSearchParams()
   const keyword = params.get('q') ?? ''
-  const [filters, setFilters] = useState<Omit<ProductSearch, 'keyword'>>({ categoryId: null })
+  const filters = readProductFilters(params)
   const search: ProductSearch = { ...filters, keyword }
-  const [pickedChildId, setChildId] = useState<string | null>(null)
+  const pickedChildId = params.get('child')
+  const update = (filters: ProductFilters, child: string | null) => {
+    const next = writeProductFilters(params, filters)
+    if (child) next.set('child', child)
+    else next.delete('child')
+    setParams(next, { replace: true })
+  }
+  const setFilters = (next: ProductFilters) => update(next, pickedChildId)
+  const setChildId = (child: string | null) => update(filters, child)
   // 검색 중에는 전체 상품에서 찾는다
   const childId = keyword ? null : pickedChildId
   const [heroIndex, setHeroIndex] = useState(0)
@@ -68,10 +80,7 @@ export function ShopHomePage() {
       <CategoryCircles
         categories={categories.data ?? []}
         selectedId={filters.categoryId}
-        onSelect={(categoryId) => {
-          setChildId(null)
-          setFilters({ ...filters, categoryId, attributes: [] })
-        }}
+        onSelect={(categoryId) => update({ ...filters, categoryId, attributes: [] }, null)}
       />
 
       <section ref={listRef} className="scroll-mt-28 space-y-4">
