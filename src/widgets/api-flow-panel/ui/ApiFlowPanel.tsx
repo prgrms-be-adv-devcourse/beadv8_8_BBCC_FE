@@ -13,13 +13,22 @@ import { CallList } from './CallList'
 import { ChangeList } from './ChangeList'
 import { ContractList } from './ContractList'
 import { EventFlowDiagram } from './EventFlowDiagram'
+import { CallDetail } from './CallDetail'
 import { LatestCallCard } from './LatestCallCard'
 import { MockSettings } from './MockSettings'
 
 type Tab = 'calls' | 'changes' | 'contract' | 'mock'
 
-/** 화면에서 일어난 API 호출, 그 뒤 서버에서 이어지는 처리, 서버 상태 변화, 계약 불일치를 보여 준다 */
-export function ApiFlowPanel() {
+type ApiFlowPanelProps = {
+  /** 쇼핑 화면 흐름 서랍 안: 폭 버튼 없이 위아래로만 */
+  inDrawer?: boolean
+}
+
+/**
+ * 화면에서 일어난 API 호출, 그 뒤 서버에서 이어지는 처리, 서버 상태 변화, 계약 불일치를 보여 준다.
+ * 넓게 · 전체 폭에서는 왼쪽에 호출 목록, 오른쪽에 방금 호출(또는 고른 호출 상세) + 서버 이벤트 흐름도.
+ */
+export function ApiFlowPanel({ inDrawer = false }: ApiFlowPanelProps) {
   const logs = useApiFlowLog((state) => state.logs)
   const clear = useApiFlowLog((state) => state.clear)
   const [tab, setTab] = useState<Tab>('calls')
@@ -34,21 +43,47 @@ export function ApiFlowPanel() {
     log.contractIssues.some((issue) => issue.type !== 'extra'),
   ).length
   const failedCount = logs.filter(isFailedCall).length
-  const focusedLogId = useApiFlowLog((state) => state.focusedLogId)
+  const selectedLogId = useApiFlowLog((state) => state.focusedLogId)
   const focusLog = useApiFlowLog((state) => state.focusLog)
-  const { size, setSize } = usePanelSize()
+  const { size, setSize, widenForDetail, restoreAfterDetail } = usePanelSize()
   const [diagramOpen, setDiagramOpen] = useState(false)
   const spotlight = spotlightCall(logs, isKeyCall)
-  // 다른 곳에서 호출로 이동하면 호출 탭으로
-  const [seenFocus, setSeenFocus] = useState(focusedLogId)
-  if (focusedLogId !== seenFocus) {
-    setSeenFocus(focusedLogId)
-    if (focusedLogId !== null) setTab('calls')
+  const selected = logs.find((log) => log.id === selectedLogId) ?? null
+  const split = !inDrawer && size !== 'normal'
+  const diagramShown = diagramOpen || (!inDrawer && size === 'full')
+
+  // 다른 곳(방금 호출 · 자동 시연 실패)에서 호출을 고르면 호출 탭으로, 보통 폭이면 잠깐 넓게
+  const [seenSelected, setSeenSelected] = useState(selectedLogId)
+  if (selectedLogId !== seenSelected) {
+    setSeenSelected(selectedLogId)
+    if (selectedLogId !== null) setTab('calls')
   }
   useEffect(() => {
-    // 새 호출이 오면 강조를 푼다 (방금 호출 카드가 따라감)
-    if (focusedLogId !== null && logs.at(-1) && logs.at(-1)!.id > focusedLogId + 20) focusLog(null)
-  }, [logs, focusedLogId, focusLog])
+    if (selectedLogId !== null && !inDrawer) widenForDetail()
+  }, [selectedLogId, inDrawer, widenForDetail])
+
+  const closeDetail = () => {
+    focusLog(null)
+    if (!inDrawer) restoreAfterDetail()
+  }
+  const toggleSelect = (logId: number) => {
+    if (logId === selectedLogId) closeDetail()
+    else focusLog(logId)
+  }
+
+  // Esc: 상세 닫기 (입력 칸에서는 무시)
+  useEffect(() => {
+    if (selectedLogId === null) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      const target = event.target as HTMLElement | null
+      if (target?.closest('input, textarea, select, [role="dialog"]')) return
+      focusLog(null)
+      if (!inDrawer) restoreAfterDetail()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selectedLogId, inDrawer, focusLog, restoreAfterDetail])
 
   const exportReport = () => {
     const report = buildReport(logs, changes)
@@ -58,6 +93,78 @@ export function ApiFlowPanel() {
       report,
     )
   }
+
+  const side = (
+    <>
+      {selected ? (
+        <CallDetail log={selected} onClose={closeDetail} />
+      ) : (
+        spotlight && <LatestCallCard log={spotlight} onOpen={() => focusLog(spotlight.id)} />
+      )}
+      <button
+        type="button"
+        aria-expanded={diagramShown}
+        onClick={() => setDiagramOpen((value) => !value)}
+        className="text-muted-foreground hover:text-foreground text-xs"
+      >
+        {diagramShown ? '▾' : '▸'} 서버 이벤트 흐름도
+      </button>
+      {diagramShown && (
+        <div className={cn(!split && 'max-h-[45vh] overflow-y-auto')}>
+          <EventFlowDiagram timeline={timeline} />
+        </div>
+      )}
+    </>
+  )
+
+  const tabs = (
+    <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5 text-xs">
+      <TabButton active={tab === 'calls'} onClick={() => setTab('calls')}>
+        호출 {presentation ? `${visibleLogs.length}/${logs.length}` : logs.length}
+        {failedCount > 0 && <span className="text-destructive"> · 실패 {failedCount}</span>}
+      </TabButton>
+      <TabButton active={tab === 'changes'} onClick={() => setTab('changes')}>
+        상태 변화 {changes.filter((change) => change.from !== null).length}
+      </TabButton>
+      <TabButton active={tab === 'contract'} onClick={() => setTab('contract')}>
+        <span className={cn(contractErrorCount > 0 && 'text-destructive')}>
+          계약 {contractErrorCount}
+          {contractLogs.length > contractErrorCount &&
+            ` (+추가 ${contractLogs.length - contractErrorCount})`}
+        </span>
+      </TabButton>
+      <TabButton active={tab === 'mock'} onClick={() => setTab('mock')}>
+        목 설정
+      </TabButton>
+      <div className="ml-auto flex gap-1">
+        <Button
+          size="xs"
+          variant={presentation ? 'default' : 'ghost'}
+          aria-pressed={presentation}
+          onClick={togglePresentation}
+        >
+          발표 모드
+        </Button>
+        <Button size="xs" variant="ghost" onClick={exportReport} disabled={logs.length === 0}>
+          기록 내보내기
+        </Button>
+        <Button size="xs" variant="ghost" onClick={clear}>
+          지우기
+        </Button>
+      </div>
+    </div>
+  )
+
+  const content = (
+    <div className="min-h-0 flex-1 overflow-y-auto p-2">
+      {tab === 'calls' && (
+        <CallList logs={visibleLogs} selectedLogId={selectedLogId} onSelect={toggleSelect} />
+      )}
+      {tab === 'changes' && <ChangeList changes={changes} />}
+      {tab === 'contract' && <ContractList logs={contractLogs} />}
+      {tab === 'mock' && <MockSettings />}
+    </div>
+  )
 
   return (
     <aside
@@ -69,95 +176,45 @@ export function ApiFlowPanel() {
     >
       <div className="flex items-center gap-1 border-b px-2 py-1.5 text-xs">
         <span className="font-semibold">API 흐름</span>
-        <div role="group" aria-label="패널 폭" className="ml-auto flex gap-0.5">
-          {SIZES.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              aria-pressed={size === item.value}
-              title={item.title}
-              onClick={() => setSize(item.value)}
-              className={cn(
-                'rounded px-2 py-0.5',
-                size === item.value ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="shrink-0 space-y-2 border-b p-2">
-        {spotlight && (
-          <LatestCallCard
-            log={spotlight}
-            onOpen={() => {
-              focusLog(spotlight.id)
-              setTab('calls')
-            }}
-          />
-        )}
-        <button
-          type="button"
-          aria-expanded={diagramOpen || size === 'full'}
-          onClick={() => setDiagramOpen((value) => !value)}
-          className="text-muted-foreground hover:text-foreground text-xs"
-        >
-          {diagramOpen || size === 'full' ? '▾' : '▸'} 서버 이벤트 흐름도
-        </button>
-        {(diagramOpen || size === 'full') && (
-          // 전체 폭에서도 그림이 호출 목록을 밀어내지 않게 높이 · 폭을 묶는다
-          <div
-            className={cn(
-              'overflow-y-auto',
-              size === 'full' ? 'mx-auto max-h-[32vh] w-full max-w-3xl' : 'max-h-[45vh]',
-            )}
-          >
-            <EventFlowDiagram timeline={timeline} />
+        {!inDrawer && (
+          <div role="group" aria-label="패널 폭" className="ml-auto flex gap-0.5">
+            {SIZES.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                aria-pressed={size === item.value}
+                title={item.title}
+                onClick={() => setSize(item.value)}
+                className={cn(
+                  'rounded px-2 py-0.5',
+                  size === item.value ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5 text-xs">
-        <TabButton active={tab === 'calls'} onClick={() => setTab('calls')}>
-          호출 {presentation ? `${visibleLogs.length}/${logs.length}` : logs.length}
-          {failedCount > 0 && <span className="text-destructive"> · 실패 {failedCount}</span>}
-        </TabButton>
-        <TabButton active={tab === 'changes'} onClick={() => setTab('changes')}>
-          상태 변화 {changes.filter((change) => change.from !== null).length}
-        </TabButton>
-        <TabButton active={tab === 'contract'} onClick={() => setTab('contract')}>
-          <span className={cn(contractErrorCount > 0 && 'text-destructive')}>
-            계약 {contractErrorCount}
-            {contractLogs.length > contractErrorCount &&
-              ` (+추가 ${contractLogs.length - contractErrorCount})`}
-          </span>
-        </TabButton>
-        <TabButton active={tab === 'mock'} onClick={() => setTab('mock')}>
-          목 설정
-        </TabButton>
-        <div className="ml-auto flex gap-1">
-          <Button
-            size="xs"
-            variant={presentation ? 'default' : 'ghost'}
-            aria-pressed={presentation}
-            onClick={togglePresentation}
+      {split ? (
+        <div className="flex min-h-0 flex-1">
+          <div
+            role="region"
+            aria-label="호출 목록"
+            className="flex min-h-0 basis-[52%] flex-col border-r"
           >
-            발표 모드
-          </Button>
-          <Button size="xs" variant="ghost" onClick={exportReport} disabled={logs.length === 0}>
-            기록 내보내기
-          </Button>
-          <Button size="xs" variant="ghost" onClick={clear}>
-            지우기
-          </Button>
+            {tabs}
+            {content}
+          </div>
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2">{side}</div>
         </div>
-      </div>
-      <div className="flex-1 overflow-y-auto p-2">
-        {tab === 'calls' && <CallList logs={visibleLogs} focusedLogId={focusedLogId} />}
-        {tab === 'changes' && <ChangeList changes={changes} />}
-        {tab === 'contract' && <ContractList logs={contractLogs} />}
-        {tab === 'mock' && <MockSettings />}
-      </div>
+      ) : (
+        <>
+          <div className="max-h-[60%] shrink-0 space-y-2 overflow-y-auto border-b p-2">{side}</div>
+          {tabs}
+          {content}
+        </>
+      )}
     </aside>
   )
 }

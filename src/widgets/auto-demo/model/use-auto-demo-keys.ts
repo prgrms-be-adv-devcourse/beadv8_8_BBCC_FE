@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useApiFlowLog } from '@/shared/api'
 import { useAutoDemo } from './auto-demo-store'
 import { nextAutoDemo, stopAutoDemo, togglePauseAutoDemo } from './run-auto-demo'
 
@@ -26,6 +27,8 @@ export function useAutoDemoKeys() {
         event.preventDefault()
         nextAutoDemo()
       } else if (event.key === 'Escape') {
+        // 흐름 패널에 호출 상세가 열려 있으면 Esc는 상세 닫기 (패널이 처리)
+        if (useApiFlowLog.getState().focusedLogId !== null) return
         stopAutoDemo()
       }
     }

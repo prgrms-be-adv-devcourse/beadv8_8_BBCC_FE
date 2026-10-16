@@ -29,7 +29,9 @@ test('자동 시연: 버튼 하나로 정상 흐름 ①~⑦', async ({ page }) =
   await expect(status).toContainText('자동 시연 끝 · ①~⑦ 통과', { timeout: 90_000 })
   // 마지막 화면은 판매자 정산서, 흐름 패널에 자동 시연 행동이 남는다
   await expect(page).toHaveURL(/\/console\/seller\/settlements$/)
-  await expect(page.getByText(/자동 시연 · 정산 실행/).first()).toBeVisible()
+  await expect(page.getByRole('region', { name: '단계 ⑦ 호출' }).first()).toContainText(
+    '/admin/settlements/run',
+  )
   await expect(bar.getByRole('link', { name: '흐름 확인 보기' })).toBeVisible()
   expect(errors).toEqual([])
 })

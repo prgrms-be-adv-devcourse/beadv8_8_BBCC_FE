@@ -48,7 +48,7 @@ export function DemoBarWithFlowDrawer() {
             닫기 ✕
           </button>
           <div className="min-h-0 flex-1">
-            <ApiFlowPanel />
+            <ApiFlowPanel inDrawer />
           </div>
         </div>
       )}
