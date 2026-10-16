@@ -33,3 +33,18 @@ export function summarizeGrowth(records: GrowthRecord[]): GrowthSummary {
     latest,
   }
 }
+
+/** 만 나이 (생일이 지났는지까지 본다) */
+export function ageOf(birthDate: string, today: Date = new Date()): number {
+  const [y, m, d] = birthDate.split('-').map(Number)
+  let age = today.getFullYear() - y
+  if (today.getMonth() + 1 < m || (today.getMonth() + 1 === m && today.getDate() < d)) age -= 1
+  return Math.max(0, age)
+}
+
+/** 첫 기록 → 마지막 기록 사이 개월 수 (반올림, 최소 1). 기록이 2건 미만이면 null */
+export function growthMonths(records: { recordedAt: string }[]): number | null {
+  if (records.length < 2) return null
+  const times = records.map((record) => Date.parse(record.recordedAt)).sort((a, b) => a - b)
+  return Math.max(1, Math.round((times.at(-1)! - times[0]) / (30.44 * 86_400_000)))
+}

@@ -3,6 +3,7 @@ export type { ChildProfileDto, GrowthRecordDto } from './api/child.dto'
 export { childApi } from './api/child-api'
 export {
   BODY_TYPE_LABEL,
+  GENDER_LABEL,
   type BodyType,
   type Child,
   type ChildForm,
@@ -12,7 +13,13 @@ export {
   type PreferredFit,
 } from './model/child'
 export { toChildForm, toChildRequest, toGrowthRecord } from './model/child.mapper'
-export { findChild, summarizeGrowth, validateChildForm } from './model/child.rules'
+export {
+  ageOf,
+  findChild,
+  growthMonths,
+  summarizeGrowth,
+  validateChildForm,
+} from './model/child.rules'
 export { childKeys, useChildQuery, useChildrenQuery, useGrowthRecordsQuery } from './model/queries'
 export { ChildCard } from './ui/ChildCard'
 export { ChildFormFields } from './ui/ChildFormFields'

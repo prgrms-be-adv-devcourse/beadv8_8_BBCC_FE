@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { formatWon } from '@/shared/lib'
-import { Card } from '@/shared/ui/card'
 import { ProductImage } from './ProductImage'
 
 type ProductCardProps = {
@@ -18,16 +17,18 @@ type ProductCardProps = {
 
 export function ProductCard({ to, name, meta, price, imageUrl, badge }: ProductCardProps) {
   return (
-    <Link to={to}>
-      <Card className="hover:border-primary space-y-2 transition-colors">
-        <ProductImage src={imageUrl} alt={name} className="aspect-[4/3] rounded-lg" />
-        <p className="font-medium">{name}</p>
-        <p className="text-muted-foreground text-xs">{meta}</p>
-        <div className="flex items-center justify-between">
-          <span className="font-semibold">{price === null ? '—' : formatWon(price)}</span>
-          {badge}
+    <Link to={to} className="group block">
+      <article className="group-hover:border-primary/40 h-full space-y-2 rounded-2xl border bg-white p-2.5 transition-colors">
+        <ProductImage src={imageUrl} alt={name} className="aspect-square rounded-xl" />
+        <div className="space-y-1 px-1 pb-1">
+          {meta && <p className="text-muted-foreground text-xs">{meta}</p>}
+          <p className="line-clamp-2 text-sm font-medium">{name}</p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-extrabold">{price === null ? '—' : formatWon(price)}</span>
+            {badge}
+          </div>
         </div>
-      </Card>
+      </article>
     </Link>
   )
 }

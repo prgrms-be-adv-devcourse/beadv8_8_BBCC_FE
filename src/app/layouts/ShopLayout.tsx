@@ -1,5 +1,6 @@
-import { Outlet } from 'react-router'
-import { env } from '@/shared/config'
+import { Link, Outlet } from 'react-router'
+import { ThemeLab } from '@/features/theme-lab'
+import { env, paths } from '@/shared/config'
 import { ShopHeader } from '@/widgets/shop-header'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { TopProgressBar } from './TopProgressBar'
@@ -9,7 +10,7 @@ import { ShopLoginRedirect } from './ShopLoginRedirect'
 /** 쇼핑(보호자): 일반 쇼핑몰 화면. API 흐름은 시연 막대의 버튼으로 연다 */
 export function ShopLayout() {
   return (
-    <div className="bg-muted/30 flex min-h-svh flex-col">
+    <div className="bg-background flex min-h-svh flex-col">
       <DemoBarWithFlowDrawer />
       <TopProgressBar />
       <ShopHeader />
@@ -20,9 +21,17 @@ export function ShopLayout() {
           </ShopLoginRedirect>
         </SessionGate>
       </main>
-      <footer className="text-muted-foreground border-t bg-white py-6 text-center text-xs">
-        Kidly · 팀 블루블랙치킨고양이{env.demoRoleSwitch && ' · 세미 프로젝트 시연용'}
+      <footer className="text-muted-foreground border-t py-6 text-xs">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 md:px-6">
+          <span>
+            Kidly · 팀 블루블랙치킨고양이{env.demoRoleSwitch && ' · 세미 프로젝트 시연용'}
+          </span>
+          <Link to={paths.center.apply} className="underline">
+            판매자 입점
+          </Link>
+        </div>
       </footer>
+      <ThemeLab />
     </div>
   )
 }

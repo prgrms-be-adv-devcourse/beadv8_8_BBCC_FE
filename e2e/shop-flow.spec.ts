@@ -52,7 +52,10 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     // 단계 번호 · 백엔드 설명은 콘솔에서만 보인다
     await expect(page.getByText('product.changed')).toHaveCount(0)
     await page.getByRole('button', { name: '등록하기' }).click()
-    await page.getByRole('button', { name: '판매 시작' }).first().click()
+    // 등록 결과 줄의 판매 시작 (내 상품 목록이 먼저 다시 불려 같은 버튼이 목록에도 생긴다)
+    const registered = page.getByText(/상품 #\d+를 등록했어요/).locator('..')
+    await registered.getByRole('button', { name: '판매 시작' }).click()
+    await expect(registered.getByText('판매를 시작했어요.')).toBeVisible()
     await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
   })
 
@@ -156,6 +159,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       .click()
     await expect(page.getByText(/테스트에게 맞는 상품/)).toBeVisible()
     await page.getByText('데일리 맨투맨 (상품 A)').first().click()
+    await expect(page).toHaveURL(/\/products\/\d+\?childId=/)
     await expect(page.getByText('추천 사이즈')).toBeVisible()
     // 착용 미리보기: 추천 사이즈로 시작, 사이즈를 바꾸면 그림 · 문구가 바뀐다
     await expect(
