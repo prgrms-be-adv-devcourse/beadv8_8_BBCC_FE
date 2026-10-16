@@ -25,7 +25,7 @@ export function useUploadProductImage({ imageUrls, onChange }: UseUploadProductI
   }, [])
 
   const upload = useMutation({
-    mutationFn: (files: File[]) => runWithAction('상품 이미지 업로드', () => uploadImages(files)),
+    mutationFn: (files: File[]) => runWithAction('이미지 업로드', () => uploadImages(files)),
     onSuccess: (uploaded) => {
       const added = uploaded.map(({ imageUrl, blob }) => {
         const previewUrl = URL.createObjectURL(blob)
