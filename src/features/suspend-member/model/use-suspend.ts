@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminMemberApi, memberKeys } from '@/entities/member'
 import { sellerApi } from '@/entities/seller'
+import { toast } from '@/shared/lib'
 import { runWithAction } from '@/shared/api'
 
 /** 회원 이용 정지 (로그인 · 재발급이 막힌다) */
@@ -9,7 +10,10 @@ export function useSuspendMember(memberId: string) {
   return useMutation({
     mutationFn: (reason: string) =>
       runWithAction('회원 이용 정지', () => adminMemberApi.suspend(memberId, { reason })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.all }),
+    onSuccess: () => {
+      toast('회원 이용을 정지했어요')
+      return queryClient.invalidateQueries({ queryKey: memberKeys.all })
+    },
   })
 }
 
@@ -19,6 +23,9 @@ export function useSuspendSeller(sellerId: string) {
   return useMutation({
     mutationFn: (reason: string) =>
       runWithAction('판매자 자격 정지', () => sellerApi.suspend(sellerId, { reason })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.all }),
+    onSuccess: () => {
+      toast('판매자 자격을 정지했어요')
+      return queryClient.invalidateQueries({ queryKey: memberKeys.all })
+    },
   })
 }

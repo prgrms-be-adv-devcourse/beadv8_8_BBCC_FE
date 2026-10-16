@@ -1,3 +1,4 @@
+import { confirmAction } from '@/shared/lib'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -17,8 +18,15 @@ export function DeleteChildButton({ childId, childName, onDeleted }: DeleteChild
         variant="destructive"
         size="sm"
         disabled={remove.isPending}
-        onClick={() => {
-          if (window.confirm(`${childName} 프로필을 삭제할까요? 지난 주문의 자녀 정보는 남아요.`))
+        onClick={async () => {
+          if (
+            await confirmAction({
+              title: `${childName} 프로필을 삭제할까요?`,
+              description: '지난 주문의 자녀 정보는 남아요.',
+              confirmLabel: '삭제',
+              tone: 'danger',
+            })
+          )
             remove.mutate()
         }}
       >

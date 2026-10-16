@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { acceptConfirms } from './support/confirm'
 
 // 시연 콘솔(/console)에서 정상 흐름 ①~⑦을 시연 순서대로 따라가며, 화면 결과와 흐름 확인(/verify) 판정까지 확인한다.
 // 가짜 백엔드(e2e/fake-backend) + FE 목(판매자 상품 목록 · 수정 등 BE에 없는 것)으로 돈다.
@@ -17,7 +18,7 @@ async function switchRole(page: Page, role: keyof typeof NICKNAME) {
 test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
   const consoleErrors: string[] = []
   page.on('pageerror', (error) => consoleErrors.push(error.message))
-  page.on('dialog', (dialog) => dialog.accept())
+  await acceptConfirms(page)
 
   await test.step('시작: 보호자로 전환', async () => {
     await page.goto('/console')

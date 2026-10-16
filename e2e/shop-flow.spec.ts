@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { acceptConfirms } from './support/confirm'
 
 // 사용자 화면(쇼핑 · 판매자 센터 · 관리자)으로 같은 흐름을 따라간다.
 // 시연 콘솔 테스트와 가짜 백엔드를 같이 쓰므로, 앞선 테스트가 남긴 데이터가 있어도 통과하게 쓴다.
@@ -22,7 +23,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     if (message.type() === 'warning' && message.text().includes('HydrateFallback'))
       warnings.push(message.text())
   })
-  page.on('dialog', (dialog) => dialog.accept())
+  await acceptConfirms(page)
 
   await test.step('로그인 전: 상품은 보고, 장바구니는 로그인 뒤 원래 화면으로 (기획서 F01 · F03)', async () => {
     await page.goto('/products/1')

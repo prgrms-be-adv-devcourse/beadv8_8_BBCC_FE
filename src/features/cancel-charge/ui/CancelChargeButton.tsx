@@ -1,6 +1,6 @@
 import { isChargeCancelling, type Charge } from '@/entities/wallet'
 import { getErrorMessage } from '@/shared/api'
-import { formatWon } from '@/shared/lib'
+import { formatWon, confirmAction } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useCancelCharge } from '../model/use-cancel-charge'
@@ -25,11 +25,14 @@ export function CancelChargeButton({ charge }: CancelChargeButtonProps) {
         size="sm"
         variant="outline"
         disabled={cancel.isPending}
-        onClick={() => {
+        onClick={async () => {
           if (
-            window.confirm(
-              `${formatWon(charge.amount)} 충전을 취소할까요? 토스 결제가 취소되고 잔액에서 빠져요.`,
-            )
+            await confirmAction({
+              title: `${formatWon(charge.amount)} 충전을 취소할까요?`,
+              description: '토스 결제가 취소되고 잔액에서 빠져요.',
+              confirmLabel: '충전 취소',
+              tone: 'danger',
+            })
           ) {
             cancel.mutate()
           }

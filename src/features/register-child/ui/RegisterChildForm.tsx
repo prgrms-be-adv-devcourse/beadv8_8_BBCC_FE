@@ -35,7 +35,6 @@ export function RegisterChildForm() {
               {register.isError && (
                 <StateMessage tone="error">{getErrorMessage(register.error)}</StateMessage>
               )}
-              {register.isSuccess && <StateMessage>등록했어요.</StateMessage>}
             </>
           }
         />

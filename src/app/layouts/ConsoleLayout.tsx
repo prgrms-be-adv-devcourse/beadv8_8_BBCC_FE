@@ -6,6 +6,7 @@ import { DemoBar } from '@/widgets/demo-bar'
 import { TopProgressBar } from './TopProgressBar'
 import { DemoGuide, DemoStepBar } from '@/widgets/demo-step-bar'
 import { SessionGate } from './SessionGate'
+import { Overlays } from './Overlays'
 
 /** 시연 콘솔: 왼쪽은 단계별 화면, 오른쪽은 API 호출 흐름 (항상 펼침) */
 export function ConsoleLayout() {
@@ -34,6 +35,7 @@ export function ConsoleLayout() {
         </div>
         <ApiFlowPanel />
       </div>
+      <Overlays />
     </div>
   )
 }

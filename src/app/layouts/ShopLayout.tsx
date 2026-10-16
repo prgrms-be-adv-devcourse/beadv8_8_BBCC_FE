@@ -6,6 +6,7 @@ import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { TopProgressBar } from './TopProgressBar'
 import { SessionGate } from './SessionGate'
 import { ShopLoginRedirect } from './ShopLoginRedirect'
+import { Overlays } from './Overlays'
 
 /** 쇼핑(보호자): 일반 쇼핑몰 화면. API 흐름은 시연 막대의 버튼으로 연다 */
 export function ShopLayout() {
@@ -32,6 +33,7 @@ export function ShopLayout() {
         </div>
       </footer>
       <ThemeLab />
+      <Overlays />
     </div>
   )
 }

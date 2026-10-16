@@ -7,6 +7,7 @@ import { SideNav, type SideNavItem } from '@/shared/ui/SideNav'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { TopProgressBar } from './TopProgressBar'
 import { SessionGate } from './SessionGate'
+import { Overlays } from './Overlays'
 
 type WorkspaceLayoutProps = {
   title: string
@@ -73,6 +74,7 @@ export function WorkspaceLayout({
           </div>
         </main>
       </div>
+      <Overlays />
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { confirmAction } from '@/shared/lib'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -16,8 +17,14 @@ export function ConfirmPurchaseButton({ orderId, orderItemId }: ConfirmPurchaseB
       <Button
         size="sm"
         disabled={confirm.isPending}
-        onClick={() => {
-          if (window.confirm('구매확정하면 취소 · 환불할 수 없어요. 확정할까요?'))
+        onClick={async () => {
+          if (
+            await confirmAction({
+              title: '구매확정할까요?',
+              description: '구매확정하면 취소 · 환불할 수 없어요.',
+              confirmLabel: '구매확정',
+            })
+          )
             confirm.mutate(orderItemId)
         }}
       >

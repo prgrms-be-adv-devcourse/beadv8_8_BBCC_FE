@@ -6,6 +6,7 @@ import { FitBadge, useRecommendedProductsQuery } from '@/entities/recommendation
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { CardGridSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 /** 전체 상품 또는 자녀 맞춤 목록 (맞는 사이즈가 판매 중인 상품만) */
@@ -39,7 +40,7 @@ export function ConsoleProductsPage() {
         </Link>
       )}
 
-      {query.isPending && <StateMessage>불러오는 중…</StateMessage>}
+      {query.isPending && <CardGridSkeleton count={4} />}
       {query.isError && <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>}
       {childId !== null && recommended.data?.content.length === 0 && (
         <StateMessage>맞는 사이즈가 있는 상품이 없어요.</StateMessage>

@@ -15,6 +15,7 @@ import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { Badge } from '@/shared/ui/badge'
 import { MockBadge } from '@/shared/ui/MockBadge'
+import { CardGridSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { CategoryCircles } from './CategoryCircles'
 import { FitPassportCard } from './FitPassportCard'
@@ -128,8 +129,7 @@ export function ShopHomePage() {
             }
           />
         )}
-        {query.isPending && childId !== null && <StateMessage>맞는 상품을 찾는 중…</StateMessage>}
-        {query.isPending && childId === null && <StateMessage>불러오는 중…</StateMessage>}
+        {query.isPending && <CardGridSkeleton />}
         {query.isError && <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>}
         {childId !== null && recommended.data?.content.length === 0 && (
           <StateMessage>맞는 사이즈가 판매 중인 상품이 없어요.</StateMessage>

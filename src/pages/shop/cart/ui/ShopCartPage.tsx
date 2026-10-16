@@ -10,6 +10,7 @@ import { formatWon, optionLabel } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Select } from '@/shared/ui/input'
+import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 /** 장바구니 + 주문서: 주문할 상품 선택 → 배송지 · 예치금 잔액 확인 → 주문하기 (기획서 F05 · F06) */
@@ -40,7 +41,7 @@ export function ShopCartPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">장바구니</h1>
-      {cart.isPending && <StateMessage>불러오는 중…</StateMessage>}
+      {cart.isPending && <ListSkeleton />}
       {cart.isError && <StateMessage tone="error">{getErrorMessage(cart.error)}</StateMessage>}
       {cart.data?.lines.length === 0 && (
         <Card className="py-10 text-center">

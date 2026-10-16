@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
+import { acceptConfirms } from './support/confirm'
 
 // 시연 초기화: 탭에 쌓인 시연 기록(목 저장소 · 흐름 기록)을 지우고 콘솔 홈을 새로 불러온다. 시연 역할 로그인은 남는다
 
 test('시연 초기화: 탭 시연 기록을 지우고 로그인은 유지', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
-  page.on('dialog', (dialog) => dialog.accept())
+  await acceptConfirms(page)
 
   await page.goto('/console')
   await page.getByRole('button', { name: '보호자', exact: true }).first().click()

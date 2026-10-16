@@ -1,3 +1,4 @@
+import { confirmAction } from '@/shared/lib'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -14,8 +15,15 @@ export function AdminStopSaleForm({ productId }: AdminStopSaleFormProps) {
         size="sm"
         variant="outline"
         disabled={stop.isPending}
-        onClick={() => {
-          if (window.confirm('이 상품의 판매를 중지할까요? 판매자는 다시 판매할 수 없어요.'))
+        onClick={async () => {
+          if (
+            await confirmAction({
+              title: '이 상품의 판매를 중지할까요?',
+              description: '관리자가 중지한 상품은 판매자가 다시 판매할 수 없어요.',
+              confirmLabel: '판매 중지',
+              tone: 'danger',
+            })
+          )
             stop.mutate()
         }}
       >

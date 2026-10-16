@@ -1,3 +1,4 @@
+import { confirmAction } from '@/shared/lib'
 import { useState } from 'react'
 import { SETTLEMENT_RUN_STATUS_LABEL } from '@/entities/settlement'
 import { getErrorMessage } from '@/shared/api'
@@ -15,9 +16,15 @@ export function RunSettlementButton() {
     <div className="space-y-2">
       <Button
         disabled={run.isPending}
-        onClick={() => {
+        onClick={async () => {
           const cutoffOn = settlementPeriodEnd(new Date(), includeToday)
-          if (window.confirm(`${cutoffOn} 0시 전 구매확정분으로 정산을 실행할까요?`)) {
+          if (
+            await confirmAction({
+              title: '정산을 실행할까요?',
+              description: `${cutoffOn} 0시 전 구매확정분을 판매자별로 정산하고 예치금으로 입금해요.`,
+              confirmLabel: '정산 실행',
+            })
+          ) {
             run.mutate(cutoffOn)
           }
         }}

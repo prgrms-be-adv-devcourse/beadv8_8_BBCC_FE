@@ -7,6 +7,7 @@ import {
   type ChildForm,
   type GrowthRecordDto,
 } from '@/entities/child'
+import { toast } from '@/shared/lib'
 import { runWithAction } from '@/shared/api'
 
 /** 자녀 수정 (전체 교체). 키 · 체형이 바뀌면 서버가 성장 이력을 쌓고 child.changed로 추천 · 주문에 알린다 */
@@ -15,7 +16,10 @@ export function useUpdateChild(childId: string) {
   return useMutation({
     mutationFn: (form: ChildForm) =>
       runWithAction('자녀 수정', () => childApi.update(childId, toChildRequest(form))),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: childKeys.all }),
+    onSuccess: () => {
+      toast('저장했어요 · 키 · 체형이 바뀌었으면 성장 이력에 쌓여요')
+      return queryClient.invalidateQueries({ queryKey: childKeys.all })
+    },
   })
 }
 

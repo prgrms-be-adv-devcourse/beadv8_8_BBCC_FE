@@ -9,6 +9,7 @@ export function useAddToCart() {
   return useMutation({
     mutationFn: (input: AddToCartInput) =>
       runWithAction('장바구니 담기', () => cartApi.addItem(toAddCartItemRequest(input))),
+    // 담은 뒤 안내 · 장바구니 링크는 버튼 아래에 바로 보여 준다 (영역마다 장바구니 주소가 달라서)
     onSuccess: () => queryClient.invalidateQueries({ queryKey: cartKeys.mine }),
   })
 }
