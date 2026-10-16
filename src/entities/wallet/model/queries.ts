@@ -14,7 +14,7 @@ export const walletKeys = {
 export function useWalletQuery() {
   return useQuery({
     queryKey: walletKeys.me,
-    queryFn: walletApi.getMine,
+    queryFn: () => walletApi.getMine(),
     select: (dto): Wallet => ({ balance: dto.balance }),
   })
 }

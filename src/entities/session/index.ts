@@ -8,6 +8,7 @@ export {
   type SessionUser,
 } from './model/session'
 export {
+  issueDemoToken,
   refreshSession,
   restoreSession,
   signInAsDemo,
