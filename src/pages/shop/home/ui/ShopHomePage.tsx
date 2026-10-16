@@ -40,21 +40,19 @@ export function ShopHomePage() {
   const search: ProductSearch = { ...filters, keyword }
   const pickedChildId = params.get('child')
   /**
-   * 바뀐 값만 받아 최신 주소(prev)에 얹는다. 주소 변경은 조금 늦게 반영되므로,
-   * 화면에 그려진 값(filters)으로 전체를 다시 쓰면 바로 앞 변경(예: 카테고리 해제)을 덮어쓴다
+   * 바뀐 값만 받아 최신 주소에 얹는다. 주소 변경은 화면에 조금 늦게 반영되므로,
+   * 화면에 그려진 값으로 다시 쓰면 바로 앞 변경(예: 카테고리 해제)을 덮어쓴다.
+   * setParams의 함수형 인자(prev)도 화면에 그려진 시점의 값이라, 주소창의 값을 직접 읽는다
    */
-  const update = (patch: Partial<ProductFilters>, child?: string | null) =>
-    setParams(
-      (prev) => {
-        const next = writeProductFilters(prev, { ...readProductFilters(prev), ...patch })
-        if (child !== undefined) {
-          if (child) next.set('child', child)
-          else next.delete('child')
-        }
-        return next
-      },
-      { replace: true },
-    )
+  const update = (patch: Partial<ProductFilters>, child?: string | null) => {
+    const latest = new URLSearchParams(window.location.search)
+    const next = writeProductFilters(latest, { ...readProductFilters(latest), ...patch })
+    if (child !== undefined) {
+      if (child) next.set('child', child)
+      else next.delete('child')
+    }
+    setParams(next, { replace: true })
+  }
   const setChildId = (child: string | null) => update({}, child)
   // 검색 중에는 전체 상품에서 찾는다
   const childId = keyword ? null : pickedChildId
