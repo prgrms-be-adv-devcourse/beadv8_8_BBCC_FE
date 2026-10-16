@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import {
   countOrdersByTab,
   filterOrdersByTab,
   ORDER_TABS,
+  orderTabOf,
   OrderStatusBadge,
   useOrdersQuery,
   type OrderTab,
@@ -18,7 +18,11 @@ import { StateMessage } from '@/shared/ui/StateMessage'
 /** 내 주문 (기획서 F08): 상태 탭 → 주문 카드 → 주문 상세 */
 export function ShopOrdersPage() {
   const orders = useOrdersQuery()
-  const [tab, setTab] = useState<OrderTab>('ALL')
+  // 탭은 주소(?tab=)에 둔다 → 마이페이지 요약에서 바로 열고, 상세에서 뒤로 와도 그대로
+  const [params, setParams] = useSearchParams()
+  const tab = orderTabOf(params.get('tab'))
+  const setTab = (next: OrderTab) =>
+    setParams(next === 'ALL' ? {} : { tab: next }, { replace: true })
   const all = orders.data?.content ?? []
   const counts = countOrdersByTab(all)
   const visible = filterOrdersByTab(all, tab)

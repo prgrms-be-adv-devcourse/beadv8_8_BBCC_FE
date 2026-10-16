@@ -75,3 +75,8 @@ export { ProductOptionList } from './ui/ProductOptionList'
 export { ProductSpecs } from './ui/ProductSpecs'
 export { garmentKindOf, wearFitOf, type WearFit } from './model/wear-preview'
 export { WearPreview } from './ui/WearPreview'
+export {
+  readProductFilters,
+  writeProductFilters,
+  type ProductFilters,
+} from './model/product-filter-params'

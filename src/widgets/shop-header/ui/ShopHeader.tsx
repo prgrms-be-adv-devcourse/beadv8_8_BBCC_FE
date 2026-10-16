@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router'
+import { useCartCount } from '@/entities/cart'
 import { useSessionStore } from '@/entities/session'
 import { loginPath, paths } from '@/shared/config'
 import { cn } from '@/shared/lib'
@@ -65,6 +66,7 @@ function HeaderSearch() {
 /** 쇼핑 영역 머리말 (E안). API를 부르지 않는다 (흐름 기록을 화면 동작만으로 남기려고) */
 export function ShopHeader() {
   const user = useSessionStore((state) => state.user)
+  const cartCount = useCartCount()
   const { pathname, search } = useLocation()
   return (
     <header className="bg-background/95 sticky top-0 z-30 border-b backdrop-blur">
@@ -113,9 +115,17 @@ export function ShopHeader() {
           </nav>
           <Link
             to={paths.shop.cart}
-            aria-label="장바구니"
-            className="hover:text-primary flex size-9 items-center justify-center rounded-full"
+            aria-label={user && cartCount ? `장바구니 ${cartCount}개` : '장바구니'}
+            className="hover:text-primary relative flex size-9 items-center justify-center rounded-full"
           >
+            {user && cartCount ? (
+              <span
+                aria-hidden
+                className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+              >
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            ) : null}
             <svg
               viewBox="0 0 24 24"
               className="size-5"
