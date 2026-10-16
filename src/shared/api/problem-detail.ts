@@ -17,6 +17,13 @@ export function getErrorStatus(error: unknown): number | null {
   return isAxiosError(error) ? (error.response?.status ?? null) : null
 }
 
+/** ProblemDetail의 title. 응답에 오류 코드가 없어 같은 status를 나눌 때만 쓴다 (BE가 정한 문구와 같아야 함) */
+export function getErrorTitle(error: unknown): string | null {
+  if (!isAxiosError(error)) return null
+  const data: unknown = error.response?.data
+  return isProblemDetail(data) ? data.title : null
+}
+
 /** 화면에 보여 줄 오류 문구. ProblemDetail의 detail을 그대로 쓴다 */
 export function getErrorMessage(error: unknown): string {
   if (!isAxiosError(error)) {

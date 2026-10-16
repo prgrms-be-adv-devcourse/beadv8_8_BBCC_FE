@@ -32,6 +32,8 @@ const children = [],
   settlements = [],
   settlementRuns = []
 const wallets = { 1: 100000, 2: 0, 3: 0 }
+// 주문 멱등키 (BE #351): '회원:키' → { hash, orderId }
+const idempotency = {}
 // BE WalletLedger: 잔액이 바뀔 때마다 한 줄 (출금은 음수)
 const ledgers = []
 const ledger = (memberId, type, amount, refId) =>
@@ -153,7 +155,7 @@ http
   .createServer(async (req, res) => {
     res.setHeader('access-control-allow-origin', req.headers.origin || '*')
     res.setHeader('access-control-allow-credentials', 'true')
-    res.setHeader('access-control-allow-headers', 'authorization,content-type')
+    res.setHeader('access-control-allow-headers', 'authorization,content-type,idempotency-key')
     res.setHeader('access-control-allow-methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
     if (req.method === 'OPTIONS') return send(res, 204)
     let raw = ''
@@ -604,6 +606,37 @@ http
       return send(res, 204)
     }
     if (r('POST', /^\/orders$/)) {
+      // 멱등키 (BE #351): 회원 + 키. 같은 내용이면 200 + 기존 주문, 다른 내용이면 409. 실패한 요청은 키를 남기지 않는다
+      const idemKey = req.headers['idempotency-key']
+      if (
+        idemKey !== undefined &&
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idemKey)
+      )
+        return problem(res, 400, '잘못된 요청입니다', '요청 키는 UUID 형식이어야 합니다.', req.url)
+      const idemSlot = idemKey ? `${me}:${idemKey.toLowerCase()}` : null
+      const idemHash = JSON.stringify([
+        [...body.items]
+          .map((it) => [
+            String(it.optionId),
+            it.childId == null ? null : String(it.childId),
+            it.quantity,
+            it.unitPrice,
+          ])
+          .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
+        body.shippingAddress,
+      ])
+      if (idemSlot && idempotency[idemSlot]) {
+        const prev = idempotency[idemSlot]
+        if (prev.hash !== idemHash)
+          return problem(
+            res,
+            409,
+            '이미 다른 주문에 쓴 요청입니다',
+            '주문서를 다시 열어 주문해 주세요.',
+            req.url,
+          )
+        return send(res, 200, detailOf(orders.find((o) => o.orderId === prev.orderId)))
+      }
       for (const it of body.items)
         if (replica[it.optionId].price !== it.unitPrice)
           return problem(
@@ -658,6 +691,7 @@ http
         deliveries: [],
       }
       orders.push(o)
+      if (idemSlot) idempotency[idemSlot] = { hash: idemHash, orderId: o.orderId }
       const stall = stallNext
       stallNext = null
       // 결제 마감: 그때까지 결제 처리 중이면 PAYMENT_EXPIRED로 취소 (BE 마감 스케줄러)
