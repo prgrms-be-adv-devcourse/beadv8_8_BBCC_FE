@@ -173,3 +173,28 @@ export function validateProductEditForm(form: ProductEditForm): string | null {
     return '가격은 1원 이상이어야 해요.'
   return null
 }
+
+/** 재고 적음 기준 (이하면 판매자 화면에서 강조) */
+export const LOW_STOCK_THRESHOLD = 5
+
+export type StockLevel = 'OUT' | 'LOW' | 'OK'
+
+/** 재고 수준: 0 품절 · 5개 이하 적음 · 그 밖은 충분 */
+export function stockLevelOf(stock: number): StockLevel {
+  if (stock <= 0) return 'OUT'
+  if (stock <= LOW_STOCK_THRESHOLD) return 'LOW'
+  return 'OK'
+}
+
+/** 판매자 상품 목록 거르기: 이름 찾기 + 재고 적은 것만 (품절 포함) */
+export function filterSellerProducts<T extends { name: string; totalStock: number }>(
+  products: T[],
+  { keyword, lowStockOnly }: { keyword: string; lowStockOnly: boolean },
+): T[] {
+  const word = keyword.trim().toLowerCase()
+  return products.filter(
+    (product) =>
+      (!word || product.name.toLowerCase().includes(word)) &&
+      (!lowStockOnly || stockLevelOf(product.totalStock) !== 'OK'),
+  )
+}

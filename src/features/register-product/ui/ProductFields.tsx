@@ -9,6 +9,7 @@ import {
   type RegisterProductForm as RegisterProductFormValue,
   type SizeSpecInput,
 } from '@/entities/product'
+import { useLeaveGuard } from '@/shared/lib'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { Input, Select } from '@/shared/ui/input'
@@ -30,6 +31,9 @@ export function ProductFields({ inputs, productHref }: ProductFieldsProps) {
   const [form, setForm] = useState<RegisterProductFormValue>(() => demoRegisterForm(inputs))
   const [invalid, setInvalid] = useState<string | null>(null)
   const [startedId, setStartedId] = useState<string | null>(null)
+  // 고치다가 다른 화면으로 나가면 확인 (등록하면 풀린다)
+  const [isDirty, setIsDirty] = useState(false)
+  useLeaveGuard(isDirty, '등록하지 않은 상품 입력이 사라져요.')
   const combos = optionCombos(inputs, form)
   const groups = priceGroups(inputs, form)
   const sizes = sizeValues(inputs, form)
@@ -64,14 +68,14 @@ export function ProductFields({ inputs, productHref }: ProductFieldsProps) {
     setInvalid(message)
     if (!message) {
       setStartedId(null)
-      register.mutate(form)
+      register.mutate(form, { onSuccess: () => setIsDirty(false) })
     }
   }
 
   const registered = register.data
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-4" onSubmit={handleSubmit} onChangeCapture={() => setIsDirty(true)}>
       <div className="grid gap-3 md:grid-cols-3">
         <Label className="md:col-span-2">
           상품명
