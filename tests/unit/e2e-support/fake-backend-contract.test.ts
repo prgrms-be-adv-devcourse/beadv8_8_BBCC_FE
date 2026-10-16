@@ -276,18 +276,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       'PUT',
       '/admin/settings',
       3,
-      toAppSettingRequest({ isMockEnabled: false, isDemoRoleSwitchEnabled: true }),
+      toAppSettingRequest({ isMockEnabled: false }),
     )
     expect(changed.status).toBe(200)
     expectContract(changed.data, appSettingShape)
-    expect((await call('GET', '/settings', null)).data).toEqual({
-      useMock: false,
-      demoRoleSwitch: true,
-    })
+    expect((await call('GET', '/settings', null)).data).toEqual({ useMock: false })
     expect((await call('PUT', '/admin/settings', 1, initial.data)).status).toBe(403)
-    expect((await call('PUT', '/admin/settings', 3, { useMock: true })).status).toBe(400)
+    expect((await call('PUT', '/admin/settings', 3, {})).status).toBe(400)
 
-    // 다른 테스트가 목 · 시연을 켠 상태를 전제하므로 되돌린다
+    // 다른 테스트가 목을 켠 상태를 전제하므로 되돌린다
     await call('PUT', '/admin/settings', 3, initial.data)
   })
 
