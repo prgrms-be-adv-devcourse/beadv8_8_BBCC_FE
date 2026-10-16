@@ -21,7 +21,16 @@ import {
 const CHARGES = '/wallets/me/charges'
 
 export const walletApi = {
-  getMine: () => apiClient.get<WalletBalanceDto>('/wallets/me').then(expectShape(walletShape)),
+  /** accessToken을 주면 지금 로그인과 상관없이 그 계정의 잔액 (자동 시연 시작 전 점검) */
+  getMine: (accessToken?: string) =>
+    apiClient
+      .get<WalletBalanceDto>(
+        '/wallets/me',
+        accessToken
+          ? { skipAuth: true, headers: { Authorization: `Bearer ${accessToken}` } }
+          : undefined,
+      )
+      .then(expectShape(walletShape)),
   /** 내 충전 내역 (상태와 상관없이 최신순) */
   listCharges: () =>
     apiClient
