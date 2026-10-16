@@ -35,21 +35,40 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText('기본', { exact: true })).toBeVisible()
   })
 
-  await test.step('API 흐름 패널: 방금 호출 · 단계별 묶음 · 폭 조절', async () => {
+  await test.step('API 흐름 패널: 방금 호출 · 단계별 묶음 · 목록 | 상세 · 폭 조절', async () => {
     const latest = page.getByRole('region', { name: '방금 호출' })
     await expect(latest).toContainText('POST')
     await expect(latest).toContainText('/members/me/addresses')
-    await expect(page.getByRole('region', { name: '단계 ① 호출' }).first()).toBeVisible()
-    // 요청 · 응답 보기 → 그 호출이 펼쳐진다
+    const step1 = page.getByRole('region', { name: '단계 ① 호출' }).first()
+    await expect(step1).toBeVisible()
+    const widthButton = (name: string) =>
+      page.getByRole('group', { name: '패널 폭' }).getByRole('button', { name })
+    // 요청 · 응답 보기 → 보통 폭이면 넓게로 바뀌고 오른쪽에 상세, 방금 호출 자리를 대신한다
     await latest.getByRole('button', { name: '요청 · 응답 보기' }).click()
-    await expect(page.getByText('응답', { exact: true }).first()).toBeVisible()
+    const detail = page.getByRole('region', { name: '선택한 호출' })
+    await expect(detail).toContainText('/members/me/addresses')
+    await expect(detail.getByText('응답', { exact: true })).toBeVisible()
+    await expect(latest).toHaveCount(0)
+    await expect(widthButton('◧ 넓게')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByRole('region', { name: '호출 목록' })).toBeVisible()
+    // Esc → 상세 닫힘, 원래 폭(보통)으로
+    await page.locator('body').press('Escape')
+    await expect(detail).toHaveCount(0)
+    await expect(latest).toBeVisible()
+    await expect(widthButton('보통')).toHaveAttribute('aria-pressed', 'true')
+    // 목록 줄 클릭 → 상세, 같은 줄 다시 클릭 → 닫힘 (토글)
+    const row = step1.getByRole('button', { name: /POST\s*\/members\/me\/addresses/ }).first()
+    await row.click()
+    await expect(row).toHaveAttribute('aria-pressed', 'true')
+    await expect(detail).toBeVisible()
+    await row.click()
+    await expect(detail).toHaveCount(0)
+    await expect(widthButton('보통')).toHaveAttribute('aria-pressed', 'true')
     // 전체: API만 화면 가득 → 다시 보통
-    await page.getByRole('button', { name: '⛶ 전체' }).click()
-    await expect(page.getByRole('button', { name: '⛶ 전체' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
-    await page.getByRole('button', { name: '보통' }).click()
+    await widthButton('⛶ 전체').click()
+    await expect(widthButton('⛶ 전체')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByRole('region', { name: '호출 목록' })).toBeVisible()
+    await widthButton('보통').click()
   })
 
   await test.step('② 판매자 신청 → 관리자 거절 → 다시 신청 → 승인', async () => {

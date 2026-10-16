@@ -14,16 +14,34 @@ function load(): PanelSize {
   }
 }
 
-type PanelSizeState = { size: PanelSize; setSize: (size: PanelSize) => void }
+type PanelSizeState = {
+  size: PanelSize
+  /** 상세를 보려고 잠깐 넓혔으면 원래 폭 (닫을 때 돌아간다) */
+  restoreTo: PanelSize | null
+  setSize: (size: PanelSize) => void
+  /** 보통 폭이면 잠깐 넓게 (저장하지 않음) */
+  widenForDetail: () => void
+  /** 잠깐 넓혔으면 원래 폭으로 */
+  restoreAfterDetail: () => void
+}
 
-export const usePanelSize = create<PanelSizeState>()((set) => ({
+export const usePanelSize = create<PanelSizeState>()((set, get) => ({
   size: load(),
+  restoreTo: null,
   setSize: (size) => {
     try {
       localStorage.setItem(STORAGE_KEY, size)
     } catch {
       // 이 탭에서만 유지
     }
-    set({ size })
+    // 직접 고른 폭은 그대로 둔다
+    set({ size, restoreTo: null })
+  },
+  widenForDetail: () => {
+    if (get().size === 'normal') set({ size: 'wide', restoreTo: 'normal' })
+  },
+  restoreAfterDetail: () => {
+    const { restoreTo } = get()
+    if (restoreTo) set({ size: restoreTo, restoreTo: null })
   },
 }))
