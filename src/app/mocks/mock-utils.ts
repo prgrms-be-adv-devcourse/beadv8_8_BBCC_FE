@@ -11,18 +11,30 @@ export function fetchReal<T>(request: MockRequest, path: string): Promise<T> {
     .then((response) => response.data)
 }
 
-/** Authorization 토큰의 sub(회원 ID). 없으면 null */
-export function memberIdOf(request: MockRequest): string | null {
+type TokenClaims = { sub: string; roles?: string[] }
+
+/** Authorization 토큰의 payload. 없거나 읽을 수 없으면 null (서명 검증은 하지 않는다) */
+function claimsOf(request: MockRequest): TokenClaims | null {
   const header = String(request.headers.Authorization ?? '')
   const payload = header.replace('Bearer ', '').split('.')[1]
   if (!payload) {
     return null
   }
   try {
-    return (JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { sub: string }).sub
+    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as TokenClaims
   } catch {
     return null
   }
+}
+
+/** Authorization 토큰의 sub(회원 ID). 없으면 null */
+export function memberIdOf(request: MockRequest): string | null {
+  return claimsOf(request)?.sub ?? null
+}
+
+/** Authorization 토큰의 역할(roles). 없으면 빈 목록 */
+export function rolesOf(request: MockRequest): string[] {
+  return claimsOf(request)?.roles ?? []
 }
 
 export function page<T>(content: T[], request: MockRequest) {

@@ -8,7 +8,7 @@ import {
   type ProductImageUploadUrlsRequestDto,
 } from '@/features/upload-product-image'
 import { MOCK_UPLOAD_URL_PREFIX, type MockHandler } from '@/shared/api'
-import { memberIdOf, problem } from './mock-utils'
+import { memberIdOf, problem, rolesOf } from './mock-utils'
 
 const UPLOAD_URLS_PATH = '/api/v1/seller/product-images/upload-urls'
 /** 실제 저장 주소와 같은 모양 (S3에 파일은 없으므로 화면은 기본 이미지를 보여 준다) */
@@ -26,16 +26,20 @@ function seoulLocalDateTime(epochMs: number): string {
   return new Date(epochMs + SEOUL_OFFSET_MS).toISOString().slice(0, 19)
 }
 
-/** BE와 같은 조건으로 400을 낸다: 1 ~ 10장, jpeg · png · webp, 1바이트 ~ 10MB */
-function invalidUploadDetail(files: ProductImageUploadUrlsRequestDto['files']): string | null {
-  if (files.length === 0) return '업로드할 이미지를 하나 이상 보내 주세요.'
-  const tooMany = validateImageCount(0, files.length)
-  if (tooMany) return tooMany
-  if (files.some((file) => !canUploadImageType(file.contentType))) {
-    return '이미지는 JPEG · PNG · WEBP 형식만 올릴 수 있습니다.'
+const INVALID_TYPE = 'jpeg, png, webp 이미지만 올릴 수 있습니다.'
+const INVALID_SIZE = '이미지는 한 장에 1바이트 이상 10MB 이하로 올려 주세요.'
+
+/** BE와 같은 조건 · 문구("필드: 메시지")로 400을 낸다: 1 ~ 10장, jpeg · png · webp, 1바이트 ~ 10MB */
+function invalidUploadDetail(files: unknown): string | null {
+  if (!Array.isArray(files)) return 'files: 이미지 목록을 넣어 주세요.'
+  if (files.length === 0 || validateImageCount(0, files.length)) {
+    return 'files: 이미지는 한 번에 1장 이상 10장 이하로 요청해 주세요.'
   }
-  if (files.some((file) => !canUploadImageSize(file.contentLength))) {
-    return '이미지 크기는 1바이트 이상 10MB 이하여야 합니다.'
+  const list = files as ProductImageUploadUrlsRequestDto['files']
+  for (const [index, file] of list.entries()) {
+    if (!canUploadImageType(file.contentType)) return `files[${index}].contentType: ${INVALID_TYPE}`
+    if (!canUploadImageSize(file.contentLength))
+      return `files[${index}].contentLength: ${INVALID_SIZE}`
   }
   return null
 }
@@ -64,13 +68,21 @@ export const productHandlers: MockHandler[] = [
     method: 'POST',
     path: '/seller/product-images/upload-urls',
     handle: (request) => {
-      const { files = [] } = (request.body ?? {}) as Partial<ProductImageUploadUrlsRequestDto>
+      const sellerId = memberIdOf(request)
+      if (!sellerId) {
+        return problem(401, '로그인이 필요합니다', '로그인이 필요합니다.', UPLOAD_URLS_PATH)
+      }
+      if (!rolesOf(request).includes('SELLER')) {
+        return problem(403, '권한이 없습니다', '판매자만 올릴 수 있습니다.', UPLOAD_URLS_PATH)
+      }
+      const { files } = (request.body ?? {}) as Partial<ProductImageUploadUrlsRequestDto>
       const detail = invalidUploadDetail(files)
-      if (detail) return problem(400, '잘못된 이미지 업로드 요청입니다', detail, UPLOAD_URLS_PATH)
-      const sellerId = memberIdOf(request) ?? '0'
+      if (detail) return problem(400, '잘못된 요청입니다', detail, UPLOAD_URLS_PATH)
+      // 위 검사에서 목록인지 확인했다
+      const valid = files as ProductImageUploadUrlsRequestDto['files']
       const expiresAt = seoulLocalDateTime(Date.now() + UPLOAD_URL_TTL_MS)
       const data: ProductImageUploadUrlsDto = {
-        uploads: files.map((file) => {
+        uploads: valid.map((file) => {
           const key = `dev/products/${sellerId}/${newRequestKey()}.${EXTENSIONS[file.contentType]}`
           return {
             uploadUrl: `${MOCK_UPLOAD_URL_PREFIX}${key}`,
