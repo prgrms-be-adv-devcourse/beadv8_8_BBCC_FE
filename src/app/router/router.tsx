@@ -56,6 +56,9 @@ const adminSellerApplications = page(() =>
     Component: m.AdminSellerApplicationsPage,
   })),
 )
+const adminHome = page(() =>
+  import('@/pages/admin/home').then((m) => ({ Component: m.AdminHomePage })),
+)
 const adminMembers = page(() =>
   import('@/pages/admin/members').then((m) => ({ Component: m.AdminMembersPage })),
 )
@@ -181,6 +184,7 @@ export const router = createBrowserRouter(
           title="Kidly 관리자"
           role="ADMIN"
           items={[
+            { to: paths.admin.home, label: '대시보드', end: true },
             { to: paths.admin.members, label: '회원 관리' },
             { to: paths.admin.sellerApplications, label: '판매자 신청 심사' },
             { to: paths.admin.products, label: '상품 관리' },
@@ -192,7 +196,7 @@ export const router = createBrowserRouter(
       ),
       HydrateFallback: RouteFallback,
       children: [
-        { index: true, element: <Navigate to={paths.admin.members} replace /> },
+        { index: true, ...adminHome },
         { path: rel(paths.admin.home, paths.admin.members), ...adminMembers },
         { path: rel(paths.admin.home, paths.admin.orders), ...adminOrders },
         { path: rel(paths.admin.home, paths.admin.products), ...adminProducts },

@@ -8,7 +8,8 @@ import { cn } from '@/shared/lib'
 
 type ProductFilterBarProps = {
   search: ProductSearch
-  onChange: (search: ProductSearch) => void
+  /** 바뀐 값만 넘긴다 (주소에 얹는 쪽이 최신 값과 합친다) */
+  onChange: (patch: Pick<ProductSearch, 'sort' | 'attributes'>) => void
 }
 
 const SORTS = Object.keys(PRODUCT_SORT_LABEL) as ProductSort[]
@@ -21,7 +22,7 @@ export function ProductFilterBar({ search, onChange }: ProductFilterBarProps) {
     const next = new Set(selected)
     if (next.has(key)) next.delete(key)
     else next.add(key)
-    onChange({ ...search, attributes: [...next] })
+    onChange({ attributes: [...next] })
   }
 
   return (
@@ -32,7 +33,7 @@ export function ProductFilterBar({ search, onChange }: ProductFilterBarProps) {
           aria-label="정렬"
           className="rounded-md border bg-white px-2 py-1"
           value={search.sort ?? 'NEWEST'}
-          onChange={(e) => onChange({ ...search, sort: e.target.value as ProductSort })}
+          onChange={(e) => onChange({ sort: e.target.value as ProductSort })}
         >
           {SORTS.map((sort) => (
             <option key={sort} value={sort}>
@@ -81,7 +82,7 @@ export function ProductFilterBar({ search, onChange }: ProductFilterBarProps) {
         <button
           type="button"
           className="text-muted-foreground text-xs underline"
-          onClick={() => onChange({ ...search, attributes: [] })}
+          onClick={() => onChange({ attributes: [] })}
         >
           거르기 지우기
         </button>

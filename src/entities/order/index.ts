@@ -30,6 +30,7 @@ export {
   needsCharge,
   ORDER_TABS,
   orderTabOf,
+  summarizeOrdersOn,
   orderProgress,
   PAYMENT_DELAY_MS,
   paymentPollInterval,

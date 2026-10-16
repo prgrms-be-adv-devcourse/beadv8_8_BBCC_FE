@@ -140,6 +140,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('데일리 맨투맨 (상품 A)')).toBeVisible()
     await expect(page.getByText('밴딩 조거 팬츠 (상품 B)')).toHaveCount(0)
     await page.getByRole('button', { name: '전체 카테고리' }).click()
+    await expect(page).not.toHaveURL(/cat=/)
 
     // 정렬 (BE sort): 낮은 가격순이면 A(25,000원)가 B(30,000원)보다 앞
     await page.getByRole('combobox', { name: '정렬' }).selectOption('PRICE_ASC')
@@ -148,6 +149,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     const names = page.getByText(/\(상품 [AB]\)$/)
     await expect(names.first()).toHaveText('데일리 맨투맨 (상품 A)')
     await page.getByRole('combobox', { name: '정렬' }).selectOption('PRICE_DESC')
+    await expect(page).toHaveURL(/sort=PRICE_DESC/)
     await expect(names.first()).toHaveText('밴딩 조거 팬츠 (상품 B)')
     await page.getByRole('combobox', { name: '정렬' }).selectOption('NEWEST')
 
@@ -373,6 +375,10 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
   await test.step('관리자: 회원 관리 · 판매자 자격 정지 · 전체 주문 · 결제 · 정산 실행', async () => {
     await switchRole(page, '관리자')
     await page.goto('/admin')
+    // 대시보드: 오늘 숫자 · 처리할 일
+    await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible()
+    await expect(page.getByText('오늘 주문', { exact: true })).toBeVisible()
+    await page.getByRole('link', { name: '회원 관리' }).click()
     await expect(page.getByRole('heading', { name: '회원 관리' })).toBeVisible()
     await page.getByRole('button', { name: '판매자', exact: true }).nth(1).click()
     await page.getByRole('textbox', { name: '회원 검색' }).fill('테스트')
@@ -408,6 +414,15 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
     await page.getByRole('link', { name: '전체 주문' }).click()
     await expect(page.getByText(/^주문 \d+$/).first()).toBeVisible()
+    // 공통 표: 행을 누르면 상세 서랍 (결제 연결), CSV 내려받기
+    await page.getByRole('table', { name: '전체 주문' }).getByRole('row').nth(1).click()
+    const sheet = page.getByRole('dialog', { name: /^주문 \d+$/ })
+    await expect(sheet.getByText('이 주문의 결제')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(sheet).toHaveCount(0)
+    const download = page.waitForEvent('download')
+    await page.getByRole('button', { name: 'CSV 내려받기' }).click()
+    expect((await download).suggestedFilename()).toBe('kidly-orders-all.csv')
     await page.getByRole('link', { name: '전체 결제' }).click()
     await expect(page.getByText('결제 완료').first()).toBeVisible()
 

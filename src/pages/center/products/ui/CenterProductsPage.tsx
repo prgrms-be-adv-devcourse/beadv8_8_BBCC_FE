@@ -35,10 +35,15 @@ export function CenterProductsPage() {
   const keyword = params.get('q') ?? ''
   const lowStockOnly = params.get('stock') === 'low'
   const setFilter = (key: 'q' | 'stock', value: string | null) => {
-    const next = new URLSearchParams(params)
-    if (value) next.set(key, value)
-    else next.delete(key)
-    setParams(next, { replace: true })
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (value) next.set(key, value)
+        else next.delete(key)
+        return next
+      },
+      { replace: true },
+    )
   }
   const all = products.data?.content ?? []
   const visible = filterSellerProducts(all, { keyword, lowStockOnly })

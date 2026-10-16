@@ -39,14 +39,23 @@ export function ShopHomePage() {
   const filters = readProductFilters(params)
   const search: ProductSearch = { ...filters, keyword }
   const pickedChildId = params.get('child')
-  const update = (filters: ProductFilters, child: string | null) => {
-    const next = writeProductFilters(params, filters)
-    if (child) next.set('child', child)
-    else next.delete('child')
-    setParams(next, { replace: true })
-  }
-  const setFilters = (next: ProductFilters) => update(next, pickedChildId)
-  const setChildId = (child: string | null) => update(filters, child)
+  /**
+   * 바뀐 값만 받아 최신 주소(prev)에 얹는다. 주소 변경은 조금 늦게 반영되므로,
+   * 화면에 그려진 값(filters)으로 전체를 다시 쓰면 바로 앞 변경(예: 카테고리 해제)을 덮어쓴다
+   */
+  const update = (patch: Partial<ProductFilters>, child?: string | null) =>
+    setParams(
+      (prev) => {
+        const next = writeProductFilters(prev, { ...readProductFilters(prev), ...patch })
+        if (child !== undefined) {
+          if (child) next.set('child', child)
+          else next.delete('child')
+        }
+        return next
+      },
+      { replace: true },
+    )
+  const setChildId = (child: string | null) => update({}, child)
   // 검색 중에는 전체 상품에서 찾는다
   const childId = keyword ? null : pickedChildId
   const [heroIndex, setHeroIndex] = useState(0)
@@ -80,7 +89,7 @@ export function ShopHomePage() {
       <CategoryCircles
         categories={categories.data ?? []}
         selectedId={filters.categoryId}
-        onSelect={(categoryId) => update({ ...filters, categoryId, attributes: [] }, null)}
+        onSelect={(categoryId) => update({ categoryId, attributes: [] }, null)}
       />
 
       <section ref={listRef} className="scroll-mt-28 space-y-4">
@@ -127,16 +136,7 @@ export function ShopHomePage() {
           )}
         </div>
         {childId === null && (
-          <ProductFilterBar
-            search={search}
-            onChange={(next) =>
-              setFilters({
-                categoryId: next.categoryId,
-                sort: next.sort,
-                attributes: next.attributes,
-              })
-            }
-          />
+          <ProductFilterBar search={search} onChange={(patch) => update(patch)} />
         )}
         {query.isPending && <CardGridSkeleton />}
         {query.isError && <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>}
