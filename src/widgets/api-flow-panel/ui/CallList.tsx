@@ -1,46 +1,102 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ApiCallLog } from '@/shared/api'
 import { cn } from '@/shared/lib'
 import type { DomainId, FlowStep } from '../config/domain-flow'
+import { groupCallsByStep, type CallGroup } from '../model/call-groups'
 import { followingSteps } from '../model/flow-view'
 import { IssueList } from './IssueList'
 
-type CallListProps = { logs: ApiCallLog[] }
+type CallListProps = {
+  logs: ApiCallLog[]
+  /** 펼쳐서 보여 줄 호출 (방금 호출 · 자동 시연 실패에서 이동) */
+  focusedLogId: number | null
+}
 
-export function CallList({ logs }: CallListProps) {
+/** 호출을 시연 단계별로 묶어 최신 묶음부터. 최신 묶음과 이동한 호출의 묶음만 펼친다 */
+export function CallList({ logs, focusedLogId }: CallListProps) {
   if (logs.length === 0) {
     return (
       <p className="text-muted-foreground p-2 text-xs">
-        화면을 조작하면 호출한 API가 여기에 순서대로 쌓여요.
+        화면을 조작하면 호출한 API가 여기에 단계별로 쌓여요.
       </p>
     )
   }
+  const groups = groupCallsByStep(logs)
   return (
-    <ol className="space-y-1">
-      {[...logs].reverse().map((log) => (
-        <ApiCallRow key={log.id} log={log} />
+    <div className="space-y-2">
+      {groups.map((group, index) => (
+        <CallGroupSection
+          key={`${group.step}-${group.logs[0].id}`}
+          group={group}
+          latest={index === 0}
+          focusedLogId={focusedLogId}
+        />
       ))}
-    </ol>
+    </div>
   )
 }
 
-type ApiCallRowProps = { log: ApiCallLog }
+type CallGroupSectionProps = { group: CallGroup; latest: boolean; focusedLogId: number | null }
 
-function ApiCallRow({ log }: ApiCallRowProps) {
-  const [open, setOpen] = useState(false)
+function CallGroupSection({ group, latest, focusedLogId }: CallGroupSectionProps) {
+  const hasFocus = group.logs.some((log) => log.id === focusedLogId)
+  const [toggled, setToggled] = useState<boolean | null>(null)
+  const open = toggled ?? (latest || hasFocus)
+  return (
+    <section aria-label={`단계 ${group.step} 호출`} className="rounded-lg border">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setToggled(!open)}
+        className="hover:bg-muted/50 flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm"
+      >
+        <span aria-hidden className="text-muted-foreground w-3">
+          {open ? '▾' : '▸'}
+        </span>
+        <span className="font-bold">{group.step}</span>
+        <span className="text-muted-foreground min-w-0 flex-1 truncate text-xs">
+          {group.actions.slice(0, 3).join(' · ')}
+        </span>
+        <span className="text-muted-foreground shrink-0 text-xs">
+          호출 {group.logs.length}
+          {group.failed > 0 && <span className="text-destructive"> · 실패 {group.failed}</span>}
+        </span>
+      </button>
+      {open && (
+        <ol className="space-y-1 border-t p-1.5">
+          {[...group.logs].reverse().map((log) => (
+            <ApiCallRow key={log.id} log={log} focused={log.id === focusedLogId} />
+          ))}
+        </ol>
+      )}
+    </section>
+  )
+}
+
+type ApiCallRowProps = { log: ApiCallLog; focused: boolean }
+
+function ApiCallRow({ log, focused }: ApiCallRowProps) {
+  const [toggled, setToggled] = useState<boolean | null>(null)
+  const open = toggled ?? focused
   const steps = followingSteps(log)
+  const ref = useRef<HTMLLIElement>(null)
+  useEffect(() => {
+    if (focused) ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [focused])
 
   return (
     <li
+      ref={ref}
       className={cn(
         'rounded-md border text-xs',
+        focused && 'ring-primary ring-2',
         log.contractIssues.some((issue) => issue.type !== 'extra') && 'border-destructive/50',
       )}
     >
       <button
         type="button"
         className="flex w-full items-center gap-2 px-2 py-1.5 text-left"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => setToggled(!open)}
       >
         <span className="w-11 shrink-0 font-mono font-semibold">{log.method}</span>
         <span className="flex-1 truncate font-mono">{log.path}</span>

@@ -1,16 +1,19 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { isFailedCall, useApiFlowLog } from '@/shared/api'
 import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { buildReport, downloadText } from '../lib/report'
 import { domainOf } from '../config/domain-flow'
 import { latestTimeline } from '../model/event-timeline'
+import { spotlightCall } from '../model/call-groups'
+import { usePanelSize, type PanelSize } from '../model/panel-size'
 import { isKeyCall, usePresentationMode } from '../model/presentation-mode'
 import { deriveStateChanges } from '../model/state-changes'
 import { CallList } from './CallList'
 import { ChangeList } from './ChangeList'
 import { ContractList } from './ContractList'
 import { EventFlowDiagram } from './EventFlowDiagram'
+import { LatestCallCard } from './LatestCallCard'
 import { MockSettings } from './MockSettings'
 
 type Tab = 'calls' | 'changes' | 'contract' | 'mock'
@@ -31,6 +34,21 @@ export function ApiFlowPanel() {
     log.contractIssues.some((issue) => issue.type !== 'extra'),
   ).length
   const failedCount = logs.filter(isFailedCall).length
+  const focusedLogId = useApiFlowLog((state) => state.focusedLogId)
+  const focusLog = useApiFlowLog((state) => state.focusLog)
+  const { size, setSize } = usePanelSize()
+  const [diagramOpen, setDiagramOpen] = useState(false)
+  const spotlight = spotlightCall(logs, isKeyCall)
+  // 다른 곳에서 호출로 이동하면 호출 탭으로
+  const [seenFocus, setSeenFocus] = useState(focusedLogId)
+  if (focusedLogId !== seenFocus) {
+    setSeenFocus(focusedLogId)
+    if (focusedLogId !== null) setTab('calls')
+  }
+  useEffect(() => {
+    // 새 호출이 오면 강조를 푼다 (방금 호출 카드가 따라감)
+    if (focusedLogId !== null && logs.at(-1) && logs.at(-1)!.id > focusedLogId + 20) focusLog(null)
+  }, [logs, focusedLogId, focusLog])
 
   const exportReport = () => {
     const report = buildReport(logs, changes)
@@ -49,8 +67,55 @@ export function ApiFlowPanel() {
         presentation && '[zoom:1.15]',
       )}
     >
-      <div className="max-h-[55%] shrink-0 overflow-y-auto border-b p-3">
-        <EventFlowDiagram timeline={timeline} />
+      <div className="flex items-center gap-1 border-b px-2 py-1.5 text-xs">
+        <span className="font-semibold">API 흐름</span>
+        <div role="group" aria-label="패널 폭" className="ml-auto flex gap-0.5">
+          {SIZES.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              aria-pressed={size === item.value}
+              title={item.title}
+              onClick={() => setSize(item.value)}
+              className={cn(
+                'rounded px-2 py-0.5',
+                size === item.value ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="shrink-0 space-y-2 border-b p-2">
+        {spotlight && (
+          <LatestCallCard
+            log={spotlight}
+            onOpen={() => {
+              focusLog(spotlight.id)
+              setTab('calls')
+            }}
+          />
+        )}
+        <button
+          type="button"
+          aria-expanded={diagramOpen || size === 'full'}
+          onClick={() => setDiagramOpen((value) => !value)}
+          className="text-muted-foreground hover:text-foreground text-xs"
+        >
+          {diagramOpen || size === 'full' ? '▾' : '▸'} 서버 이벤트 흐름도
+        </button>
+        {(diagramOpen || size === 'full') && (
+          // 전체 폭에서도 그림이 호출 목록을 밀어내지 않게 높이 · 폭을 묶는다
+          <div
+            className={cn(
+              'overflow-y-auto',
+              size === 'full' ? 'mx-auto max-h-[32vh] w-full max-w-3xl' : 'max-h-[45vh]',
+            )}
+          >
+            <EventFlowDiagram timeline={timeline} />
+          </div>
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5 text-xs">
         <TabButton active={tab === 'calls'} onClick={() => setTab('calls')}>
@@ -88,7 +153,7 @@ export function ApiFlowPanel() {
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-2">
-        {tab === 'calls' && <CallList logs={visibleLogs} />}
+        {tab === 'calls' && <CallList logs={visibleLogs} focusedLogId={focusedLogId} />}
         {tab === 'changes' && <ChangeList changes={changes} />}
         {tab === 'contract' && <ContractList logs={contractLogs} />}
         {tab === 'mock' && <MockSettings />}
@@ -96,6 +161,12 @@ export function ApiFlowPanel() {
     </aside>
   )
 }
+
+const SIZES: { value: PanelSize; label: string; title: string }[] = [
+  { value: 'normal', label: '보통', title: '오른쪽에 좁게' },
+  { value: 'wide', label: '◧ 넓게', title: '화면 절반' },
+  { value: 'full', label: '⛶ 전체', title: 'API 흐름만 화면 가득' },
+]
 
 type TabButtonProps = {
   active: boolean
