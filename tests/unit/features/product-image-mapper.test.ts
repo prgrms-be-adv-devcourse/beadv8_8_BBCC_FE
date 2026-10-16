@@ -56,6 +56,21 @@ describe('toUploadTargets: 발급 응답 → 업로드할 곳', () => {
   })
 })
 
+describe('toUploadTargets: 만료 시각 (BE는 서울 시간을 시간대 없이 준다)', () => {
+  const withExpiresAt = (expiresAt: string): ProductImageUploadUrlsDto => ({
+    uploads: [{ uploadUrl: `${S3}/a.jpg?x`, imageUrl: `${S3}/a.jpg`, expiresAt }],
+  })
+
+  it.each([
+    ['2026-10-16T12:05:00', '2026-10-16T12:05:00+09:00'],
+    ['2026-10-16T12:05:00.123', '2026-10-16T12:05:00.123+09:00'],
+    ['2026-10-16T03:05:00Z', '2026-10-16T03:05:00Z'],
+    ['2026-10-16T12:05:00+09:00', '2026-10-16T12:05:00+09:00'],
+  ])('%s는 %s로 읽는다 (시간대가 있으면 그대로)', (expiresAt, expected) => {
+    expect(toUploadTargets(withExpiresAt(expiresAt))[0].expiresAt).toBe(expected)
+  })
+})
+
 describe('발급 응답 모양 (계약 검사)', () => {
   it('BE 응답 모양과 같으면 문제가 없다', () => {
     expect(validate(response, productImageUploadUrlsShape)).toEqual([])

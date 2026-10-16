@@ -12,7 +12,10 @@ export type ProductImageUploadUrlsRequestDto = {
   files: { contentType: string; contentLength: number }[]
 }
 
-/** 응답. 요청 순서대로. uploadUrl은 5분 안에 PUT을 시작해야 하고, imageUrl은 만료되지 않는다 */
+/**
+ * 응답. 요청 순서대로. uploadUrl은 5분 안에 PUT을 시작해야 하고, imageUrl은 만료되지 않는다.
+ * expiresAt은 서울 시간이고 시간대가 없다 (BE LocalDateTime, 예: 2026-10-16T12:05:00)
+ */
 export type ProductImageUploadUrlsDto = {
   uploads: { uploadUrl: string; imageUrl: string; expiresAt: string }[]
 }

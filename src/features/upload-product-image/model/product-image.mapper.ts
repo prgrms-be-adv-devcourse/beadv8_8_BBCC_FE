@@ -11,10 +11,17 @@ export function toUploadUrlsRequest(blobs: Blob[]): ProductImageUploadUrlsReques
   return { files: blobs.map((blob) => ({ contentType: blob.type, contentLength: blob.size })) }
 }
 
+const HAS_TIME_ZONE = /(Z|[+-]\d{2}:\d{2})$/
+
+/** BE는 만료 시각을 서울 시간으로, 시간대 없이 준다. 그대로 읽으면 브라우저 시간대로 해석되므로 +09:00을 붙인다 */
+function toSeoulTime(localDateTime: string): string {
+  return HAS_TIME_ZONE.test(localDateTime) ? localDateTime : `${localDateTime}+09:00`
+}
+
 export function toUploadTargets(dto: ProductImageUploadUrlsDto): UploadTarget[] {
   return dto.uploads.map((upload) => ({
     uploadUrl: upload.uploadUrl,
     imageUrl: upload.imageUrl,
-    expiresAt: upload.expiresAt,
+    expiresAt: toSeoulTime(upload.expiresAt),
   }))
 }

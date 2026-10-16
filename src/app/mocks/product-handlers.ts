@@ -19,6 +19,12 @@ const EXTENSIONS: Record<string, string> = {
   'image/webp': 'webp',
 }
 const UPLOAD_URL_TTL_MS = 5 * 60 * 1000
+const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000
+
+/** BE처럼 서울 시간을 시간대 없이 (LocalDateTime, 예: 2026-10-16T12:05:00) */
+function seoulLocalDateTime(epochMs: number): string {
+  return new Date(epochMs + SEOUL_OFFSET_MS).toISOString().slice(0, 19)
+}
 
 /** BE와 같은 조건으로 400을 낸다: 1 ~ 10장, jpeg · png · webp, 1바이트 ~ 10MB */
 function invalidUploadDetail(files: ProductImageUploadUrlsRequestDto['files']): string | null {
@@ -62,7 +68,7 @@ export const productHandlers: MockHandler[] = [
       const detail = invalidUploadDetail(files)
       if (detail) return problem(400, '잘못된 이미지 업로드 요청입니다', detail, UPLOAD_URLS_PATH)
       const sellerId = memberIdOf(request) ?? '0'
-      const expiresAt = new Date(Date.now() + UPLOAD_URL_TTL_MS).toISOString()
+      const expiresAt = seoulLocalDateTime(Date.now() + UPLOAD_URL_TTL_MS)
       const data: ProductImageUploadUrlsDto = {
         uploads: files.map((file) => {
           const key = `dev/products/${sellerId}/${newRequestKey()}.${EXTENSIONS[file.contentType]}`
