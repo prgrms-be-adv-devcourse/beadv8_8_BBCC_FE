@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { isFailedCall, useApiFlowLog } from '@/shared/api'
 import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
@@ -6,7 +6,7 @@ import { buildReport, downloadText } from '../lib/report'
 import { domainOf } from '../config/domain-flow'
 import { latestTimeline } from '../model/event-timeline'
 import { spotlightCall } from '../model/call-groups'
-import { usePanelSize, type PanelSize } from '../model/panel-size'
+import { SPLIT_MIN_PX, usePanelSize, type PanelSize } from '../model/panel-size'
 import { isKeyCall, usePresentationMode } from '../model/presentation-mode'
 import { deriveStateChanges } from '../model/state-changes'
 import { CallList } from './CallList'
@@ -49,7 +49,17 @@ export function ApiFlowPanel({ inDrawer = false }: ApiFlowPanelProps) {
   const [diagramOpen, setDiagramOpen] = useState(false)
   const spotlight = spotlightCall(logs, isKeyCall)
   const selected = logs.find((log) => log.id === selectedLogId) ?? null
-  const split = !inDrawer && size !== 'normal'
+  const [panelWidth, setPanelWidth] = useState(0)
+  // 패널 실제 폭을 따라간다 (손잡이로 맞춘 폭 포함)
+  const observe = useCallback((element: HTMLElement | null) => {
+    if (!element) return
+    setPanelWidth(element.getBoundingClientRect().width)
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(([entry]) => setPanelWidth(entry.contentRect.width))
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+  const split = !inDrawer && (size === 'full' || panelWidth >= SPLIT_MIN_PX)
   const diagramShown = diagramOpen || (!inDrawer && size === 'full')
 
   // 다른 곳(방금 호출 · 자동 시연 실패)에서 호출을 고르면 호출 탭으로, 보통 폭이면 잠깐 넓게
@@ -59,7 +69,9 @@ export function ApiFlowPanel({ inDrawer = false }: ApiFlowPanelProps) {
     if (selectedLogId !== null) setTab('calls')
   }
   useEffect(() => {
-    if (selectedLogId !== null && !inDrawer) widenForDetail()
+    if (selectedLogId !== null && !inDrawer) widenForDetail(panelWidth)
+    // 고를 때만 넓힌다 (폭이 바뀔 때마다 다시 부르지 않음)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLogId, inDrawer, widenForDetail])
 
   const closeDetail = () => {
@@ -168,6 +180,7 @@ export function ApiFlowPanel({ inDrawer = false }: ApiFlowPanelProps) {
 
   return (
     <aside
+      ref={observe}
       className={cn(
         'flex h-full min-h-0 flex-col border-l bg-white',
         // 발표 모드: 프로젝터에서도 읽히게 패널 전체를 키운다
@@ -219,7 +232,7 @@ export function ApiFlowPanel({ inDrawer = false }: ApiFlowPanelProps) {
   )
 }
 
-const SIZES: { value: PanelSize; label: string; title: string }[] = [
+const SIZES: { value: Exclude<PanelSize, 'custom'>; label: string; title: string }[] = [
   { value: 'normal', label: '보통', title: '오른쪽에 좁게' },
   { value: 'wide', label: '◧ 넓게', title: '화면 절반' },
   { value: 'full', label: '⛶ 전체', title: 'API 흐름만 화면 가득' },
