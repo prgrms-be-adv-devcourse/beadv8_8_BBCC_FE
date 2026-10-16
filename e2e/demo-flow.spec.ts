@@ -35,6 +35,23 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText('기본', { exact: true })).toBeVisible()
   })
 
+  await test.step('API 흐름 패널: 방금 호출 · 단계별 묶음 · 폭 조절', async () => {
+    const latest = page.getByRole('region', { name: '방금 호출' })
+    await expect(latest).toContainText('POST')
+    await expect(latest).toContainText('/members/me/addresses')
+    await expect(page.getByRole('region', { name: '단계 ① 호출' }).first()).toBeVisible()
+    // 요청 · 응답 보기 → 그 호출이 펼쳐진다
+    await latest.getByRole('button', { name: '요청 · 응답 보기' }).click()
+    await expect(page.getByText('응답', { exact: true }).first()).toBeVisible()
+    // 전체: API만 화면 가득 → 다시 보통
+    await page.getByRole('button', { name: '⛶ 전체' }).click()
+    await expect(page.getByRole('button', { name: '⛶ 전체' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await page.getByRole('button', { name: '보통' }).click()
+  })
+
   await test.step('② 판매자 신청 → 관리자 거절 → 다시 신청 → 승인', async () => {
     await page.goto('/console/seller/apply')
     await page.getByRole('button', { name: '신청하기' }).click()
@@ -66,9 +83,11 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByRole('checkbox', { name: '네이비' })).toBeChecked()
     await expect(page.getByLabel('네이비 / 120 재고')).toHaveValue('10')
     await page.getByRole('button', { name: '등록하기' }).click()
-    await expect(page.getByText(/상품 #\d+를 등록했어요/)).toBeVisible()
-    await page.getByRole('button', { name: '판매 시작' }).first().click()
-    await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
+    // 등록 결과 줄의 판매 시작 (내 상품 목록이 먼저 다시 불려 같은 버튼이 목록에도 생긴다)
+    const registered = page.getByText(/상품 #\d+를 등록했어요/).locator('..')
+    await registered.getByRole('button', { name: '판매 시작' }).click()
+    await expect(registered.getByText('판매를 시작했어요.')).toBeVisible()
+    await expect(registered.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
     // 판매 시작 → 상세로 이어진다 (실제 상세 API)
     await page.getByRole('link', { name: '상품 상세 보기' }).click()
     await expect(page.getByRole('heading', { name: '데일리 맨투맨', exact: true })).toBeVisible()
@@ -187,7 +206,11 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await page.goto('/console/seller/products')
     await page.getByRole('button', { name: '수정' }).first().click()
     await page.getByRole('button', { name: '수정 저장' }).click()
-    await expect(page.getByText(/없는 API PATCH \/seller\/products\/\d+/)).toBeVisible()
+    await expect(
+      page.getByRole('main').getByText(/없는 API PATCH \/seller\/products\/\d+/),
+    ).toBeVisible()
+    // 방금 호출 카드에도 실패로 크게
+    await expect(page.getByRole('region', { name: '방금 호출' })).toContainText('404')
   })
 
   expect(consoleErrors).toEqual([])

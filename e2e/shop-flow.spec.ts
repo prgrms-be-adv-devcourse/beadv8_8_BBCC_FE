@@ -205,6 +205,9 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
   await test.step('흐름 서랍: 쇼핑에서도 API 호출을 본다', async () => {
     await page.getByRole('button', { name: /^API 흐름 \d+/ }).click()
+    // 맨 위 "방금 호출" 카드, 흐름도는 접혀 있어 펼쳐서 본다
+    await expect(page.getByRole('region', { name: '방금 호출' })).toBeVisible()
+    await page.getByRole('button', { name: /서버 이벤트 흐름도/ }).click()
     // 서버 이벤트 흐름 그림: 주문하기 뒤 실제 결과(결제 완료)까지 이벤트 순서대로
     await expect(page.getByRole('heading', { name: '서버 이벤트 흐름' })).toBeVisible()
     await expect(

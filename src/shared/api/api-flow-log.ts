@@ -23,12 +23,20 @@ export type ApiCallLog = {
   responseBody: unknown
   /** 응답이 계약(DTO 모양)과 다른 곳 */
   contractIssues: ContractIssue[]
+  /** 호출할 때의 시연 단계 (①~⑦ · 시작 · 확인). 시연 콘솔 밖이면 null. 예전 기록에는 없다 */
+  step?: string | null
 }
 
 type ApiFlowLogState = {
   logs: ApiCallLog[]
   currentAction: string | null
-  add: (log: Omit<ApiCallLog, 'id' | 'contractIssues'>) => number
+  /** 지금 시연 단계 (콘솔 레이아웃이 주소로 정한다). 새 기록에 step으로 붙는다 */
+  currentStep: string | null
+  setCurrentStep: (step: string | null) => void
+  /** 흐름 패널이 펼쳐 보여 줄 호출 (자동 시연 실패 → "이 호출 보기") */
+  focusedLogId: number | null
+  focusLog: (logId: number | null) => void
+  add: (log: Omit<ApiCallLog, 'id' | 'contractIssues' | 'step'>) => number
   attachContractIssues: (logId: number, issues: ContractIssue[]) => void
   clear: () => void
 }
@@ -59,10 +67,17 @@ let nextId = (initialLogs.at(-1)?.id ?? 0) + 1
 export const useApiFlowLog = create<ApiFlowLogState>()((set) => ({
   logs: initialLogs,
   currentAction: null,
+  currentStep: null,
+  setCurrentStep: (step) => set({ currentStep: step }),
+  focusedLogId: null,
+  focusLog: (logId) => set({ focusedLogId: logId }),
   add: (log) => {
     const id = nextId++
     set((state) => {
-      const logs = [...state.logs, { ...log, id, contractIssues: [] }].slice(-MAX_LOGS)
+      const logs = [
+        ...state.logs,
+        { ...log, id, contractIssues: [], step: state.currentStep },
+      ].slice(-MAX_LOGS)
       saveLogs(logs)
       return { logs }
     })
