@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { isOnSale, useSellerProductsQuery } from '@/entities/product'
+import { isOnSale, stockLevelOf, useSellerProductsQuery } from '@/entities/product'
+import { sumSettlementItems, useSettlementTargetsQuery } from '@/entities/settlement'
 import { SELLER_STATUS_LABEL, useMySellerQuery } from '@/entities/seller'
 import { EditBusinessNameForm } from '@/features/edit-seller-info'
 import { summarizeSellerOrders, useSellerOrdersQuery } from '@/entities/seller-order'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
+import { formatWon } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
-import { MockBadge } from '@/shared/ui/MockBadge'
 
 /** 판매자 센터 첫 화면: 오늘 할 일 */
 export function CenterHomePage() {
@@ -20,17 +21,39 @@ export function CenterHomePage() {
   const seller = useMySellerQuery()
   const [editingName, setEditingName] = useState(false)
   const summary = orders.data ? summarizeSellerOrders(orders.data.content) : null
+  const targets = useSettlementTargetsQuery()
   const onSaleCount = products.data?.content.filter(isOnSale).length
+  const lowStockCount = products.data?.content.filter(
+    (product) => stockLevelOf(product.totalStock) !== 'OK',
+  ).length
+  const pendingSettlement = targets.data ? sumSettlementItems(targets.data.content) : undefined
 
-  const tiles = [
-    { to: paths.center.orders, label: '발송할 주문', value: summary?.toShip, strong: true },
-    { to: paths.center.orders, label: '배송 중', value: summary?.shipping },
-    { to: paths.center.orders, label: '배송 완료', value: summary?.delivered },
+  // 누르면 그 탭 · 거르기로 바로 (주소 ?tab= · ?stock=)
+  const tiles: {
+    to: string
+    label: string
+    value: number | string | undefined
+    tone?: 'primary' | 'warn'
+  }[] = [
     {
-      to: paths.center.products,
-      label: '판매 중 상품',
-      value: onSaleCount,
-      mock: 'GET /seller/products',
+      to: `${paths.center.orders}?tab=READY`,
+      label: '발송할 주문',
+      value: summary?.toShip,
+      tone: 'primary',
+    },
+    { to: `${paths.center.orders}?tab=SHIPPING`, label: '배송 중', value: summary?.shipping },
+    { to: `${paths.center.orders}?tab=DELIVERED`, label: '배송 완료', value: summary?.delivered },
+    { to: paths.center.products, label: '판매 중 상품', value: onSaleCount },
+    {
+      to: `${paths.center.products}?stock=low`,
+      label: '재고 적은 상품',
+      value: lowStockCount,
+      tone: lowStockCount ? 'warn' : undefined,
+    },
+    {
+      to: paths.center.settlements,
+      label: '정산 예정 (구매확정분)',
+      value: pendingSettlement === undefined ? undefined : formatWon(pendingSettlement),
     },
   ]
 
@@ -71,15 +94,20 @@ export function CenterHomePage() {
           </Badge>
         )}
       </Card>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {tiles.map((tile) => (
           <Link key={tile.label} to={tile.to}>
             <Card className="hover:border-primary space-y-1 transition-colors">
-              <p className="text-muted-foreground text-sm">
-                {tile.label}
-                {'mock' in tile && tile.mock && <MockBadge endpoints={[tile.mock]} />}
-              </p>
-              <p className={tile.strong ? 'text-primary text-3xl font-bold' : 'text-3xl font-bold'}>
+              <p className="text-muted-foreground text-sm">{tile.label}</p>
+              <p
+                className={
+                  tile.tone === 'primary'
+                    ? 'text-primary text-3xl font-bold'
+                    : tile.tone === 'warn'
+                      ? 'text-3xl font-bold text-amber-600'
+                      : 'text-3xl font-bold'
+                }
+              >
                 {tile.value ?? '…'}
               </p>
             </Card>

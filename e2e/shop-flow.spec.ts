@@ -75,6 +75,15 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await mine.getByLabel('네이비 / 110 증감 수량').fill('5')
     await mine.getByRole('button', { name: '조정', exact: true }).click()
     await expect(mine.getByText('재고 15')).toBeVisible()
+    // 재고 적은 상품만 (상품 B 재고 5)
+    // 거르기는 주소(?stock=low)에 저장돼 조금 늦게 체크되므로 click 뒤 상태를 기다린다
+    const lowOnly = page.getByRole('checkbox', { name: '재고 적은 상품만' })
+    await lowOnly.click()
+    await expect(lowOnly).toBeChecked()
+    await expect(page.getByText('밴딩 조거 팬츠 (상품 B)')).toBeVisible()
+    await expect(page.getByText(/^(재고 적음|품절)$/).first()).toBeVisible()
+    await lowOnly.click()
+    await expect(lowOnly).not.toBeChecked()
     await mine.getByRole('button', { name: '판매 중지' }).click()
     await expect(mine.getByRole('button', { name: '판매 시작' })).toBeVisible()
     await mine.getByRole('button', { name: '판매 시작' }).click()
@@ -214,7 +223,26 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByRole('textbox', { name: '상호명' }).fill('테스트상점 본점')
     await page.getByRole('button', { name: '상호명 저장' }).click()
     await expect(page.getByText('테스트상점 본점')).toBeVisible()
-    await page.getByRole('link', { name: '주문 · 배송' }).click()
+    // 할 일 타일 → 그 탭으로 바로
+    await page.getByRole('link', { name: /발송할 주문/ }).click()
+    await expect(page).toHaveURL(/\/center\/orders\?tab=READY$/)
+    await expect(page.getByRole('tab', { name: /발송할 주문/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    // 고르면 일괄 처리 막대 (송장을 넣어야 일괄 발송)
+    await page
+      .getByRole('checkbox', { name: /판매 주문 #\d+ 선택/ })
+      .first()
+      .check()
+    const bulk = page.getByRole('region', { name: '일괄 처리' })
+    await expect(bulk.getByRole('button', { name: '1건 일괄 발송' })).toBeDisabled()
+    await page
+      .getByRole('checkbox', { name: /판매 주문 #\d+ 선택/ })
+      .first()
+      .uncheck()
+    await expect(bulk).toHaveCount(0)
+    await page.getByRole('tab', { name: /전체/ }).click()
     await page.getByRole('button', { name: '발송' }).first().click()
     await page.getByRole('button', { name: '배송 완료 처리' }).first().click()
     await expect(page.getByText('배송 완료', { exact: true }).first()).toBeVisible()
