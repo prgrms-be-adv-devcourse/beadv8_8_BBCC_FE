@@ -9,7 +9,8 @@ import {
   toRegisterProductRequest,
 } from '@/entities/product'
 import { recommendationApi } from '@/entities/recommendation'
-import { sellerApi } from '@/entities/seller'
+import { sellerApi, toSellerApplicationRequest } from '@/entities/seller'
+import { DEMO_APPLICATION } from '@/features/apply-seller'
 import { sellerOrderApi } from '@/entities/seller-order'
 import { settlementApi } from '@/entities/settlement'
 import { walletApi } from '@/entities/wallet'
@@ -101,11 +102,8 @@ export const AUTO_DEMO_STEPS: AutoDemoStep[] = [
       let application = await ctx.call('내 판매자 신청', () => sellerApi.getMyApplication())
       if (!application || application.status === 'REJECTED') {
         await ctx.call('판매자 신청', () =>
-          sellerApi.apply({
-            businessName: '자동 시연 상점',
-            representativeName: '보호자',
-            businessRegistrationNumber: '123-45-67890',
-          }),
+          // 판매자 신청 화면과 같은 시연 값 (BE: 사업자등록번호는 하이픈 없는 숫자 10자리)
+          sellerApi.apply(toSellerApplicationRequest(DEMO_APPLICATION)),
         )
         application = await sellerApi.getMyApplication()
       }
@@ -120,7 +118,10 @@ export const AUTO_DEMO_STEPS: AutoDemoStep[] = [
       await ctx.show(C.sellerProducts, '판매자: 상품 등록 (카테고리 입력 항목으로)')
       const categories = toCategories(await productApi.categories())
       const categoryId = demoCategoryId(categories)
-      if (!categoryId) throw new AutoDemoError('카테고리가 없어요')
+      if (!categoryId)
+        throw new AutoDemoError(
+          '카테고리가 없어요 (서버에 상품 카테고리 데이터가 없음 · 백엔드 초기 데이터 필요)',
+        )
       const inputs = toCategoryInputs(await productApi.categoryInputs(categoryId))
       const form = { ...demoRegisterForm(inputs), name: `데일리 맨투맨 (자동 ${ctx.data.stamp})` }
       const result = await ctx.call('상품 등록', () =>

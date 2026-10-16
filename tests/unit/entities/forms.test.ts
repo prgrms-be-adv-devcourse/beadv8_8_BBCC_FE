@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { validateChildForm, type ChildForm } from '@/entities/child'
-import { validateSellerApplicationForm } from '@/entities/seller'
+import { toSellerApplicationRequest, validateSellerApplicationForm } from '@/entities/seller'
+import { DEMO_APPLICATION } from '@/features/apply-seller'
 
 const TODAY = '2026-10-15'
 const child = (patch: Partial<ChildForm> = {}): ChildForm => ({
@@ -62,5 +63,14 @@ describe('판매자 신청 검증', () => {
     expect(
       validateSellerApplicationForm({ ...base, businessRegistrationNumber: '123-45-67890' }),
     ).not.toBeNull()
+  })
+})
+
+describe('시연 판매자 신청 값 (자동 시연 · 신청 화면이 같이 씀)', () => {
+  it('신청 검증(BE: 사업자등록번호 하이픈 없는 숫자 10자리)을 통과한다', () => {
+    expect(validateSellerApplicationForm(DEMO_APPLICATION)).toBeNull()
+    expect(toSellerApplicationRequest(DEMO_APPLICATION).businessRegistrationNumber).toMatch(
+      /^\d{10}$/,
+    )
   })
 })
