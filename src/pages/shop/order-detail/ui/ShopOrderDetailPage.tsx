@@ -21,13 +21,14 @@ import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { formatDateTime, formatWon } from '@/shared/lib'
 import { Card, CardTitle } from '@/shared/ui/card'
+import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 export function ShopOrderDetailPage() {
   const { orderId = '' } = useParams()
   const { query, payments, payment, paymentCheck, delayed } = useOrderTracking(orderId)
 
-  if (query.isPending) return <StateMessage>불러오는 중…</StateMessage>
+  if (query.isPending) return <ListSkeleton rows={4} />
   if (query.isError) return <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>
 
   const order = query.data

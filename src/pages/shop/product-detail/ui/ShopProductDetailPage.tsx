@@ -24,6 +24,7 @@ import { loginPath, paths } from '@/shared/config'
 import { formatWon } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
+import { Skeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 export function ShopProductDetailPage() {
@@ -39,7 +40,18 @@ export function ShopProductDetailPage() {
   const [optionId, setOptionId] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
 
-  if (product.isPending) return <StateMessage>불러오는 중…</StateMessage>
+  if (product.isPending)
+    return (
+      <div role="status" aria-label="불러오는 중" className="grid gap-6 md:grid-cols-2">
+        <Skeleton className="aspect-square rounded-2xl" />
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-1/4" />
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-6 w-1/3" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      </div>
+    )
   if (product.isError)
     return <StateMessage tone="error">{getErrorMessage(product.error)}</StateMessage>
 

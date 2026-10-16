@@ -12,6 +12,7 @@ import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn, formatDateTime, formatWon } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
+import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 /** 내 주문 (기획서 F08): 상태 탭 → 주문 카드 → 주문 상세 */
@@ -44,7 +45,7 @@ export function ShopOrdersPage() {
           </button>
         ))}
       </div>
-      {orders.isPending && <StateMessage>불러오는 중…</StateMessage>}
+      {orders.isPending && <ListSkeleton />}
       {orders.isError && <StateMessage tone="error">{getErrorMessage(orders.error)}</StateMessage>}
       {orders.data && visible.length === 0 && (
         <Card className="py-10 text-center">

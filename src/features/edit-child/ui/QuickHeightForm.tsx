@@ -43,9 +43,6 @@ export function QuickHeightForm({ child, className }: QuickHeightFormProps) {
           기록하기
         </button>
       </div>
-      {update.isSuccess && (
-        <p className="text-growth-deep text-xs">기록했어요. 추천 사이즈가 바뀌었어요.</p>
-      )}
       {update.isError && (
         <p className="text-destructive text-xs">{getErrorMessage(update.error)}</p>
       )}

@@ -6,6 +6,7 @@ import {
   type CategoryInputs,
   type RegisterProductForm,
 } from '@/entities/product'
+import { toast } from '@/shared/lib'
 import { runWithAction } from '@/shared/api'
 
 /** 상품 등록 → 판매 시작 전(SALE_PENDING). 응답의 productId로 판매를 시작한다 */
@@ -14,7 +15,10 @@ export function useRegisterProduct(inputs: CategoryInputs) {
   return useMutation({
     mutationFn: (form: RegisterProductForm) =>
       runWithAction('상품 등록', () => productApi.register(toRegisterProductRequest(inputs, form))),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: productKeys.sellerList }),
+    onSuccess: () => {
+      toast('상품을 등록했어요')
+      return queryClient.invalidateQueries({ queryKey: productKeys.sellerList })
+    },
   })
 }
 
@@ -24,6 +28,9 @@ export function useStartSale() {
   return useMutation({
     mutationFn: (productId: string) =>
       runWithAction('판매 시작', () => productApi.startSale(productId)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: productKeys.all }),
+    onSuccess: () => {
+      toast('판매를 시작했어요 · 이제 구매자에게 보여요')
+      return queryClient.invalidateQueries({ queryKey: productKeys.all })
+    },
   })
 }

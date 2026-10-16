@@ -1,3 +1,4 @@
+import { confirmAction } from '@/shared/lib'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -15,8 +16,15 @@ export function WithdrawButton({ onDone }: WithdrawButtonProps) {
         variant="destructive"
         size="sm"
         disabled={withdraw.isPending}
-        onClick={() => {
-          if (window.confirm('탈퇴할까요? 탈퇴 조건은 아직 정해지지 않아 시연용(목)이에요.'))
+        onClick={async () => {
+          if (
+            await confirmAction({
+              title: '탈퇴할까요?',
+              description: '탈퇴 조건은 아직 정해지지 않아 시연용(목)이에요.',
+              confirmLabel: '탈퇴하기',
+              tone: 'danger',
+            })
+          )
             withdraw.mutate()
         }}
       >

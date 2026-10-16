@@ -42,9 +42,6 @@ export function EditChildForm({ child }: EditChildFormProps) {
               {update.isError && (
                 <StateMessage tone="error">{getErrorMessage(update.error)}</StateMessage>
               )}
-              {update.isSuccess && (
-                <StateMessage>저장했어요. 키 · 체형이 바뀌었으면 성장 이력에 쌓여요.</StateMessage>
-              )}
             </>
           }
         />

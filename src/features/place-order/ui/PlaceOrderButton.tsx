@@ -2,7 +2,7 @@ import type { ShippingAddress } from '@/entities/address'
 import type { CartLine } from '@/entities/cart'
 import type { Order } from '@/entities/order'
 import { getErrorMessage } from '@/shared/api'
-import { formatWon } from '@/shared/lib'
+import { formatWon, confirmAction } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { usePlaceOrder } from '../model/use-place-order'
@@ -23,8 +23,15 @@ export function PlaceOrderButton({ lines, address, totalAmount, onPlaced }: Plac
         size="lg"
         className="w-full"
         disabled={lines.length === 0 || !address || place.isPending}
-        onClick={() => {
-          if (address && window.confirm(`${formatWon(totalAmount)}을 예치금으로 결제할까요?`)) {
+        onClick={async () => {
+          if (
+            address &&
+            (await confirmAction({
+              title: `${formatWon(totalAmount)}을 예치금으로 결제할까요?`,
+              description: `상품 ${lines.length}개 · ${address.recipientName} (${address.fullAddress})`,
+              confirmLabel: '결제하기',
+            }))
+          ) {
             place.mutate({ lines, address })
           }
         }}

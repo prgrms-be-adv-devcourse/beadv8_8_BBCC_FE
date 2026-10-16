@@ -1,3 +1,4 @@
+import { confirmAction } from '@/shared/lib'
 import { paths } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
 import { clearDemoStorage } from '../lib/clear-demo-storage'
@@ -11,10 +12,13 @@ export function ResetDemoButton() {
     <Button
       size="sm"
       variant="outline"
-      onClick={() => {
-        const ok = window.confirm(
-          '시연을 처음부터 다시 할까요?\n\n지우는 것: 목 데이터(상품 · 정산 등), 흐름 기록\n남는 것: 시연 역할 로그인, 목 설정\n서버(백엔드) 데이터는 그대로예요.',
-        )
+      onClick={async () => {
+        const ok = await confirmAction({
+          title: '시연을 처음부터 다시 할까요?',
+          description:
+            '지우는 것: 목 데이터(상품 · 정산 등), 흐름 기록\n남는 것: 시연 역할 로그인, 목 설정\n서버(백엔드) 데이터는 그대로예요.',
+          confirmLabel: '처음부터',
+        })
         if (!ok) return
         try {
           clearDemoStorage(sessionStorage)
