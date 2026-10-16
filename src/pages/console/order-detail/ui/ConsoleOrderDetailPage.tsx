@@ -21,6 +21,7 @@ import { formatDateTime, formatWon } from '@/shared/lib'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { OrderTimelineCard } from '@/widgets/order-timeline'
 
 export function ConsoleOrderDetailPage() {
   const { orderId = '' } = useParams()
@@ -80,6 +81,8 @@ export function ConsoleOrderDetailPage() {
         <CardTitle className="mb-2">진행 (상태 변화)</CardTitle>
         <OrderTimeline events={buildOrderTimeline(order)} />
       </Card>
+
+      <OrderTimelineCard order={order} />
 
       <Card className="space-y-2">
         <CardTitle>주문상품</CardTitle>

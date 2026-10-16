@@ -1,5 +1,5 @@
 export { orderApi } from './api/order-api'
-export type { AdminOrderDto, OrderDetailDto } from './api/order.dto'
+export type { AdminOrderDto, OrderDetailDto, OrderTimelineDto } from './api/order.dto'
 export {
   CANCEL_REASON_LABEL,
   type AdminOrder,
@@ -35,10 +35,22 @@ export {
   type OrderTab,
 } from './model/order.rules'
 export {
+  doneCount,
+  formatGap,
+  TIMELINE_CANCEL_LABEL,
+  TIMELINE_STEP_LABEL,
+  toOrderTimeline,
+  type OrderTimeline as ServerOrderTimeline,
+  type TimelineDetail,
+  type TimelineStep,
+  type TimelineStepStatus,
+} from './model/order-timeline'
+export {
   orderKeys,
   paymentPendingMs,
   useAdminOrdersQuery,
   useOrderQuery,
+  useOrderTimelineQuery,
   useOrdersQuery,
 } from './model/queries'
 export { OrderDeliveryList } from './ui/OrderDeliveryList'

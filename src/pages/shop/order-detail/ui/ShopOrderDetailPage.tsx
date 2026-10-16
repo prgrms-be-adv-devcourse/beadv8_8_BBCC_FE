@@ -16,6 +16,7 @@ import {
 import { PaymentCard } from '@/entities/payment'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
 import { useOrderTracking } from '@/features/track-order'
+import { OrderTimelineCard } from '@/widgets/order-timeline'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { formatDateTime, formatWon } from '@/shared/lib'
@@ -115,6 +116,8 @@ export function ShopOrderDetailPage() {
           <span>{formatWon(order.totalAmount)}</span>
         </div>
       </Card>
+
+      <OrderTimelineCard order={order} />
 
       {paymentCheck && (
         <PaymentCard

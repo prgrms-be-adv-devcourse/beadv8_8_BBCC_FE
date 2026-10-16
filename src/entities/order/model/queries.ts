@@ -1,11 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { orderApi } from '../api/order-api'
 import { toAdminOrder, toOrder, toOrderSummary } from './order.mapper'
+import { toOrderTimeline } from './order-timeline'
 import { isAwaitingPayment, paymentPollInterval } from './order.rules'
 
 export const orderKeys = {
   list: ['orders', 'list'] as const,
   detail: (orderId: string) => ['orders', 'detail', orderId] as const,
+  timeline: (orderId: string, revision: string) =>
+    ['orders', 'timeline', orderId, revision] as const,
 }
 
 export function useOrdersQuery() {
@@ -57,5 +60,18 @@ export function useAdminOrdersQuery(status: string | null) {
         .map(toAdminOrder)
         .filter((order) => status === null || order.status === status),
     }),
+  })
+}
+
+/**
+ * 주문 처리 타임라인 (BE #352). revision은 주문 상세에서 만든 상태 글자 —
+ * 주문 상세가 바뀌면(결제 · 발송 · 확정) 타임라인도 다시 부른다
+ */
+export function useOrderTimelineQuery(orderId: string, revision: string) {
+  return useQuery({
+    queryKey: orderKeys.timeline(orderId, revision),
+    queryFn: () => orderApi.timeline(orderId),
+    select: toOrderTimeline,
+    placeholderData: (previous) => previous,
   })
 }

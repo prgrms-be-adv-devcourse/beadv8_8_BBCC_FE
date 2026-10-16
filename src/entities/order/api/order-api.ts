@@ -3,9 +3,15 @@ import type {
   AdminOrderDto,
   OrderDetailDto,
   OrderSummaryDto,
+  OrderTimelineDto,
   PlaceOrderRequestDto,
 } from './order.dto'
-import { adminOrderPageShape, orderDetailShape, orderPageShape } from './order.shape'
+import {
+  adminOrderPageShape,
+  orderDetailShape,
+  orderPageShape,
+  orderTimelineShape,
+} from './order.shape'
 
 export const orderApi = {
   list: () =>
@@ -24,6 +30,11 @@ export const orderApi = {
         headers: { 'Idempotency-Key': idempotencyKey },
       })
       .then(expectShape(orderDetailShape)),
+  /** 주문 처리 단계 · 시각 (BE #352). 본인 주문만, 아니면 404 */
+  timeline: (orderId: string) =>
+    apiClient
+      .get<OrderTimelineDto>(`/orders/${orderId}/timeline`)
+      .then(expectShape(orderTimelineShape)),
   /** 이미 확정이어도 200, 배송 완료 전이면 409 */
   confirmItem: (orderId: string, orderItemId: string) =>
     apiClient.post(`/orders/${orderId}/items/${orderItemId}/confirm`),
