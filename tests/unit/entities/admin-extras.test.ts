@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { ordersSeenInLogs, paymentsSeenInLogs } from '@/app/mocks/admin-handlers'
 import {
+  canGrantAdmin,
+  canRevokeAdmin,
   canSuspendMember,
   canSuspendSeller,
   toAdminMember,
@@ -23,16 +25,18 @@ describe('validateReason: 정지 · 거절 사유 (백엔드 @NotBlank · 200자
   })
 })
 
+const MEMBER_DTO = {
+  id: 2,
+  nickname: '테스트상점',
+  status: 'ACTIVE',
+  sellerStatus: 'ACTIVE',
+  suspendReason: null,
+  suspendedAt: null,
+  createdAt: '2026-10-01T10:00:00',
+}
+
 const member = (patch: Partial<AdminMember> = {}): AdminMember => ({
-  ...toAdminMember({
-    id: 2,
-    nickname: '테스트상점',
-    status: 'ACTIVE',
-    sellerStatus: 'ACTIVE',
-    suspendReason: null,
-    suspendedAt: null,
-    createdAt: '2026-10-01T10:00:00',
-  }),
+  ...toAdminMember(MEMBER_DTO, false),
   ...patch,
 })
 
@@ -40,9 +44,24 @@ describe('관리자 회원 목록', () => {
   it('toAdminMember: 숫자 ID → 문자열', () => {
     expect(member().id).toBe('2')
   })
-  it('이용 정지는 활동 중인 회원만', () => {
+  it('toAdminMember: 관리자 탭(filter=ADMIN)에서 읽은 행만 관리자', () => {
+    expect(toAdminMember(MEMBER_DTO, true).isAdmin).toBe(true)
+    expect(toAdminMember(MEMBER_DTO, false).isAdmin).toBe(false)
+  })
+  it('이용 정지는 활동 중인 일반 회원만 (관리자는 서버가 409)', () => {
     expect(canSuspendMember(member())).toBe(true)
     expect(canSuspendMember(member({ status: 'SUSPENDED' }))).toBe(false)
+    expect(canSuspendMember(member({ isAdmin: true }))).toBe(false)
+  })
+  it('관리자 지정은 활동 중인 일반 회원만', () => {
+    expect(canGrantAdmin(member())).toBe(true)
+    expect(canGrantAdmin(member({ status: 'SUSPENDED' }))).toBe(false)
+    expect(canGrantAdmin(member({ isAdmin: true }))).toBe(false)
+  })
+  it('권한 해제는 관리자만, 본인은 안 됨', () => {
+    expect(canRevokeAdmin(member({ isAdmin: true }), '3')).toBe(true)
+    expect(canRevokeAdmin(member({ isAdmin: true }), '2')).toBe(false)
+    expect(canRevokeAdmin(member(), '3')).toBe(false)
   })
   it('판매자 자격 정지는 판매 가능한 판매자만 (판매자가 아니면 불가)', () => {
     expect(canSuspendSeller(member())).toBe(true)

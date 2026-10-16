@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import {
+  canGrantAdmin,
+  canRevokeAdmin,
   canSuspendMember,
   canSuspendSeller,
   MEMBER_FILTER_LABEL,
@@ -7,6 +9,8 @@ import {
   useAdminMembersQuery,
   type MemberFilter,
 } from '@/entities/member'
+import { useSessionStore } from '@/entities/session'
+import { GrantAdminButton, RevokeAdminButton } from '@/features/manage-admin-role'
 import { SuspendMemberForm, SuspendSellerForm } from '@/features/suspend-member'
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime } from '@/shared/lib'
@@ -17,19 +21,20 @@ import { Input } from '@/shared/ui/input'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
-/** 관리자 회원 목록 · 이용 정지 · 판매자 자격 정지 */
+/** 관리자 회원 목록 · 이용 정지 · 판매자 자격 정지 · 관리자 지정 · 해제 */
 export function AdminMembersPage() {
   const [filter, setFilter] = useState<MemberFilter>('ALL')
   const [keyword, setKeyword] = useState('')
   const [search, setSearch] = useState('')
   const members = useAdminMembersQuery(filter, search)
+  const myMemberId = useSessionStore((s) => s.user?.memberId)
 
   return (
     <div className="space-y-4">
       <PageHeader
         title="회원 관리"
-        description="회원을 찾아 이용 정지하거나 판매자 자격을 정지해요. 관리자 · 탈퇴 회원은 보이지 않아요."
-        note="이용 정지 → 로그인 · 재발급 막힘. 판매자 자격 정지 → seller.changed (정지 후 상품 처리는 보류, 기획서 2.1)"
+        description="회원을 찾아 이용 정지하거나 판매자 자격을 정지하고, 관리자를 지정 · 해제해요. 관리자는 관리자 탭에서만 보이고 탈퇴 회원은 보이지 않아요. 권한을 바꾼 회원은 새로고침해야 메뉴가 바뀌어요."
+        note="이용 정지 → 로그인 · 재발급 막힘. 판매자 자격 정지 → seller.changed (정지 후 상품 처리는 보류, 기획서 2.1). 관리자 지정 · 해제 → 다음 토큰 재발급부터 ADMIN 역할 반영 (BE #356)"
       />
       <div className="flex flex-wrap items-center gap-2">
         {(Object.keys(MEMBER_FILTER_LABEL) as MemberFilter[]).map((key) => (
@@ -96,6 +101,8 @@ export function AdminMembersPage() {
           <div className="flex flex-wrap items-start gap-2">
             {canSuspendMember(member) && <SuspendMemberForm memberId={member.id} />}
             {canSuspendSeller(member) && <SuspendSellerForm sellerId={member.id} />}
+            {canGrantAdmin(member) && <GrantAdminButton memberId={member.id} />}
+            {canRevokeAdmin(member, myMemberId) && <RevokeAdminButton memberId={member.id} />}
           </div>
         </Card>
       ))}

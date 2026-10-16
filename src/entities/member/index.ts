@@ -8,5 +8,10 @@ export {
   type MemberStatus,
 } from './model/member'
 export { toAdminMember } from './model/member.mapper'
-export { canSuspendMember, canSuspendSeller } from './model/member.rules'
+export {
+  canGrantAdmin,
+  canRevokeAdmin,
+  canSuspendMember,
+  canSuspendSeller,
+} from './model/member.rules'
 export { memberKeys, useAdminMembersQuery } from './model/queries'

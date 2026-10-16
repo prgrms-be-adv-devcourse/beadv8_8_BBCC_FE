@@ -46,10 +46,11 @@ const ledger = (memberId, type, amount, refId) =>
     refId,
     createdAt: now(),
   })
-// 관리자 회원 목록용 (기획서 7.1: 회원 1 보호자 · 2 판매자, 관리자는 목록에서 빠짐)
+// 관리자 회원 목록용 (기획서 7.1: 회원 1 보호자 · 2 판매자 · 3 관리자). 관리자는 filter=ADMIN에서만 나온다 (BE #356)
 const members = {
   1: {
     nickname: '보호자',
+    role: 'USER',
     status: 'ACTIVE',
     sellerStatus: null,
     suspendReason: null,
@@ -57,8 +58,17 @@ const members = {
   },
   2: {
     nickname: '테스트상점',
+    role: 'USER',
     status: 'ACTIVE',
     sellerStatus: 'ACTIVE',
+    suspendReason: null,
+    suspendedAt: null,
+  },
+  3: {
+    nickname: '관리자',
+    role: 'ADMIN',
+    status: 'ACTIVE',
+    sellerStatus: null,
     suspendReason: null,
     suspendedAt: null,
   },
@@ -866,7 +876,9 @@ http
       const filter = url.searchParams.get('filter') || 'ALL'
       const keyword = (url.searchParams.get('keyword') || '').trim()
       const rows = Object.entries(members)
-        .map(([id, m]) => ({ id: +id, ...m, createdAt: '2026-10-01T10:00:00' }))
+        .filter(([, m]) => (filter === 'ADMIN') === (m.role === 'ADMIN'))
+        // 응답에는 역할이 없다 (BE AdminMemberSummaryResponse)
+        .map(([id, { role: _role, ...m }]) => ({ id: +id, ...m, createdAt: '2026-10-01T10:00:00' }))
         .filter((m) =>
           filter === 'SUSPENDED'
             ? m.status === 'SUSPENDED'
@@ -881,7 +893,7 @@ http
     }
     if ((x = r('POST', /^\/admin\/members\/(\d+)\/suspend$/))) {
       const m = members[x[1]]
-      if (!m || m.status !== 'ACTIVE')
+      if (!m || m.status !== 'ACTIVE' || m.role === 'ADMIN')
         return problem(
           res,
           409,
@@ -890,6 +902,36 @@ http
           req.url,
         )
       Object.assign(m, { status: 'SUSPENDED', suspendReason: body.reason, suspendedAt: now() })
+      return send(res, 204)
+    }
+    if ((x = r('POST', /^\/admin\/members\/(\d+)\/grant-admin$/))) {
+      const m = members[x[1]]
+      if (!m)
+        return problem(res, 404, '찾을 수 없습니다', '요청한 리소스를 찾을 수 없습니다.', req.url)
+      if (m.status !== 'ACTIVE' || m.role === 'ADMIN')
+        return problem(
+          res,
+          409,
+          '관리자로 지정할 수 없는 회원입니다',
+          '정지 · 탈퇴했거나 이미 관리자인 회원입니다.',
+          req.url,
+        )
+      m.role = 'ADMIN'
+      return send(res, 204)
+    }
+    if ((x = r('POST', /^\/admin\/members\/(\d+)\/revoke-admin$/))) {
+      const m = members[x[1]]
+      if (!m)
+        return problem(res, 404, '찾을 수 없습니다', '요청한 리소스를 찾을 수 없습니다.', req.url)
+      if (m.role !== 'ADMIN' || +x[1] === me)
+        return problem(
+          res,
+          409,
+          '관리자 권한을 해제할 수 없는 회원입니다',
+          '관리자가 아니거나 본인입니다.',
+          req.url,
+        )
+      m.role = 'USER'
       return send(res, 204)
     }
     if ((x = r('POST', /^\/admin\/sellers\/(\d+)\/suspend$/))) {
