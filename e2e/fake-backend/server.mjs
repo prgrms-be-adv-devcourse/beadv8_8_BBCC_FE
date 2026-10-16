@@ -80,6 +80,8 @@ const PAYMENT_TIMEOUT_MS = 10 * 60e3
 // 다음 주문 하나를 처리하지 않고 결제 마감에 취소한다 (상품 order.created 리스너가 없는 실제 백엔드 흉내).
 // POST /__fake/payment-stall { timeoutMs } — 가짜 백엔드 전용
 let stallNext = null
+// FE 동작 설정 (BE AppSetting). 다른 E2E가 목 · 시연을 켠 상태를 전제하므로 기본값은 둘 다 켬
+const appSetting = { useMock: true, demoRoleSwitch: true }
 const problem = (res, status, title, detail, instance) =>
   send(res, status, { type: 'about:blank', title, status, detail, instance })
 // 주문 BE #253: 수량 1~99, 범위 밖이면 400 INVALID_QUANTITY
@@ -203,8 +205,18 @@ http
         ? send(res, 200, detail)
         : problem(res, 404, '찾을 수 없습니다', '상품을 찾을 수 없습니다.', req.url)
     }
+    if (r('GET', /^\/settings$/)) return send(res, 200, appSetting)
     if (!u) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
     const me = Number(u.sub)
+    if (r('PUT', /^\/admin\/settings$/)) {
+      if (!(u.roles || []).includes('ADMIN'))
+        return problem(res, 403, '권한이 없습니다', '관리자만 바꿀 수 있습니다.', req.url)
+      if (typeof body?.useMock !== 'boolean' || typeof body?.demoRoleSwitch !== 'boolean')
+        return problem(res, 400, '잘못된 요청입니다', '두 값을 모두 넣어 주세요.', req.url)
+      appSetting.useMock = body.useMock
+      appSetting.demoRoleSwitch = body.demoRoleSwitch
+      return send(res, 200, appSetting)
+    }
     // 정산: 구매확정된 주문상품이 대상, 실행하면 판매자별 정산서 → 바로 예치금 입금(PAID)
     const confirmedItems = () =>
       orders.flatMap((o) =>

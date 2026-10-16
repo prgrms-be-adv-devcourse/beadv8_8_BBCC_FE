@@ -1,11 +1,15 @@
+import { appSettings } from './app-settings'
+
 export const env = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL ?? '',
   isDev: import.meta.env.DEV,
   /**
    * 시연 기능: 역할 전환(개발용 토큰) · 시연 콘솔 · API 흐름 · 시연 표시 · 시연용 문구.
-   * 개발 토큰이 없는 서버면 false로 빌드 → 카카오 로그인만, 시연 기능은 모두 감춘다
+   * 끄면 카카오 로그인만, 시연 기능은 모두 감춘다. 관리자 화면 설정을 따른다 (appSettings)
    */
-  demoRoleSwitch: import.meta.env.VITE_DEMO_ROLE_SWITCH !== 'false',
+  get demoRoleSwitch() {
+    return appSettings.current().isDemoRoleSwitchEnabled
+  },
   tossClientKey: import.meta.env.VITE_TOSS_CLIENT_KEY ?? '',
   kakaoClientId: import.meta.env.VITE_KAKAO_CLIENT_ID ?? '',
   kakaoRedirectUri:

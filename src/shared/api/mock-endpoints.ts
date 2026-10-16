@@ -150,6 +150,21 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     backend: 'BE #326 develop 머지(10/16) → 실제 (FE #117)',
     screens: '관리자 결제',
   },
+  // 설정 (앱 시작 때 목을 등록하기 전에 부르므로 목이 없다)
+  {
+    method: 'GET',
+    path: '/settings',
+    source: 'real',
+    backend: 'BE #378 (PR #379) → 실제 (FE #139)',
+    screens: '앱 시작 · 관리자 설정',
+  },
+  {
+    method: 'PUT',
+    path: '/admin/settings',
+    source: 'real',
+    backend: 'BE #378 (PR #379) → 실제 (FE #139)',
+    screens: '관리자 설정',
+  },
 ]
 
 export function endpointOf(method: string, path: string): MockEndpoint | undefined {

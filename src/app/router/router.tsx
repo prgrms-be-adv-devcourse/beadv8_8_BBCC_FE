@@ -71,6 +71,9 @@ const adminPayments = page(() =>
 const adminSettlements = page(() =>
   import('@/pages/admin/settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
 )
+const adminSettings = page(() =>
+  import('@/pages/admin/settings').then((m) => ({ Component: m.AdminSettingsPage })),
+)
 
 /** 주소에서 앞의 영역 접두어를 뗀 상대 경로 */
 const rel = (prefix: string, path: string) => path.slice(prefix.length + 1)
@@ -187,6 +190,7 @@ export const router = createBrowserRouter(
             { to: paths.admin.orders, label: '전체 주문' },
             { to: paths.admin.payments, label: '전체 결제' },
             { to: paths.admin.settlements, label: '정산' },
+            { to: paths.admin.settings, label: '설정' },
           ]}
         />
       ),
@@ -199,6 +203,7 @@ export const router = createBrowserRouter(
         { path: rel(paths.admin.home, paths.admin.payments), ...adminPayments },
         { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
         { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
+        { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
         { path: '*', element: <NotFoundPage /> },
       ],
     },
