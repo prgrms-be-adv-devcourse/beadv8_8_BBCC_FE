@@ -18,7 +18,7 @@ export const DOMAINS: { id: DomainId; name: string; external?: boolean }[] = [
 const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/products\/[^/]+\/size-recommendation/, 'recommend'],
   [/^\/children\/[^/]+\/recommended-products/, 'recommend'],
-  [/^\/((seller|admin)\/)?products|^\/categories/, 'product'],
+  [/^\/((seller|admin)\/)?(products|product-images)|^\/categories/, 'product'],
   [/^\/(cart|orders|seller\/orders)/, 'order'],
   [/^\/(wallets|payments)/, 'payment'],
   [/^\/(seller\/settlement|admin\/settlements)/, 'settlement'],

@@ -285,4 +285,7 @@ describe('domainOf: 상품 도메인 경로', () => {
     expect(domainOf('/categories/3/attributes')).toBe('product')
     expect(domainOf('/admin/products/1/stop-sale')).toBe('product')
   })
+  it('상품 이미지 업로드 주소 발급도 상품 도메인', () => {
+    expect(domainOf('/seller/product-images/upload-urls')).toBe('product')
+  })
 })
