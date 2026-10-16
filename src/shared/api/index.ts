@@ -23,7 +23,7 @@ export {
   type ProblemDetail,
 } from './problem-detail'
 export type { Page } from './types'
-export { MOCK_UPLOAD_URL_PREFIX, putToPresignedUrl, UploadError } from './presigned-upload'
+export { putToPresignedUrl, UploadError } from './presigned-upload'
 export {
   registerMockHandlers,
   isMockActive,

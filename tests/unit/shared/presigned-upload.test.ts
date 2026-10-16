@@ -1,11 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  MOCK_UPLOAD_URL_PREFIX,
-  putToPresignedUrl,
-  runWithAction,
-  UploadError,
-  useApiFlowLog,
-} from '@/shared/api'
+import { putToPresignedUrl, runWithAction, UploadError, useApiFlowLog } from '@/shared/api'
 
 const UPLOAD_URL =
   'https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com/dev/products/7/a.jpg?X-Amz-Signature=abc'
@@ -42,15 +36,6 @@ describe('putToPresignedUrl: 발급받은 주소로 S3에 바로 올린다', () 
 
     await expect(putToPresignedUrl(UPLOAD_URL, blob)).rejects.toEqual(new UploadError(null))
   })
-
-  it('목 업로드 주소면 네트워크로 보내지 않고 성공한다', async () => {
-    const fetchMock = vi.fn()
-    vi.stubGlobal('fetch', fetchMock)
-
-    await putToPresignedUrl(`${MOCK_UPLOAD_URL_PREFIX}dev/products/7/a.jpg`, blob)
-
-    expect(fetchMock).not.toHaveBeenCalled()
-  })
 })
 
 describe('putToPresignedUrl: 흐름 패널 기록', () => {
@@ -82,18 +67,5 @@ describe('putToPresignedUrl: 흐름 패널 기록', () => {
     await expect(putToPresignedUrl(UPLOAD_URL, blob)).rejects.toBeInstanceOf(UploadError)
 
     expect(useApiFlowLog.getState().logs).toMatchObject([{ method: 'PUT', status }])
-  })
-
-  it('목 업로드는 목으로 기록한다', async () => {
-    vi.stubGlobal('fetch', vi.fn())
-
-    await putToPresignedUrl(
-      `${MOCK_UPLOAD_URL_PREFIX}dev/products/7/a.jpg?X-Amz-Signature=mock`,
-      blob,
-    )
-
-    expect(useApiFlowLog.getState().logs).toMatchObject([
-      { path: `${MOCK_UPLOAD_URL_PREFIX}dev/products/7/a.jpg`, status: 200, mock: true },
-    ])
   })
 })

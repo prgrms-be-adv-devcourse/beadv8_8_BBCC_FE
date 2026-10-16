@@ -1,5 +1,5 @@
 // E2E 전용 가짜 백엔드 (실제 백엔드 코드와 무관). 구현된 API의 응답 모양(DTO)만 흉내 낸다.
-// 상품은 등록 · 판매 시작 · 상세 · 카테고리만 있다(products.mjs). 판매자 상품 목록 · 상세 · 재고 조정 · 판매 중지도 products.mjs. 상품 목록 · 사이즈 추천 · 자녀 맞춤 목록 · 관리자 전체 주문 · 결제 · 정산은 여기서 응답하고, 상품 수정은 FE 목(app/mocks)이 응답한다.
+// 상품은 등록 · 판매 시작 · 상세 · 카테고리 · 이미지 업로드 주소 발급만 있다(products.mjs). 판매자 상품 목록 · 상세 · 재고 조정 · 판매 중지도 products.mjs. 상품 목록 · 사이즈 추천 · 자녀 맞춤 목록 · 관리자 전체 주문 · 결제 · 정산은 여기서 응답하고, 상품 수정은 FE 목(app/mocks)이 응답한다.
 // 응답 모양이 실제와 달라지면 FE 흐름 패널의 계약 검사로 드러난다.
 import http from 'node:http'
 import {
@@ -10,6 +10,7 @@ import {
   adminChangeSaleStatus,
   changeSaleStatus,
   detailOf as productDetailOf,
+  issueImageUploadUrls,
   register,
   replica,
   sellerDetailOf,
@@ -372,6 +373,14 @@ http
       if (!c)
         return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
       return send(res, 200, sizeRecommendationOf(detail, c))
+    }
+    if (r('POST', /^\/seller\/product-images\/upload-urls$/)) {
+      if (!(u.roles || []).includes('SELLER'))
+        return problem(res, 403, '권한이 없습니다', '판매자만 올릴 수 있습니다.', req.url)
+      const result = issueImageUploadUrls(me, body)
+      return result.status === 200
+        ? send(res, 200, result.body)
+        : problem(res, result.status, '잘못된 요청입니다', result.detail, req.url)
     }
     if (r('POST', /^\/seller\/products$/)) {
       const result = register(me, body)

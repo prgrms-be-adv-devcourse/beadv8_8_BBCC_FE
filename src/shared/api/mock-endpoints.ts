@@ -50,9 +50,9 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'POST',
     path: '/seller/product-images/upload-urls',
-    source: 'mock',
-    backend: 'BE #373 진행 중(10/16), develop 머지 전',
-    screens: '판매자 상품(등록 사진)',
+    source: 'real',
+    backend: 'BE #390 develop 머지(10/16) → 실제 (FE #156)',
+    screens: '판매자 상품(등록 · 수정 사진)',
   },
   {
     method: 'PUT',

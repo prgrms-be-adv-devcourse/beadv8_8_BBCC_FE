@@ -1,10 +1,5 @@
 import { useApiFlowLog } from './api-flow-log'
 
-/** 목 핸들러가 주는 업로드 주소의 머리말. 이 주소는 네트워크로 보내지 않고 성공으로 끝낸다 */
-export const MOCK_UPLOAD_URL_PREFIX = 'mock-upload://'
-
-const MOCK_UPLOAD_DELAY_MS = 150
-
 /** S3 업로드 실패. status가 null이면 네트워크 · CORS로 응답을 받지 못한 것 */
 export class UploadError extends Error {
   readonly status: number | null
@@ -31,17 +26,13 @@ function record(uploadUrl: string, blob: Blob, startedAt: number, status: number
     expectedReason: null,
     durationMs: Math.round(performance.now() - startedAt),
     startedAt: new Date(performance.timeOrigin + startedAt).toISOString(),
-    mock: uploadUrl.startsWith(MOCK_UPLOAD_URL_PREFIX),
+    mock: false,
     requestBody: { contentType: blob.type, contentLength: blob.size },
     responseBody: null,
   })
 }
 
 async function send(uploadUrl: string, blob: Blob): Promise<number | null> {
-  if (uploadUrl.startsWith(MOCK_UPLOAD_URL_PREFIX)) {
-    await new Promise((resolve) => setTimeout(resolve, MOCK_UPLOAD_DELAY_MS))
-    return 200
-  }
   try {
     const response = await fetch(uploadUrl, {
       method: 'PUT',
