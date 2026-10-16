@@ -1,8 +1,14 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router'
 import { cn } from '@/shared/lib'
 import { useApiFlowLog } from '@/shared/api'
-import { ApiFlowPanel, usePanelSize, usePresentationMode } from '@/widgets/api-flow-panel'
+import {
+  ApiFlowPanel,
+  consoleColumns,
+  PanelResizeHandle,
+  usePanelSize,
+  usePresentationMode,
+} from '@/widgets/api-flow-panel'
 import { AutoDemoBar } from '@/widgets/auto-demo'
 import { DemoBar } from '@/widgets/demo-bar'
 import { TopProgressBar } from './TopProgressBar'
@@ -14,6 +20,9 @@ import { Overlays } from './Overlays'
 export function ConsoleLayout() {
   const presentation = usePresentationMode((state) => state.on)
   const size = usePanelSize((state) => state.size)
+  const width = usePanelSize((state) => state.width)
+  const gridRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const { pathname } = useLocation()
   // 호출 기록에 시연 단계(①~⑦)를 붙인다 → 흐름 패널이 단계별로 묶음
   const setCurrentStep = useApiFlowLog((state) => state.setCurrentStep)
@@ -27,16 +36,9 @@ export function ConsoleLayout() {
       <TopProgressBar />
       <DemoStepBar />
       <div
-        className={cn(
-          'grid min-h-0 flex-1',
-          size === 'full'
-            ? 'grid-cols-[0_1fr]'
-            : size === 'wide'
-              ? 'grid-cols-[1fr_1fr]'
-              : presentation
-                ? 'grid-cols-[1fr_560px]'
-                : 'grid-cols-[1fr_440px]',
-        )}
+        ref={gridRef}
+        className="grid min-h-0 flex-1"
+        style={{ gridTemplateColumns: consoleColumns(size, width, presentation) }}
       >
         <div
           className={cn('flex min-h-0 flex-col', size === 'full' && 'invisible overflow-hidden')}
@@ -50,7 +52,14 @@ export function ConsoleLayout() {
             </div>
           </main>
         </div>
-        <ApiFlowPanel />
+        {size === 'full' ? (
+          <div aria-hidden />
+        ) : (
+          <PanelResizeHandle containerRef={gridRef} panelRef={panelRef} />
+        )}
+        <div ref={panelRef} className="min-h-0 min-w-0">
+          <ApiFlowPanel />
+        </div>
       </div>
       {/* 자동 시연 막대는 패널 폭(전체 포함)과 상관없이 맨 아래에 */}
       <AutoDemoBar />

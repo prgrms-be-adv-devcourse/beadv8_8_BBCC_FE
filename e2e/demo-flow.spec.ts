@@ -69,6 +69,27 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(widthButton('⛶ 전체')).toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByRole('region', { name: '호출 목록' })).toBeVisible()
     await widthButton('보통').click()
+
+    // 손잡이를 끌어 폭을 맞춘다 → 프리셋 선택 표시 없음, ← 로 40px 넓힘, 더블클릭이면 보통
+    const handle = page.getByRole('separator', { name: 'API 흐름 폭 조절' })
+    const box = (await handle.boundingBox())!
+    const viewport = page.viewportSize()!
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(viewport.width - 700, box.y + box.height / 2, { steps: 5 })
+    await page.mouse.up()
+    await expect(handle).toHaveAttribute('aria-valuenow', /^(69\d|70\d)$/)
+    for (const name of ['보통', '◧ 넓게', '⛶ 전체']) {
+      await expect(widthButton(name)).toHaveAttribute('aria-pressed', 'false')
+    }
+    // 700px 이상이면 패널 안이 목록 | 방금 호출로 나뉜다
+    await expect(page.getByRole('region', { name: '호출 목록' })).toBeVisible()
+    const before = Number(await handle.getAttribute('aria-valuenow'))
+    await handle.focus()
+    await page.keyboard.press('ArrowLeft')
+    await expect(handle).toHaveAttribute('aria-valuenow', String(before + 40))
+    await handle.dblclick()
+    await expect(widthButton('보통')).toHaveAttribute('aria-pressed', 'true')
   })
 
   await test.step('② 판매자 신청 → 관리자 거절 → 다시 신청 → 승인', async () => {
