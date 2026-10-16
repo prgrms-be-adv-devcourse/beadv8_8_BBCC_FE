@@ -43,7 +43,7 @@ export function demoRegisterForm(inputs: CategoryInputs): RegisterProductForm {
   const form: RegisterProductForm = {
     name: '데일리 맨투맨',
     brand: '키들리',
-    imageUrlsText: '',
+    imageUrls: [],
     categoryId: inputs.categoryId,
     info,
     optionValues,

@@ -18,6 +18,7 @@ export {
   type InputAttribute,
   type ProductDetail,
   type ProductEditForm,
+  type ProductImagesField,
   type ProductListItem,
   type ProductOption,
   PRODUCT_SORT_LABEL,

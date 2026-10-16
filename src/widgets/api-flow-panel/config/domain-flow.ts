@@ -1,7 +1,7 @@
 // 시연용 고정 데이터. 기획서 v1.0 3.3 모듈 연결 지도 · 8장 이벤트 표를 옮겼다 (실제 이벤트 로그가 아니다)
 
 export type DomainId =
-  'member' | 'product' | 'recommend' | 'order' | 'payment' | 'settlement' | 'toss' | 'kakao'
+  'member' | 'product' | 'recommend' | 'order' | 'payment' | 'settlement' | 'toss' | 'kakao' | 's3'
 
 export const DOMAINS: { id: DomainId; name: string; external?: boolean }[] = [
   { id: 'member', name: '회원' },
@@ -12,13 +12,16 @@ export const DOMAINS: { id: DomainId; name: string; external?: boolean }[] = [
   { id: 'settlement', name: '정산' },
   { id: 'kakao', name: '카카오', external: true },
   { id: 'toss', name: '토스', external: true },
+  { id: 's3', name: 'S3', external: true },
 ]
 
 /** API 경로 → 처리하는 도메인. 위에서부터 먼저 맞는 것 */
 const PATH_DOMAINS: [RegExp, DomainId][] = [
+  // 브라우저가 서명된 주소로 직접 올리는 S3 (목 업로드 주소 포함)
+  [/^(https:\/\/[^/]+\.amazonaws\.com\/|mock-upload:\/\/)/, 's3'],
   [/^\/products\/[^/]+\/size-recommendation/, 'recommend'],
   [/^\/children\/[^/]+\/recommended-products/, 'recommend'],
-  [/^\/((seller|admin)\/)?products|^\/categories/, 'product'],
+  [/^\/((seller|admin)\/)?(products|product-images)|^\/categories/, 'product'],
   [/^\/(cart|orders|seller\/orders)/, 'order'],
   [/^\/(wallets|payments)/, 'payment'],
   [/^\/(seller\/settlement|admin\/settlements)/, 'settlement'],
@@ -70,6 +73,20 @@ const FLOWS: { method: string; pattern: RegExp; steps: FlowStep[] }[] = [
         to: ['recommend', 'order'],
         description: '추천 · 주문이 자녀 정보 복사본 저장',
         kind: 'event',
+      },
+    ],
+  },
+  {
+    method: 'POST',
+    pattern: /^\/seller\/product-images\/upload-urls$/,
+    steps: [
+      {
+        name: 'S3 업로드 주소 서명',
+        from: 'product',
+        to: ['s3'],
+        description:
+          '서버는 파일을 받지 않고 형식 · 크기를 확인해 5분짜리 PUT 주소에 서명만 한다 → 브라우저가 이 주소로 S3에 직접 올린다',
+        kind: 'external',
       },
     ],
   },

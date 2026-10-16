@@ -10,6 +10,30 @@ const NICKNAME = {
   관리자: '관리자 · 회원 3',
 } as const
 
+/** 목 업로드가 돌려주는 저장 주소. 확장자는 발급 때 보낸 형식(줄인 결과 JPG)에서 정해진다 */
+const BUCKET_IMAGE =
+  /^https:\/\/team04-kidly-s3\.s3\.ap-northeast-2\.amazonaws\.com\/dev\/products\/\d+\/[\w-]+\.jpg$/
+
+/** 브라우저에서 그린 단색 PNG (업로드할 사진) */
+async function pngOf(page: Page, width: number, height: number): Promise<Buffer> {
+  const bytes = await page.evaluate(
+    async ([w, h]) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('canvas 없음')
+      context.fillStyle = '#681078'
+      context.fillRect(0, 0, w, h)
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
+      if (!blob) throw new Error('PNG를 만들지 못함')
+      return Array.from(new Uint8Array(await blob.arrayBuffer()))
+    },
+    [width, height] as const,
+  )
+  return Buffer.from(bytes)
+}
+
 async function switchRole(page: Page, role: keyof typeof NICKNAME) {
   await page.getByRole('button', { name: role, exact: true }).first().click()
   await expect(page.getByText(NICKNAME[role])).toBeVisible()
@@ -24,6 +48,10 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       warnings.push(message.text())
   })
   await acceptConfirms(page)
+  // 목 업로드의 저장 주소는 S3에 파일이 없다. 외부로 나가지 않게 막으면 화면은 기본 이미지를 보여 준다
+  await page.route('https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com/**', (route) =>
+    route.abort(),
+  )
 
   await test.step('로그인 전: 상품은 보고, 장바구니는 로그인 뒤 원래 화면으로 (기획서 F01 · F03)', async () => {
     await page.goto('/products/1')
@@ -46,13 +74,31 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('관리자 계정으로 볼 수 있는 화면이에요.')).toBeVisible()
   })
 
-  await test.step('판매자 센터: 상품 등록 → 판매 시작 (실제 API)', async () => {
+  await test.step('판매자 센터: 사진 업로드(목) → 상품 등록 → 판매 시작 (실제 API)', async () => {
     await switchRole(page, '판매자')
     await page.goto('/center/products')
     await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
     // 단계 번호 · 백엔드 설명은 콘솔에서만 보인다
     await expect(page.getByText('product.changed')).toHaveCount(0)
+    // 긴 변 2400px PNG를 고르면 JPG로 줄여 발급받는다 (발급은 목, 목 업로드 주소라 S3로는 보내지 않음)
+    await page.getByLabel(/상품 사진/).setInputFiles({
+      name: 'photo.png',
+      mimeType: 'image/png',
+      buffer: await pngOf(page, 2400, 1200),
+    })
+    await expect(page.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
+    await expect(page.getByText('대표', { exact: true })).toBeVisible()
+    const registering = page.waitForRequest(
+      (request) => request.method() === 'POST' && request.url().endsWith('/seller/products'),
+    )
     await page.getByRole('button', { name: '등록하기' }).click()
+    const body = (await registering).postDataJSON() as {
+      thumbnailUrl: string
+      imageUrls: string[]
+    }
+    expect(body.imageUrls).toHaveLength(1)
+    expect(body.thumbnailUrl).toBe(body.imageUrls[0])
+    expect(body.thumbnailUrl).toMatch(BUCKET_IMAGE)
     // 등록 결과 줄의 판매 시작 (내 상품 목록이 먼저 다시 불려 같은 버튼이 목록에도 생긴다)
     const registered = page.getByText(/상품 #\d+를 등록했어요/).locator('..')
     await registered.getByRole('button', { name: '판매 시작' }).click()
@@ -60,7 +106,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
   })
 
-  await test.step('판매자 센터: 재고 조정 · 판매 중지 → 다시 판매 (실제 API) · 상품 수정 (목)', async () => {
+  await test.step('판매자 센터: 재고 조정 · 판매 중지 → 다시 판매 (실제 API) · 상품 수정 · 사진 교체 (목)', async () => {
     // 내 상품은 등록 최신순 → 방금 등록한 상품이 맨 위
     const mine = page
       .locator('[data-slot="card"]')
@@ -69,6 +115,13 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     // 수정은 목: 오류 없이 저장만 확인 (실제 목록에는 반영되지 않음)
     await mine.getByRole('button', { name: '수정' }).click()
     await mine.getByLabel('상품명').fill('데일리 맨투맨 (수정)')
+    // 사진은 새로 올린 것으로 바꾸기만 한다 (지금 사진은 불러오지 못함)
+    await mine.getByLabel(/상품 사진/).setInputFiles({
+      name: 'photo-2.png',
+      mimeType: 'image/png',
+      buffer: await pngOf(page, 800, 600),
+    })
+    await expect(mine.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
     await mine.getByRole('button', { name: '수정 저장' }).click()
     await expect(mine.getByRole('button', { name: '수정 저장' })).toHaveCount(0)
     await mine.getByRole('button', { name: '재고 조정' }).first().click()

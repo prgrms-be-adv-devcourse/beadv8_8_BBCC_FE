@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ApiCallLog } from '@/shared/api'
-import { domainOf } from '@/widgets/api-flow-panel/config/domain-flow'
+import { domainOf, flowOf } from '@/widgets/api-flow-panel/config/domain-flow'
 import { latestTimeline } from '@/widgets/api-flow-panel/model/event-timeline'
 import { isKeyCall } from '@/widgets/api-flow-panel/model/presentation-mode'
 import { deriveStateChanges } from '@/widgets/api-flow-panel/model/state-changes'
@@ -284,5 +284,22 @@ describe('domainOf: 상품 도메인 경로', () => {
     expect(domainOf('/categories')).toBe('product')
     expect(domainOf('/categories/3/attributes')).toBe('product')
     expect(domainOf('/admin/products/1/stop-sale')).toBe('product')
+  })
+  it('상품 이미지 업로드 주소 발급도 상품 도메인', () => {
+    expect(domainOf('/seller/product-images/upload-urls')).toBe('product')
+  })
+})
+
+describe('S3: 브라우저가 직접 올리는 외부 저장소', () => {
+  it.each([
+    'https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com/dev/products/7/a.jpg',
+    'mock-upload://dev/products/7/a.jpg',
+  ])('업로드 주소 %s는 S3', (path) => {
+    expect(domainOf(path)).toBe('s3')
+  })
+  it('업로드 주소 발급 뒤 서버는 서명만 하고 브라우저가 S3에 직접 올린다 (설계 기준)', () => {
+    expect(flowOf('POST', '/seller/product-images/upload-urls')).toMatchObject([
+      { from: 'product', to: ['s3'], kind: 'external' },
+    ])
   })
 })

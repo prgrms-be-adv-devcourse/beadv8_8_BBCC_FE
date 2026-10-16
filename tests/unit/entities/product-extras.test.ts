@@ -87,6 +87,25 @@ describe('상품 수정', () => {
       options: [{ optionId: '1', price: 27000 }],
     })
   })
+  it('toUpdateProductRequest: 새로 올린 사진이 있으면 첫 사진을 대표로 바꾼다 (목: 교체만)', () => {
+    const S3 = 'https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com/dev/products/7'
+    expect(
+      toUpdateProductRequest({ name: '이름', prices: { '1': 27000 } }, [
+        `${S3}/a.jpg`,
+        `${S3}/b.jpg`,
+      ]),
+    ).toEqual({
+      name: '이름',
+      options: [{ optionId: '1', price: 27000 }],
+      thumbnailUrl: `${S3}/a.jpg`,
+      imageUrls: [`${S3}/a.jpg`, `${S3}/b.jpg`],
+    })
+  })
+  it('toUpdateProductRequest: 새로 올린 사진이 없으면 사진 칸을 보내지 않는다 (기존 사진 그대로)', () => {
+    const request = toUpdateProductRequest({ name: '이름', prices: { '1': 27000 } }, [])
+    expect(request).not.toHaveProperty('thumbnailUrl')
+    expect(request).not.toHaveProperty('imageUrls')
+  })
   it('validateProductEditForm: 이름 필수 · 가격은 1원 이상 (경계)', () => {
     const form = { name: '이름', prices: { '1': 1 } }
     expect(validateProductEditForm(form)).toBeNull()

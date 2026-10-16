@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import {
   optionCombos,
@@ -6,6 +6,7 @@ import {
   sizeValues,
   validateRegisterProductForm,
   type CategoryInputs,
+  type ProductImagesField,
   type RegisterProductForm as RegisterProductFormValue,
   type SizeSpecInput,
 } from '@/entities/product'
@@ -23,13 +24,18 @@ import { StartSaleButton } from './StartSaleButton'
 
 const EMPTY_SPEC: SizeSpecInput = { minHeightCm: 0, maxHeightCm: 0, measurements: {} }
 
-type ProductFieldsProps = { inputs: CategoryInputs; productHref: (productId: string) => string }
+type ProductFieldsProps = {
+  inputs: CategoryInputs
+  productHref: (productId: string) => string
+  renderImages: (field: ProductImagesField) => ReactNode
+}
 
 /** 카테고리 입력 항목으로 만든 등록 폼 본문 + 등록 결과(판매 시작 → 상세) */
-export function ProductFields({ inputs, productHref }: ProductFieldsProps) {
+export function ProductFields({ inputs, productHref, renderImages }: ProductFieldsProps) {
   const register = useRegisterProduct(inputs)
   const [form, setForm] = useState<RegisterProductFormValue>(() => demoRegisterForm(inputs))
   const [invalid, setInvalid] = useState<string | null>(null)
+  const [isUploading, setUploading] = useState(false)
   const [startedId, setStartedId] = useState<string | null>(null)
   // 고치다가 다른 화면으로 나가면 확인 (등록하면 풀린다)
   const [isDirty, setIsDirty] = useState(false)
@@ -177,17 +183,14 @@ export function ProductFields({ inputs, productHref }: ProductFieldsProps) {
         />
       )}
 
-      <Label>
-        이미지 주소 (한 줄에 하나, 첫 줄이 대표 이미지 · 없으면 기본 이미지)
-        <textarea
-          className="min-h-16 rounded-md border px-3 py-2 text-sm"
-          value={form.imageUrlsText}
-          onChange={(e) => set('imageUrlsText', e.target.value)}
-        />
-      </Label>
+      {renderImages({
+        value: form.imageUrls,
+        onChange: (imageUrls) => set('imageUrls', imageUrls),
+        onUploadingChange: setUploading,
+      })}
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={register.isPending}>
+        <Button type="submit" disabled={register.isPending || isUploading}>
           등록하기
         </Button>
         {invalid && <StateMessage tone="error">{invalid}</StateMessage>}

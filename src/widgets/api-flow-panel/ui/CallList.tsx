@@ -145,6 +145,7 @@ const DOMAIN_NAME: Record<DomainId, string> = {
   settlement: '정산',
   toss: '토스',
   kakao: '카카오',
+  s3: 'S3',
 }
 
 type FlowStepsProps = { steps: FlowStep[] }
