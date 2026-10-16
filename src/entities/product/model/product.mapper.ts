@@ -180,10 +180,6 @@ export function toRegisterProductRequest(
   inputs: CategoryInputs,
   form: RegisterProductForm,
 ): RegisterProductRequestDto {
-  const imageUrls = form.imageUrlsText
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
   const attributes = inputs.infoAttributes.flatMap<RegisterProductRequestDto['attributes'][number]>(
     (attribute) => {
       const input = form.info[attribute.id]
@@ -201,8 +197,8 @@ export function toRegisterProductRequest(
     brand: form.brand.trim() || null,
     categoryId: Number(form.categoryId),
     description: null,
-    thumbnailUrl: imageUrls[0] ?? null,
-    imageUrls,
+    thumbnailUrl: form.imageUrls[0] ?? null,
+    imageUrls: form.imageUrls,
     attributes,
     options: optionCombos(inputs, form).map((combo) => ({
       valueIds: toIds(combo.valueIds),

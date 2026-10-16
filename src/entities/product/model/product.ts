@@ -131,8 +131,8 @@ export type SizeSpecInput = {
 export type RegisterProductForm = {
   name: string
   brand: string
-  /** 이미지 주소, 한 줄에 하나 */
-  imageUrlsText: string
+  /** 올린 이미지 주소 (S3). 첫 번째가 대표 이미지 */
+  imageUrls: string[]
   categoryId: string
   /** 정보 항목 ID → 고른 값 ID(목록 항목) 또는 직접 입력 값 */
   info: Record<string, { valueId: string; text: string }>

@@ -80,7 +80,7 @@ const inputs = toCategoryInputs(inputsDto)
 const form: RegisterProductForm = {
   name: ' 데일리 맨투맨 ',
   brand: '',
-  imageUrlsText: ' https://cdn/a-1.jpg \n\nhttps://cdn/a-2.jpg',
+  imageUrls: ['https://cdn/a-1.jpg', 'https://cdn/a-2.jpg'],
   categoryId: '11',
   info: { '3': { valueId: '301', text: '' }, '4': { valueId: '', text: ' ' } },
   optionValues: { '1': ['101'], '2': ['202', '203'] },
