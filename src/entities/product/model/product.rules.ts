@@ -148,6 +148,9 @@ export function validateRegisterProductForm(
 }
 
 /** 재고 조정 검증: 입고는 늘리기만, 불량 · 분실은 줄이기만, 조정 뒤 0 이상(재고를 알 때). 문제가 없으면 null */
+/** BE InventoryAdjustmentRequest: 증감량 -1,000,000 ~ 1,000,000 */
+export const STOCK_DELTA_MAX = 1_000_000
+
 export function validateStockAdjustment(
   currentStock: number | null,
   delta: number,
@@ -155,6 +158,7 @@ export function validateStockAdjustment(
 ): string | null {
   if (!Number.isInteger(delta)) return '수량은 정수로 입력해 주세요.'
   if (delta === 0) return '늘리거나 줄일 수량을 입력해 주세요.'
+  if (Math.abs(delta) > STOCK_DELTA_MAX) return '한 번에 1,000,000개까지 조정할 수 있어요.'
   if (reason === 'RESTOCK' && delta < 0) return '입고는 재고를 늘릴 때만 써요.'
   if ((reason === 'DEFECTIVE' || reason === 'LOST') && delta > 0)
     return '불량 · 분실은 재고를 줄일 때만 써요.'

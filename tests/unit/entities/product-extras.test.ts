@@ -54,6 +54,16 @@ describe('validateStockAdjustment: 재고 조정 (사유 = BE InventoryAdjustmen
       '재고는 0보다 적어질 수 없어요 (지금 10개).',
     )
   })
+  it('증감량은 ±1,000,000까지 (BE 검증, 경계)', () => {
+    expect(validateStockAdjustment(null, 1_000_000, 'RESTOCK')).toBeNull()
+    expect(validateStockAdjustment(null, 1_000_001, 'RESTOCK')).toBe(
+      '한 번에 1,000,000개까지 조정할 수 있어요.',
+    )
+    expect(validateStockAdjustment(null, -1_000_000, 'CORRECTION')).toBeNull()
+    expect(validateStockAdjustment(null, -1_000_001, 'CORRECTION')).toBe(
+      '한 번에 1,000,000개까지 조정할 수 있어요.',
+    )
+  })
   it('소수는 안 된다', () => {
     expect(validateStockAdjustment(10, 1.5, 'RESTOCK')).toBe('수량은 정수로 입력해 주세요.')
   })
