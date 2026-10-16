@@ -40,10 +40,16 @@ export function ShopHomePage() {
   const search: ProductSearch = { ...filters, keyword }
   const pickedChildId = params.get('child')
   const update = (filters: ProductFilters, child: string | null) => {
-    const next = writeProductFilters(params, filters)
-    if (child) next.set('child', child)
-    else next.delete('child')
-    setParams(next, { replace: true })
+    // 바로 앞 변경이 아직 반영 전이어도 덮지 않게 최신 주소(prev)에서 만든다
+    setParams(
+      (prev) => {
+        const next = writeProductFilters(prev, filters)
+        if (child) next.set('child', child)
+        else next.delete('child')
+        return next
+      },
+      { replace: true },
+    )
   }
   const setFilters = (next: ProductFilters) => update(next, pickedChildId)
   const setChildId = (child: string | null) => update(filters, child)

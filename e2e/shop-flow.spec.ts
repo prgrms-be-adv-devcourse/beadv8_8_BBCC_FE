@@ -148,6 +148,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     const names = page.getByText(/\(상품 [AB]\)$/)
     await expect(names.first()).toHaveText('데일리 맨투맨 (상품 A)')
     await page.getByRole('combobox', { name: '정렬' }).selectOption('PRICE_DESC')
+    await expect(page).toHaveURL(/sort=PRICE_DESC/)
     await expect(names.first()).toHaveText('밴딩 조거 팬츠 (상품 B)')
     await page.getByRole('combobox', { name: '정렬' }).selectOption('NEWEST')
 
