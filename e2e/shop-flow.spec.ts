@@ -106,7 +106,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
   })
 
-  await test.step('판매자 센터: 재고 조정 · 판매 중지 → 다시 판매 (실제 API) · 상품 수정 (목)', async () => {
+  await test.step('판매자 센터: 재고 조정 · 판매 중지 → 다시 판매 (실제 API) · 상품 수정 · 사진 교체 (목)', async () => {
     // 내 상품은 등록 최신순 → 방금 등록한 상품이 맨 위
     const mine = page
       .locator('[data-slot="card"]')
@@ -115,6 +115,13 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     // 수정은 목: 오류 없이 저장만 확인 (실제 목록에는 반영되지 않음)
     await mine.getByRole('button', { name: '수정' }).click()
     await mine.getByLabel('상품명').fill('데일리 맨투맨 (수정)')
+    // 사진은 새로 올린 것으로 바꾸기만 한다 (지금 사진은 불러오지 못함)
+    await mine.getByLabel(/상품 사진/).setInputFiles({
+      name: 'photo-2.png',
+      mimeType: 'image/png',
+      buffer: await pngOf(page, 800, 600),
+    })
+    await expect(mine.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
     await mine.getByRole('button', { name: '수정 저장' }).click()
     await expect(mine.getByRole('button', { name: '수정 저장' })).toHaveCount(0)
     await mine.getByRole('button', { name: '재고 조정' }).first().click()

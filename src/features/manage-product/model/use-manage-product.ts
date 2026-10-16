@@ -17,12 +17,14 @@ function useInvalidateProducts(message: string) {
   }
 }
 
-/** 상품 수정 → product.changed (추천 · 주문 복사본 갱신) */
+/** 상품 수정 → product.changed (추천 · 주문 복사본 갱신). 사진은 새로 올렸을 때만 바꾼다 */
 export function useUpdateProduct(productId: string) {
   const onSuccess = useInvalidateProducts('상품을 수정했어요')
   return useMutation({
-    mutationFn: (form: ProductEditForm) =>
-      runWithAction('상품 수정', () => productApi.update(productId, toUpdateProductRequest(form))),
+    mutationFn: ({ form, newImageUrls }: { form: ProductEditForm; newImageUrls: string[] }) =>
+      runWithAction('상품 수정', () =>
+        productApi.update(productId, toUpdateProductRequest(form, newImageUrls)),
+      ),
     onSuccess,
   })
 }

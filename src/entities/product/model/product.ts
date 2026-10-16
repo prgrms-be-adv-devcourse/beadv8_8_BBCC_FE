@@ -149,6 +149,15 @@ export type RegisterProductForm = {
 /** 옵션 조합 · 가격 묶음 한 줄 (폼이 고른 값에서 계산) */
 export type ValueCombo = { key: string; valueIds: string[]; label: string }
 
+/** 사진 입력 칸(업로드 기능)에 넘기는 값. 업로드는 다른 기능이라 페이지가 등록 · 수정 폼에 슬롯으로 끼워 넣는다 */
+export type ProductImagesField = {
+  /** 올린 이미지 주소 (첫 번째가 대표) */
+  value: string[]
+  onChange: (imageUrls: string[]) => void
+  /** 올리는 중에는 저장 버튼을 막는다 */
+  onUploadingChange: (isUploading: boolean) => void
+}
+
 /** (목) 상품 수정 폼: 상품명 · 옵션별 가격 (재고는 재고 조정으로) */
 export type ProductEditForm = {
   name: string

@@ -55,7 +55,7 @@ export function CenterProductsPage() {
         title="상품 관리"
         step="②"
         description="상품을 등록 · 수정하고, 판매를 시작 · 중지하고, 재고를 조정해요."
-        note="등록 · 판매 시작 · 판매 중지 · 내 상품 · 재고 조정은 실제 API예요. 판매를 시작하면 상품이 product.changed 이벤트를 보내 추천 · 주문이 복사본을 저장해요. 상품 수정만 백엔드에 없어 목이에요 (목 수정은 실제 목록에 반영되지 않아요). 사진은 브라우저에서 긴 변 2000px JPG로 줄인 뒤, 업로드 주소를 발급받아 S3에 바로 올리고 그 주소를 등록 요청에 담아요 (발급은 백엔드 머지 전까지 목, 목 업로드는 S3에 보내지 않아요)."
+        note="등록 · 판매 시작 · 판매 중지 · 내 상품 · 재고 조정은 실제 API예요. 판매를 시작하면 상품이 product.changed 이벤트를 보내 추천 · 주문이 복사본을 저장해요. 상품 수정만 백엔드에 없어 목이에요 (목 수정은 실제 목록에 반영되지 않아요, 사진은 지금 사진을 불러오지 못해 새로 올린 사진으로 바꾸기만 해요). 사진은 브라우저에서 긴 변 2000px JPG로 줄인 뒤, 업로드 주소를 발급받아 S3에 바로 올리고 그 주소를 등록 요청에 담아요 (발급은 백엔드 머지 전까지 목, 목 업로드는 S3에 보내지 않아요)."
       />
       <RegisterProductForm
         productHref={(id) => productHref(id)}
@@ -174,7 +174,11 @@ function SellerProductRow({ product, buyerHref }: SellerProductRowProps) {
         ))}
       </ul>
       {editing && detail.data && (
-        <EditProductForm product={detail.data} onDone={() => setEditing(false)} />
+        <EditProductForm
+          product={detail.data}
+          onDone={() => setEditing(false)}
+          renderImages={(field) => <ProductImageUploader {...field} />}
+        />
       )}
     </Card>
   )

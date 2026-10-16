@@ -1,12 +1,16 @@
 import { useState, type ReactNode } from 'react'
-import { useCategoriesQuery, useCategoryInputsQuery } from '@/entities/product'
+import {
+  useCategoriesQuery,
+  useCategoryInputsQuery,
+  type ProductImagesField,
+} from '@/entities/product'
 import { getErrorMessage } from '@/shared/api'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { Select } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { demoCategoryId } from '../config/demo-product'
-import { ProductFields, type ProductImagesField } from './ProductFields'
+import { ProductFields } from './ProductFields'
 
 type RegisterProductFormProps = {
   /** 판매를 시작한 뒤 이어서 볼 상품 상세 주소 (영역마다 다름) */

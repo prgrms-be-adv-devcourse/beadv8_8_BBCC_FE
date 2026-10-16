@@ -6,6 +6,7 @@ import {
   sizeValues,
   validateRegisterProductForm,
   type CategoryInputs,
+  type ProductImagesField,
   type RegisterProductForm as RegisterProductFormValue,
   type SizeSpecInput,
 } from '@/entities/product'
@@ -22,13 +23,6 @@ import { SizeSpecTable } from './SizeSpecTable'
 import { StartSaleButton } from './StartSaleButton'
 
 const EMPTY_SPEC: SizeSpecInput = { minHeightCm: 0, maxHeightCm: 0, measurements: {} }
-
-/** 이미지 입력 칸에 넘기는 값. 업로드는 다른 기능이라 페이지가 슬롯으로 끼워 넣는다 */
-export type ProductImagesField = {
-  value: string[]
-  onChange: (imageUrls: string[]) => void
-  onUploadingChange: (isUploading: boolean) => void
-}
 
 type ProductFieldsProps = {
   inputs: CategoryInputs
