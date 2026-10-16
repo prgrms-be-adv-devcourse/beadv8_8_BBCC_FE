@@ -17,6 +17,7 @@ import { demoCategoryId, demoRegisterForm } from '@/features/register-product'
 import { settlementPeriodEnd } from '@/features/run-settlement'
 import { getErrorStatus } from '@/shared/api'
 import { paths } from '@/shared/config'
+import { newRequestKey } from '@/shared/lib'
 
 export type DemoRole = '보호자' | '판매자' | '관리자'
 
@@ -189,6 +190,7 @@ export const AUTO_DEMO_STEPS: AutoDemoStep[] = [
             ],
             shippingAddress: ctx.data.address!,
           }),
+          newRequestKey(),
         ),
       )
       ctx.data.orderId = String(order.orderId)

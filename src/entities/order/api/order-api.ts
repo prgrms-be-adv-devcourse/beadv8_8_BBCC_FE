@@ -14,9 +14,16 @@ export const orderApi = {
       .then(expectShape(orderPageShape)),
   get: (orderId: string) =>
     apiClient.get<OrderDetailDto>(`/orders/${orderId}`).then(expectShape(orderDetailShape)),
-  /** 201 + PENDING_PAYMENT. 결과는 주문 상세를 다시 조회해 확인한다 */
-  place: (request: PlaceOrderRequestDto) =>
-    apiClient.post<OrderDetailDto>('/orders', request).then(expectShape(orderDetailShape)),
+  /**
+   * 201 + PENDING_PAYMENT. 결과는 주문 상세를 다시 조회해 확인한다.
+   * 멱등키(BE #351): 같은 키 · 같은 내용이면 200 + 기존 주문(그 시점 상태), 같은 키 · 다른 내용이면 409
+   */
+  place: (request: PlaceOrderRequestDto, idempotencyKey: string) =>
+    apiClient
+      .post<OrderDetailDto>('/orders', request, {
+        headers: { 'Idempotency-Key': idempotencyKey },
+      })
+      .then(expectShape(orderDetailShape)),
   /** 이미 확정이어도 200, 배송 완료 전이면 409 */
   confirmItem: (orderId: string, orderItemId: string) =>
     apiClient.post(`/orders/${orderId}/items/${orderItemId}/confirm`),
