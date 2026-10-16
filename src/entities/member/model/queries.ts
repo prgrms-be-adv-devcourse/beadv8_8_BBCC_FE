@@ -12,6 +12,9 @@ export function useAdminMembersQuery(filter: MemberFilter, keyword: string) {
   return useQuery({
     queryKey: memberKeys.list(filter, keyword),
     queryFn: () => adminMemberApi.list(filter, keyword),
-    select: (page) => ({ ...page, content: page.content.map(toAdminMember) }),
+    select: (page) => ({
+      ...page,
+      content: page.content.map((dto) => toAdminMember(dto, filter === 'ADMIN')),
+    }),
   })
 }

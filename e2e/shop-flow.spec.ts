@@ -338,6 +338,20 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByRole('button', { name: '자격 정지하기' }).click()
     await expect(page.getByText('판매자 자격 정지', { exact: true })).toBeVisible()
 
+    // 관리자 지정 · 해제 (BE #356): 관리자는 관리자 탭에서만 보이고, 본인은 해제할 수 없다
+    await page.getByRole('textbox', { name: '회원 검색' }).fill('')
+    await page.getByRole('button', { name: '검색' }).click()
+    await page.getByRole('button', { name: '보호자', exact: true }).nth(1).click()
+    const guardian = page.locator('[data-slot="card"]').filter({ hasText: '회원 1' })
+    await guardian.getByRole('button', { name: '관리자 지정' }).click()
+    await expect(guardian).toHaveCount(0)
+    await page.getByRole('button', { name: '관리자', exact: true }).nth(1).click()
+    const me = page.locator('[data-slot="card"]').filter({ hasText: '회원 3' })
+    await expect(me).toBeVisible()
+    await expect(me.getByRole('button', { name: '권한 해제' })).toHaveCount(0)
+    await guardian.getByRole('button', { name: '권한 해제' }).click()
+    await expect(guardian).toHaveCount(0)
+
     await page.getByRole('link', { name: '상품 관리' }).click()
     // 목록은 실제 GET /products(BE #288), 관리자 판매 중지는 아직 목 → 버튼 옆 준비 중(목) 배지.
     // 목 판매 중지는 실제 목록에 반영되지 않으므로 오류 없이 요청이 끝나는 것까지만 본다

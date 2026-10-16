@@ -247,6 +247,24 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     })
   })
 
+  it('관리자 탭 · 관리자 지정 · 해제 (BE #356)', async () => {
+    const admins = await call('GET', '/admin/members?filter=ADMIN', 3)
+    expectContract(admins.data, adminMemberPageShape)
+    expect(admins.data.content.map((m: { id: number }) => m.id)).toEqual([3])
+    expect(admins.data.content[0]).not.toHaveProperty('role')
+
+    expect((await call('POST', '/admin/members/2/grant-admin', 3)).status).toBe(204)
+    const granted = await call('GET', '/admin/members?filter=ADMIN', 3)
+    expect(granted.data.content.map((m: { id: number }) => m.id)).toEqual([2, 3])
+    expect((await call('POST', '/admin/members/2/grant-admin', 3)).status).toBe(409)
+
+    expect((await call('POST', '/admin/members/3/revoke-admin', 3)).status).toBe(409)
+    expect((await call('POST', '/admin/members/2/revoke-admin', 3)).status).toBe(204)
+    const all = await call('GET', '/admin/members?filter=ALL', 3)
+    expect(all.data.content.map((m: { id: number }) => m.id)).toContain(2)
+    expect(all.data.content.map((m: { id: number }) => m.id)).not.toContain(3)
+  })
+
   it('충전 승인 · 충전 조회', async () => {
     const confirmed = await call('POST', '/wallets/me/charges/confirm', 1, {
       paymentKey: 'pk',

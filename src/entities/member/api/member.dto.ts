@@ -1,4 +1,7 @@
-/** GET /admin/members 한 줄 (백엔드 AdminMemberSummaryResponse). 관리자 · 탈퇴 회원은 빠진다 */
+/**
+ * GET /admin/members 한 줄 (백엔드 AdminMemberSummaryResponse). 탈퇴 회원은 빠진다.
+ * 관리자는 filter=ADMIN에서만 나오고 역할 필드는 없다 (BE #356)
+ */
 export type AdminMemberDto = {
   id: number
   nickname: string
