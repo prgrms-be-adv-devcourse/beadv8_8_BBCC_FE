@@ -69,3 +69,26 @@ export type ProductTypeLinkForm = {
 }
 
 export type ProductTypeForm = { name: string; links: ProductTypeLinkForm[] }
+
+/** 관리자 카테고리. 말단만 상품 유형과 필수 실측 항목을 가진다 */
+export type CatalogCategory = {
+  id: string
+  name: string
+  parentId: string | null
+  isLeaf: boolean
+  productTypeId: string | null
+  productTypeName: string | null
+  measurementItems: MeasurementItem[]
+}
+
+/** 중간(아래에 카테고리를 둠) · 말단(상품을 등록함) */
+export type CategoryKind = 'MIDDLE' | 'LEAF'
+
+/** parentId · productTypeId는 고르지 않았으면 '' (최상위 · 유형 없음) */
+export type CategoryForm = {
+  name: string
+  parentId: string
+  kind: CategoryKind
+  productTypeId: string
+  measurementItemIds: string[]
+}

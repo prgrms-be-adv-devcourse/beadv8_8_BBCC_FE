@@ -30,3 +30,13 @@ export const productTypeShape = obj({
 })
 
 export const measurementItemShape = obj({ measurementItemId: str, name: str, code: str, unit: str })
+
+export const categoryShape = obj({
+  categoryId: str,
+  name: str,
+  parentId: nullable(str),
+  leaf: bool,
+  productTypeId: nullable(str),
+  productTypeName: nullable(str),
+  measurementItems: arr(measurementItemShape),
+})

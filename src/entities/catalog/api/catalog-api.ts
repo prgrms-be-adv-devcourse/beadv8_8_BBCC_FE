@@ -1,22 +1,25 @@
 import { apiClient, arr, expectShape } from '@/shared/api'
 import type {
+  CategoryDto,
   AttributeCreateRequestDto,
   AttributeDto,
   AttributeValueDto,
   AttributeValueRequestDto,
+  CategoryCreateRequestDto,
   MeasurementItemDto,
   MeasurementItemRequestDto,
   ProductTypeCreateRequestDto,
   ProductTypeDto,
 } from './catalog.dto'
 import {
+  categoryShape,
   attributeShape,
   attributeValueShape,
   measurementItemShape,
   productTypeShape,
 } from './catalog.shape'
 
-// 실제(ADMIN만): 항목 · 목록 값 · 실측 항목(BE #405), 상품 유형(BE #424) 만들기와 목록.
+// 실제(ADMIN만): 항목 · 목록 값 · 실측 항목(BE #405), 상품 유형(BE #424) · 카테고리(BE #425) 만들기와 목록.
 // 목록은 페이지 없이 ID 순서
 
 export const catalogApi = {
@@ -49,4 +52,10 @@ export const catalogApi = {
     apiClient
       .post<ProductTypeDto>('/admin/product-types', request)
       .then(expectShape(productTypeShape)),
+  /** 카테고리 목록. ID 순서의 평면 배열이고 계층은 parentId (트리는 화면에서 만든다) */
+  categories: () =>
+    apiClient.get<CategoryDto[]>('/admin/categories').then(expectShape(arr(categoryShape))),
+  /** 카테고리 만들기. 말단 아래 · 중간에 실측 항목이면 400, 없는 부모 · 유형 · 실측 항목은 404, 같은 위치 같은 이름은 409 */
+  createCategory: (request: CategoryCreateRequestDto) =>
+    apiClient.post<CategoryDto>('/admin/categories', request).then(expectShape(categoryShape)),
 }

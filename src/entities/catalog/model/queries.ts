@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { catalogApi } from '../api/catalog-api'
 import { toAttribute, toMeasurementItem } from './catalog.mapper'
+import { toCatalogCategory } from './category.mapper'
 import { toProductType } from './product-type.mapper'
 
 export const catalogKeys = {
@@ -8,6 +9,7 @@ export const catalogKeys = {
   attributes: ['catalog', 'attributes'] as const,
   measurementItems: ['catalog', 'measurement-items'] as const,
   productTypes: ['catalog', 'product-types'] as const,
+  categories: ['catalog', 'categories'] as const,
 }
 
 export function useAttributesQuery() {
@@ -31,5 +33,13 @@ export function useProductTypesQuery() {
     queryKey: catalogKeys.productTypes,
     queryFn: catalogApi.productTypes,
     select: (dtos) => dtos.map(toProductType),
+  })
+}
+
+export function useCatalogCategoriesQuery() {
+  return useQuery({
+    queryKey: catalogKeys.categories,
+    queryFn: catalogApi.categories,
+    select: (dtos) => dtos.map(toCatalogCategory),
   })
 }

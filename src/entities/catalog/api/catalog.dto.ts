@@ -70,3 +70,24 @@ export type ProductTypeDto = {
   name: string
   attributes: ProductTypeLinkDto[]
 }
+
+// 카테고리 (BE #425 CategoryCreateRequest · CategoryResponse)
+
+/** 카테고리 만들기. productTypeId가 있으면 말단, null이면 중간(실측 항목은 []만) */
+export type CategoryCreateRequestDto = {
+  name: string
+  parentId: string | null
+  productTypeId: string | null
+  measurementItemIds: string[]
+}
+
+/** 관리자 카테고리 목록의 한 줄 (ID 순서의 평면 배열, 계층은 parentId) */
+export type CategoryDto = {
+  categoryId: string
+  name: string
+  parentId: string | null
+  leaf: boolean
+  productTypeId: string | null
+  productTypeName: string | null
+  measurementItems: MeasurementItemDto[]
+}

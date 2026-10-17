@@ -1,14 +1,16 @@
 import { expect, test } from '@playwright/test'
 
 // 관리자 상품 기준 데이터: 항목(팔레트) 만들기 → 목록 값 더하기, 실측 항목 만들기 (BE #405),
-// 상품 유형 만들기 (BE #424).
+// 상품 유형 만들기 (BE #424), 카테고리 만들기 (BE #425).
 // 가짜 백엔드를 다른 테스트와 같이 쓰므로 코드는 실행마다 다르게 만든다 (대문자와 _만)
 const RUN = String(Date.now())
   .split('')
   .map((digit) => String.fromCharCode(65 + Number(digit)))
   .join('')
 
-test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 · 상품 유형 만들기', async ({ page }) => {
+test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 · 상품 유형 · 카테고리 만들기', async ({
+  page,
+}) => {
   await page.goto('/')
   await page.getByRole('button', { name: '관리자', exact: true }).first().click()
   await expect(page.getByText('관리자 · 회원 3')).toBeVisible()
@@ -75,5 +77,18 @@ test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 �
       .filter({ hasText: `시연 유형 ${RUN}` })
       .last()
     await expect(created.getByText('옵션 · 필수 · 허용 값 네이비')).toBeVisible()
+  })
+
+  await test.step('카테고리 만들기: 말단은 유형을 골라야 하고, 만들면 트리에 보인다', async () => {
+    await page.getByRole('button', { name: '카테고리', exact: true }).click()
+    await page.getByLabel('카테고리 이름').fill(`시연 바지 ${RUN}`)
+    await page.getByLabel('부모 카테고리').selectOption({ label: '의류' })
+    await page.getByRole('button', { name: '카테고리 만들기' }).click()
+    await expect(page.getByText('말단 카테고리는 상품 유형을 골라 주세요.')).toBeVisible()
+
+    await page.getByLabel('상품 유형').selectOption({ label: '의류' })
+    await page.getByLabel('총장').check()
+    await page.getByRole('button', { name: '카테고리 만들기' }).click()
+    await expect(page.getByText(`└ 시연 바지 ${RUN}`)).toBeVisible()
   })
 })
