@@ -4,6 +4,7 @@ import type {
   ChargeRequestResultDto,
   ConfirmChargeRequestDto,
   ConfirmChargeResultDto,
+  FailChargeRequestDto,
   WalletLedgerDto,
 } from '../api/wallet.dto'
 import type {
@@ -19,9 +20,11 @@ import type {
 export function toCharge(dto: ChargeDetailDto): Charge {
   return {
     id: String(dto.chargeId),
+    tossOrderId: dto.orderId,
     amount: dto.amount,
     status: dto.status as ChargeStatus,
     approvedAt: dto.approvedAt,
+    expiresAt: dto.expiresAt,
     createdAt: dto.createdAt,
   }
 }
@@ -54,6 +57,13 @@ export function toConfirmChargeRequest(search: URLSearchParams): ConfirmChargeRe
   const orderId = search.get('orderId')
   const amount = Number(search.get('amount'))
   return paymentKey && orderId && amount > 0 ? { paymentKey, orderId, amount } : null
+}
+
+/** 토스 failUrl 쿼리(code · message · orderId) → 실패 처리 요청. 빠진 값이 있으면 null */
+export function toFailChargeRequest(search: URLSearchParams): FailChargeRequestDto | null {
+  const orderId = search.get('orderId')
+  const code = search.get('code')
+  return orderId && code ? { orderId, code } : null
 }
 
 export function toWalletTransaction(dto: WalletLedgerDto): WalletTransaction {

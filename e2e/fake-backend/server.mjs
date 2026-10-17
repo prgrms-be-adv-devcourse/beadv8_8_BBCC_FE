@@ -539,6 +539,7 @@ http
         amount: body.amount,
         status: 'DONE',
         approvedAt: now(),
+        expiresAt: now(),
         createdAt: now(),
       })
       ledger(me, 'CHARGE', body.amount, 77)
@@ -547,6 +548,18 @@ http
         status: 'DONE',
         amount: body.amount,
         balance: wallets[me],
+      })
+    }
+    if (r('POST', /^\/wallets\/me\/charges\/fail$/)) {
+      // BE ChargeDetailResponse: 결제창이 끝나지 않은 충전을 FAILED로
+      return send(res, 200, {
+        chargeId: 78,
+        orderId: body.orderId,
+        amount: 50000,
+        status: 'FAILED',
+        approvedAt: null,
+        expiresAt: now(),
+        createdAt: now(),
       })
     }
     if ((x = r('POST', /^\/wallets\/me\/charges\/(\d+)\/cancel$/))) {
@@ -584,6 +597,7 @@ http
         amount: 50000,
         status: 'DONE',
         approvedAt: now(),
+        expiresAt: now(),
         createdAt: now(),
       })
     if (r('GET', /^\/wallets\/me\/ledgers$/))

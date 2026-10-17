@@ -5,6 +5,7 @@ import type {
   ChargeRequestResultDto,
   ConfirmChargeRequestDto,
   ConfirmChargeResultDto,
+  FailChargeRequestDto,
   WalletBalanceDto,
   WalletLedgerDto,
 } from './wallet.dto'
@@ -54,6 +55,9 @@ export const walletApi = {
     apiClient
       .post<ConfirmChargeResultDto>(`${CHARGES}/confirm`, request)
       .then(expectShape(chargeConfirmShape)),
+  /** 결제창이 끝나지 않은 충전을 실패로 끝낸다. 이미 실패한 충전이면 그대로 200 */
+  failCharge: (request: FailChargeRequestDto) =>
+    apiClient.post<ChargeDetailDto>(`${CHARGES}/fail`, request).then(expectShape(chargeShape)),
   /** 충전 취소 = 토스 결제 취소. 200 = 취소 완료, 202 = 토스 결과 확인 중 (충전액은 이미 빠짐) */
   cancelCharge: (chargeId: string) =>
     apiClient

@@ -8,6 +8,7 @@ export const chargeShape = obj({
   amount: num,
   status: oneOf(['PENDING', 'CONFIRMING', 'DONE', 'CANCELLING', 'CANCELLED', 'FAILED', 'EXPIRED']),
   approvedAt: nullable(str),
+  expiresAt: str,
   createdAt: str,
 })
 
