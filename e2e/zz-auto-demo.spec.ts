@@ -16,10 +16,22 @@ test('자동 시연: 버튼 하나로 정상 흐름 ①~⑦', async ({ page }) =
   await bar.getByRole('button', { name: '▶ 자동 시연' }).click()
 
   const status = bar.getByRole('status', { name: '자동 시연 상태' })
+  // 시작 전 점검: 서버 · 카테고리 · 계정 · 예치금
+  const checks = bar.getByRole('list', { name: '시작 전 점검' })
+  await expect(checks).toContainText('✓ 서버 연결')
+  await expect(checks).toContainText('✓ 시연 계정')
+  // 키보드: Space 일시정지 · 계속
+  await expect(status).not.toContainText('시작 전 점검 중')
+  await page.locator('body').press(' ')
+  await expect(status).toContainText('일시정지')
+  await page.locator('body').press(' ')
+  await expect(status).not.toContainText('일시정지')
   await expect(status).toContainText('자동 시연 끝 · ①~⑦ 통과', { timeout: 90_000 })
   // 마지막 화면은 판매자 정산서, 흐름 패널에 자동 시연 행동이 남는다
   await expect(page).toHaveURL(/\/console\/seller\/settlements$/)
-  await expect(page.getByText(/자동 시연 · 정산 실행/).first()).toBeVisible()
+  await expect(page.getByRole('region', { name: '단계 ⑦ 호출' }).first()).toContainText(
+    '/admin/settlements/run',
+  )
   await expect(bar.getByRole('link', { name: '흐름 확인 보기' })).toBeVisible()
   expect(errors).toEqual([])
 })

@@ -3,21 +3,10 @@ import {
   canStartSale,
   canStopSale,
   STOCK_REASON_LABEL,
-  toProductEditForm,
   toProductSearchParams,
-  toUpdateProductRequest,
-  validateProductEditForm,
   validateStockAdjustment,
-  type SellerProductDetail,
 } from '@/entities/product'
 import { validateBusinessName } from '@/entities/seller'
-
-const product: SellerProductDetail = {
-  id: '1',
-  name: '데일리 맨투맨',
-  status: 'ON_SALE',
-  options: [{ id: '1', name: '네이비 / 110', price: 25000, stock: 10, onSale: true }],
-}
 
 describe('판매 상태 전환', () => {
   it('판매 중지는 판매 중일 때만', () => {
@@ -66,34 +55,6 @@ describe('validateStockAdjustment: 재고 조정 (사유 = BE InventoryAdjustmen
   })
   it('소수는 안 된다', () => {
     expect(validateStockAdjustment(10, 1.5, 'RESTOCK')).toBe('수량은 정수로 입력해 주세요.')
-  })
-})
-
-describe('상품 수정', () => {
-  it('toProductEditForm: 상품명 · 옵션별 가격', () => {
-    expect(toProductEditForm(product)).toEqual({
-      name: '데일리 맨투맨',
-      prices: { '1': 25000 },
-    })
-  })
-  it('toUpdateProductRequest: 이름 앞뒤 공백 제거 · 옵션별 가격 배열', () => {
-    expect(
-      toUpdateProductRequest({
-        name: ' 새 이름 ',
-        prices: { '1': 27000 },
-      }),
-    ).toEqual({
-      name: '새 이름',
-      options: [{ optionId: '1', price: 27000 }],
-    })
-  })
-  it('validateProductEditForm: 이름 필수 · 가격은 1원 이상 (경계)', () => {
-    const form = { name: '이름', prices: { '1': 1 } }
-    expect(validateProductEditForm(form)).toBeNull()
-    expect(validateProductEditForm({ ...form, name: ' ' })).toBe('상품명을 입력해 주세요.')
-    expect(validateProductEditForm({ ...form, prices: { '1': 0 } })).toBe(
-      '가격은 1원 이상이어야 해요.',
-    )
   })
 })
 

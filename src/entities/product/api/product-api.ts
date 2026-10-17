@@ -9,10 +9,10 @@ import type {
   RegisterProductResultDto,
   SaleStatusResultDto,
   InventoryAdjustmentRequestDto,
+  ProductUpdateRequestDto,
   InventoryAdjustmentResultDto,
   SellerProductDetailDto,
   SellerProductSummaryDto,
-  UpdateProductRequestDto,
 } from './product.dto'
 import {
   categoryInputsShape,
@@ -68,9 +68,14 @@ export const productApi = {
     apiClient
       .put<SaleStatusResultDto>(`/seller/products/${productId}/sale-status`, { status: 'ON_SALE' })
       .then(expectShape(saleStatusResultShape)),
-  /** (목) 상품명 · 옵션 가격 수정 */
-  update: (productId: string, request: UpdateProductRequestDto) =>
-    apiClient.patch(`/seller/products/${productId}`, request),
+  /**
+   * 상품 수정 (BE #317 PUT, 상세 응답은 #403). 읽어 간 version이 다르면 409.
+   * 판매 시작 뒤에 옵션 · 가격 · 실측을 보내면 409. 응답은 수정된 판매자 상세
+   */
+  updateProduct: (productId: string, request: ProductUpdateRequestDto) =>
+    apiClient
+      .put<SellerProductDetailDto>(`/seller/products/${productId}`, request)
+      .then(expectShape(sellerProductDetailShape)),
   /** 판매 중지 (BE #315). 다시 판매는 startSale */
   stopSale: (productId: string) =>
     apiClient

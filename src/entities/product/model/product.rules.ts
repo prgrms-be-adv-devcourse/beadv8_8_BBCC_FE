@@ -3,7 +3,6 @@ import type {
   CategoryInputs,
   InputAttribute,
   ProductDetail,
-  ProductEditForm,
   ProductOption,
   RegisterProductForm,
   StockReason,
@@ -35,6 +34,11 @@ export function canStartSale(product: { status: string }): boolean {
 
 export function canStopSale(product: { status: string }): boolean {
   return product.status === 'ON_SALE'
+}
+
+/** 옵션 · 가격 · 실측은 판매 시작 전에만 고칠 수 있다 (그 밖에는 BE가 409) */
+export function canEditSaleInputs(product: { status: string }): boolean {
+  return product.status === 'SALE_PENDING'
 }
 
 /** 살 수 없는 옵션은 고를 수 없다 (최종 판단은 서버 409) */
@@ -115,6 +119,20 @@ export function validateRegisterProductForm(
   inputs: CategoryInputs,
   form: RegisterProductForm,
 ): string | null {
+  return validateBasics(inputs, form) ?? validateSaleInputs(inputs, form)
+}
+
+/** 수정: 판매 시작 뒤에는 옵션 · 가격 · 실측을 보내지 않으므로 상품명 · 정보 항목만 검사한다 */
+export function validateProductUpdateForm(
+  inputs: CategoryInputs,
+  form: RegisterProductForm,
+  product: { status: string },
+): string | null {
+  if (canEditSaleInputs(product)) return validateRegisterProductForm(inputs, form)
+  return validateBasics(inputs, form)
+}
+
+function validateBasics(inputs: CategoryInputs, form: RegisterProductForm): string | null {
   const name = form.name.trim()
   if (!name) return '상품명을 입력해 주세요.'
   if (name.length > 100) return '상품명은 100자 이하로 입력해 주세요.'
@@ -123,6 +141,10 @@ export function validateRegisterProductForm(
     const filled = attribute.values.length > 0 ? !!input?.valueId : !!input?.text.trim()
     if (attribute.required && !filled) return `${attribute.name}을(를) 입력해 주세요.`
   }
+  return null
+}
+
+function validateSaleInputs(inputs: CategoryInputs, form: RegisterProductForm): string | null {
   for (const attribute of inputs.optionAttributes) {
     if ((form.optionValues[attribute.id] ?? []).length === 0)
       return `${attribute.name}을(를) 하나 이상 골라 주세요.`
@@ -167,9 +189,27 @@ export function validateStockAdjustment(
   return null
 }
 
-export function validateProductEditForm(form: ProductEditForm): string | null {
-  if (!form.name.trim()) return '상품명을 입력해 주세요.'
-  if (Object.values(form.prices).some((price) => !(price >= 1)))
-    return '가격은 1원 이상이어야 해요.'
-  return null
+/** 재고 적음 기준 (이하면 판매자 화면에서 강조) */
+export const LOW_STOCK_THRESHOLD = 5
+
+export type StockLevel = 'OUT' | 'LOW' | 'OK'
+
+/** 재고 수준: 0 품절 · 5개 이하 적음 · 그 밖은 충분 */
+export function stockLevelOf(stock: number): StockLevel {
+  if (stock <= 0) return 'OUT'
+  if (stock <= LOW_STOCK_THRESHOLD) return 'LOW'
+  return 'OK'
+}
+
+/** 판매자 상품 목록 거르기: 이름 찾기 + 재고 적은 것만 (품절 포함) */
+export function filterSellerProducts<T extends { name: string; totalStock: number }>(
+  products: T[],
+  { keyword, lowStockOnly }: { keyword: string; lowStockOnly: boolean },
+): T[] {
+  const word = keyword.trim().toLowerCase()
+  return products.filter(
+    (product) =>
+      (!word || product.name.toLowerCase().includes(word)) &&
+      (!lowStockOnly || stockLevelOf(product.totalStock) !== 'OK'),
+  )
 }

@@ -22,3 +22,41 @@ export function summarizeSellerOrders(orders: SellerOrder[]) {
     delivered: orders.filter((order) => order.status === 'DELIVERED').length,
   }
 }
+
+export type SellerOrderTab = 'READY' | 'SHIPPING' | 'DELIVERED' | 'ALL'
+
+/** 주문 · 배송 탭 (할 일 먼저) */
+export const SELLER_ORDER_TABS: { value: SellerOrderTab; label: string }[] = [
+  { value: 'READY', label: '발송할 주문' },
+  { value: 'SHIPPING', label: '배송 중' },
+  { value: 'DELIVERED', label: '배송 완료' },
+  { value: 'ALL', label: '전체' },
+]
+
+/** 주소의 ?tab= → 탭 (모르는 값 · 없음은 전체) */
+export function sellerOrderTabOf(value: string | null): SellerOrderTab {
+  return SELLER_ORDER_TABS.some((tab) => tab.value === value) ? (value as SellerOrderTab) : 'ALL'
+}
+
+export function filterSellerOrdersByTab(orders: SellerOrder[], tab: SellerOrderTab): SellerOrder[] {
+  return tab === 'ALL' ? orders : orders.filter((order) => order.status === tab)
+}
+
+export function countSellerOrdersByTab(orders: SellerOrder[]): Record<SellerOrderTab, number> {
+  const summary = summarizeSellerOrders(orders)
+  return {
+    READY: summary.toShip,
+    SHIPPING: summary.shipping,
+    DELIVERED: summary.delivered,
+    ALL: orders.length,
+  }
+}
+
+/** 일괄 처리: 고른 주문 중 같은 다음 처리(발송 · 배송 완료)인 것만 */
+export function bulkTargets(orders: SellerOrder[], selectedIds: Set<string>) {
+  const selected = orders.filter((order) => selectedIds.has(order.id))
+  return {
+    toShip: selected.filter((order) => nextShippingStep(order) === 'SHIP'),
+    toDeliver: selected.filter((order) => nextShippingStep(order) === 'DELIVER'),
+  }
+}

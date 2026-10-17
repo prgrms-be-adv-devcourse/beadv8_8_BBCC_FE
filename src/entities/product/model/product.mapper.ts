@@ -9,14 +9,12 @@ import type {
   RegisterProductRequestDto,
   SellerProductDetailDto,
   SellerProductSummaryDto,
-  UpdateProductRequestDto,
 } from '../api/product.dto'
 import type {
   Category,
   CategoryInputs,
   InputAttribute,
   ProductDetail,
-  ProductEditForm,
   ProductListItem,
   ProductOption,
   ProductSearch,
@@ -131,13 +129,22 @@ export function toSellerProductDetail(dto: SellerProductDetailDto): SellerProduc
     id: dto.productId,
     name: dto.name,
     status: dto.status as ProductStatus,
+    version: dto.version,
+    brand: dto.brand,
+    categoryId: dto.categoryId,
+    description: dto.description,
+    imageUrls: dto.imageUrls,
+    attributes: dto.attributes,
     options: dto.options.map((option) => ({
       id: option.optionId,
       name: option.optionName,
+      valueIds: option.valueIds,
       price: option.price,
       stock: option.availableQuantity,
       onSale: option.saleStatus === 'ON_SALE',
     })),
+    prices: dto.prices,
+    sizeSpecs: dto.sizeSpecs,
   }
 }
 
@@ -180,10 +187,6 @@ export function toRegisterProductRequest(
   inputs: CategoryInputs,
   form: RegisterProductForm,
 ): RegisterProductRequestDto {
-  const imageUrls = form.imageUrlsText
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
   const attributes = inputs.infoAttributes.flatMap<RegisterProductRequestDto['attributes'][number]>(
     (attribute) => {
       const input = form.info[attribute.id]
@@ -201,8 +204,8 @@ export function toRegisterProductRequest(
     brand: form.brand.trim() || null,
     categoryId: Number(form.categoryId),
     description: null,
-    thumbnailUrl: imageUrls[0] ?? null,
-    imageUrls,
+    thumbnailUrl: form.imageUrls[0] ?? null,
+    imageUrls: form.imageUrls,
     attributes,
     options: optionCombos(inputs, form).map((combo) => ({
       valueIds: toIds(combo.valueIds),
@@ -224,20 +227,6 @@ export function toRegisterProductRequest(
         ),
       }
     }),
-  }
-}
-
-export function toProductEditForm(product: SellerProductDetail): ProductEditForm {
-  return {
-    name: product.name,
-    prices: Object.fromEntries(product.options.map((option) => [option.id, option.price])),
-  }
-}
-
-export function toUpdateProductRequest(form: ProductEditForm): UpdateProductRequestDto {
-  return {
-    name: form.name.trim(),
-    options: Object.entries(form.prices).map(([optionId, price]) => ({ optionId, price })),
   }
 }
 

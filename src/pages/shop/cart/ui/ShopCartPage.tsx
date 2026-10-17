@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router'
 import { groupBySeller, orderableLines, sellerGroupLabel, sumLineAmount } from '@/entities/cart'
 import { findChild, useChildrenQuery } from '@/entities/child'
 import { ProductImage } from '@/entities/product'
-import { CartItemControls } from '@/features/edit-cart-item'
+import { CartItemControls, RemoveSelectedButton } from '@/features/edit-cart-item'
 import { PlaceOrderButton, useCheckout } from '@/features/place-order'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
@@ -55,16 +55,19 @@ export function ShopCartPage() {
       {cart.data && cart.data.lines.length > 0 && (
         <div className="grid items-start gap-6 md:grid-cols-[1fr_320px]">
           <div className="space-y-3">
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input
-                type="checkbox"
-                className="accent-primary size-4"
-                checked={allSelected}
-                disabled={orderableIds.size === 0}
-                onChange={toggleAll}
-              />
-              전체 선택 ({lines.length}/{orderableIds.size})
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  className="accent-primary size-4"
+                  checked={allSelected}
+                  disabled={orderableIds.size === 0}
+                  onChange={toggleAll}
+                />
+                전체 선택 ({lines.length}/{orderableIds.size})
+              </label>
+              <RemoveSelectedButton cartItemIds={lines.map((line) => line.id)} />
+            </div>
             {groupBySeller(cart.data.lines).map((group) => (
               <section
                 key={group.sellerId ?? 'unknown'}

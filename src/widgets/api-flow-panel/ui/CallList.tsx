@@ -1,56 +1,119 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ApiCallLog } from '@/shared/api'
 import { cn } from '@/shared/lib'
-import type { DomainId, FlowStep } from '../config/domain-flow'
-import { followingSteps } from '../model/flow-view'
-import { IssueList } from './IssueList'
+import { groupCallsByStep, type CallGroup } from '../model/call-groups'
+import { statusColor } from '../model/status-color'
 
-type CallListProps = { logs: ApiCallLog[] }
+type CallListProps = {
+  logs: ApiCallLog[]
+  /** 고른 호출 (상세가 옆에 보인다) */
+  selectedLogId: number | null
+  /** 줄을 누름: 고른 호출이면 닫고, 아니면 고른다 */
+  onSelect: (logId: number) => void
+}
 
-export function CallList({ logs }: CallListProps) {
+/** 호출을 시연 단계별로 묶어 최신 묶음부터. 한 줄에 메서드 · 경로 · 상태 · 시간만, 상세는 옆에 */
+export function CallList({ logs, selectedLogId, onSelect }: CallListProps) {
   if (logs.length === 0) {
     return (
       <p className="text-muted-foreground p-2 text-xs">
-        화면을 조작하면 호출한 API가 여기에 순서대로 쌓여요.
+        화면을 조작하면 호출한 API가 여기에 단계별로 쌓여요.
       </p>
     )
   }
+  const groups = groupCallsByStep(logs)
   return (
-    <ol className="space-y-1">
-      {[...logs].reverse().map((log) => (
-        <ApiCallRow key={log.id} log={log} />
+    <div className="space-y-2">
+      {groups.map((group) => (
+        <CallGroupSection
+          key={`${group.step}-${group.logs[0].id}`}
+          group={group}
+          selectedLogId={selectedLogId}
+          onSelect={onSelect}
+        />
       ))}
-    </ol>
+    </div>
   )
 }
 
-type ApiCallRowProps = { log: ApiCallLog }
+type CallGroupSectionProps = {
+  group: CallGroup
+  selectedLogId: number | null
+  onSelect: (logId: number) => void
+}
 
-function ApiCallRow({ log }: ApiCallRowProps) {
-  const [open, setOpen] = useState(false)
-  const steps = followingSteps(log)
-
+function CallGroupSection({ group, selectedLogId, onSelect }: CallGroupSectionProps) {
+  const hasSelected = group.logs.some((log) => log.id === selectedLogId)
+  const [toggled, setToggled] = useState<boolean | null>(null)
+  // 목록을 길게 보도록 모두 펼쳐 두고, 접은 묶음도 고른 호출이 있으면 펼친다
+  const open = hasSelected || (toggled ?? true)
   return (
-    <li
-      className={cn(
-        'rounded-md border text-xs',
-        log.contractIssues.some((issue) => issue.type !== 'extra') && 'border-destructive/50',
-      )}
-    >
+    <section aria-label={`단계 ${group.step} 호출`}>
       <button
         type="button"
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left"
-        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        onClick={() => setToggled(!open)}
+        className="hover:bg-muted/50 flex w-full items-center gap-2 rounded px-1 py-1 text-left text-xs"
+      >
+        <span aria-hidden className="text-muted-foreground w-3">
+          {open ? '▾' : '▸'}
+        </span>
+        <span className="font-bold">{group.step}</span>
+        <span className="text-muted-foreground min-w-0 flex-1 truncate">
+          {group.actions.slice(0, 3).join(' · ')}
+        </span>
+        <span className="text-muted-foreground shrink-0">
+          {group.logs.length}
+          {group.failed > 0 && <span className="text-destructive"> · 실패 {group.failed}</span>}
+        </span>
+      </button>
+      {open && (
+        <ol className="space-y-1 pt-1">
+          {[...group.logs].reverse().map((log) => (
+            <ApiCallRow
+              key={log.id}
+              log={log}
+              selected={log.id === selectedLogId}
+              onSelect={onSelect}
+            />
+          ))}
+        </ol>
+      )}
+    </section>
+  )
+}
+
+type ApiCallRowProps = { log: ApiCallLog; selected: boolean; onSelect: (logId: number) => void }
+
+function ApiCallRow({ log, selected, onSelect }: ApiCallRowProps) {
+  const ref = useRef<HTMLLIElement>(null)
+  const contractError = log.contractIssues.some((issue) => issue.type !== 'extra')
+  useEffect(() => {
+    if (selected) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [selected])
+
+  return (
+    <li ref={ref}>
+      <button
+        type="button"
+        aria-pressed={selected}
+        title={[log.action, log.actor ? `회원 ${log.actor}` : '토큰 없음']
+          .filter(Boolean)
+          .join(' · ')}
+        onClick={() => onSelect(log.id)}
+        className={cn(
+          'flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs',
+          selected ? 'border-primary bg-primary-soft/60 ring-primary ring-1' : 'hover:bg-muted/50',
+          contractError && !selected && 'border-destructive/50',
+        )}
       >
         <span className="w-11 shrink-0 font-mono font-semibold">{log.method}</span>
-        <span className="flex-1 truncate font-mono">{log.path}</span>
+        <span className="min-w-0 flex-1 truncate font-mono">{log.path}</span>
         {log.mock && <span className="bg-highlight rounded px-1">목</span>}
         {log.expectedReason && (
-          <span className="bg-muted text-muted-foreground rounded px-1" title={log.expectedReason}>
-            예상됨
-          </span>
+          <span className="bg-muted text-muted-foreground rounded px-1">예상됨</span>
         )}
-        {log.contractIssues.some((issue) => issue.type !== 'extra') && (
+        {contractError && (
           <span className="bg-destructive/10 text-destructive rounded px-1">계약 불일치</span>
         )}
         <span
@@ -63,75 +126,6 @@ function ApiCallRow({ log }: ApiCallRowProps) {
         </span>
         <span className="text-muted-foreground w-11 text-right">{log.durationMs}ms</span>
       </button>
-      <div className="text-muted-foreground flex gap-2 px-2 pb-1">
-        {log.action && <span>↳ {log.action}</span>}
-        {log.expectedReason && <span className="truncate">{log.expectedReason}</span>}
-        <span className="ml-auto">{log.actor ? `회원 ${log.actor}` : '토큰 없음'}</span>
-      </div>
-      {steps.length > 0 && <FlowSteps steps={steps} />}
-      {open && (
-        <div className="space-y-1 border-t p-2">
-          {log.contractIssues.length > 0 && <IssueList log={log} />}
-          <JsonBlock label="요청" value={log.requestBody} />
-          <JsonBlock label="응답" value={log.responseBody} />
-        </div>
-      )}
     </li>
   )
-}
-
-const DOMAIN_NAME: Record<DomainId, string> = {
-  member: '회원',
-  product: '상품',
-  recommend: '추천',
-  order: '주문',
-  payment: '결제',
-  settlement: '정산',
-  toss: '토스',
-  kakao: '카카오',
-}
-
-type FlowStepsProps = { steps: FlowStep[] }
-
-function FlowSteps({ steps }: FlowStepsProps) {
-  return (
-    <div className="mx-2 mb-2 rounded border border-dashed p-1.5">
-      <div className="text-muted-foreground mb-1 text-[11px]">
-        서버에서 이어지는 처리 (설계 기준)
-      </div>
-      <ol className="space-y-0.5">
-        {steps.map((step) => (
-          <li key={step.name}>
-            <span className="text-primary font-mono font-semibold">{step.name}</span>{' '}
-            <span className="text-muted-foreground">
-              {DOMAIN_NAME[step.from]} → {step.to.map((to) => DOMAIN_NAME[to]).join(' · ')}
-            </span>
-            <div className="text-muted-foreground pl-2">{step.description}</div>
-          </li>
-        ))}
-      </ol>
-    </div>
-  )
-}
-
-type JsonBlockProps = { label: string; value: unknown }
-
-function JsonBlock({ label, value }: JsonBlockProps) {
-  if (value === null || value === '') {
-    return null
-  }
-  return (
-    <div>
-      <div className="text-muted-foreground">{label}</div>
-      <pre className="bg-muted max-h-48 overflow-auto rounded p-1.5 text-[11px]">
-        {JSON.stringify(value, null, 2)}
-      </pre>
-    </div>
-  )
-}
-
-function statusColor(status: number | null): string {
-  if (status === null || status >= 500) return 'text-destructive'
-  if (status >= 400) return 'text-orange-600'
-  return 'text-green-700'
 }

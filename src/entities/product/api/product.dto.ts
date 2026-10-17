@@ -61,6 +61,20 @@ export type RegisterProductRequestDto = {
   }[]
 }
 
+/**
+ * PUT /seller/products/{productId} (BE ProductUpdateRequest). 읽어 간 version을 함께 보낸다.
+ * options · prices · sizeSpecs는 판매 시작 전에만 셋을 함께 보내고, 그 밖에는 셋 다 null (보내면 409)
+ */
+export type ProductUpdateRequestDto = Omit<
+  RegisterProductRequestDto,
+  'options' | 'prices' | 'sizeSpecs'
+> & {
+  version: number
+  options: RegisterProductRequestDto['options'] | null
+  prices: RegisterProductRequestDto['prices'] | null
+  sizeSpecs: RegisterProductRequestDto['sizeSpecs'] | null
+}
+
 /** POST /seller/products → 201 (BE ProductRegisterResponse, Location에도 productId) */
 export type RegisterProductResultDto = {
   productId: string
@@ -147,19 +161,39 @@ export type SellerProductSummaryDto = {
   createdAt: string
 }
 
-/** GET /seller/products/{productId} (BE SellerProductDetailResponse) */
+/**
+ * GET /seller/products/{productId} · PUT 수정 응답 (BE SellerProductDetailResponse, #403).
+ * 칸 이름 · 모양은 수정 요청(ProductUpdateRequest)과 같아 그대로 다시 보낼 수 있다
+ */
 export type SellerProductDetailDto = {
   productId: string
   name: string
   status: string
   version: number
+  brand: string | null
+  categoryId: string
+  description: string | null
+  thumbnailUrl: string | null
+  /** 저장된 순서. 없으면 [] */
+  imageUrls: string[]
+  /** 정보 항목마다 한 칸. 목록 항목은 고른 값들, 직접 입력 항목은 valueIds [] + text */
+  attributes: { attributeId: string; valueIds: string[]; text: string | null }[]
   options: {
     optionId: string
     optionName: string
+    valueIds: string[]
     price: number
     availableQuantity: number
     saleStatus: string
     skuCode: string | null
+  }[]
+  /** 가격 구분 묶음마다 하나 (가격 구분 항목이 없으면 valueIds [] 하나) */
+  prices: { valueIds: string[]; price: number }[]
+  sizeSpecs: {
+    sizeValueId: string
+    minHeightCm: number | null
+    maxHeightCm: number | null
+    measurements: Record<string, number>
   }[]
 }
 
@@ -170,12 +204,6 @@ export type InventoryAdjustmentResultDto = {
   reason: string
   deltaQuantity: number
   availableQuantity: number
-}
-
-/** (목) PATCH /seller/products/{productId} (기획서 8장 보완) */
-export type UpdateProductRequestDto = {
-  name: string
-  options: { optionId: string; price: number }[]
 }
 
 /** (목) PATCH /seller/products/{productId}/options/{optionId}/stock — 증감 수량과 사유 */

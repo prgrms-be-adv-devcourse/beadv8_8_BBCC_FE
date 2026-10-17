@@ -4,6 +4,9 @@ import { ChildPicker, sizeBandOf, useChildrenQuery } from '@/entities/child'
 import {
   ProductCard,
   listItemMeta,
+  readProductFilters,
+  writeProductFilters,
+  type ProductFilters,
   useCategoriesQuery,
   useProductsQuery,
   type ProductSearch,
@@ -30,11 +33,27 @@ export function ShopHomePage() {
   const user = useSessionStore((state) => state.user)
   const isBuyer = hasRole(user, 'BUYER')
   const children = useChildrenQuery({ enabled: isBuyer })
-  const [params] = useSearchParams()
+  // 검색어(q) · 거르기(cat · sort · attr) · 자녀 맞춤(child)은 주소에 둔다 → 상세에서 뒤로 와도 그대로
+  const [params, setParams] = useSearchParams()
   const keyword = params.get('q') ?? ''
-  const [filters, setFilters] = useState<Omit<ProductSearch, 'keyword'>>({ categoryId: null })
+  const filters = readProductFilters(params)
   const search: ProductSearch = { ...filters, keyword }
-  const [pickedChildId, setChildId] = useState<string | null>(null)
+  const pickedChildId = params.get('child')
+  /**
+   * 바뀐 값만 받아 최신 주소에 얹는다. 주소 변경은 화면에 조금 늦게 반영되므로,
+   * 화면에 그려진 값으로 다시 쓰면 바로 앞 변경(예: 카테고리 해제)을 덮어쓴다.
+   * setParams의 함수형 인자(prev)도 화면에 그려진 시점의 값이라, 주소창의 값을 직접 읽는다
+   */
+  const update = (patch: Partial<ProductFilters>, child?: string | null) => {
+    const latest = new URLSearchParams(window.location.search)
+    const next = writeProductFilters(latest, { ...readProductFilters(latest), ...patch })
+    if (child !== undefined) {
+      if (child) next.set('child', child)
+      else next.delete('child')
+    }
+    setParams(next, { replace: true })
+  }
+  const setChildId = (child: string | null) => update({}, child)
   // 검색 중에는 전체 상품에서 찾는다
   const childId = keyword ? null : pickedChildId
   const [heroIndex, setHeroIndex] = useState(0)
@@ -68,10 +87,7 @@ export function ShopHomePage() {
       <CategoryCircles
         categories={categories.data ?? []}
         selectedId={filters.categoryId}
-        onSelect={(categoryId) => {
-          setChildId(null)
-          setFilters({ ...filters, categoryId, attributes: [] })
-        }}
+        onSelect={(categoryId) => update({ categoryId, attributes: [] }, null)}
       />
 
       <section ref={listRef} className="scroll-mt-28 space-y-4">
@@ -118,16 +134,7 @@ export function ShopHomePage() {
           )}
         </div>
         {childId === null && (
-          <ProductFilterBar
-            search={search}
-            onChange={(next) =>
-              setFilters({
-                categoryId: next.categoryId,
-                sort: next.sort,
-                attributes: next.attributes,
-              })
-            }
-          />
+          <ProductFilterBar search={search} onChange={(patch) => update(patch)} />
         )}
         {query.isPending && <CardGridSkeleton />}
         {query.isError && <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>}

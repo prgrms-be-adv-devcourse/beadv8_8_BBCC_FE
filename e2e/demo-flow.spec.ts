@@ -35,6 +35,63 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText('기본', { exact: true })).toBeVisible()
   })
 
+  await test.step('API 흐름 패널: 방금 호출 · 단계별 묶음 · 목록 | 상세 · 폭 조절', async () => {
+    const latest = page.getByRole('region', { name: '방금 호출' })
+    await expect(latest).toContainText('POST')
+    await expect(latest).toContainText('/members/me/addresses')
+    const step1 = page.getByRole('region', { name: '단계 ① 호출' }).first()
+    await expect(step1).toBeVisible()
+    const widthButton = (name: string) =>
+      page.getByRole('group', { name: '패널 폭' }).getByRole('button', { name })
+    // 요청 · 응답 보기 → 보통 폭이면 넓게로 바뀌고 오른쪽에 상세, 방금 호출 자리를 대신한다
+    await latest.getByRole('button', { name: '요청 · 응답 보기' }).click()
+    const detail = page.getByRole('region', { name: '선택한 호출' })
+    await expect(detail).toContainText('/members/me/addresses')
+    await expect(detail.getByText('응답', { exact: true })).toBeVisible()
+    await expect(latest).toHaveCount(0)
+    await expect(widthButton('◧ 넓게')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByRole('region', { name: '호출 목록' })).toBeVisible()
+    // Esc → 상세 닫힘, 원래 폭(보통)으로
+    await page.locator('body').press('Escape')
+    await expect(detail).toHaveCount(0)
+    await expect(latest).toBeVisible()
+    await expect(widthButton('보통')).toHaveAttribute('aria-pressed', 'true')
+    // 목록 줄 클릭 → 상세, 같은 줄 다시 클릭 → 닫힘 (토글)
+    const row = step1.getByRole('button', { name: /POST\s*\/members\/me\/addresses/ }).first()
+    await row.click()
+    await expect(row).toHaveAttribute('aria-pressed', 'true')
+    await expect(detail).toBeVisible()
+    await row.click()
+    await expect(detail).toHaveCount(0)
+    await expect(widthButton('보통')).toHaveAttribute('aria-pressed', 'true')
+    // 전체: API만 화면 가득 → 다시 보통
+    await widthButton('⛶ 전체').click()
+    await expect(widthButton('⛶ 전체')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByRole('region', { name: '호출 목록' })).toBeVisible()
+    await widthButton('보통').click()
+
+    // 손잡이를 끌어 폭을 맞춘다 → 프리셋 선택 표시 없음, ← 로 40px 넓힘, 더블클릭이면 보통
+    const handle = page.getByRole('separator', { name: 'API 흐름 폭 조절' })
+    const box = (await handle.boundingBox())!
+    const viewport = page.viewportSize()!
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(viewport.width - 700, box.y + box.height / 2, { steps: 5 })
+    await page.mouse.up()
+    await expect(handle).toHaveAttribute('aria-valuenow', /^(69\d|70\d)$/)
+    for (const name of ['보통', '◧ 넓게', '⛶ 전체']) {
+      await expect(widthButton(name)).toHaveAttribute('aria-pressed', 'false')
+    }
+    // 700px 이상이면 패널 안이 목록 | 방금 호출로 나뉜다
+    await expect(page.getByRole('region', { name: '호출 목록' })).toBeVisible()
+    const before = Number(await handle.getAttribute('aria-valuenow'))
+    await handle.focus()
+    await page.keyboard.press('ArrowLeft')
+    await expect(handle).toHaveAttribute('aria-valuenow', String(before + 40))
+    await handle.dblclick()
+    await expect(widthButton('보통')).toHaveAttribute('aria-pressed', 'true')
+  })
+
   await test.step('② 판매자 신청 → 관리자 거절 → 다시 신청 → 승인', async () => {
     await page.goto('/console/seller/apply')
     await page.getByRole('button', { name: '신청하기' }).click()
@@ -66,9 +123,11 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByRole('checkbox', { name: '네이비' })).toBeChecked()
     await expect(page.getByLabel('네이비 / 120 재고')).toHaveValue('10')
     await page.getByRole('button', { name: '등록하기' }).click()
-    await expect(page.getByText(/상품 #\d+를 등록했어요/)).toBeVisible()
-    await page.getByRole('button', { name: '판매 시작' }).first().click()
-    await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
+    // 등록 결과 줄의 판매 시작 (내 상품 목록이 먼저 다시 불려 같은 버튼이 목록에도 생긴다)
+    const registered = page.getByText(/상품 #\d+를 등록했어요/).locator('..')
+    await registered.getByRole('button', { name: '판매 시작' }).click()
+    await expect(registered.getByText('판매를 시작했어요.')).toBeVisible()
+    await expect(registered.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
     // 판매 시작 → 상세로 이어진다 (실제 상세 API)
     await page.getByRole('link', { name: '상품 상세 보기' }).click()
     await expect(page.getByRole('heading', { name: '데일리 맨투맨', exact: true })).toBeVisible()
@@ -181,13 +240,17 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
 
   await test.step('목 끄기 → 실제 서버로 감', async () => {
     await page.getByRole('button', { name: '목 설정' }).click()
-    await page.locator('label', { hasText: '상품' }).locator('input').uncheck()
-    // 상품 수정은 아직 목 → 끄면 가짜 백엔드의 없는 API 응답
+    await page.locator('label', { hasText: '회원 보완' }).locator('input').uncheck()
+    // 판매자 상호명 수정은 아직 목 → 끄면 가짜 백엔드의 없는 API 응답
     await switchRole(page, '판매자')
-    await page.goto('/console/seller/products')
-    await page.getByRole('button', { name: '수정' }).first().click()
-    await page.getByRole('button', { name: '수정 저장' }).click()
-    await expect(page.getByText(/없는 API PATCH \/seller\/products\/\d+/)).toBeVisible()
+    await page.goto('/center')
+    await page.getByRole('button', { name: '상호명 수정' }).click()
+    await page.getByRole('textbox', { name: '상호명' }).fill('목 끈 상점')
+    await page.getByRole('button', { name: '상호명 저장' }).click()
+    await expect(page.getByRole('main').getByText(/없는 API PATCH \/seller\/me/)).toBeVisible()
+    // 방금 호출 카드에도 실패로 크게 (판매자 센터에서는 흐름 패널을 서랍으로 연다)
+    await page.getByRole('button', { name: /^API 흐름 \d+/ }).click()
+    await expect(page.getByRole('region', { name: '방금 호출' })).toContainText('404')
   })
 
   expect(consoleErrors).toEqual([])

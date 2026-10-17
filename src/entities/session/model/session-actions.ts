@@ -31,6 +31,12 @@ export async function signInAsDemo(account: DemoAccount) {
   await signIn(accessToken)
 }
 
+/** 시연 계정 토큰만 받는다 (로그인 상태는 바꾸지 않음). 자동 시연 시작 전 점검용 */
+export async function issueDemoToken(account: DemoAccount): Promise<string> {
+  const { accessToken } = await sessionApi.issueDevToken(toDevTokenRequest(account))
+  return accessToken
+}
+
 /** 서버의 Refresh Token을 폐기하고 화면의 로그인 상태를 지운다 (Access Token은 만료까지 서버에서 유효) */
 export async function signOut() {
   try {

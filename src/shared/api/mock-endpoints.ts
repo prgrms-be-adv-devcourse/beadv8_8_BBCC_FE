@@ -41,11 +41,18 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     screens: '판매자 상품(옵션별 재고)',
   },
   {
-    method: 'PATCH',
+    method: 'PUT',
     path: '/seller/products/:productId',
-    source: 'mock',
-    backend: 'BE 없음 (수정 도메인 #317만, API 없음)',
+    source: 'real',
+    backend: 'BE SellerProductController develop + 판매자 상세 확장 #403 → 실제 (FE #162)',
     screens: '판매자 상품(수정)',
+  },
+  {
+    method: 'POST',
+    path: '/seller/product-images/upload-urls',
+    source: 'real',
+    backend: 'BE #390 develop 머지(10/16) → 실제 (FE #156)',
+    screens: '판매자 상품(등록 · 수정 사진)',
   },
   {
     method: 'PUT',

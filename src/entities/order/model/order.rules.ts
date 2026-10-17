@@ -221,3 +221,23 @@ const PROCESS = [
   { label: '재고 확보', event: 'stock.deducted' },
   { label: '예치금 결제', event: 'payment.completed' },
 ] as const
+
+/** 주소의 ?tab= → 주문 탭 (모르는 값은 전체) */
+export function orderTabOf(value: string | null): OrderTab {
+  return ORDER_TABS.some((tab) => tab.value === value) ? (value as OrderTab) : 'ALL'
+}
+
+/** 관리자 대시보드: 그날(KST 날짜 글자) 주문 · 결제된 주문 금액 · 취소 */
+export function summarizeOrdersOn(
+  orders: { status: OrderStatus; orderedAt: string; totalAmount: number }[],
+  day: string,
+) {
+  const today = orders.filter((order) => order.orderedAt.startsWith(day))
+  return {
+    count: today.length,
+    paidAmount: today
+      .filter((order) => order.status === 'PAID')
+      .reduce((sum, order) => sum + order.totalAmount, 0),
+    cancelled: today.filter((order) => order.status === 'CANCELLED').length,
+  }
+}

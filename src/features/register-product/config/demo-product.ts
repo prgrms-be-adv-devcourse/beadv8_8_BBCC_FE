@@ -43,7 +43,7 @@ export function demoRegisterForm(inputs: CategoryInputs): RegisterProductForm {
   const form: RegisterProductForm = {
     name: '데일리 맨투맨',
     brand: '키들리',
-    imageUrlsText: '',
+    imageUrls: [],
     categoryId: inputs.categoryId,
     info,
     optionValues,
@@ -52,7 +52,7 @@ export function demoRegisterForm(inputs: CategoryInputs): RegisterProductForm {
     sizeSpecs: {},
   }
   for (const combo of optionCombos(inputs, form)) form.stocks[combo.key] = 10
-  for (const group of priceGroups(inputs, form)) form.prices[group.key] = 25000
+  for (const group of priceGroups(inputs, form)) form.prices[group.key] = DEMO_PRICE
   sizeValues(inputs, form).forEach((value, index) => {
     const [min, max] = DEMO_SIZES[value.name] ?? [100 + index * 10, 110 + index * 10]
     form.sizeSpecs[value.id] = {
@@ -68,6 +68,9 @@ export function demoRegisterForm(inputs: CategoryInputs): RegisterProductForm {
   })
   return form
 }
+
+/** 시연 상품 옵션 가격 (자동 시연 시작 전 점검: 보호자 예치금이 이만큼 있어야 주문이 된다) */
+export const DEMO_PRICE = 25000
 
 /** 카테고리 기본값: 시연 상품의 카테고리(상의), 없으면 첫 카테고리 */
 export function demoCategoryId(categories: { id: string; name: string }[]): string {

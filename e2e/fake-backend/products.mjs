@@ -1,6 +1,7 @@
-// 가짜 백엔드의 상품 도메인: 카테고리 · 입력 항목 · 등록 · 판매 시작 · 상세 (BE in/** 응답 모양만 흉내).
+// 가짜 백엔드의 상품 도메인: 카테고리 · 입력 항목 · 등록 · 판매 시작 · 상세 · 이미지 업로드 주소 발급 (BE in/** 응답 모양만 흉내).
 // 기준 데이터는 BE 테스트 픽스처(의류 > 상의 · 하의, 색상 · 사이즈 옵션, 주요소재 · 혼용률 정보, 실측)를 따른다.
 // 판매를 시작하면 주문 도메인 상품 복사본(replica)과 재고(stock)를 만든다 (product.changed 흉내).
+import { randomUUID } from 'node:crypto'
 
 const attrs = {
   1: {
@@ -306,7 +307,56 @@ export function register(sellerId, body) {
   ]
   if (sent.some((id) => typeof id !== 'number'))
     return { status: 400, detail: '항목 · 값 ID는 숫자로 보내 주세요.' }
-  const ids = (list) => list.map(Number)
+  const built = buildSaleInputs(body)
+  if (built.status) return built
+  const { options } = built
+  const product = {
+    productId: String(nextProductId++),
+    sellerId,
+    name: body.name.trim(),
+    brand: body.brand,
+    categoryId,
+    description: body.description ?? null,
+    status: 'SALE_PENDING',
+    version: 0,
+    thumbnailUrl: body.thumbnailUrl ?? null,
+    imageUrls: body.imageUrls,
+    info: infoOf(body),
+    options,
+    prices: built.prices,
+    sizeSpecs: built.sizeSpecs,
+  }
+  products[product.productId] = product
+  options.forEach((o) => (stock[o.optionId] = o.qty))
+  return {
+    status: 201,
+    location: `/api/v1/seller/products/${product.productId}`,
+    body: {
+      productId: product.productId,
+      status: product.status,
+      version: product.version,
+      options: options.map((o) => ({
+        optionId: String(o.optionId),
+        optionName: optionNameOf(o.valueIds),
+        price: o.price,
+        availableQuantity: o.qty,
+        saleStatus: 'ON_SALE',
+        skuCode: o.skuCode ?? null,
+      })),
+    },
+  }
+}
+
+const ids = (list) => list.map(Number)
+const infoOf = (body) =>
+  body.attributes.map((a) => ({
+    attributeId: Number(a.attributeId),
+    valueIds: ids(a.valueIds),
+    text: a.text,
+  }))
+
+/** 옵션 · 가격 · 실측 (등록 · 판매 시작 전 수정). 실패면 { status, detail } */
+function buildSaleInputs(body) {
   const options = body.options.map((o) => {
     const valueIds = ids(o.valueIds)
     const group = body.prices.find((g) => ids(g.valueIds).every((v) => valueIds.includes(v)))
@@ -331,42 +381,44 @@ export function register(sellerId, body) {
         detail: `판매를 시작할 수 없습니다. ${values[size].value} 사이즈에 실측과 권장 키가 없습니다.`,
       }
   }
-  const product = {
-    productId: String(nextProductId++),
-    sellerId,
-    name: body.name.trim(),
-    brand: body.brand,
-    categoryId,
-    status: 'SALE_PENDING',
-    version: 0,
-    imageUrls: body.imageUrls,
-    info: body.attributes.map((a) => ({
-      attributeId: Number(a.attributeId),
-      valueIds: ids(a.valueIds),
-      text: a.text,
-    })),
+  return {
     options,
+    prices: body.prices.map((g) => ({ valueIds: ids(g.valueIds), price: g.price })),
     sizeSpecs: body.sizeSpecs.map((s) => ({ ...s, sizeValueId: Number(s.sizeValueId) })),
   }
-  products[product.productId] = product
-  options.forEach((o) => (stock[o.optionId] = o.qty))
-  return {
-    status: 201,
-    location: `/api/v1/seller/products/${product.productId}`,
-    body: {
-      productId: product.productId,
-      status: product.status,
-      version: product.version,
-      options: options.map((o) => ({
-        optionId: String(o.optionId),
-        optionName: optionNameOf(o.valueIds),
-        price: o.price,
-        availableQuantity: o.qty,
-        saleStatus: 'ON_SALE',
-        skuCode: o.skuCode ?? null,
-      })),
-    },
+}
+
+/**
+ * PUT /seller/products/{productId} (BE ProductUpdateRequest). 읽어 간 version이 다르면 409.
+ * 옵션 · 가격 · 실측은 판매 시작 전에만 셋을 함께 받고, 그 밖에 보내면 409 (SALE_INPUTS_LOCKED)
+ */
+export function updateProduct(sellerId, productId, body) {
+  const p = products[productId]
+  if (!p || p.sellerId !== sellerId) return { status: 404, detail: '상품을 찾을 수 없습니다.' }
+  if (body.version !== p.version)
+    return { status: 409, detail: '다른 곳에서 먼저 고쳤습니다. 다시 불러와 주세요.' }
+  if (!body.name?.trim()) return { status: 400, detail: '상품명을 입력해 주세요.' }
+  const saleInputs = [body.options, body.prices, body.sizeSpecs]
+  const sent = saleInputs.filter((item) => item != null).length
+  if (sent > 0 && p.status !== 'SALE_PENDING')
+    return { status: 409, detail: '판매를 시작한 상품은 옵션 · 가격 · 실측을 바꿀 수 없습니다.' }
+  if (sent > 0 && sent < 3) return { status: 400, detail: '옵션 · 가격 · 실측은 함께 보내 주세요.' }
+  if (sent === 3) {
+    const built = buildSaleInputs(body)
+    if (built.status) return built
+    Object.assign(p, { options: built.options, prices: built.prices, sizeSpecs: built.sizeSpecs })
+    built.options.forEach((o) => (stock[o.optionId] = o.qty))
   }
+  Object.assign(p, {
+    name: body.name.trim(),
+    brand: body.brand,
+    description: body.description ?? null,
+    thumbnailUrl: body.thumbnailUrl ?? null,
+    imageUrls: body.imageUrls,
+    info: infoOf(body),
+    version: p.version + 1,
+  })
+  return { status: 200, body: sellerDetailOf(sellerId, productId) }
 }
 
 const saleStatusBody = (p) => ({ productId: p.productId, status: p.status, version: p.version })
@@ -438,18 +490,38 @@ export function sellerListOf(sellerId) {
 export function sellerDetailOf(sellerId, productId) {
   const p = products[productId]
   if (!p || p.sellerId !== sellerId) return null
+  const strs = (list) => list.map(String)
+  // BE SellerProductDetailResponse (#403): 수정 요청과 같은 모양, ID는 문자열
   return {
     productId: String(p.productId),
     name: p.name,
     status: p.status,
     version: p.version,
+    brand: p.brand ?? null,
+    categoryId: String(p.categoryId),
+    description: p.description ?? null,
+    thumbnailUrl: p.thumbnailUrl ?? null,
+    imageUrls: p.imageUrls ?? [],
+    attributes: (p.info ?? []).map((a) => ({
+      attributeId: String(a.attributeId),
+      valueIds: strs(a.valueIds),
+      text: a.text ?? null,
+    })),
     options: p.options.map((o) => ({
       optionId: String(o.optionId),
       optionName: optionNameOf(o.valueIds),
+      valueIds: strs(o.valueIds),
       price: o.price,
       availableQuantity: stock[o.optionId] ?? 0,
       saleStatus: 'ON_SALE',
       skuCode: o.skuCode ?? null,
+    })),
+    prices: (p.prices ?? []).map((g) => ({ valueIds: strs(g.valueIds), price: g.price })),
+    sizeSpecs: (p.sizeSpecs ?? []).map((s) => ({
+      sizeValueId: String(s.sizeValueId),
+      minHeightCm: s.minHeightCm ?? null,
+      maxHeightCm: s.maxHeightCm ?? null,
+      measurements: s.measurements ?? {},
     })),
   }
 }
@@ -487,4 +559,40 @@ export function adjustInventory(sellerId, optionId, body) {
       availableQuantity: stock[option.optionId],
     },
   }
+}
+
+// 상품 이미지 업로드 주소 발급 (BE SellerProductImageController · ProductImageUploadUrlRequest)
+// 저장 주소는 실제 버킷 모양이고, 업로드 주소는 그 뒤에 가짜 서명을 붙인다. S3 PUT은 E2E가 브라우저에서 가로챈다
+const BUCKET_URL = 'https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com'
+const IMAGE_EXTENSIONS = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
+const IMAGE_MAX_BYTES = 10 * 1024 * 1024
+const UPLOAD_URL_TTL_MS = 5 * 60 * 1000
+const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000
+
+function invalidImageUploadDetail(files) {
+  if (!Array.isArray(files)) return 'files: 이미지 목록을 넣어 주세요.'
+  if (files.length < 1 || files.length > 10)
+    return 'files: 이미지는 한 번에 1장 이상 10장 이하로 요청해 주세요.'
+  for (const [index, file] of files.entries()) {
+    if (!IMAGE_EXTENSIONS[file.contentType])
+      return `files[${index}].contentType: jpeg, png, webp 이미지만 올릴 수 있습니다.`
+    if (!(file.contentLength >= 1 && file.contentLength <= IMAGE_MAX_BYTES))
+      return `files[${index}].contentLength: 이미지는 한 장에 1바이트 이상 10MB 이하로 올려 주세요.`
+  }
+  return null
+}
+
+export function issueImageUploadUrls(sellerId, body) {
+  const detail = invalidImageUploadDetail(body?.files)
+  if (detail) return { status: 400, detail }
+  // BE는 서울 시간을 시간대 없이 준다 (LocalDateTime)
+  const expiresAt = new Date(Date.now() + UPLOAD_URL_TTL_MS + SEOUL_OFFSET_MS)
+    .toISOString()
+    .slice(0, 19)
+  const uploads = body.files.map((file) => {
+    const imageUrl = `${BUCKET_URL}/dev/products/${sellerId}/${randomUUID()}.${IMAGE_EXTENSIONS[file.contentType]}`
+    const signature = `X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=300&X-Amz-Signature=fake`
+    return { uploadUrl: `${imageUrl}?${signature}`, imageUrl, expiresAt }
+  })
+  return { status: 200, body: { uploads } }
 }

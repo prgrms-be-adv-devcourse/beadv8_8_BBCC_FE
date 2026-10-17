@@ -34,12 +34,21 @@ import {
   productDetailShape,
   registerProductResultShape,
   saleStatusResultShape,
+  sellerProductDetailShape,
 } from '@/entities/product/api/product.shape'
-import { toCategoryInputs, toRegisterProductRequest } from '@/entities/product'
+import {
+  toCategoryInputs,
+  toEditableProductForm,
+  toProductUpdateRequest,
+  toRegisterProductRequest,
+  type CategoryInputs,
+} from '@/entities/product'
+import { toSellerProductDetail } from '@/entities/product/model/product.mapper'
 import { DEMO_ADDRESS } from '@/features/manage-address/config/demo-address'
 import { demoRegisterForm } from '@/features/register-product/config/demo-product'
 import { DEMO_APPLICATION } from '@/features/apply-seller/config/demo-application'
 import { DEMO_CHILD } from '@/features/register-child/config/demo-child'
+import { productImageUploadUrlsShape } from '@/features/upload-product-image'
 import { arr, validate, type Shape } from '@/shared/api'
 
 // E2E가 쓰는 가짜 백엔드의 응답이 FE 계약(응답 모양)과 같은지 확인한다.
@@ -320,6 +329,50 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
   })
 })
 
+describe('상품 이미지 업로드 주소 발급 (BE SellerProductImageController)', () => {
+  const S3_IMAGE =
+    /^https:\/\/team04-kidly-s3\.s3\.ap-northeast-2\.amazonaws\.com\/dev\/products\/2\/[\w-]+\.(jpg|webp)$/
+  const jpeg = { contentType: 'image/jpeg', contentLength: 1000 }
+
+  it('판매자는 요청 순서대로 업로드 주소 · 저장 주소 · 서울 시간 만료 시각을 받는다', async () => {
+    const issued = await call('POST', '/seller/product-images/upload-urls', 2, {
+      files: [jpeg, { contentType: 'image/webp', contentLength: 2000 }],
+    })
+    expect(issued.status).toBe(200)
+    expectContract(issued.data, productImageUploadUrlsShape)
+    const uploads = issued.data.uploads as {
+      uploadUrl: string
+      imageUrl: string
+      expiresAt: string
+    }[]
+    expect(uploads.map((upload) => upload.imageUrl.split('.').at(-1))).toEqual(['jpg', 'webp'])
+    for (const upload of uploads) {
+      expect(upload.imageUrl).toMatch(S3_IMAGE)
+      expect(upload.uploadUrl.startsWith(`${upload.imageUrl}?`)).toBe(true)
+      expect(upload.expiresAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
+    }
+  })
+
+  it.each([
+    [null, 401],
+    [1, 403],
+  ])('회원 %s는 %i', async (as, status) => {
+    const issued = await call('POST', '/seller/product-images/upload-urls', as, { files: [jpeg] })
+    expect(issued.status).toBe(status)
+  })
+
+  it('형식이 틀리면 400, detail은 "필드: 메시지"', async () => {
+    const issued = await call('POST', '/seller/product-images/upload-urls', 2, {
+      files: [jpeg, { contentType: 'image/svg+xml', contentLength: 1000 }],
+    })
+    expect(issued.status).toBe(400)
+    expect(issued.data).toMatchObject({
+      title: '잘못된 요청입니다',
+      detail: 'files[1].contentType: jpeg, png, webp 이미지만 올릴 수 있습니다.',
+    })
+  })
+})
+
 describe('상품 (실제 API): 등록 → 판매 시작 → 상세 → 시드 없이 담기', () => {
   it('카테고리 입력 항목으로 만든 등록 요청이 받아지고, 판매 시작하면 주문 복사본이 생긴다', async () => {
     const tree = await call('GET', '/categories', null)
@@ -382,5 +435,66 @@ describe('상품 (실제 API): 등록 → 판매 시작 → 상세 → 시드 �
     })
     expect(placed.status).toBe(201)
     expectContract(placed.data, orderDetailShape)
+  })
+})
+
+describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · PUT ProductUpdateRequest)', () => {
+  const S3_IMAGE = 'https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com/dev/products/2/a.jpg'
+
+  async function registerAndRead() {
+    const inputs: CategoryInputs = toCategoryInputs(
+      (await call('GET', '/categories/11/attributes', null)).data,
+    )
+    const registered = await call(
+      'POST',
+      '/seller/products',
+      2,
+      toRegisterProductRequest(inputs, demoRegisterForm(inputs)),
+    )
+    const read = async () => await call('GET', `/seller/products/${registered.data.productId}`, 2)
+    return { inputs, productId: registered.data.productId as string, read }
+  }
+
+  it('상세는 수정 요청과 같은 모양이고, 그대로 고쳐 보내면 200 · version이 오른다', async () => {
+    const { inputs, productId, read } = await registerAndRead()
+    const before = await read()
+    expect(before.status).toBe(200)
+    expectContract(before.data, sellerProductDetailShape)
+    const detail = toSellerProductDetail(before.data)
+    const form = toEditableProductForm(inputs, detail)
+
+    const updated = await call(
+      'PUT',
+      `/seller/products/${productId}`,
+      2,
+      toProductUpdateRequest(
+        inputs,
+        { ...form, name: '데일리 맨투맨 (수정)', imageUrls: [S3_IMAGE] },
+        detail,
+      ),
+    )
+    expect(updated.status).toBe(200)
+    expectContract(updated.data, sellerProductDetailShape)
+    expect(updated.data).toMatchObject({
+      name: '데일리 맨투맨 (수정)',
+      version: detail.version + 1,
+      thumbnailUrl: S3_IMAGE,
+      imageUrls: [S3_IMAGE],
+    })
+    // 읽어 간 version이 오래되면 409
+    const stale = toProductUpdateRequest(inputs, form, detail)
+    expect((await call('PUT', `/seller/products/${productId}`, 2, stale)).status).toBe(409)
+  })
+
+  it('판매를 시작하면 옵션 · 가격 · 실측을 보내면 409, 셋 다 null이면 200', async () => {
+    const { inputs, productId, read } = await registerAndRead()
+    await call('PUT', `/seller/products/${productId}/sale-status`, 2, { status: 'ON_SALE' })
+    const detail = toSellerProductDetail((await read()).data)
+    const form = toEditableProductForm(inputs, detail)
+    const locked = toProductUpdateRequest(inputs, form, { ...detail, status: 'SALE_PENDING' })
+    expect((await call('PUT', `/seller/products/${productId}`, 2, locked)).status).toBe(409)
+    const nameOnly = toProductUpdateRequest(inputs, { ...form, name: '이름만' }, detail)
+    expect(nameOnly).toMatchObject({ options: null, prices: null, sizeSpecs: null })
+    expect((await call('PUT', `/seller/products/${productId}`, 2, nameOnly)).status).toBe(200)
   })
 })
