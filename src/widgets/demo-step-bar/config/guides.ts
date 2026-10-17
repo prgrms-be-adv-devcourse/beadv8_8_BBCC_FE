@@ -166,7 +166,10 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
     guide: {
       step: '⑦',
       actor: '관리자',
-      todo: ['"정산 실행"을 눌러요 (원래는 매월 자동)'],
+      todo: [
+        '"정산 실행"을 눌러요 (원래는 매월 자동)',
+        '기준일은 오늘이라 어제까지 구매확정분이 대상이에요. 오늘 구매확정분은 내일 정산돼요',
+      ],
       watch:
         'POST /admin/settlements/run → settlement.payout-requested → payment.payout-completed → 판매자 예치금 입금',
       next: { label: '⑦ 정산서', to: C.sellerSettlements },
@@ -177,7 +180,10 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
     guide: {
       step: '⑦',
       actor: '판매자',
-      todo: ['정산서 "상세"에서 수수료 10%를 뺀 지급액을 봐요'],
+      todo: [
+        '정산서 "상세"에서 수수료 10%를 뺀 지급액을 봐요',
+        '오늘 구매확정한 상품은 "정산 대상"에 있다가 내일 정산돼요',
+      ],
       watch: 'GET /seller/settlements — 구매확정 → 정산 → 예치금 입금(지급 완료)까지 이어진 결과',
       next: { label: '흐름 확인', to: C.verify },
     },

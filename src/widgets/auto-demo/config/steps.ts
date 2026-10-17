@@ -250,18 +250,22 @@ export const AUTO_DEMO_STEPS: AutoDemoStep[] = [
     title: '정산',
     run: async (ctx) => {
       await ctx.as('관리자')
-      await ctx.show(C.adminSettlements, '관리자: 정산 실행 (오늘 구매확정분까지)')
+      await ctx.show(C.adminSettlements, '관리자: 정산 실행 (기준일 오늘 · 어제까지 확정분)')
       try {
-        await ctx.call('정산 실행', () =>
-          settlementApi.run({ cutoffOn: settlementPeriodEnd(new Date(), true) }),
+        const result = await ctx.call('정산 실행', () =>
+          settlementApi.run({ cutoffOn: settlementPeriodEnd(new Date()) }),
+        )
+        ctx.say(
+          `정산 실행 · 성공 ${result.successCount} · 오늘 구매확정분(방금 확정)은 내일 정산 대상`,
         )
       } catch (error) {
         // 같은 기준일로 이미 실행했으면 409 (오늘 두 번째 자동 시연). 정산서 화면은 그대로 본다
         if (getErrorStatus(error) !== 409) throw error
-        ctx.say('오늘 기준일 정산은 이미 실행됨 → 정산서 확인')
+        ctx.say('오늘 기준일 정산은 이미 실행됨 → 정산 대상 · 정산서 확인')
       }
+      await ctx.wait(1500)
       await ctx.as('판매자')
-      await ctx.show(C.sellerSettlements, '판매자: 정산서 확인')
+      await ctx.show(C.sellerSettlements, '판매자: 정산 대상(방금 확정분) · 정산서 확인')
       await ctx.wait(1000)
     },
   },

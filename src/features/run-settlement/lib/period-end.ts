@@ -7,12 +7,9 @@ const seoulDate = new Intl.DateTimeFormat('en-CA', {
 })
 
 /**
- * 정산 종료 기준일 "YYYY-MM-DD" (이 날짜 이전 구매확정분이 대상). 날짜는 한국 시간 기준이다
- * (구매확정 시각 · BE 정산 기준이 한국 시간). includeToday면 내일을 보내 오늘 구매확정분까지 넣는다 (시연용)
+ * 정산 종료 기준일 "YYYY-MM-DD" = 오늘(한국 시간). 이날 0시 전, 즉 어제까지 구매확정된 대상을 정산한다.
+ * BE는 오늘 이후 날짜를 거절한다(INVALID_SETTLEMENT_CUTOFF). 오늘 구매확정분은 내일 정산 대상이다
  */
-export function settlementPeriodEnd(now: Date, includeToday: boolean): string {
-  const today = seoulDate.format(now)
-  if (!includeToday) return today
-  const [year, month, day] = today.split('-').map(Number)
-  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10)
+export function settlementPeriodEnd(now: Date): string {
+  return seoulDate.format(now)
 }

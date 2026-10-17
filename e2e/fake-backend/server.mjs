@@ -184,6 +184,18 @@ http
       stallNext = { timeoutMs: body?.timeoutMs ?? PAYMENT_TIMEOUT_MS }
       return send(res, 204)
     }
+    // POST /__fake/age-confirmations { days } — 정산 안 된 구매확정 시각을 며칠 앞으로 (가짜 백엔드 전용).
+    // 정산 기준일은 오늘까지만 되므로(BE) 방금 구매확정한 상품을 E2E에서 정산하려고 쓴다
+    if (r('POST', /^\/__fake\/age-confirmations$/)) {
+      const days = Number(body?.days ?? 1)
+      for (const it of orders.flatMap((o) => o.items)) {
+        if (it.status !== 'CONFIRMED' || !it.confirmedAt || it.settled) continue
+        it.confirmedAt = new Date(Date.parse(`${it.confirmedAt}Z`) - days * 86_400_000)
+          .toISOString()
+          .slice(0, 19)
+      }
+      return send(res, 204)
+    }
     if (r('POST', /^\/dev\/tokens$/))
       return send(res, 200, {
         accessToken: `${b64({ alg: 'none' })}.${b64({ sub: String(body.memberId), nickname: body.nickname || '회원' + body.memberId, roles: body.roles })}.sig`,
@@ -256,6 +268,15 @@ http
       const cutoffOn = body?.cutoffOn
       if (!/^\d{4}-\d{2}-\d{2}$/.test(cutoffOn ?? ''))
         return problem(res, 400, '잘못된 요청입니다', '종료 기준일을 넣어 주세요.', req.url)
+      // BE: 수동 실행 기준일은 오늘 또는 지난 날짜 (SettlementPeriod.manual)
+      if (cutoffOn > now().slice(0, 10))
+        return problem(
+          res,
+          400,
+          '정산 기준일이 올바르지 않습니다',
+          '오늘 또는 지난 날짜로 지정해 주세요.',
+          req.url,
+        )
       if (settlementRuns.some((run) => run.cutoffAt.startsWith(cutoffOn)))
         return problem(res, 409, '이미 정산했습니다', '이미 정산한 기준일입니다.', req.url)
       const due = confirmedItems().filter(
