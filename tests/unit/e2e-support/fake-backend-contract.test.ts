@@ -2,8 +2,16 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { toAddressRequest } from '@/entities/address'
-import { measurementItemShape } from '@/entities/catalog/api/catalog.shape'
-import { toMeasurementItemRequest } from '@/entities/catalog'
+import {
+  attributeShape,
+  attributeValueShape,
+  measurementItemShape,
+} from '@/entities/catalog/api/catalog.shape'
+import {
+  toAttributeCreateRequest,
+  toAttributeValueRequest,
+  toMeasurementItemRequest,
+} from '@/entities/catalog'
 import { addressShape } from '@/entities/address/api/address.shape'
 import { toAddCartItemRequest } from '@/entities/cart'
 import { cartShape } from '@/entities/cart/api/cart.shape'
@@ -472,6 +480,36 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     const nameOnly = toProductUpdateRequest(inputs, { ...form, name: '이름만' }, detail)
     expect(nameOnly).toMatchObject({ options: null, prices: null, sizeSpecs: null })
     expect((await call('PUT', `/seller/products/${productId}`, 2, nameOnly)).status).toBe(200)
+  })
+
+  it('관리자 상품 기준 데이터: 항목 · 목록 값 만들기와 목록 (BE #405)', async () => {
+    const created = await call(
+      'POST',
+      '/admin/attributes',
+      3,
+      toAttributeCreateRequest({
+        name: '계약 소재',
+        code: 'CONTRACT_MATERIAL',
+        inputType: 'PALETTE',
+        values: [{ name: '면', colorCode: '#ffffff' }],
+      }),
+    )
+    expect(created.status).toBe(201)
+    expectContract(created.data, attributeShape)
+    const added = await call(
+      'POST',
+      `/admin/attributes/${created.data.attributeId}/values`,
+      3,
+      toAttributeValueRequest({ name: '린넨', colorCode: '#e3d3bc' }, 'PALETTE'),
+    )
+    expect(added.status).toBe(201)
+    expectContract(added.data, attributeValueShape)
+    expectContract((await call('GET', '/admin/attributes', 3)).data, arr(attributeShape))
+    // 같은 코드는 409, 같은 항목에 같은 값 이름도 409, 없는 항목은 404
+    expect((await call('POST', '/admin/attributes', 3, created.data)).status).toBe(409)
+    const again = `/admin/attributes/${created.data.attributeId}/values`
+    expect((await call('POST', again, 3, added.data)).status).toBe(409)
+    expect((await call('POST', '/admin/attributes/999999/values', 3, added.data)).status).toBe(404)
   })
 
   it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {
