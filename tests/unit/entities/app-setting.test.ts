@@ -71,7 +71,7 @@ describe('시연 기능 끄기 확인', () => {
     expect(turnOffDemoConfirm(true)).toEqual({
       title: '시연 기능을 끌까요?',
       description:
-        '지금은 시연 계정으로 로그인해 있어요. 새로고침하면 로그아웃되고, 카카오로 로그인한 관리자만 다시 켤 수 있어요.',
+        '지금은 시연 계정으로 로그인해 있어요. 끄면 바로 새로고침되면서 로그아웃되고, 카카오로 로그인한 관리자만 다시 켤 수 있어요.',
       confirmLabel: '끄기',
       tone: 'danger',
     })
@@ -80,7 +80,7 @@ describe('시연 기능 끄기 확인', () => {
     expect(turnOffDemoConfirm(false)).toEqual({
       title: '시연 기능을 끌까요?',
       description:
-        '모든 방문자에게 역할 전환 · 시연 콘솔 · API 흐름 패널이 사라지고 카카오 로그인만 남아요.',
+        '모든 방문자에게 역할 전환 · 시연 콘솔 · API 흐름 패널이 사라지고 카카오 로그인만 남아요. 끄면 바로 새로고침돼요.',
       confirmLabel: '끄기',
       tone: 'danger',
     })

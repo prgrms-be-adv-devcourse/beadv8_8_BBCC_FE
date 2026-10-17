@@ -12,7 +12,7 @@ export function needsReload(applied: AppSetting, saved: AppSetting): boolean {
 }
 
 /**
- * 새로고침 안내. 필요 없으면 null.
+ * 새로고침 안내. 필요 없으면 null. 이 화면에서 바꾸면 바로 새로고침하므로, 다른 관리자가 바꿨을 때 보인다.
  * 시연 계정(개발용 토큰)은 시연 기능을 끄고 새로고침하면 다시 로그인되지 않으므로 따로 알린다
  */
 export function reloadNotice(
@@ -33,8 +33,8 @@ export function turnOffDemoConfirm(isDemoSession: boolean): ConfirmOptions {
   return {
     title: '시연 기능을 끌까요?',
     description: isDemoSession
-      ? '지금은 시연 계정으로 로그인해 있어요. 새로고침하면 로그아웃되고, 카카오로 로그인한 관리자만 다시 켤 수 있어요.'
-      : '모든 방문자에게 역할 전환 · 시연 콘솔 · API 흐름 패널이 사라지고 카카오 로그인만 남아요.',
+      ? '지금은 시연 계정으로 로그인해 있어요. 끄면 바로 새로고침되면서 로그아웃되고, 카카오로 로그인한 관리자만 다시 켤 수 있어요.'
+      : '모든 방문자에게 역할 전환 · 시연 콘솔 · API 흐름 패널이 사라지고 카카오 로그인만 남아요. 끄면 바로 새로고침돼요.',
     confirmLabel: '끄기',
     tone: 'danger',
   }

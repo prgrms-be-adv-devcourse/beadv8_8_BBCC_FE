@@ -38,13 +38,19 @@ test('관리자 설정: 목 데이터 · 시연 기능 끄고 켜기 (새로고�
     await expect(settingCard(page, '시연 기능').getByText('켜짐')).toBeVisible()
   })
 
-  await test.step('목 데이터를 끄면 저장된 값이 바뀌고, 새로고침 안내가 나온다', async () => {
-    await settingCard(page, '목 데이터').getByRole('button', { name: '끄기' }).click()
+  await test.step('목 데이터를 끄면 바로 새로고침되어 적용되고, 다시 켜도 같다', async () => {
+    await Promise.all([
+      page.waitForEvent('load'),
+      settingCard(page, '목 데이터').getByRole('button', { name: '끄기' }).click(),
+    ])
     await expect(settingCard(page, '목 데이터').getByText('꺼짐')).toBeVisible()
-    await expect(page.getByText('바꾼 설정은 새로고침하면 이 화면에 적용돼요.')).toBeVisible()
-    await settingCard(page, '목 데이터').getByRole('button', { name: '켜기' }).click()
-    await expect(settingCard(page, '목 데이터').getByText('켜짐')).toBeVisible()
+    // 새로고침으로 화면에 적용됐으므로 안내가 없다
     await expect(page.getByText('바꾼 설정은 새로고침하면 이 화면에 적용돼요.')).toHaveCount(0)
+    await Promise.all([
+      page.waitForEvent('load'),
+      settingCard(page, '목 데이터').getByRole('button', { name: '켜기' }).click(),
+    ])
+    await expect(settingCard(page, '목 데이터').getByText('켜짐')).toBeVisible()
   })
 
   await test.step('시연 기능 끄기는 확인 창에서 취소하면 그대로다', async () => {
@@ -58,14 +64,12 @@ test('관리자 설정: 목 데이터 · 시연 기능 끄고 켜기 (새로고�
     await expect(settingCard(page, '시연 기능').getByText('켜짐')).toBeVisible()
   })
 
-  await test.step('시연 기능을 끄고 새로고침하면 시연 계정은 로그아웃되고, 역할 전환이 없다', async () => {
+  await test.step('시연 기능을 끄면 바로 새로고침되어 시연 계정은 로그아웃되고, 역할 전환이 없다', async () => {
     await settingCard(page, '시연 기능').getByRole('button', { name: '끄기' }).click()
-    await page.getByRole('alertdialog').getByRole('button', { name: '끄기' }).click()
-    await expect(settingCard(page, '시연 기능').getByText('꺼짐')).toBeVisible()
-    await expect(
-      page.getByText('새로고침하면 시연 기능이 꺼지고 시연 계정은 로그아웃돼요.', { exact: false }),
-    ).toBeVisible()
-    await page.getByRole('button', { name: '새로고침' }).click()
+    await Promise.all([
+      page.waitForEvent('load'),
+      page.getByRole('alertdialog').getByRole('button', { name: '끄기' }).click(),
+    ])
     // 시연 계정(개발용 토큰)은 시연을 끄면 다시 받지 않는다 → 로그아웃 상태로 관리자 로그인 안내
     await expect(page.getByText('관리자 계정으로 볼 수 있는 화면이에요.')).toBeVisible()
     await expect(page.getByRole('button', { name: '보호자', exact: true })).toHaveCount(0)
