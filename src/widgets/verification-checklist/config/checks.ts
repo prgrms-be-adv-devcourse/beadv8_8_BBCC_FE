@@ -366,7 +366,8 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     id: 'settle',
     step: '⑦',
     title: '정산 실행',
-    expected: '실행 기록 status = COMPLETED · 성공 1건 이상',
+    expected:
+      '실행 기록 status = COMPLETED · 성공 1건 이상 (기준일 오늘 → 어제까지 구매확정분이 있을 때)',
     role: '관리자',
     screen: paths.console.adminSettlements,
     call: {

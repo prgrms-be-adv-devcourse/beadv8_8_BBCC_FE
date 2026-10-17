@@ -1,5 +1,4 @@
 import { confirmAction } from '@/shared/lib'
-import { useState } from 'react'
 import { SETTLEMENT_RUN_STATUS_LABEL } from '@/entities/settlement'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
@@ -9,19 +8,17 @@ import { useRunSettlement } from '../model/use-run-settlement'
 
 export function RunSettlementButton() {
   const run = useRunSettlement()
-  // 정산은 종료 기준일 "이전" 구매확정분만 대상이다. 시연에서는 방금 구매확정한 상품까지 넣으려고 내일을 기준일로 보낸다
-  const [includeToday, setIncludeToday] = useState(true)
 
   return (
     <div className="space-y-2">
       <Button
         disabled={run.isPending}
         onClick={async () => {
-          const cutoffOn = settlementPeriodEnd(new Date(), includeToday)
+          const cutoffOn = settlementPeriodEnd(new Date())
           if (
             await confirmAction({
               title: '정산을 실행할까요?',
-              description: `${cutoffOn} 0시 전 구매확정분을 판매자별로 정산하고 예치금으로 입금해요.`,
+              description: `${cutoffOn} 0시 전(어제까지) 구매확정분을 판매자별로 정산하고 예치금으로 입금해요. 오늘 구매확정분은 내일 정산 대상이에요.`,
               confirmLabel: '정산 실행',
             })
           ) {
@@ -31,14 +28,10 @@ export function RunSettlementButton() {
       >
         정산 실행
       </Button>
-      <label className="text-muted-foreground flex items-center gap-2 text-xs">
-        <input
-          type="checkbox"
-          checked={includeToday}
-          onChange={(e) => setIncludeToday(e.target.checked)}
-        />
-        오늘 구매확정분까지 포함 (시연용)
-      </label>
+      <p className="text-muted-foreground text-xs">
+        기준일은 오늘이에요. 어제까지 구매확정된 주문상품이 대상이고, 오늘 구매확정분은 내일
+        정산돼요.
+      </p>
       {run.isError && <StateMessage tone="error">{getErrorMessage(run.error)}</StateMessage>}
       {run.data && (
         <StateMessage>

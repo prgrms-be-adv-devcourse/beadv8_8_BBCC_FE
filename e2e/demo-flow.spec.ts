@@ -179,10 +179,11 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText(/주문 #\d+ · 주문상품 #\d+ · 구매확정/)).toBeVisible()
     await switchRole(page, '관리자')
     await page.goto('/console/admin/settlements')
-    // 기본으로 오늘 구매확정분까지 포함 → 방금 구매확정한 상품이 정산된다
-    await expect(
-      page.getByRole('checkbox', { name: '오늘 구매확정분까지 포함 (시연용)' }),
-    ).toBeChecked()
+    // 기준일은 오늘(BE: 오늘 이후는 400) → 어제까지 구매확정분이 대상. 방금 확정한 상품을 하루 전 확정으로 옮겨 정산한다
+    await expect(page.getByText(/오늘 구매확정분은 내일/).first()).toBeVisible()
+    await page.request.post('http://localhost:18080/__fake/age-confirmations', {
+      data: { days: 1 },
+    })
     await page.getByRole('button', { name: '정산 실행' }).click()
     await expect(page.getByText(/정산 완료 · 성공 1 · 실패 0 · 기간/)).toBeVisible()
     await switchRole(page, '판매자')
