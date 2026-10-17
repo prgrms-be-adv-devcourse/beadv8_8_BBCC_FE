@@ -1,4 +1,4 @@
-// 가짜 백엔드의 관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 만들기와 목록 (BE #405 응답 모양만 흉내).
+// 가짜 백엔드의 관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목(BE #405) · 상품 유형(BE #424) 만들기와 목록 (응답 모양만 흉내).
 // 처음 데이터는 BE 초기 데이터 러너의 이름 · 코드를 일부 따른다. 결과는 { status, body } 또는 { status, detail }
 const CODE = /^[A-Z_]+$/
 const COLOR = /^#[0-9a-fA-F]{6}$/
@@ -94,6 +94,63 @@ function createMeasurementItem(body) {
   return { status: 201, body: item }
 }
 
+// 상품 유형: 연결은 항목 ID · 설정 · 허용 값 ID로 두고, 응답할 때 항목에서 이름 · 코드 · 값을 읽는다
+const productTypes = []
+const BOOLEANS = ['required', 'allValuesAllowed', 'sizeRole', 'priceAffecting']
+const ruleBroken = (detail) => ({ status: 400, detail })
+
+function productTypeOut(type) {
+  return {
+    productTypeId: type.productTypeId,
+    name: type.name,
+    attributes: type.links.map(({ attributeId, allowedValueIds, ...settings }) => {
+      const a = attributes.find((item) => item.attributeId === attributeId)
+      const allowedValues = a.values.filter((v) => allowedValueIds.includes(v.valueId))
+      return {
+        attributeId,
+        code: a.code,
+        name: a.name,
+        inputType: a.inputType,
+        ...settings,
+        allowedValues,
+      }
+    }),
+  }
+}
+
+// BE는 boolean 네 칸이 빠지면 400 (Jackson 3 기본값). 유형 규칙은 필수 옵션만 흉내 낸다
+function createProductType(body) {
+  if (blank(body?.name)) return bad('유형 이름을 입력해 주세요.')
+  if (!Array.isArray(body.attributes)) return bad('연결할 항목을 보내 주세요.')
+  for (const link of body.attributes) {
+    if (BOOLEANS.some((key) => typeof link[key] !== 'boolean'))
+      return bad('요청 값을 확인해 주세요.')
+    if (!Array.isArray(link.allowedValueIds))
+      return bad('허용할 값 ID를 보내 주세요. 없으면 빈 목록을 보내 주세요.')
+    const a = attributes.find((item) => item.attributeId === String(link.attributeId))
+    if (!a) return { status: 404, detail: '항목을 다시 확인해 주세요.' }
+    if (link.allowedValueIds.some((id) => !a.values.some((v) => v.valueId === String(id))))
+      return { status: 404, detail: '목록 값을 다시 확인해 주세요.' }
+  }
+  if (!body.attributes.some((link) => link.role === 'OPTION' && link.required))
+    return ruleBroken('필수 옵션 항목을 하나 이상 연결해 주세요.')
+  const ids = body.attributes.map((link) => String(link.attributeId))
+  if (new Set(ids).size !== ids.length || productTypes.some((t) => t.name === body.name))
+    return conflict
+  const type = {
+    productTypeId: String(nextId++),
+    name: body.name,
+    links: body.attributes.map((link) => ({
+      attributeId: String(link.attributeId),
+      role: link.role,
+      ...Object.fromEntries(BOOLEANS.map((key) => [key, link[key]])),
+      allowedValueIds: link.allowedValueIds.map(String),
+    })),
+  }
+  productTypes.push(type)
+  return { status: 201, body: productTypeOut(type) }
+}
+
 /** 기준 데이터 경로면 처리 함수를, 아니면 null (권한 확인은 server.mjs) */
 export function catalogRoute(method, path, body) {
   const key = `${method} ${path}`
@@ -101,6 +158,9 @@ export function catalogRoute(method, path, body) {
   if (key === 'POST /admin/attributes') return () => createAttribute(body)
   const values = key.match(/^POST \/admin\/attributes\/(\d+)\/values$/)
   if (values) return () => addAttributeValue(values[1], body)
+  if (key === 'GET /admin/product-types')
+    return () => ({ status: 200, body: productTypes.map(productTypeOut) })
+  if (key === 'POST /admin/product-types') return () => createProductType(body)
   if (key === 'GET /admin/measurement-items') return () => ({ status: 200, body: measurementItems })
   if (key === 'POST /admin/measurement-items') return () => createMeasurementItem(body)
   return null

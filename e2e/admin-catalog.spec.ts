@@ -1,13 +1,14 @@
 import { expect, test } from '@playwright/test'
 
-// 관리자 상품 기준 데이터: 항목(팔레트) 만들기 → 목록 값 더하기, 실측 항목 만들기 (BE #405).
+// 관리자 상품 기준 데이터: 항목(팔레트) 만들기 → 목록 값 더하기, 실측 항목 만들기 (BE #405),
+// 상품 유형 만들기 (BE #424).
 // 가짜 백엔드를 다른 테스트와 같이 쓰므로 코드는 실행마다 다르게 만든다 (대문자와 _만)
 const RUN = String(Date.now())
   .split('')
   .map((digit) => String.fromCharCode(65 + Number(digit)))
   .join('')
 
-test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 만들기', async ({ page }) => {
+test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 · 상품 유형 만들기', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: '관리자', exact: true }).first().click()
   await expect(page.getByText('관리자 · 회원 3')).toBeVisible()
@@ -55,5 +56,24 @@ test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 �
     await page.getByLabel('코드 (대문자 · _)').fill(`DEMO_LENGTH_${RUN}`)
     await page.getByRole('button', { name: '실측 항목 만들기' }).click()
     await expect(page.getByText(`DEMO_LENGTH_${RUN}`)).toBeVisible()
+  })
+
+  await test.step('상품 유형 만들기: 허용 값이 없으면 막고, 고르면 목록에 보인다', async () => {
+    await page.getByRole('button', { name: '상품 유형', exact: true }).click()
+    await page.getByLabel('유형 이름').fill(`시연 유형 ${RUN}`)
+    await page.getByLabel('연결할 항목').selectOption({ label: '색상 (COLOR)' })
+    await page.getByLabel('모든 값 허용').uncheck()
+    await page.getByRole('button', { name: '상품 유형 만들기' }).click()
+    await expect(
+      page.getByText('모든 값을 허용하지 않는 항목에는 허용 값을 하나 이상 골라 주세요.'),
+    ).toBeVisible()
+
+    await page.getByLabel('네이비').check()
+    await page.getByRole('button', { name: '상품 유형 만들기' }).click()
+    const created = page
+      .locator('div')
+      .filter({ hasText: `시연 유형 ${RUN}` })
+      .last()
+    await expect(created.getByText('옵션 · 필수 · 허용 값 네이비')).toBeVisible()
   })
 })

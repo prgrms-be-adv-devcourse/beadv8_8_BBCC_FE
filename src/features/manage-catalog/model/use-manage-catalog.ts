@@ -5,10 +5,12 @@ import {
   toAttributeCreateRequest,
   toAttributeValueRequest,
   toMeasurementItemRequest,
+  toProductTypeCreateRequest,
   type AttributeForm,
   type AttributeInputType,
   type AttributeValueForm,
   type MeasurementItemForm,
+  type ProductTypeForm,
 } from '@/entities/catalog'
 import { runWithAction } from '@/shared/api'
 import { toast } from '@/shared/lib'
@@ -52,6 +54,18 @@ export function useCreateMeasurementItem() {
     mutationFn: (form: MeasurementItemForm) =>
       runWithAction('실측 항목 만들기', () =>
         catalogApi.createMeasurementItem(toMeasurementItemRequest(form)),
+      ),
+    onSuccess,
+  })
+}
+
+/** 상품 유형 만들기. 유형 규칙에 어긋나면 400, 이름이 겹치면 409 */
+export function useCreateProductType() {
+  const onSuccess = useRefetch(catalogKeys.productTypes, '상품 유형을 만들었어요')
+  return useMutation({
+    mutationFn: (form: ProductTypeForm) =>
+      runWithAction('상품 유형 만들기', () =>
+        catalogApi.createProductType(toProductTypeCreateRequest(form)),
       ),
     onSuccess,
   })

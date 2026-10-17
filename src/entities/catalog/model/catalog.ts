@@ -33,3 +33,39 @@ export type AttributeForm = {
 }
 
 export type MeasurementItemForm = { name: string; code: string; unit: string }
+
+/** 상품 유형에서 항목의 역할: 옵션(재고 · 가격 단위) · 정보(상세에 보여 줌) */
+export type AttributeRole = 'OPTION' | 'INFO'
+
+export const ATTRIBUTE_ROLE_LABEL: Record<AttributeRole, string> = {
+  OPTION: '옵션',
+  INFO: '정보',
+}
+
+/** 상품 유형이 항목 하나를 쓰는 설정. 모든 값 허용이 아니면 allowedValues만 고를 수 있다 */
+export type ProductTypeLink = {
+  attributeId: string
+  code: string
+  name: string
+  inputType: AttributeInputType
+  role: AttributeRole
+  required: boolean
+  allValuesAllowed: boolean
+  sizeRole: boolean
+  priceAffecting: boolean
+  allowedValues: AttributeValue[]
+}
+
+export type ProductType = { id: string; name: string; links: ProductTypeLink[] }
+
+export type ProductTypeLinkForm = {
+  attributeId: string
+  role: AttributeRole
+  required: boolean
+  allValuesAllowed: boolean
+  sizeRole: boolean
+  priceAffecting: boolean
+  allowedValueIds: string[]
+}
+
+export type ProductTypeForm = { name: string; links: ProductTypeLinkForm[] }

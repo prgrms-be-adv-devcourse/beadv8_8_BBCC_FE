@@ -6,11 +6,13 @@ import {
   attributeShape,
   attributeValueShape,
   measurementItemShape,
+  productTypeShape,
 } from '@/entities/catalog/api/catalog.shape'
 import {
   toAttributeCreateRequest,
   toAttributeValueRequest,
   toMeasurementItemRequest,
+  toProductTypeCreateRequest,
 } from '@/entities/catalog'
 import { addressShape } from '@/entities/address/api/address.shape'
 import { toAddCartItemRequest } from '@/entities/cart'
@@ -510,6 +512,30 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     const again = `/admin/attributes/${created.data.attributeId}/values`
     expect((await call('POST', again, 3, added.data)).status).toBe(409)
     expect((await call('POST', '/admin/attributes/999999/values', 3, added.data)).status).toBe(404)
+  })
+
+  it('관리자 상품 기준 데이터: 상품 유형 만들기와 목록 (BE #424)', async () => {
+    const [color] = (await call('GET', '/admin/attributes', 3)).data
+    const link = {
+      attributeId: color.attributeId,
+      role: 'OPTION' as const,
+      required: true,
+      allValuesAllowed: false,
+      sizeRole: false,
+      priceAffecting: false,
+      allowedValueIds: [color.values[0].valueId],
+    }
+    const request = toProductTypeCreateRequest({ name: '계약 유형', links: [link] })
+    const created = await call('POST', '/admin/product-types', 3, request)
+    expect(created.status).toBe(201)
+    expectContract(created.data, productTypeShape)
+    expect(created.data.attributes[0].allowedValues).toHaveLength(1)
+    expectContract((await call('GET', '/admin/product-types', 3)).data, arr(productTypeShape))
+    // 같은 이름은 409, boolean 칸이 빠지면 400
+    expect((await call('POST', '/admin/product-types', 3, request)).status).toBe(409)
+    const withoutRequired = { ...request.attributes[0], required: undefined }
+    const missing = { name: '빠진 칸', attributes: [withoutRequired] }
+    expect((await call('POST', '/admin/product-types', 3, missing)).status).toBe(400)
   })
 
   it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {
