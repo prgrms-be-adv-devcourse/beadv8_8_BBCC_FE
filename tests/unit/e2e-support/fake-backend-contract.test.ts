@@ -2,6 +2,8 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { toAddressRequest } from '@/entities/address'
+import { measurementItemShape } from '@/entities/catalog/api/catalog.shape'
+import { toMeasurementItemRequest } from '@/entities/catalog'
 import { addressShape } from '@/entities/address/api/address.shape'
 import { toAddCartItemRequest } from '@/entities/cart'
 import { cartShape } from '@/entities/cart/api/cart.shape'
@@ -470,5 +472,23 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     const nameOnly = toProductUpdateRequest(inputs, { ...form, name: '이름만' }, detail)
     expect(nameOnly).toMatchObject({ options: null, prices: null, sizeSpecs: null })
     expect((await call('PUT', `/seller/products/${productId}`, 2, nameOnly)).status).toBe(200)
+  })
+
+  it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {
+    const item = await call(
+      'POST',
+      '/admin/measurement-items',
+      3,
+      toMeasurementItemRequest({ name: '계약 길이', code: 'CONTRACT_LENGTH', unit: 'cm' }),
+    )
+    expect(item.status).toBe(201)
+    expectContract(item.data, measurementItemShape)
+    expectContract(
+      (await call('GET', '/admin/measurement-items', 3)).data,
+      arr(measurementItemShape),
+    )
+    // 같은 코드는 409, 관리자만
+    expect((await call('POST', '/admin/measurement-items', 3, item.data)).status).toBe(409)
+    expect((await call('GET', '/admin/measurement-items', 1)).status).toBe(403)
   })
 })
