@@ -115,14 +115,30 @@ export const sellerProductDetailShape = obj({
   name: str,
   status: STATUS,
   version: num,
+  brand: nullable(str),
+  categoryId: str,
+  description: nullable(str),
+  thumbnailUrl: nullable(str),
+  imageUrls: arr(str),
+  attributes: arr(obj({ attributeId: str, valueIds: arr(str), text: nullable(str) })),
   options: arr(
     obj({
       optionId: str,
       optionName: str,
+      valueIds: arr(str),
       price: num,
       availableQuantity: num,
       saleStatus: str,
       skuCode: nullable(str),
+    }),
+  ),
+  prices: arr(obj({ valueIds: arr(str), price: num })),
+  sizeSpecs: arr(
+    obj({
+      sizeValueId: str,
+      minHeightCm: nullable(num),
+      maxHeightCm: nullable(num),
+      measurements: recordOf(num),
     }),
   ),
 })

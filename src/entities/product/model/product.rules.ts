@@ -37,6 +37,11 @@ export function canStopSale(product: { status: string }): boolean {
   return product.status === 'ON_SALE'
 }
 
+/** 옵션 · 가격 · 실측은 판매 시작 전에만 고칠 수 있다 (그 밖에는 BE가 409) */
+export function canEditSaleInputs(product: { status: string }): boolean {
+  return product.status === 'SALE_PENDING'
+}
+
 /** 살 수 없는 옵션은 고를 수 없다 (최종 판단은 서버 409) */
 export function isSelectable(option: ProductOption): boolean {
   return !option.soldOut

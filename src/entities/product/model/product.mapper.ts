@@ -131,13 +131,22 @@ export function toSellerProductDetail(dto: SellerProductDetailDto): SellerProduc
     id: dto.productId,
     name: dto.name,
     status: dto.status as ProductStatus,
+    version: dto.version,
+    brand: dto.brand,
+    categoryId: dto.categoryId,
+    description: dto.description,
+    imageUrls: dto.imageUrls,
+    attributes: dto.attributes,
     options: dto.options.map((option) => ({
       id: option.optionId,
       name: option.optionName,
+      valueIds: option.valueIds,
       price: option.price,
       stock: option.availableQuantity,
       onSale: option.saleStatus === 'ON_SALE',
     })),
+    prices: dto.prices,
+    sizeSpecs: dto.sizeSpecs,
   }
 }
 
