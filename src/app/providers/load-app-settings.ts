@@ -5,8 +5,8 @@ import { appSettings } from '@/shared/config'
 const TIMEOUT_MS = 3_000
 
 /**
- * 목을 등록하기 전에 BE 설정(목 데이터 사용)을 적용한다.
- * BE 장애 · 시간 초과면 빌드 값(VITE_USE_MOCK, 없으면 켬)을 그대로 쓴다
+ * 화면 모듈을 불러오기 전에 BE 설정(목 데이터 · 시연 역할 전환)을 적용한다.
+ * BE 장애 · 시간 초과면 빌드 값(VITE_USE_MOCK · VITE_DEMO_ROLE_SWITCH, 없으면 켬)을 그대로 쓴다
  */
 export async function loadAppSettings() {
   try {

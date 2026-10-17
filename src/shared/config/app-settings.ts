@@ -1,14 +1,15 @@
-/** 목 데이터 사용 (관리자 화면에서 바꾸는 FE 동작 설정) */
-export type AppSettingValues = { isMockEnabled: boolean }
+/** 목 데이터 사용 · 시연 역할 전환 (관리자 화면에서 바꾸는 FE 동작 설정) */
+export type AppSettingValues = { isMockEnabled: boolean; isDemoRoleSwitchEnabled: boolean }
 
 // 앱 시작 때 BE 설정(GET /settings)으로 덮어쓴다. 못 읽으면 빌드 값(없으면 켬)을 그대로 쓴다
 let current: AppSettingValues = {
   isMockEnabled: import.meta.env.VITE_USE_MOCK !== 'false',
+  isDemoRoleSwitchEnabled: import.meta.env.VITE_DEMO_ROLE_SWITCH !== 'false',
 }
 
 /**
- * 실행 중 FE 동작 설정. 목을 등록하기 전(main.tsx)에 한 번 적용한다.
- * 목은 앱이 시작할 때 등록하므로, 바꾼 값은 새로고침해야 적용된다
+ * 실행 중 FE 동작 설정. 화면 모듈을 불러오기 전(main.tsx)에 한 번 적용한다.
+ * 라우터 · 레이아웃이 시작할 때 읽으므로, 바꾼 값은 새로고침해야 화면에 적용된다
  */
 export const appSettings = {
   current: (): AppSettingValues => ({ ...current }),

@@ -15,9 +15,15 @@ const SETTING_ITEMS: { field: keyof AppSetting; title: string; description: stri
     description:
       '백엔드에 아직 없는 API를 목 응답으로 대신해요. 끄면 모든 화면이 실제 서버만 불러요.',
   },
+  {
+    field: 'isDemoRoleSwitchEnabled',
+    title: '시연 역할 전환',
+    description:
+      '보호자 · 판매자 · 관리자 전환, 시연 콘솔, API 흐름 패널을 보여 줘요. 끄면 카카오 로그인만 보여요. 개발용 토큰이 있는 서버(dev)에서만 전환이 동작해요.',
+  },
 ]
 
-/** 관리자 설정: 목 데이터 사용을 켜고 끈다 (모든 방문자에게 적용) */
+/** 관리자 설정: 목 데이터 · 시연 역할 전환을 켜고 끈다 (모든 방문자에게 적용) */
 export function AdminSettingsPage() {
   const setting = useAppSettingQuery()
 
@@ -25,7 +31,7 @@ export function AdminSettingsPage() {
     <div className="space-y-4">
       <PageHeader
         title="설정"
-        description="목 데이터 사용을 켜고 꺼요. 모든 방문자에게 적용돼요."
+        description="목 데이터와 시연 역할 전환을 켜고 꺼요. 모든 방문자에게 적용돼요."
         note="바꾼 값은 앱이 시작할 때 적용돼요. 다른 방문자도 새로고침하면 바뀌어요."
       />
       {setting.isPending && <StateMessage>불러오는 중…</StateMessage>}
