@@ -6,10 +6,18 @@ import type {
   AttributeValueRequestDto,
   MeasurementItemDto,
   MeasurementItemRequestDto,
+  ProductTypeCreateRequestDto,
+  ProductTypeDto,
 } from './catalog.dto'
-import { attributeShape, attributeValueShape, measurementItemShape } from './catalog.shape'
+import {
+  attributeShape,
+  attributeValueShape,
+  measurementItemShape,
+  productTypeShape,
+} from './catalog.shape'
 
-// 실제(BE #405, ADMIN만): 항목 · 목록 값 · 실측 항목 만들기와 목록. 목록은 페이지 없이 ID 순서
+// 실제(ADMIN만): 항목 · 목록 값 · 실측 항목(BE #405), 상품 유형(BE #424) 만들기와 목록.
+// 목록은 페이지 없이 ID 순서
 
 export const catalogApi = {
   attributes: () =>
@@ -31,4 +39,14 @@ export const catalogApi = {
     apiClient
       .post<MeasurementItemDto>('/admin/measurement-items', request)
       .then(expectShape(measurementItemShape)),
+  /** 유형 목록. 연결 순서대로 항목 설정을 담는다 */
+  productTypes: () =>
+    apiClient
+      .get<ProductTypeDto[]>('/admin/product-types')
+      .then(expectShape(arr(productTypeShape))),
+  /** 유형 만들기. 유형 규칙에 어긋나면 400, 없는 항목 · 값은 404, 이름이 겹치거나 같은 항목을 두 번 연결하면 409 */
+  createProductType: (request: ProductTypeCreateRequestDto) =>
+    apiClient
+      .post<ProductTypeDto>('/admin/product-types', request)
+      .then(expectShape(productTypeShape)),
 }

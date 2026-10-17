@@ -33,3 +33,40 @@ export type MeasurementItemDto = {
 
 /** MeasurementItemRequest */
 export type MeasurementItemRequestDto = { name: string; code: string; unit: string }
+
+// 상품 유형 (BE #424 ProductTypeCreateRequest · ProductTypeResponse)
+
+/** ProductTypeCreateRequest.Link. boolean 네 칸은 빠지면 400이라 늘 보낸다. 모든 값 허용이면 allowedValueIds는 [] (null이면 400) */
+export type ProductTypeLinkRequestDto = {
+  attributeId: string
+  role: string
+  required: boolean
+  allValuesAllowed: boolean
+  sizeRole: boolean
+  priceAffecting: boolean
+  allowedValueIds: string[]
+}
+
+/** ProductTypeCreateRequest. 넣은 순서가 연결 순서 */
+export type ProductTypeCreateRequestDto = { name: string; attributes: ProductTypeLinkRequestDto[] }
+
+/** ProductTypeResponse.Link. role은 OPTION · INFO, 모든 값 허용이면 allowedValues는 [] */
+export type ProductTypeLinkDto = {
+  attributeId: string
+  code: string
+  name: string
+  inputType: string
+  role: string
+  required: boolean
+  allValuesAllowed: boolean
+  sizeRole: boolean
+  priceAffecting: boolean
+  allowedValues: AttributeValueDto[]
+}
+
+/** ProductTypeResponse */
+export type ProductTypeDto = {
+  productTypeId: string
+  name: string
+  attributes: ProductTypeLinkDto[]
+}

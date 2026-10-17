@@ -288,12 +288,14 @@ describe('domainOf: 상품 도메인 경로', () => {
   it('상품 이미지 업로드 주소 발급도 상품 도메인', () => {
     expect(domainOf('/seller/product-images/upload-urls')).toBe('product')
   })
-  it.each(['/admin/attributes', '/admin/attributes/1/values', '/admin/measurement-items'])(
-    '관리자 상품 기준 데이터 %s도 상품 도메인',
-    (path) => {
-      expect(domainOf(path)).toBe('product')
-    },
-  )
+  it.each([
+    '/admin/attributes',
+    '/admin/attributes/1/values',
+    '/admin/measurement-items',
+    '/admin/product-types',
+  ])('관리자 상품 기준 데이터 %s도 상품 도메인', (path) => {
+    expect(domainOf(path)).toBe('product')
+  })
 })
 
 describe('S3: 브라우저가 직접 올리는 외부 저장소', () => {
