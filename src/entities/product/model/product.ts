@@ -77,12 +77,35 @@ export type SellerProduct = {
   createdAt: string
 }
 
-/** 내 상품 하나 (옵션별 재고) */
+/** 내 상품 하나: 옵션별 재고 + 수정 폼을 채울 저장 값 (수정 요청과 같은 모양) */
 export type SellerProductDetail = {
   id: string
   name: string
   status: ProductStatus
-  options: { id: string; name: string; price: number; stock: number; onSale: boolean }[]
+  /** 읽어 간 버전. 수정할 때 그대로 보낸다 */
+  version: number
+  brand: string | null
+  categoryId: string
+  description: string | null
+  /** 저장된 순서, 첫 번째가 대표 */
+  imageUrls: string[]
+  /** 정보 항목 ID → 고른 값 ID들(목록 항목) · 직접 입력 값 */
+  attributes: { attributeId: string; valueIds: string[]; text: string | null }[]
+  options: {
+    id: string
+    name: string
+    valueIds: string[]
+    price: number
+    stock: number
+    onSale: boolean
+  }[]
+  prices: { valueIds: string[]; price: number }[]
+  sizeSpecs: {
+    sizeValueId: string
+    minHeightCm: number | null
+    maxHeightCm: number | null
+    measurements: Record<string, number>
+  }[]
 }
 
 export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {

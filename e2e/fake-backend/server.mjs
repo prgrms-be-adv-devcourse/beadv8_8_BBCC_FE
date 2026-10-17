@@ -16,6 +16,7 @@ import {
   sellerDetailOf,
   sellerListOf,
   stock,
+  updateProduct,
 } from './products.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
@@ -386,6 +387,12 @@ http
       const result = register(me, body)
       return result.status === 201
         ? send(res, 201, result.body, { location: result.location })
+        : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
+    }
+    if ((x = r('PUT', /^\/seller\/products\/(\d+)$/))) {
+      const result = updateProduct(me, x[1], body)
+      return result.status === 200
+        ? send(res, 200, result.body)
         : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
     }
     if ((x = r('PUT', /^\/seller\/products\/(\d+)\/sale-status$/))) {

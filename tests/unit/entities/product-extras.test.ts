@@ -16,7 +16,24 @@ const product: SellerProductDetail = {
   id: '1',
   name: '데일리 맨투맨',
   status: 'ON_SALE',
-  options: [{ id: '1', name: '네이비 / 110', price: 25000, stock: 10, onSale: true }],
+  version: 0,
+  brand: null,
+  categoryId: '11',
+  description: null,
+  imageUrls: [],
+  attributes: [],
+  options: [
+    {
+      id: '1',
+      name: '네이비 / 110',
+      valueIds: ['101', '202'],
+      price: 25000,
+      stock: 10,
+      onSale: true,
+    },
+  ],
+  prices: [{ valueIds: [], price: 25000 }],
+  sizeSpecs: [],
 }
 
 describe('판매 상태 전환', () => {

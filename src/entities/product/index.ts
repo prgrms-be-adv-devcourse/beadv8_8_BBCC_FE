@@ -8,6 +8,7 @@ export type {
   RegisterProductRequestDto,
   RegisterProductResultDto,
   SaleStatusResultDto,
+  ProductUpdateRequestDto,
   UpdateProductRequestDto,
 } from './api/product.dto'
 export {
@@ -46,6 +47,12 @@ export {
   toUpdateProductRequest,
 } from './model/product.mapper'
 export {
+  existingComboKeys,
+  toEditableProductForm,
+  toProductUpdateRequest,
+} from './model/product-edit.mapper'
+export {
+  canEditSaleInputs,
   canStartSale,
   canStopSale,
   categoryNameOf,

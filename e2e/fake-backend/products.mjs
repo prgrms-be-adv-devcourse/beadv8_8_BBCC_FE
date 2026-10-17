@@ -307,7 +307,56 @@ export function register(sellerId, body) {
   ]
   if (sent.some((id) => typeof id !== 'number'))
     return { status: 400, detail: '항목 · 값 ID는 숫자로 보내 주세요.' }
-  const ids = (list) => list.map(Number)
+  const built = buildSaleInputs(body)
+  if (built.status) return built
+  const { options } = built
+  const product = {
+    productId: String(nextProductId++),
+    sellerId,
+    name: body.name.trim(),
+    brand: body.brand,
+    categoryId,
+    description: body.description ?? null,
+    status: 'SALE_PENDING',
+    version: 0,
+    thumbnailUrl: body.thumbnailUrl ?? null,
+    imageUrls: body.imageUrls,
+    info: infoOf(body),
+    options,
+    prices: built.prices,
+    sizeSpecs: built.sizeSpecs,
+  }
+  products[product.productId] = product
+  options.forEach((o) => (stock[o.optionId] = o.qty))
+  return {
+    status: 201,
+    location: `/api/v1/seller/products/${product.productId}`,
+    body: {
+      productId: product.productId,
+      status: product.status,
+      version: product.version,
+      options: options.map((o) => ({
+        optionId: String(o.optionId),
+        optionName: optionNameOf(o.valueIds),
+        price: o.price,
+        availableQuantity: o.qty,
+        saleStatus: 'ON_SALE',
+        skuCode: o.skuCode ?? null,
+      })),
+    },
+  }
+}
+
+const ids = (list) => list.map(Number)
+const infoOf = (body) =>
+  body.attributes.map((a) => ({
+    attributeId: Number(a.attributeId),
+    valueIds: ids(a.valueIds),
+    text: a.text,
+  }))
+
+/** 옵션 · 가격 · 실측 (등록 · 판매 시작 전 수정). 실패면 { status, detail } */
+function buildSaleInputs(body) {
   const options = body.options.map((o) => {
     const valueIds = ids(o.valueIds)
     const group = body.prices.find((g) => ids(g.valueIds).every((v) => valueIds.includes(v)))
@@ -332,42 +381,44 @@ export function register(sellerId, body) {
         detail: `판매를 시작할 수 없습니다. ${values[size].value} 사이즈에 실측과 권장 키가 없습니다.`,
       }
   }
-  const product = {
-    productId: String(nextProductId++),
-    sellerId,
-    name: body.name.trim(),
-    brand: body.brand,
-    categoryId,
-    status: 'SALE_PENDING',
-    version: 0,
-    imageUrls: body.imageUrls,
-    info: body.attributes.map((a) => ({
-      attributeId: Number(a.attributeId),
-      valueIds: ids(a.valueIds),
-      text: a.text,
-    })),
+  return {
     options,
+    prices: body.prices.map((g) => ({ valueIds: ids(g.valueIds), price: g.price })),
     sizeSpecs: body.sizeSpecs.map((s) => ({ ...s, sizeValueId: Number(s.sizeValueId) })),
   }
-  products[product.productId] = product
-  options.forEach((o) => (stock[o.optionId] = o.qty))
-  return {
-    status: 201,
-    location: `/api/v1/seller/products/${product.productId}`,
-    body: {
-      productId: product.productId,
-      status: product.status,
-      version: product.version,
-      options: options.map((o) => ({
-        optionId: String(o.optionId),
-        optionName: optionNameOf(o.valueIds),
-        price: o.price,
-        availableQuantity: o.qty,
-        saleStatus: 'ON_SALE',
-        skuCode: o.skuCode ?? null,
-      })),
-    },
+}
+
+/**
+ * PUT /seller/products/{productId} (BE ProductUpdateRequest). 읽어 간 version이 다르면 409.
+ * 옵션 · 가격 · 실측은 판매 시작 전에만 셋을 함께 받고, 그 밖에 보내면 409 (SALE_INPUTS_LOCKED)
+ */
+export function updateProduct(sellerId, productId, body) {
+  const p = products[productId]
+  if (!p || p.sellerId !== sellerId) return { status: 404, detail: '상품을 찾을 수 없습니다.' }
+  if (body.version !== p.version)
+    return { status: 409, detail: '다른 곳에서 먼저 고쳤습니다. 다시 불러와 주세요.' }
+  if (!body.name?.trim()) return { status: 400, detail: '상품명을 입력해 주세요.' }
+  const saleInputs = [body.options, body.prices, body.sizeSpecs]
+  const sent = saleInputs.filter((item) => item != null).length
+  if (sent > 0 && p.status !== 'SALE_PENDING')
+    return { status: 409, detail: '판매를 시작한 상품은 옵션 · 가격 · 실측을 바꿀 수 없습니다.' }
+  if (sent > 0 && sent < 3) return { status: 400, detail: '옵션 · 가격 · 실측은 함께 보내 주세요.' }
+  if (sent === 3) {
+    const built = buildSaleInputs(body)
+    if (built.status) return built
+    Object.assign(p, { options: built.options, prices: built.prices, sizeSpecs: built.sizeSpecs })
+    built.options.forEach((o) => (stock[o.optionId] = o.qty))
   }
+  Object.assign(p, {
+    name: body.name.trim(),
+    brand: body.brand,
+    description: body.description ?? null,
+    thumbnailUrl: body.thumbnailUrl ?? null,
+    imageUrls: body.imageUrls,
+    info: infoOf(body),
+    version: p.version + 1,
+  })
+  return { status: 200, body: sellerDetailOf(sellerId, productId) }
 }
 
 const saleStatusBody = (p) => ({ productId: p.productId, status: p.status, version: p.version })
@@ -439,18 +490,38 @@ export function sellerListOf(sellerId) {
 export function sellerDetailOf(sellerId, productId) {
   const p = products[productId]
   if (!p || p.sellerId !== sellerId) return null
+  const strs = (list) => list.map(String)
+  // BE SellerProductDetailResponse (#403): 수정 요청과 같은 모양, ID는 문자열
   return {
     productId: String(p.productId),
     name: p.name,
     status: p.status,
     version: p.version,
+    brand: p.brand ?? null,
+    categoryId: String(p.categoryId),
+    description: p.description ?? null,
+    thumbnailUrl: p.thumbnailUrl ?? null,
+    imageUrls: p.imageUrls ?? [],
+    attributes: (p.info ?? []).map((a) => ({
+      attributeId: String(a.attributeId),
+      valueIds: strs(a.valueIds),
+      text: a.text ?? null,
+    })),
     options: p.options.map((o) => ({
       optionId: String(o.optionId),
       optionName: optionNameOf(o.valueIds),
+      valueIds: strs(o.valueIds),
       price: o.price,
       availableQuantity: stock[o.optionId] ?? 0,
       saleStatus: 'ON_SALE',
       skuCode: o.skuCode ?? null,
+    })),
+    prices: (p.prices ?? []).map((g) => ({ valueIds: strs(g.valueIds), price: g.price })),
+    sizeSpecs: (p.sizeSpecs ?? []).map((s) => ({
+      sizeValueId: String(s.sizeValueId),
+      minHeightCm: s.minHeightCm ?? null,
+      maxHeightCm: s.maxHeightCm ?? null,
+      measurements: s.measurements ?? {},
     })),
   }
 }
