@@ -14,6 +14,7 @@ export {
   signInAsDemo,
   signInWithKakao,
   signOut,
+  signOutDemo,
   updateNickname,
   withdraw,
 } from './model/session-actions'

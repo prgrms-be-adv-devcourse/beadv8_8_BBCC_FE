@@ -5,7 +5,8 @@ export const env = {
   isDev: import.meta.env.DEV,
   /**
    * 시연 기능: 역할 전환(개발용 토큰) · 시연 콘솔 · API 흐름 · 시연 표시 · 시연용 문구.
-   * 끄면 카카오 로그인만, 시연 기능은 모두 감춘다. 관리자 화면 설정을 따른다 (appSettings)
+   * 끄면 카카오 로그인만, 시연 기능은 모두 감춘다. 관리자 화면 설정을 따른다 (appSettings).
+   * 화면(컴포넌트)에서는 바뀌면 다시 그리도록 useDemoRoleSwitch()를 쓴다
    */
   get demoRoleSwitch() {
     return appSettings.current().isDemoRoleSwitchEnabled

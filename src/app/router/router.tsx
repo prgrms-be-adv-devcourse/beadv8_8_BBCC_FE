@@ -1,8 +1,9 @@
 import type { ComponentType } from 'react'
-import { createBrowserRouter, Navigate, type RouteObject } from 'react-router'
+import { createBrowserRouter, type RouteObject } from 'react-router'
 import { NotFoundPage } from '@/pages/common/not-found'
-import { env, paths } from '@/shared/config'
+import { paths } from '@/shared/config'
 import { ConsoleLayout } from '../layouts/ConsoleLayout'
+import { DemoOnly } from '../layouts/DemoOnly'
 import { RouteError } from '../layouts/RouteError'
 import { RouteFallback } from '../layouts/RouteFallback'
 import { ShopLayout } from '../layouts/ShopLayout'
@@ -213,8 +214,12 @@ export const router = createBrowserRouter(
     },
     {
       path: paths.console.home,
-      // 시연 기능을 끈 배포에서는 시연 콘솔을 열지 않고 쇼핑 홈으로 보낸다
-      element: env.demoRoleSwitch ? <ConsoleLayout /> : <Navigate to={paths.shop.home} replace />,
+      // 시연 기능을 끄면 시연 콘솔을 열지 않고 쇼핑 홈으로 보낸다 (설정을 바꾸면 바로 따라간다)
+      element: (
+        <DemoOnly>
+          <ConsoleLayout />
+        </DemoOnly>
+      ),
       HydrateFallback: RouteFallback,
       children: [
         {

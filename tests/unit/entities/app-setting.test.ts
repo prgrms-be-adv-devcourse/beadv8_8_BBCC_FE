@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   needsReload,
+  planSettingChange,
   reloadNotice,
   toAppSetting,
   toAppSettingRequest,
@@ -71,7 +72,7 @@ describe('시연 기능 끄기 확인', () => {
     expect(turnOffDemoConfirm(true)).toEqual({
       title: '시연 기능을 끌까요?',
       description:
-        '지금은 시연 계정으로 로그인해 있어요. 끄면 바로 새로고침되면서 로그아웃되고, 카카오로 로그인한 관리자만 다시 켤 수 있어요.',
+        '지금은 시연 계정으로 로그인해 있어요. 끄면 바로 로그아웃되고 로그인 화면으로 이동해요. 카카오로 로그인한 관리자만 다시 켤 수 있어요.',
       confirmLabel: '끄기',
       tone: 'danger',
     })
@@ -80,9 +81,36 @@ describe('시연 기능 끄기 확인', () => {
     expect(turnOffDemoConfirm(false)).toEqual({
       title: '시연 기능을 끌까요?',
       description:
-        '모든 방문자에게 역할 전환 · 시연 콘솔 · API 흐름 패널이 사라지고 카카오 로그인만 남아요. 끄면 바로 새로고침돼요.',
+        '모든 방문자에게 역할 전환 · 시연 콘솔 · API 흐름 패널이 사라지고 카카오 로그인만 남아요.',
       confirmLabel: '끄기',
       tone: 'danger',
     })
+  })
+})
+
+describe('설정을 바꾼 뒤 할 일 (새로고침 없이 적용)', () => {
+  const on = { isMockEnabled: true, isDemoRoleSwitchEnabled: true }
+
+  it('목 데이터가 바뀌면 데이터를 다시 불러온다', () => {
+    expect(planSettingChange(on, { ...on, isMockEnabled: false }, true)).toEqual({
+      refetchData: true,
+      signOutDemo: false,
+    })
+  })
+  it('시연 계정으로 시연 기능을 끄면 로그아웃한다', () => {
+    expect(planSettingChange(on, { ...on, isDemoRoleSwitchEnabled: false }, true)).toEqual({
+      refetchData: false,
+      signOutDemo: true,
+    })
+  })
+  it('카카오 계정이면 시연 기능을 꺼도 로그아웃하지 않는다', () => {
+    expect(planSettingChange(on, { ...on, isDemoRoleSwitchEnabled: false }, false)).toEqual({
+      refetchData: false,
+      signOutDemo: false,
+    })
+  })
+  it('시연 기능을 켜는 경우는 아무것도 하지 않는다', () => {
+    const off = { ...on, isDemoRoleSwitchEnabled: false }
+    expect(planSettingChange(off, on, true)).toEqual({ refetchData: false, signOutDemo: false })
   })
 })

@@ -35,3 +35,11 @@ export const useMockSettings = create<MockSettingsState>()((set) => ({
       return { enabled }
     }),
 }))
+
+/** 지금 목으로 응답할 도메인. 관리자 설정에서 목 데이터를 끄면 도메인 스위치와 상관없이 모두 끈다 */
+export function activeMockDomains(
+  enabled: Record<string, boolean>,
+  isMockEnabled: boolean,
+): Record<string, boolean> {
+  return isMockEnabled ? enabled : {}
+}

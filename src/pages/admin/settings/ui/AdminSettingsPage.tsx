@@ -35,7 +35,7 @@ export function AdminSettingsPage() {
       <PageHeader
         title="설정"
         description="목 데이터와 시연 기능을 켜고 꺼요. 모든 방문자에게 적용돼요."
-        note="바꾼 값은 앱이 시작할 때 적용돼요. 다른 방문자도 새로고침하면 바뀌어요."
+        note="바꾸면 이 화면에는 바로 적용돼요. 다른 방문자는 새로고침하면 바뀌어요."
       />
       {setting.isPending && <StateMessage>불러오는 중…</StateMessage>}
       {setting.isError && (

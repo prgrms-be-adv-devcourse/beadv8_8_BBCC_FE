@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router'
 import { describeUser, useSessionStore } from '@/entities/session'
 import { LogoutButton } from '@/features/logout'
 import { SwitchDemoRole } from '@/features/switch-demo-role'
-import { AREA_LABEL, env, paths, type Area } from '@/shared/config'
+import { AREA_LABEL, paths, useDemoRoleSwitch, type Area } from '@/shared/config'
 import { cn, useArea } from '@/shared/lib'
 
 const AREA_HOME: Record<Area, string> = {
@@ -13,10 +13,7 @@ const AREA_HOME: Record<Area, string> = {
   console: paths.console.home,
 }
 
-// 시연 기능을 끈 배포에서는 시연 콘솔로 가는 메뉴를 빼고 쇼핑 · 판매자 센터 · 관리자만 둔다
-const AREAS = (Object.keys(AREA_HOME) as Area[]).filter(
-  (key) => env.demoRoleSwitch || key !== 'console',
-)
+const ALL_AREAS = Object.keys(AREA_HOME) as Area[]
 
 type DemoBarProps = { actions?: ReactNode }
 
@@ -25,12 +22,15 @@ export function DemoBar({ actions }: DemoBarProps) {
   const area = useArea()
   const user = useSessionStore((state) => state.user)
   const status = useSessionStore((state) => state.status)
+  const demoRoleSwitch = useDemoRoleSwitch()
+  // 시연 기능을 끄면 시연 콘솔로 가는 메뉴를 빼고 쇼핑 · 판매자 센터 · 관리자만 둔다
+  const areas = demoRoleSwitch ? ALL_AREAS : ALL_AREAS.filter((key) => key !== 'console')
 
   return (
     <div className="flex h-11 shrink-0 items-center gap-3 overflow-x-auto border-b bg-slate-900 px-4 whitespace-nowrap text-white [&>*]:shrink-0">
-      {env.demoRoleSwitch && <span className="text-xs font-semibold text-slate-400">시연</span>}
+      {demoRoleSwitch && <span className="text-xs font-semibold text-slate-400">시연</span>}
       <nav className="flex gap-1">
-        {AREAS.map((key) => (
+        {areas.map((key) => (
           <NavLink
             key={key}
             to={AREA_HOME[key]}
@@ -44,7 +44,7 @@ export function DemoBar({ actions }: DemoBarProps) {
         ))}
       </nav>
       <div className="ml-auto flex items-center gap-3 [&_button]:h-7">
-        {env.demoRoleSwitch && (
+        {demoRoleSwitch && (
           <div className="rounded-md bg-white px-1 py-0.5 text-slate-900">
             <SwitchDemoRole />
           </div>

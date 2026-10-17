@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router'
 import { hasRole, ROLE_LABEL, useSessionStore, type Role } from '@/entities/session'
-import { env, paths } from '@/shared/config'
+import { paths, useDemoRoleSwitch } from '@/shared/config'
 import { useArea } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { SideNav, type SideNavItem } from '@/shared/ui/SideNav'
@@ -33,6 +33,7 @@ export function WorkspaceLayout({
   const blocked = !hasRole(user, role) && !openPaths.includes(pathname)
   // 영역 색(index.css의 data-area): 시연 막대 · 흐름 서랍은 빼고 메뉴와 본문에만
   const area = useArea()
+  const demoRoleSwitch = useDemoRoleSwitch()
 
   return (
     <div className="flex h-svh flex-col">
@@ -48,7 +49,7 @@ export function WorkspaceLayout({
                   <p className="font-semibold">
                     {ROLE_LABEL[role]} 계정으로 볼 수 있는 화면이에요.
                   </p>
-                  {env.demoRoleSwitch ? (
+                  {demoRoleSwitch ? (
                     <p className="text-muted-foreground text-sm">
                       위의 시연 역할에서 {ROLE_LABEL[role]}를 고르세요.
                     </p>

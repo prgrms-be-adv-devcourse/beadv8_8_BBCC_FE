@@ -1,19 +1,22 @@
-/** 목 데이터 사용 · 시연 역할 전환 (관리자 화면에서 바꾸는 FE 동작 설정) */
+import { create } from 'zustand'
+
+/** 목 데이터 사용 · 시연 기능(역할 전환 · 시연 콘솔 · API 흐름) — 관리자 화면에서 바꾸는 FE 동작 설정 */
 export type AppSettingValues = { isMockEnabled: boolean; isDemoRoleSwitchEnabled: boolean }
 
-// 앱 시작 때 BE 설정(GET /settings)으로 덮어쓴다. 못 읽으면 빌드 값(없으면 켬)을 그대로 쓴다
-let current: AppSettingValues = {
+/**
+ * 실행 중 FE 동작 설정. 앱 시작 때(main.tsx) BE 설정(GET /settings)으로 덮어쓰고, 못 읽으면 빌드 값(없으면 켬)을 쓴다.
+ * 관리자 화면에서 바꾸면 바로 적용하고, 구독한 화면은 새로고침 없이 다시 그린다
+ */
+export const useAppSettings = create<AppSettingValues>()(() => ({
   isMockEnabled: import.meta.env.VITE_USE_MOCK !== 'false',
   isDemoRoleSwitchEnabled: import.meta.env.VITE_DEMO_ROLE_SWITCH !== 'false',
+}))
+
+/** 화면 밖(요청 · 세션 복원)에서 읽고 바꿀 때 */
+export const appSettings = {
+  current: (): AppSettingValues => ({ ...useAppSettings.getState() }),
+  apply: (next: AppSettingValues) => useAppSettings.setState({ ...next }),
 }
 
-/**
- * 실행 중 FE 동작 설정. 화면 모듈을 불러오기 전(main.tsx)에 한 번 적용한다.
- * 라우터 · 레이아웃이 시작할 때 읽으므로, 바꾼 값은 새로고침해야 화면에 적용된다
- */
-export const appSettings = {
-  current: (): AppSettingValues => ({ ...current }),
-  apply: (next: AppSettingValues) => {
-    current = { ...next }
-  },
-}
+/** 화면에서 시연 기능 여부를 읽는다. 바뀌면 다시 그린다 */
+export const useDemoRoleSwitch = () => useAppSettings((state) => state.isDemoRoleSwitchEnabled)

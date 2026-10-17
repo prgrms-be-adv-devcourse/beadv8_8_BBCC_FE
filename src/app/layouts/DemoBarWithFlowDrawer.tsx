@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApiFlowLog } from '@/shared/api'
-import { env } from '@/shared/config'
+import { useDemoRoleSwitch } from '@/shared/config'
 import { cn } from '@/shared/lib'
 import { ApiFlowPanel, usePresentationMode } from '@/widgets/api-flow-panel'
 import { DemoBar } from '@/widgets/demo-bar'
@@ -13,9 +13,10 @@ export function DemoBarWithFlowDrawer() {
   const [open, setOpen] = useState(false)
   const count = useApiFlowLog((state) => state.logs.length)
   const presentation = usePresentationMode((state) => state.on)
+  const demoRoleSwitch = useDemoRoleSwitch()
 
   // 시연 기능을 끈 배포에서는 API 흐름 패널 없이 막대만 둔다
-  if (!env.demoRoleSwitch) return <DemoBar />
+  if (!demoRoleSwitch) return <DemoBar />
 
   return (
     <>
