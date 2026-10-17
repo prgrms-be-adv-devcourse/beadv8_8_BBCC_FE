@@ -9,14 +9,12 @@ import type {
   RegisterProductRequestDto,
   SellerProductDetailDto,
   SellerProductSummaryDto,
-  UpdateProductRequestDto,
 } from '../api/product.dto'
 import type {
   Category,
   CategoryInputs,
   InputAttribute,
   ProductDetail,
-  ProductEditForm,
   ProductListItem,
   ProductOption,
   ProductSearch,
@@ -230,26 +228,6 @@ export function toRegisterProductRequest(
       }
     }),
   }
-}
-
-export function toProductEditForm(product: SellerProductDetail): ProductEditForm {
-  return {
-    name: product.name,
-    prices: Object.fromEntries(product.options.map((option) => [option.id, option.price])),
-  }
-}
-
-/** newImageUrls: 이번에 새로 올린 사진 (첫 번째가 대표). 비어 있으면 사진은 바꾸지 않는다 */
-export function toUpdateProductRequest(
-  form: ProductEditForm,
-  newImageUrls: string[] = [],
-): UpdateProductRequestDto {
-  const request: UpdateProductRequestDto = {
-    name: form.name.trim(),
-    options: Object.entries(form.prices).map(([optionId, price]) => ({ optionId, price })),
-  }
-  if (newImageUrls.length === 0) return request
-  return { ...request, thumbnailUrl: newImageUrls[0], imageUrls: newImageUrls }
 }
 
 export function toProductSearchParams(search: ProductSearch): ProductSearchParamsDto {

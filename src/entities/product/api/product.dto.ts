@@ -206,15 +206,6 @@ export type InventoryAdjustmentResultDto = {
   availableQuantity: number
 }
 
-/** (목) PATCH /seller/products/{productId} (기획서 8장 보완) */
-export type UpdateProductRequestDto = {
-  name: string
-  options: { optionId: string; price: number }[]
-  /** 새로 올린 사진으로 바꿀 때만 보낸다. 없으면 사진은 그대로 (판매자 상세가 지금 사진을 주지 않아 교체만 한다) */
-  thumbnailUrl?: string
-  imageUrls?: string[]
-}
-
 /** (목) PATCH /seller/products/{productId}/options/{optionId}/stock — 증감 수량과 사유 */
 
 /** (목) GET /products 검색 조건 (빈 값은 보내지 않음) */

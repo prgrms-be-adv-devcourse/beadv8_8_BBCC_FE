@@ -181,13 +181,6 @@ export type ProductImagesField = {
   onUploadingChange: (isUploading: boolean) => void
 }
 
-/** (목) 상품 수정 폼: 상품명 · 옵션별 가격 (재고는 재고 조정으로) */
-export type ProductEditForm = {
-  name: string
-  /** optionId → 가격 */
-  prices: Record<string, number>
-}
-
 /** 재고 조정 사유 (BE InventoryAdjustmentReason에서 처음 재고 INITIAL 제외) */
 export type StockReason = 'RESTOCK' | 'DEFECTIVE' | 'LOST' | 'CORRECTION'
 

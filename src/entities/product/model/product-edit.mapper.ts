@@ -53,6 +53,13 @@ function sizeSpecsOf(detail: SellerProductDetail): Record<string, SizeSpecInput>
   )
 }
 
+/** 있던 옵션 조합 키 → 지금 재고 */
+function currentStocksOf(inputs: CategoryInputs, detail: SellerProductDetail) {
+  return Object.fromEntries(
+    detail.options.map((option) => [keyOf(inputs.optionAttributes, option.valueIds), option.stock]),
+  )
+}
+
 /** 판매자 상세 → 등록 폼 값. 수정 화면은 등록 폼을 그대로 쓴다 (재고는 지금 수량) */
 export function toEditableProductForm(
   inputs: CategoryInputs,
@@ -66,12 +73,7 @@ export function toEditableProductForm(
     categoryId: detail.categoryId,
     info: infoOf(inputs, detail),
     optionValues: optionValuesOf(inputs, detail),
-    stocks: Object.fromEntries(
-      detail.options.map((option) => [
-        keyOf(inputs.optionAttributes, option.valueIds),
-        option.stock,
-      ]),
-    ),
+    stocks: currentStocksOf(inputs, detail),
     prices: Object.fromEntries(
       detail.prices.map((group) => [keyOf(priceAttributes, group.valueIds), group.price]),
     ),
@@ -79,9 +81,12 @@ export function toEditableProductForm(
   }
 }
 
-/** 이미 있는 옵션의 조합 키. 이 조합의 재고는 수정 폼이 아니라 재고 조정으로만 바꾼다 */
-export function existingComboKeys(inputs: CategoryInputs, detail: SellerProductDetail): string[] {
-  return detail.options.map((option) => keyOf(inputs.optionAttributes, option.valueIds))
+/** 이미 있는 옵션 조합 키 → 지금 재고. 이 조합의 재고는 수정 폼이 아니라 재고 조정으로만 바꾼다 */
+export function existingComboStocks(
+  inputs: CategoryInputs,
+  detail: SellerProductDetail,
+): Record<string, number> {
+  return currentStocksOf(inputs, detail)
 }
 
 type SavedAttribute = SellerProductDetail['attributes'][number]
@@ -121,14 +126,18 @@ function attributesOf(
 
 /**
  * 수정 폼 → PUT 요청. 읽어 간 version을 보내고, 설명은 폼에 없어 받은 값을 그대로 보낸다.
- * 옵션 · 가격 · 실측은 판매 시작 전에만 셋을 함께 보내고, 그 밖에는 셋 다 null (BE는 보내면 409)
+ * 옵션 · 가격 · 실측은 판매 시작 전에만 셋을 함께 보내고, 그 밖에는 셋 다 null (BE는 보내면 409).
+ * BE는 있던 옵션의 재고를 보낸 값으로 정정하므로, 있던 조합은 폼을 연 뒤의 재고 조정이 되돌아가지 않게 상세의 지금 재고를 보낸다
  */
 export function toProductUpdateRequest(
   inputs: CategoryInputs,
   form: RegisterProductForm,
   detail: SellerProductDetail,
 ): ProductUpdateRequestDto {
-  const request = toRegisterProductRequest(inputs, form)
+  const request = toRegisterProductRequest(inputs, {
+    ...form,
+    stocks: { ...form.stocks, ...currentStocksOf(inputs, detail) },
+  })
   const canEdit = canEditSaleInputs(detail)
   return {
     ...request,

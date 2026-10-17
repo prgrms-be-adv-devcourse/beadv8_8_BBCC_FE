@@ -3,7 +3,6 @@ import type {
   CategoryInputs,
   InputAttribute,
   ProductDetail,
-  ProductEditForm,
   ProductOption,
   RegisterProductForm,
   StockReason,
@@ -120,6 +119,20 @@ export function validateRegisterProductForm(
   inputs: CategoryInputs,
   form: RegisterProductForm,
 ): string | null {
+  return validateBasics(inputs, form) ?? validateSaleInputs(inputs, form)
+}
+
+/** 수정: 판매 시작 뒤에는 옵션 · 가격 · 실측을 보내지 않으므로 상품명 · 정보 항목만 검사한다 */
+export function validateProductUpdateForm(
+  inputs: CategoryInputs,
+  form: RegisterProductForm,
+  product: { status: string },
+): string | null {
+  if (canEditSaleInputs(product)) return validateRegisterProductForm(inputs, form)
+  return validateBasics(inputs, form)
+}
+
+function validateBasics(inputs: CategoryInputs, form: RegisterProductForm): string | null {
   const name = form.name.trim()
   if (!name) return '상품명을 입력해 주세요.'
   if (name.length > 100) return '상품명은 100자 이하로 입력해 주세요.'
@@ -128,6 +141,10 @@ export function validateRegisterProductForm(
     const filled = attribute.values.length > 0 ? !!input?.valueId : !!input?.text.trim()
     if (attribute.required && !filled) return `${attribute.name}을(를) 입력해 주세요.`
   }
+  return null
+}
+
+function validateSaleInputs(inputs: CategoryInputs, form: RegisterProductForm): string | null {
   for (const attribute of inputs.optionAttributes) {
     if ((form.optionValues[attribute.id] ?? []).length === 0)
       return `${attribute.name}을(를) 하나 이상 골라 주세요.`
@@ -169,13 +186,6 @@ export function validateStockAdjustment(
     return '불량 · 분실은 재고를 줄일 때만 써요.'
   if (currentStock !== null && currentStock + delta < 0)
     return `재고는 0보다 적어질 수 없어요 (지금 ${currentStock}개).`
-  return null
-}
-
-export function validateProductEditForm(form: ProductEditForm): string | null {
-  if (!form.name.trim()) return '상품명을 입력해 주세요.'
-  if (Object.values(form.prices).some((price) => !(price >= 1)))
-    return '가격은 1원 이상이어야 해요.'
   return null
 }
 

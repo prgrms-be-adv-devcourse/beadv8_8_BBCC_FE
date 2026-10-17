@@ -9,7 +9,6 @@ export type {
   RegisterProductResultDto,
   SaleStatusResultDto,
   ProductUpdateRequestDto,
-  UpdateProductRequestDto,
 } from './api/product.dto'
 export {
   PRODUCT_STATUS_LABEL,
@@ -18,7 +17,6 @@ export {
   type CategoryInputs,
   type InputAttribute,
   type ProductDetail,
-  type ProductEditForm,
   type ProductImagesField,
   type ProductListItem,
   type ProductOption,
@@ -39,15 +37,13 @@ export {
   toCategories,
   toCategoryInputs,
   toProductDetail,
-  toProductEditForm,
   toProductSearchParams,
   toProductListItem,
   toProductSummary,
   toRegisterProductRequest,
-  toUpdateProductRequest,
 } from './model/product.mapper'
 export {
-  existingComboKeys,
+  existingComboStocks,
   toEditableProductForm,
   toProductUpdateRequest,
 } from './model/product-edit.mapper'
@@ -68,7 +64,7 @@ export {
   listItemMeta,
   productMeta,
   sizeValues,
-  validateProductEditForm,
+  validateProductUpdateForm,
   validateRegisterProductForm,
   validateStockAdjustment,
 } from './model/product.rules'
@@ -84,6 +80,7 @@ export {
 export { ProductCard } from './ui/ProductCard'
 export { ProductImage } from './ui/ProductImage'
 export { ProductOptionList } from './ui/ProductOptionList'
+export { ProductFormFields } from './ui/ProductFormFields'
 export { ProductSpecs } from './ui/ProductSpecs'
 export { garmentKindOf, wearFitOf, type WearFit } from './model/wear-preview'
 export { WearPreview } from './ui/WearPreview'
