@@ -32,8 +32,16 @@ import {
   productDetailShape,
   registerProductResultShape,
   saleStatusResultShape,
+  sellerProductDetailShape,
 } from '@/entities/product/api/product.shape'
-import { toCategoryInputs, toRegisterProductRequest } from '@/entities/product'
+import {
+  toCategoryInputs,
+  toEditableProductForm,
+  toProductUpdateRequest,
+  toRegisterProductRequest,
+  type CategoryInputs,
+} from '@/entities/product'
+import { toSellerProductDetail } from '@/entities/product/model/product.mapper'
 import { DEMO_ADDRESS } from '@/features/manage-address/config/demo-address'
 import { demoRegisterForm } from '@/features/register-product/config/demo-product'
 import { DEMO_APPLICATION } from '@/features/apply-seller/config/demo-application'
@@ -401,5 +409,66 @@ describe('상품 (실제 API): 등록 → 판매 시작 → 상세 → 시드 �
     })
     expect(placed.status).toBe(201)
     expectContract(placed.data, orderDetailShape)
+  })
+})
+
+describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · PUT ProductUpdateRequest)', () => {
+  const S3_IMAGE = 'https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com/dev/products/2/a.jpg'
+
+  async function registerAndRead() {
+    const inputs: CategoryInputs = toCategoryInputs(
+      (await call('GET', '/categories/11/attributes', null)).data,
+    )
+    const registered = await call(
+      'POST',
+      '/seller/products',
+      2,
+      toRegisterProductRequest(inputs, demoRegisterForm(inputs)),
+    )
+    const read = async () => await call('GET', `/seller/products/${registered.data.productId}`, 2)
+    return { inputs, productId: registered.data.productId as string, read }
+  }
+
+  it('상세는 수정 요청과 같은 모양이고, 그대로 고쳐 보내면 200 · version이 오른다', async () => {
+    const { inputs, productId, read } = await registerAndRead()
+    const before = await read()
+    expect(before.status).toBe(200)
+    expectContract(before.data, sellerProductDetailShape)
+    const detail = toSellerProductDetail(before.data)
+    const form = toEditableProductForm(inputs, detail)
+
+    const updated = await call(
+      'PUT',
+      `/seller/products/${productId}`,
+      2,
+      toProductUpdateRequest(
+        inputs,
+        { ...form, name: '데일리 맨투맨 (수정)', imageUrls: [S3_IMAGE] },
+        detail,
+      ),
+    )
+    expect(updated.status).toBe(200)
+    expectContract(updated.data, sellerProductDetailShape)
+    expect(updated.data).toMatchObject({
+      name: '데일리 맨투맨 (수정)',
+      version: detail.version + 1,
+      thumbnailUrl: S3_IMAGE,
+      imageUrls: [S3_IMAGE],
+    })
+    // 읽어 간 version이 오래되면 409
+    const stale = toProductUpdateRequest(inputs, form, detail)
+    expect((await call('PUT', `/seller/products/${productId}`, 2, stale)).status).toBe(409)
+  })
+
+  it('판매를 시작하면 옵션 · 가격 · 실측을 보내면 409, 셋 다 null이면 200', async () => {
+    const { inputs, productId, read } = await registerAndRead()
+    await call('PUT', `/seller/products/${productId}/sale-status`, 2, { status: 'ON_SALE' })
+    const detail = toSellerProductDetail((await read()).data)
+    const form = toEditableProductForm(inputs, detail)
+    const locked = toProductUpdateRequest(inputs, form, { ...detail, status: 'SALE_PENDING' })
+    expect((await call('PUT', `/seller/products/${productId}`, 2, locked)).status).toBe(409)
+    const nameOnly = toProductUpdateRequest(inputs, { ...form, name: '이름만' }, detail)
+    expect(nameOnly).toMatchObject({ options: null, prices: null, sizeSpecs: null })
+    expect((await call('PUT', `/seller/products/${productId}`, 2, nameOnly)).status).toBe(200)
   })
 })
