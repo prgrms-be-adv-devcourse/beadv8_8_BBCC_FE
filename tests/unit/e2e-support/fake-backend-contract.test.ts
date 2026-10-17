@@ -2,6 +2,20 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { toAddressRequest } from '@/entities/address'
+import {
+  attributeShape,
+  attributeValueShape,
+  categoryShape,
+  measurementItemShape,
+  productTypeShape,
+} from '@/entities/catalog/api/catalog.shape'
+import {
+  toAttributeCreateRequest,
+  toCategoryCreateRequest,
+  toAttributeValueRequest,
+  toMeasurementItemRequest,
+  toProductTypeCreateRequest,
+} from '@/entities/catalog'
 import { addressShape } from '@/entities/address/api/address.shape'
 import { toAddCartItemRequest } from '@/entities/cart'
 import { cartShape } from '@/entities/cart/api/cart.shape'
@@ -470,5 +484,111 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     const nameOnly = toProductUpdateRequest(inputs, { ...form, name: '이름만' }, detail)
     expect(nameOnly).toMatchObject({ options: null, prices: null, sizeSpecs: null })
     expect((await call('PUT', `/seller/products/${productId}`, 2, nameOnly)).status).toBe(200)
+  })
+
+  it('관리자 상품 기준 데이터: 항목 · 목록 값 만들기와 목록 (BE #405)', async () => {
+    const created = await call(
+      'POST',
+      '/admin/attributes',
+      3,
+      toAttributeCreateRequest({
+        name: '계약 소재',
+        code: 'CONTRACT_MATERIAL',
+        inputType: 'PALETTE',
+        values: [{ name: '면', colorCode: '#ffffff' }],
+      }),
+    )
+    expect(created.status).toBe(201)
+    expectContract(created.data, attributeShape)
+    const added = await call(
+      'POST',
+      `/admin/attributes/${created.data.attributeId}/values`,
+      3,
+      toAttributeValueRequest({ name: '린넨', colorCode: '#e3d3bc' }, 'PALETTE'),
+    )
+    expect(added.status).toBe(201)
+    expectContract(added.data, attributeValueShape)
+    expectContract((await call('GET', '/admin/attributes', 3)).data, arr(attributeShape))
+    // 같은 코드는 409, 같은 항목에 같은 값 이름도 409, 없는 항목은 404
+    expect((await call('POST', '/admin/attributes', 3, created.data)).status).toBe(409)
+    const again = `/admin/attributes/${created.data.attributeId}/values`
+    expect((await call('POST', again, 3, added.data)).status).toBe(409)
+    expect((await call('POST', '/admin/attributes/999999/values', 3, added.data)).status).toBe(404)
+  })
+
+  it('관리자 상품 기준 데이터: 상품 유형 만들기와 목록 (BE #424)', async () => {
+    const [color] = (await call('GET', '/admin/attributes', 3)).data
+    const link = {
+      attributeId: color.attributeId,
+      role: 'OPTION' as const,
+      required: true,
+      allValuesAllowed: false,
+      sizeRole: false,
+      priceAffecting: false,
+      allowedValueIds: [color.values[0].valueId],
+    }
+    const request = toProductTypeCreateRequest({ name: '계약 유형', links: [link] })
+    const created = await call('POST', '/admin/product-types', 3, request)
+    expect(created.status).toBe(201)
+    expectContract(created.data, productTypeShape)
+    expect(created.data.attributes[0].allowedValues).toHaveLength(1)
+    expectContract((await call('GET', '/admin/product-types', 3)).data, arr(productTypeShape))
+    // 같은 이름은 409, boolean 칸이 빠지면 400
+    expect((await call('POST', '/admin/product-types', 3, request)).status).toBe(409)
+    const withoutRequired = { ...request.attributes[0], required: undefined }
+    const missing = { name: '빠진 칸', attributes: [withoutRequired] }
+    expect((await call('POST', '/admin/product-types', 3, missing)).status).toBe(400)
+  })
+
+  it('관리자 상품 기준 데이터: 카테고리 만들기와 목록 (BE #425)', async () => {
+    const [type] = (await call('GET', '/admin/product-types', 3)).data
+    const [item] = (await call('GET', '/admin/measurement-items', 3)).data
+    const middle = await call(
+      'POST',
+      '/admin/categories',
+      3,
+      toCategoryCreateRequest({
+        name: '계약 신발',
+        parentId: '',
+        kind: 'MIDDLE',
+        productTypeId: type.productTypeId,
+        measurementItemIds: [item.measurementItemId],
+      }),
+    )
+    expect(middle.status).toBe(201)
+    expectContract(middle.data, categoryShape)
+    const leafRequest = toCategoryCreateRequest({
+      name: '계약 운동화',
+      parentId: middle.data.categoryId,
+      kind: 'LEAF',
+      productTypeId: type.productTypeId,
+      measurementItemIds: [item.measurementItemId],
+    })
+    const leaf = await call('POST', '/admin/categories', 3, leafRequest)
+    expect(leaf.status).toBe(201)
+    expectContract(leaf.data, categoryShape)
+    expectContract((await call('GET', '/admin/categories', 3)).data, arr(categoryShape))
+    // 같은 위치 같은 이름은 409, 말단 아래는 400
+    expect((await call('POST', '/admin/categories', 3, leafRequest)).status).toBe(409)
+    const underLeaf = { ...leafRequest, name: '더 아래', parentId: leaf.data.categoryId }
+    expect((await call('POST', '/admin/categories', 3, underLeaf)).status).toBe(400)
+  })
+
+  it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {
+    const item = await call(
+      'POST',
+      '/admin/measurement-items',
+      3,
+      toMeasurementItemRequest({ name: '계약 길이', code: 'CONTRACT_LENGTH', unit: 'cm' }),
+    )
+    expect(item.status).toBe(201)
+    expectContract(item.data, measurementItemShape)
+    expectContract(
+      (await call('GET', '/admin/measurement-items', 3)).data,
+      arr(measurementItemShape),
+    )
+    // 같은 코드는 409, 관리자만
+    expect((await call('POST', '/admin/measurement-items', 3, item.data)).status).toBe(409)
+    expect((await call('GET', '/admin/measurement-items', 1)).status).toBe(403)
   })
 })

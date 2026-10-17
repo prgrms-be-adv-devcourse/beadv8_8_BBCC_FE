@@ -18,6 +18,7 @@ import {
   stock,
   updateProduct,
 } from './products.mjs'
+import { catalogRoute } from './catalog.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
@@ -420,6 +421,16 @@ http
       const result = adminChangeSaleStatus(x[1], body)
       return result.status === 200
         ? send(res, 200, result.body)
+        : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
+    }
+    // 관리자 상품 기준 데이터 (catalog.mjs)
+    const catalog = catalogRoute(m, p, body)
+    if (catalog) {
+      if (!(u.roles || []).includes('ADMIN'))
+        return problem(res, 403, '권한이 없습니다', '관리자만 할 수 있습니다.', req.url)
+      const result = catalog()
+      return result.body
+        ? send(res, result.status, result.body)
         : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
     }
     if (r('GET', /^\/members\/me$/))

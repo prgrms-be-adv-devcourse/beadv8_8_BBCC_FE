@@ -22,6 +22,8 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/products\/[^/]+\/size-recommendation/, 'recommend'],
   [/^\/children\/[^/]+\/recommended-products/, 'recommend'],
   [/^\/((seller|admin)\/)?(products|product-images)|^\/categories/, 'product'],
+  // 관리자 상품 기준 데이터 (항목 · 목록 값 · 실측 항목 · 상품 유형 · 카테고리)
+  [/^\/admin\/(attributes|measurement-items|product-types|categories)/, 'product'],
   [/^\/(cart|orders|seller\/orders)/, 'order'],
   [/^\/(wallets|payments)/, 'payment'],
   [/^\/(seller\/settlement|admin\/settlements)/, 'settlement'],
