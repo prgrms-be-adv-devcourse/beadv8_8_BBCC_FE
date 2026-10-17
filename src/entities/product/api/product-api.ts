@@ -13,7 +13,6 @@ import type {
   InventoryAdjustmentResultDto,
   SellerProductDetailDto,
   SellerProductSummaryDto,
-  UpdateProductRequestDto,
 } from './product.dto'
 import {
   categoryInputsShape,
@@ -77,9 +76,6 @@ export const productApi = {
     apiClient
       .put<SellerProductDetailDto>(`/seller/products/${productId}`, request)
       .then(expectShape(sellerProductDetailShape)),
-  /** (목) 상품명 · 옵션 가격 수정 */
-  update: (productId: string, request: UpdateProductRequestDto) =>
-    apiClient.patch(`/seller/products/${productId}`, request),
   /** 판매 중지 (BE #315). 다시 판매는 startSale */
   stopSale: (productId: string) =>
     apiClient

@@ -1,4 +1,5 @@
-import { isFreeSize, type CategoryInputs, type SizeSpecInput } from '@/entities/product'
+import type { CategoryInputs, SizeSpecInput } from '../model/product'
+import { isFreeSize } from '../model/product.rules'
 import { Input } from '@/shared/ui/input'
 
 type SizeSpecTableProps = {

@@ -1,4 +1,4 @@
-import type { InputAttribute } from '@/entities/product'
+import type { InputAttribute } from '../model/product'
 
 type OptionValuePickerProps = {
   attribute: InputAttribute

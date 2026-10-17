@@ -30,9 +30,6 @@ test('연결 점검: 조회 API 결과 표 · 역할 건너뜀 · 목 API 백엔
 
   // 목 API는 조회(GET)가 남지 않았다 → 바꾸는 API는 부르지 않는다
   await page.getByRole('button', { name: '백엔드에 물어보기' }).click()
-  await expect(
-    page.getByRole('listitem', { name: '목 API PATCH /seller/products/:productId' }),
-  ).toContainText('부르지 않음')
   await expect(page.getByRole('listitem', { name: '목 API PATCH /seller/me' })).toContainText(
     '부르지 않음',
   )

@@ -1,69 +1,80 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import {
-  toProductEditForm,
-  validateProductEditForm,
-  type ProductEditForm,
+  canEditSaleInputs,
+  existingComboStocks,
+  ProductFormFields,
+  toEditableProductForm,
+  useCategoryInputsQuery,
+  validateProductUpdateForm,
+  type CategoryInputs,
   type ProductImagesField,
+  type RegisterProductForm,
   type SellerProductDetail,
 } from '@/entities/product'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
-import { Input } from '@/shared/ui/input'
-import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUpdateProduct } from '../model/use-manage-product'
 
 type EditProductFormProps = {
   product: SellerProductDetail
   onDone: () => void
-  /** 사진 입력 칸 (사진 업로드 기능). 새로 올리면 그 사진으로 바꾼다 */
+  /** 사진 입력 칸 (사진 업로드 기능). 지금 사진을 보여 주고 빼거나 더한다 */
   renderImages: (field: ProductImagesField) => ReactNode
 }
 
+/** 상품 수정: 등록과 같은 입력 칸을 지금 값으로 채운다. 카테고리는 바꿀 수 없다 */
 export function EditProductForm({ product, onDone, renderImages }: EditProductFormProps) {
-  const update = useUpdateProduct(product.id)
-  const [form, setForm] = useState<ProductEditForm>(() => toProductEditForm(product))
-  const [newImageUrls, setNewImageUrls] = useState<string[]>([])
+  const inputs = useCategoryInputsQuery(product.categoryId)
+  if (inputs.isPending) return <StateMessage>입력 항목을 불러오는 중…</StateMessage>
+  if (inputs.isError)
+    return <StateMessage tone="error">{getErrorMessage(inputs.error)}</StateMessage>
+  return (
+    <EditFields
+      inputs={inputs.data}
+      product={product}
+      onDone={onDone}
+      renderImages={renderImages}
+    />
+  )
+}
+
+type EditFieldsProps = EditProductFormProps & { inputs: CategoryInputs }
+
+function EditFields({ inputs, product, onDone, renderImages }: EditFieldsProps) {
+  const update = useUpdateProduct(product)
+  const [form, setForm] = useState<RegisterProductForm>(() =>
+    toEditableProductForm(inputs, product),
+  )
+  const [invalid, setInvalid] = useState<string | null>(null)
   const [isUploading, setUploading] = useState(false)
-  const invalid = validateProductEditForm(form)
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    if (!invalid) update.mutate({ form, newImageUrls }, { onSuccess: onDone })
+    const message = validateProductUpdateForm(inputs, form, product)
+    setInvalid(message)
+    if (!message) update.mutate({ inputs, form }, { onSuccess: onDone })
   }
 
   return (
-    <form className="grid grid-cols-2 gap-3 border-t pt-3" onSubmit={handleSubmit}>
-      <Label>
-        상품명
-        <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-      </Label>
-      <div />
-      {product.options.map((option) => (
-        <Label key={option.id}>
-          {option.name} 가격 (원)
-          <Input
-            type="number"
-            value={form.prices[option.id]}
-            onChange={(e) =>
-              setForm({ ...form, prices: { ...form.prices, [option.id]: Number(e.target.value) } })
-            }
-          />
-        </Label>
-      ))}
-      <div className="col-span-2 space-y-1">
-        <p className="text-muted-foreground text-sm">
-          지금 사진은 여기서 보이지 않아요. 새로 올리면 그 사진으로 바뀌고, 올리지 않으면
-          그대로예요.
-        </p>
-        {renderImages({
-          value: newImageUrls,
-          onChange: setNewImageUrls,
+    <form className="space-y-4 border-t pt-3" onSubmit={handleSubmit}>
+      <p className="text-muted-foreground text-sm">
+        카테고리: {inputs.categoryName} (바꿀 수 없어요)
+      </p>
+      <ProductFormFields
+        inputs={inputs}
+        form={form}
+        onChange={setForm}
+        isSaleInputsLocked={!canEditSaleInputs(product)}
+        fixedStocks={existingComboStocks(inputs, product)}
+        images={renderImages({
+          value: form.imageUrls,
+          onChange: (imageUrls) => setForm((prev) => ({ ...prev, imageUrls })),
           onUploadingChange: setUploading,
         })}
-      </div>
-      <div className="col-span-2 flex items-center gap-2">
-        <Button type="submit" disabled={invalid !== null || update.isPending || isUploading}>
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="submit" disabled={update.isPending || isUploading}>
           수정 저장
         </Button>
         <Button type="button" variant="ghost" onClick={onDone}>
@@ -71,7 +82,10 @@ export function EditProductForm({ product, onDone, renderImages }: EditProductFo
         </Button>
         {invalid && <StateMessage tone="error">{invalid}</StateMessage>}
         {update.isError && (
-          <StateMessage tone="error">{getErrorMessage(update.error)}</StateMessage>
+          <StateMessage tone="error">
+            {getErrorMessage(update.error)}
+            {update.needsRecheck && ' 최신 내용을 다시 불러왔어요. 확인하고 다시 저장해 주세요.'}
+          </StateMessage>
         )}
       </div>
     </form>

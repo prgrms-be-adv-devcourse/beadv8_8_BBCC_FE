@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   canEditSaleInputs,
-  existingComboKeys,
+  existingComboStocks,
   toCategoryInputs,
   toEditableProductForm,
   toProductUpdateRequest,
+  validateProductUpdateForm,
   type CategoryInputsDto,
   type SellerProductDetail,
 } from '@/entities/product'
@@ -183,10 +184,40 @@ describe('toEditableProductForm: 판매자 상세 → 등록 폼 값 (수정 화
   })
 })
 
-describe('existingComboKeys: 이미 있는 옵션 조합 (재고는 재고 조정으로만 바꾼다)', () => {
-  it('옵션마다 항목 순서로 맞춘 조합 키', () => {
-    expect(existingComboKeys(inputs, detail)).toEqual(['101,202', '101,203'])
+describe('existingComboStocks: 이미 있는 옵션 조합의 지금 재고 (재고는 재고 조정으로만 바꾼다)', () => {
+  it('옵션마다 항목 순서로 맞춘 조합 키 → 지금 재고', () => {
+    expect(existingComboStocks(inputs, detail)).toEqual({ '101,202': 10, '101,203': 0 })
   })
+})
+
+describe('validateProductUpdateForm: 보낼 값만 검사한다', () => {
+  const form = toEditableProductForm(inputs, detail)
+  // 판매 시작 전 상품의 203 사이즈는 권장 키 · 실측이 비어 있다
+  const incompleteSize = '120: 권장 키를 입력해 주세요.'
+
+  it.each([
+    ['SALE_PENDING', incompleteSize],
+    ['ON_SALE', null],
+    ['STOPPED', null],
+  ] as const)('%s 상품의 옵션 · 가격 · 실측 검사 결과는 %s', (status, expected) => {
+    expect(validateProductUpdateForm(inputs, form, { status })).toBe(expected)
+  })
+
+  it.each(['SALE_PENDING', 'ON_SALE'] as const)(
+    '%s 상품도 상품명 · 필수 정보 항목은 검사한다',
+    (status) => {
+      expect(validateProductUpdateForm(inputs, { ...form, name: ' ' }, { status })).toBe(
+        '상품명을 입력해 주세요.',
+      )
+      expect(
+        validateProductUpdateForm(
+          inputs,
+          { ...form, info: { ...form.info, '3': { valueId: '', text: '' } } },
+          { status },
+        ),
+      ).toBe('주요소재을(를) 입력해 주세요.')
+    },
+  )
 })
 
 describe('toProductUpdateRequest: 수정 폼 → PUT 요청 (BE ProductUpdateRequest)', () => {
@@ -242,6 +273,27 @@ describe('toProductUpdateRequest: 수정 폼 → PUT 요청 (BE ProductUpdateReq
       })
     },
   )
+
+  it('있던 조합은 폼 값이 아니라 상세의 지금 재고를, 새 조합은 폼의 처음 재고를 보낸다 (BE가 보낸 값으로 재고를 맞춘다)', () => {
+    // 폼을 연 뒤 재고 조정으로 10 → 15가 된 상세를 다시 받았다
+    const adjusted = {
+      ...detail,
+      options: detail.options.map((option) =>
+        option.id === '41' ? { ...option, stock: 15 } : option,
+      ),
+    }
+    const withGray = {
+      ...form,
+      optionValues: { ...form.optionValues, '1': ['101', '102'] },
+      stocks: { ...form.stocks, '102,202': 7, '102,203': 0 },
+    }
+    expect(toProductUpdateRequest(inputs, withGray, adjusted).options).toEqual([
+      { valueIds: [101, 202], initialQuantity: 15, skuCode: null },
+      { valueIds: [101, 203], initialQuantity: 0, skuCode: null },
+      { valueIds: [102, 202], initialQuantity: 7, skuCode: null },
+      { valueIds: [102, 203], initialQuantity: 0, skuCode: null },
+    ])
+  })
 
   it('손대지 않은 정보 항목은 받은 값을 그대로 보낸다 (여러 값을 고른 목록 항목이 지워지지 않게)', () => {
     const multi = {

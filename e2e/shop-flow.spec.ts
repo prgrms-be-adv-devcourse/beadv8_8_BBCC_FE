@@ -123,24 +123,41 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
   })
 
-  await test.step('판매자 센터: 재고 조정 · 판매 중지 → 다시 판매 (실제 API) · 상품 수정 · 사진 교체 (목)', async () => {
+  await test.step('판매자 센터: 상품 수정 · 사진 더하기 · 재고 조정 · 판매 중지 → 다시 판매 (실제 API)', async () => {
     // 내 상품은 등록 최신순 → 방금 등록한 상품이 맨 위
     const mine = page
       .locator('[data-slot="card"]')
       .filter({ hasText: /상품 #\d+ · 옵션/ })
       .first()
-    // 수정은 목: 오류 없이 저장만 확인 (실제 목록에는 반영되지 않음)
+    // 수정 폼은 등록과 같은 칸을 지금 값으로 채운다. 판매 중이라 옵션 · 판매가 · 실측은 잠긴다
     await mine.getByRole('button', { name: '수정' }).click()
+    await expect(mine.getByText(/판매를 시작한 상품은 옵션/)).toBeVisible()
+    await expect(mine.getByLabel('상품명')).toHaveValue(/데일리 맨투맨/)
+    await expect(mine.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
     await mine.getByLabel('상품명').fill('데일리 맨투맨 (수정)')
-    // 사진은 새로 올린 것으로 바꾸기만 한다 (지금 사진은 불러오지 못함)
-    await mine.getByLabel(/상품 사진/).setInputFiles({
+    // 지금 사진 뒤에 새 사진을 더한다
+    await mine.getByLabel(/^상품 사진 \(/).setInputFiles({
       name: 'photo-2.png',
       mimeType: 'image/png',
       buffer: await pngOf(page, 800, 600),
     })
-    await expect(mine.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
+    await expect(mine.getByRole('img', { name: '상품 사진 2' })).toBeVisible()
+    const updating = page.waitForRequest(
+      (request) => request.method() === 'PUT' && /\/seller\/products\/\d+$/.test(request.url()),
+    )
     await mine.getByRole('button', { name: '수정 저장' }).click()
+    const update = (await updating).postDataJSON() as {
+      name: string
+      imageUrls: string[]
+      options: unknown
+      prices: unknown
+      sizeSpecs: unknown
+    }
+    expect(update.name).toBe('데일리 맨투맨 (수정)')
+    expect(update.imageUrls).toHaveLength(2)
+    expect([update.options, update.prices, update.sizeSpecs]).toEqual([null, null, null])
     await expect(mine.getByRole('button', { name: '수정 저장' })).toHaveCount(0)
+    await expect(mine.getByText('데일리 맨투맨 (수정)')).toBeVisible()
     await mine.getByRole('button', { name: '재고 조정' }).first().click()
     await mine.getByLabel('네이비 / 110 증감 수량').fill('5')
     await mine.getByRole('button', { name: '조정', exact: true }).click()

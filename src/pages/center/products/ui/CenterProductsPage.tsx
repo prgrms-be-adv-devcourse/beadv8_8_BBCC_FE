@@ -25,7 +25,6 @@ import { Input } from '@/shared/ui/input'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
-import { MockBadge } from '@/shared/ui/MockBadge'
 
 export function CenterProductsPage() {
   const products = useSellerProductsQuery()
@@ -55,7 +54,7 @@ export function CenterProductsPage() {
         title="상품 관리"
         step="②"
         description="상품을 등록 · 수정하고, 판매를 시작 · 중지하고, 재고를 조정해요."
-        note="등록 · 판매 시작 · 판매 중지 · 내 상품 · 재고 조정은 실제 API예요. 판매를 시작하면 상품이 product.changed 이벤트를 보내 추천 · 주문이 복사본을 저장해요. 상품 수정만 백엔드에 없어 목이에요 (목 수정은 실제 목록에 반영되지 않아요, 사진은 지금 사진을 불러오지 못해 새로 올린 사진으로 바꾸기만 해요). 사진은 브라우저에서 긴 변 2000px JPG로 줄인 뒤, 업로드 주소를 발급받아 S3에 바로 올리고 그 주소를 등록 요청에 담아요."
+        note="등록 · 수정 · 판매 시작 · 판매 중지 · 내 상품 · 재고 조정은 모두 실제 API예요. 판매를 시작하면 상품이 product.changed 이벤트를 보내 추천 · 주문이 복사본을 저장해요. 수정은 등록과 같은 값을 모두 보내는 PUT이고, 읽어 간 version이 다르면 409예요. 옵션 · 판매가 · 실측은 판매 시작 전에만 바꿀 수 있고, 재고는 재고 조정으로 바꿔요. 사진은 브라우저에서 긴 변 2000px JPG로 줄인 뒤, 업로드 주소를 발급받아 S3에 바로 올리고 그 주소를 등록 요청에 담아요."
       />
       <RegisterProductForm
         productHref={(id) => productHref(id)}
@@ -143,12 +142,9 @@ function SellerProductRow({ product, buyerHref }: SellerProductRowProps) {
             </Link>
           )}
           {!editing && detail.data && (
-            <span className="inline-flex items-center">
-              <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
-                수정
-              </Button>
-              <MockBadge endpoints={['PATCH /seller/products/:productId']} />
-            </span>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
+              수정
+            </Button>
           )}
           {canStopSale(product) && <StopSaleButton productId={product.id} />}
           {canStartSale(product) && <StartSaleButton productId={product.id} />}

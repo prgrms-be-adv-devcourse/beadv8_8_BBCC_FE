@@ -2,11 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   productApi,
   productKeys,
-  toUpdateProductRequest,
-  type ProductEditForm,
+  toProductUpdateRequest,
+  type CategoryInputs,
+  type RegisterProductForm,
+  type SellerProductDetail,
   type StockReason,
 } from '@/entities/product'
-import { runWithAction } from '@/shared/api'
+import { getErrorStatus, runWithAction } from '@/shared/api'
 import { toast } from '@/shared/lib'
 
 function useInvalidateProducts(message: string) {
@@ -17,16 +19,25 @@ function useInvalidateProducts(message: string) {
   }
 }
 
-/** 상품 수정 → product.changed (추천 · 주문 복사본 갱신). 사진은 새로 올렸을 때만 바꾼다 */
-export function useUpdateProduct(productId: string) {
+/**
+ * 상품 수정(PUT, 전체 값) → product.changed (추천 · 주문 복사본 갱신).
+ * 409(그사이 다른 수정 · 판매 상태 변경)면 상세를 다시 불러와 최신 version · 상태로 다시 저장하게 한다 (자동 재시도 없음)
+ */
+export function useUpdateProduct(product: SellerProductDetail) {
+  const queryClient = useQueryClient()
   const onSuccess = useInvalidateProducts('상품을 수정했어요')
-  return useMutation({
-    mutationFn: ({ form, newImageUrls }: { form: ProductEditForm; newImageUrls: string[] }) =>
+  const mutation = useMutation({
+    mutationFn: ({ inputs, form }: { inputs: CategoryInputs; form: RegisterProductForm }) =>
       runWithAction('상품 수정', () =>
-        productApi.update(productId, toUpdateProductRequest(form, newImageUrls)),
+        productApi.updateProduct(product.id, toProductUpdateRequest(inputs, form, product)),
       ),
     onSuccess,
+    onError: (error) => {
+      if (getErrorStatus(error) !== 409) return
+      return queryClient.invalidateQueries({ queryKey: productKeys.sellerDetail(product.id) })
+    },
   })
+  return { ...mutation, needsRecheck: getErrorStatus(mutation.error) === 409 }
 }
 
 /** 판매 중지 → 목록 · 추천에서 빠지고 장바구니에서 구매 불가 */
