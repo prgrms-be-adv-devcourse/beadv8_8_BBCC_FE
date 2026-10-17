@@ -34,6 +34,15 @@ function loadSdk(): Promise<void> {
   })
 }
 
+// BE failure_code 길이
+const MAX_CODE_LENGTH = 50
+
+/** 결제창 오류의 토스 코드 (예: PC에서 창을 닫으면 USER_CANCEL). 코드가 없으면 PAYMENT_WINDOW_ERROR */
+export function tossErrorCode(error: unknown): string {
+  const code = (error as { code?: unknown } | null)?.code
+  return typeof code === 'string' && code ? code.slice(0, MAX_CODE_LENGTH) : 'PAYMENT_WINDOW_ERROR'
+}
+
 export async function openTossPayment(
   clientKey: string,
   payment: { orderId: string; amount: number },

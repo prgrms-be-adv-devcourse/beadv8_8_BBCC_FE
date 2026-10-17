@@ -301,6 +301,16 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect(list.data.content[0]).toMatchObject({ chargeId: 77, status: 'DONE' })
   })
 
+  it('결제창이 끝나지 않은 충전을 실패로 (BE ChargeDetailResponse)', async () => {
+    const failed = await call('POST', '/wallets/me/charges/fail', 1, {
+      orderId: 'toss-fail',
+      code: 'PAY_PROCESS_CANCELED',
+    })
+    expect(failed.status).toBe(200)
+    expectContract(failed.data, chargeShape)
+    expect(failed.data).toMatchObject({ orderId: 'toss-fail', status: 'FAILED' })
+  })
+
   it('충전 취소 (BE ChargeCancelResponse)', async () => {
     const cancelled = await call('POST', '/wallets/me/charges/77/cancel', 1)
     expectContract(cancelled.data, chargeCancelShape)

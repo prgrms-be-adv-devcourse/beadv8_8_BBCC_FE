@@ -15,6 +15,11 @@ export function canCancelCharge(charge: Charge): boolean {
   return charge.status === 'DONE'
 }
 
+/** 결제창에서 결제를 마치지 못해 아직 대기 중인 충전인지 (만료 시각이 지나면 서버가 곧 만료로 끝낸다) */
+export function isAwaitingPayment(charge: Charge, now: Date): boolean {
+  return charge.status === 'PENDING' && new Date(charge.expiresAt).getTime() > now.getTime()
+}
+
 /** 주문 금액보다 모자란 금액 (모자라지 않으면 0) */
 export function shortageOf(balance: number | undefined, amount: number): number {
   return balance === undefined ? 0 : Math.max(0, amount - balance)

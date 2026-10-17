@@ -443,6 +443,13 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     // 다음 단계에 남지 않게 장바구니를 비운다
     await page.getByRole('button', { name: '빼기' }).click()
     await expect(page.getByText('장바구니가 비었어요.')).toBeVisible()
+
+    // 토스 결제창이 실패 · 취소로 돌아오면 그 충전을 서버에 실패로 알려 바로 끝낸다
+    await page.goto(
+      '/my/wallet/charge/fail?code=PAY_PROCESS_CANCELED&message=결제를 취소했어요&orderId=toss-89',
+    )
+    await expect(page.getByText('결제를 취소했어요')).toBeVisible()
+    await expect(page.getByText(/이 충전은 결제되지 않았어요/)).toBeVisible()
     await page.goto('/')
   })
 
