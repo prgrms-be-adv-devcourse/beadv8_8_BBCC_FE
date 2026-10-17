@@ -7,6 +7,8 @@ export type PreflightItem = {
   label: string
   state: PreflightState
   detail: string
+  /** 화면에서 바로 할 수 있는 조치 (charge: 예치금 충전 화면으로) */
+  action?: 'charge'
 }
 
 export type PreflightDeps = {
@@ -96,10 +98,12 @@ export async function runPreflight(deps: PreflightDeps): Promise<PreflightItem[]
         balance >= deps.price
           ? { key: 'wallet', label: '보호자 예치금', state: 'ok', detail: text }
           : {
+              // 충전은 토스 결제창을 거쳐야 해 자동으로 못 한다 → 시작 전에 막고 충전 화면으로 안내
               key: 'wallet',
               label: '보호자 예치금',
-              state: 'warn',
-              detail: `${text} · 시연 상품 ${deps.price.toLocaleString()}원보다 적어요 (④에서 멈춤, 충전 필요)`,
+              state: 'fail',
+              detail: `${text} · 시연 상품 ${deps.price.toLocaleString()}원보다 적어요 (토스 테스트 결제로 충전 필요)`,
+              action: 'charge',
             },
       )
     } catch (error) {

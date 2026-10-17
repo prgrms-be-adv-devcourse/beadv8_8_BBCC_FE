@@ -6,6 +6,7 @@ import { useApiFlowLog } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
+import { DEMO_CHARGE_AMOUNT, demoChargePath } from '../config/demo-charge'
 import { checkBeforeDemo } from '../config/preflight-deps'
 import { AUTO_DEMO_STEPS, type DemoRole } from '../config/steps'
 import { AUTO_DEMO_SPEEDS, type AutoDemoSpeed, useAutoDemo } from '../model/auto-demo-store'
@@ -166,6 +167,18 @@ export function AutoDemoBar() {
             >
               {MARK[item.state]} {item.label}
               {item.state !== 'ok' && ` · ${item.detail}`}
+              {item.action === 'charge' && (
+                <button
+                  type="button"
+                  className="ml-2 font-semibold underline"
+                  onClick={async () => {
+                    await deps.signIn('보호자')
+                    navigate(demoChargePath())
+                  }}
+                >
+                  충전하러 가기 ({DEMO_CHARGE_AMOUNT.toLocaleString()}원)
+                </button>
+              )}
             </li>
           ))}
         </ul>
