@@ -37,10 +37,10 @@ export function WorkspaceLayout({
   return (
     <div className="flex h-svh flex-col">
       <DemoBarWithFlowDrawer />
-      <div data-area={area} className="flex min-h-0 flex-1">
+      <div data-area={area} className="flex min-h-0 flex-1 flex-col md:flex-row">
         <TopProgressBar />
         <SideNav title={title} items={items} tone={area === 'admin' ? 'dark' : 'light'} />
-        <main className="bg-muted/30 flex-1 overflow-y-auto px-8 py-6">
+        <main className="bg-muted/30 min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6">
           <div className="mx-auto max-w-4xl">
             <SessionGate>
               {blocked ? (
