@@ -28,7 +28,9 @@ export function ShopWalletPage() {
   const requested = Number(search.get('amount'))
   const initialAmount = validateChargeAmount(requested) === null ? requested : undefined
   const returnPath = safeReturnPath(search.get('return'))
-  const afterCharge = returnPath ? { path: returnPath, label: '주문서로 돌아가기' } : null
+  // 돌아가기 문구는 보낸 화면이 정한다 (예: 자동 시연). 없으면 주문서
+  const returnLabel = search.get('returnLabel')?.trim().slice(0, 20) || '주문서로 돌아가기'
+  const afterCharge = returnPath ? { path: returnPath, label: returnLabel } : null
 
   return (
     <div className="space-y-4">
