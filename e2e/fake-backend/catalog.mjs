@@ -1,4 +1,4 @@
-// 가짜 백엔드의 관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목(BE #405) · 상품 유형(BE #424) 만들기와 목록 (응답 모양만 흉내).
+// 가짜 백엔드의 관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목(BE #405) · 상품 유형(BE #424) · 카테고리(BE #425) 만들기와 목록 (응답 모양만 흉내).
 // 처음 데이터는 BE 초기 데이터 러너의 이름 · 코드를 일부 따른다. 결과는 { status, body } 또는 { status, detail }
 const CODE = /^[A-Z_]+$/
 const COLOR = /^#[0-9a-fA-F]{6}$/
@@ -95,7 +95,27 @@ function createMeasurementItem(body) {
 }
 
 // 상품 유형: 연결은 항목 ID · 설정 · 허용 값 ID로 두고, 응답할 때 항목에서 이름 · 코드 · 값을 읽는다
-const productTypes = []
+// 처음 데이터: BE 초기 데이터의 「의류」(색상 · 사이즈 옵션, 혼용률 정보, 모두 모든 값 허용)
+const seedLink = (code, role, required, sizeRole = false) => ({
+  attributeId: attributes.find((a) => a.code === code).attributeId,
+  role,
+  required,
+  allValuesAllowed: true,
+  sizeRole,
+  priceAffecting: false,
+  allowedValueIds: [],
+})
+const productTypes = [
+  {
+    productTypeId: String(nextId++),
+    name: '의류',
+    links: [
+      seedLink('COLOR', 'OPTION', true),
+      seedLink('SIZE', 'OPTION', true, true),
+      seedLink('FABRIC_COMPOSITION', 'INFO', false),
+    ],
+  },
+]
 const BOOLEANS = ['required', 'allValuesAllowed', 'sizeRole', 'priceAffecting']
 const ruleBroken = (detail) => ({ status: 400, detail })
 
@@ -151,6 +171,69 @@ function createProductType(body) {
   return { status: 201, body: productTypeOut(type) }
 }
 
+// 카테고리: 평면 목록(ID 순서). 말단만 상품 유형과 필수 실측 항목(ID, 넣은 순서)을 가진다
+const leafOf = (name, parentId, codes) => ({
+  categoryId: String(nextId++),
+  name,
+  parentId,
+  productTypeId: productTypes[0].productTypeId,
+  measurementItemIds: codes.map(
+    (code) => measurementItems.find((m) => m.code === code).measurementItemId,
+  ),
+})
+const clothing = {
+  categoryId: String(nextId++),
+  name: '의류',
+  parentId: null,
+  productTypeId: null,
+  measurementItemIds: [],
+}
+const categories = [
+  clothing,
+  leafOf('상의', clothing.categoryId, ['TOTAL_LENGTH', 'SHOULDER_WIDTH']),
+  leafOf('하의', clothing.categoryId, ['TOTAL_LENGTH']),
+]
+
+function categoryOut({ measurementItemIds, ...category }) {
+  return {
+    ...category,
+    leaf: category.productTypeId !== null,
+    productTypeName:
+      productTypes.find((t) => t.productTypeId === category.productTypeId)?.name ?? null,
+    measurementItems: measurementItemIds.map((id) =>
+      measurementItems.find((m) => m.measurementItemId === id),
+    ),
+  }
+}
+
+function createCategory(body) {
+  if (blank(body?.name)) return bad('카테고리 이름을 입력해 주세요.')
+  if (!Array.isArray(body.measurementItemIds))
+    return bad('실측 항목 ID를 보내 주세요. 없으면 빈 목록을 보내 주세요.')
+  const productTypeId = body.productTypeId == null ? null : String(body.productTypeId)
+  const parentId = body.parentId == null ? null : String(body.parentId)
+  const itemIds = body.measurementItemIds.map(String)
+  if (!productTypeId && itemIds.length > 0)
+    return bad('실측 항목은 상품 유형을 고른 카테고리에만 넣어 주세요.')
+  const parent = categories.find((c) => c.categoryId === parentId)
+  if (parentId && !parent) return { status: 404, detail: '카테고리를 다시 확인해 주세요.' }
+  if (parent?.productTypeId) return bad('말단 카테고리 아래에는 카테고리를 만들 수 없습니다.')
+  if (productTypeId && !productTypes.some((t) => t.productTypeId === productTypeId))
+    return { status: 404, detail: '상품 유형을 다시 확인해 주세요.' }
+  if (itemIds.some((id) => !measurementItems.some((m) => m.measurementItemId === id)))
+    return { status: 404, detail: '실측 항목을 다시 확인해 주세요.' }
+  if (categories.some((c) => c.parentId === parentId && c.name === body.name)) return conflict
+  const category = {
+    categoryId: String(nextId++),
+    name: body.name,
+    parentId,
+    productTypeId,
+    measurementItemIds: itemIds,
+  }
+  categories.push(category)
+  return { status: 201, body: categoryOut(category) }
+}
+
 /** 기준 데이터 경로면 처리 함수를, 아니면 null (권한 확인은 server.mjs) */
 export function catalogRoute(method, path, body) {
   const key = `${method} ${path}`
@@ -161,6 +244,9 @@ export function catalogRoute(method, path, body) {
   if (key === 'GET /admin/product-types')
     return () => ({ status: 200, body: productTypes.map(productTypeOut) })
   if (key === 'POST /admin/product-types') return () => createProductType(body)
+  if (key === 'GET /admin/categories')
+    return () => ({ status: 200, body: categories.map(categoryOut) })
+  if (key === 'POST /admin/categories') return () => createCategory(body)
   if (key === 'GET /admin/measurement-items') return () => ({ status: 200, body: measurementItems })
   if (key === 'POST /admin/measurement-items') return () => createMeasurementItem(body)
   return null

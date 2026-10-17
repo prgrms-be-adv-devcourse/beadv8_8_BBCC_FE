@@ -4,11 +4,13 @@ import {
   catalogKeys,
   toAttributeCreateRequest,
   toAttributeValueRequest,
+  toCategoryCreateRequest,
   toMeasurementItemRequest,
   toProductTypeCreateRequest,
   type AttributeForm,
   type AttributeInputType,
   type AttributeValueForm,
+  type CategoryForm,
   type MeasurementItemForm,
   type ProductTypeForm,
 } from '@/entities/catalog'
@@ -66,6 +68,18 @@ export function useCreateProductType() {
     mutationFn: (form: ProductTypeForm) =>
       runWithAction('상품 유형 만들기', () =>
         catalogApi.createProductType(toProductTypeCreateRequest(form)),
+      ),
+    onSuccess,
+  })
+}
+
+/** 카테고리 만들기. 말단 아래면 400, 같은 위치 같은 이름이면 409 */
+export function useCreateCategory() {
+  const onSuccess = useRefetch(catalogKeys.categories, '카테고리를 만들었어요')
+  return useMutation({
+    mutationFn: (form: CategoryForm) =>
+      runWithAction('카테고리 만들기', () =>
+        catalogApi.createCategory(toCategoryCreateRequest(form)),
       ),
     onSuccess,
   })

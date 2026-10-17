@@ -293,6 +293,7 @@ describe('domainOf: 상품 도메인 경로', () => {
     '/admin/attributes/1/values',
     '/admin/measurement-items',
     '/admin/product-types',
+    '/admin/categories',
   ])('관리자 상품 기준 데이터 %s도 상품 도메인', (path) => {
     expect(domainOf(path)).toBe('product')
   })

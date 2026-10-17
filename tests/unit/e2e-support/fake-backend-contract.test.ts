@@ -5,11 +5,13 @@ import { toAddressRequest } from '@/entities/address'
 import {
   attributeShape,
   attributeValueShape,
+  categoryShape,
   measurementItemShape,
   productTypeShape,
 } from '@/entities/catalog/api/catalog.shape'
 import {
   toAttributeCreateRequest,
+  toCategoryCreateRequest,
   toAttributeValueRequest,
   toMeasurementItemRequest,
   toProductTypeCreateRequest,
@@ -536,6 +538,40 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     const withoutRequired = { ...request.attributes[0], required: undefined }
     const missing = { name: '빠진 칸', attributes: [withoutRequired] }
     expect((await call('POST', '/admin/product-types', 3, missing)).status).toBe(400)
+  })
+
+  it('관리자 상품 기준 데이터: 카테고리 만들기와 목록 (BE #425)', async () => {
+    const [type] = (await call('GET', '/admin/product-types', 3)).data
+    const [item] = (await call('GET', '/admin/measurement-items', 3)).data
+    const middle = await call(
+      'POST',
+      '/admin/categories',
+      3,
+      toCategoryCreateRequest({
+        name: '계약 신발',
+        parentId: '',
+        kind: 'MIDDLE',
+        productTypeId: type.productTypeId,
+        measurementItemIds: [item.measurementItemId],
+      }),
+    )
+    expect(middle.status).toBe(201)
+    expectContract(middle.data, categoryShape)
+    const leafRequest = toCategoryCreateRequest({
+      name: '계약 운동화',
+      parentId: middle.data.categoryId,
+      kind: 'LEAF',
+      productTypeId: type.productTypeId,
+      measurementItemIds: [item.measurementItemId],
+    })
+    const leaf = await call('POST', '/admin/categories', 3, leafRequest)
+    expect(leaf.status).toBe(201)
+    expectContract(leaf.data, categoryShape)
+    expectContract((await call('GET', '/admin/categories', 3)).data, arr(categoryShape))
+    // 같은 위치 같은 이름은 409, 말단 아래는 400
+    expect((await call('POST', '/admin/categories', 3, leafRequest)).status).toBe(409)
+    const underLeaf = { ...leafRequest, name: '더 아래', parentId: leaf.data.categoryId }
+    expect((await call('POST', '/admin/categories', 3, underLeaf)).status).toBe(400)
   })
 
   it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {
