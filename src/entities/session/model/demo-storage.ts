@@ -21,6 +21,11 @@ export function loadDemoAccount(): DemoAccount | null {
   }
 }
 
+/** 지금 탭의 로그인이 시연 계정(개발용 토큰)인지. 카카오 로그인이면 false */
+export function isDemoSession(): boolean {
+  return loadDemoAccount() !== null
+}
+
 export function clearDemoAccount() {
   try {
     sessionStorage.removeItem(KEY)

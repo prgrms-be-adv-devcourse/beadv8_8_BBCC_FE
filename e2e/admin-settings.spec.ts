@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// 관리자 설정: 목 데이터 · 시연 역할 전환을 끄고 켠다. 바꾼 값은 새로고침하면 화면에 적용된다.
+// 관리자 설정: 목 데이터 · 시연 기능(역할 전환 · 시연 콘솔 · API 흐름)을 끄고 켠다. 바꾼 값은 새로고침하면 화면에 적용된다.
 // 다른 E2E가 목 · 시연을 켠 상태를 전제하므로, 끝나면(실패해도) 가짜 백엔드 설정을 되돌린다
 
 const FAKE_BACKEND = 'http://localhost:18080/api/v1'
@@ -24,7 +24,7 @@ function settingCard(page: Page, title: string) {
 
 test.afterEach(restoreSettings)
 
-test('관리자 설정: 목 데이터 · 시연 역할 전환 끄고 켜기 (새로고침하면 적용)', async ({ page }) => {
+test('관리자 설정: 목 데이터 · 시연 기능 끄고 켜기 (새로고침하면 적용)', async ({ page }) => {
   const pageErrors: string[] = []
   page.on('pageerror', (error) => pageErrors.push(error.message))
 
@@ -35,7 +35,7 @@ test('관리자 설정: 목 데이터 · 시연 역할 전환 끄고 켜기 (새
     await page.goto('/admin/settings')
     await expect(page.getByRole('heading', { name: '설정' })).toBeVisible()
     await expect(settingCard(page, '목 데이터').getByText('켜짐')).toBeVisible()
-    await expect(settingCard(page, '시연 역할 전환').getByText('켜짐')).toBeVisible()
+    await expect(settingCard(page, '시연 기능').getByText('켜짐')).toBeVisible()
   })
 
   await test.step('목 데이터를 끄면 저장된 값이 바뀌고, 새로고침 안내가 나온다', async () => {
@@ -47,9 +47,24 @@ test('관리자 설정: 목 데이터 · 시연 역할 전환 끄고 켜기 (새
     await expect(page.getByText('바꾼 설정은 새로고침하면 이 화면에 적용돼요.')).toHaveCount(0)
   })
 
-  await test.step('시연 역할 전환을 끄고 새로고침하면 시연 계정은 로그아웃되고, 역할 전환이 없다', async () => {
-    await settingCard(page, '시연 역할 전환').getByRole('button', { name: '끄기' }).click()
-    await expect(settingCard(page, '시연 역할 전환').getByText('꺼짐')).toBeVisible()
+  await test.step('시연 기능 끄기는 확인 창에서 취소하면 그대로다', async () => {
+    await settingCard(page, '시연 기능').getByRole('button', { name: '끄기' }).click()
+    const dialog = page.getByRole('alertdialog')
+    // 시연 계정으로 로그인해 있으므로 다시 켜지 못할 수 있다고 경고한다
+    await expect(
+      dialog.getByText('카카오로 로그인한 관리자만 다시 켤 수 있어요.', { exact: false }),
+    ).toBeVisible()
+    await dialog.getByRole('button', { name: '취소' }).click()
+    await expect(settingCard(page, '시연 기능').getByText('켜짐')).toBeVisible()
+  })
+
+  await test.step('시연 기능을 끄고 새로고침하면 시연 계정은 로그아웃되고, 역할 전환이 없다', async () => {
+    await settingCard(page, '시연 기능').getByRole('button', { name: '끄기' }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: '끄기' }).click()
+    await expect(settingCard(page, '시연 기능').getByText('꺼짐')).toBeVisible()
+    await expect(
+      page.getByText('새로고침하면 시연 기능이 꺼지고 시연 계정은 로그아웃돼요.', { exact: false }),
+    ).toBeVisible()
     await page.getByRole('button', { name: '새로고침' }).click()
     // 시연 계정(개발용 토큰)은 시연을 끄면 다시 받지 않는다 → 로그아웃 상태로 관리자 로그인 안내
     await expect(page.getByText('관리자 계정으로 볼 수 있는 화면이에요.')).toBeVisible()

@@ -24,4 +24,5 @@ export {
   NICKNAME_MIN,
   validateNickname,
 } from './model/session.rules'
+export { isDemoSession } from './model/demo-storage'
 export { useSessionStore } from './model/session-store'
