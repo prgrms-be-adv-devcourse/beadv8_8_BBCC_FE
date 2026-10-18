@@ -58,6 +58,7 @@ export const paths = {
     payments: '/admin/payments',
     settlements: '/admin/settlements',
     settings: '/admin/settings',
+    catalog: '/admin/catalog',
   },
   console: {
     home: C,

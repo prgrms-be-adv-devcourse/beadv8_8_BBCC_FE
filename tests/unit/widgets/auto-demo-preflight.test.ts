@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { canStart, runPreflight, type PreflightDeps } from '@/widgets/auto-demo/model/preflight'
 import { scaleWait, SHOW_MS } from '@/widgets/auto-demo/model/run-auto-demo'
+import { DEMO_CHARGE_AMOUNT, demoChargePath } from '@/widgets/auto-demo/config/demo-charge'
 
 const deps = (patch: Partial<PreflightDeps> = {}): PreflightDeps => ({
   categories: async () => [{ id: '1', name: '상의' }],
@@ -65,7 +66,7 @@ describe('자동 시연 시작 전 점검', () => {
     expect(canStart(items)).toBe(false)
   })
 
-  it('예치금이 상품값보다 적으면 경고만 하고 시작은 한다', async () => {
+  it('예치금이 상품값보다 적으면 시작을 막고 충전 조치를 단다 (충전은 토스 결제창이라 자동 불가)', async () => {
     let usedToken = ''
     const items = await runPreflight(
       deps({
@@ -77,10 +78,34 @@ describe('자동 시연 시작 전 점검', () => {
     )
     expect(usedToken).toBe('g')
     expect(items.find((item) => item.key === 'wallet')).toMatchObject({
-      state: 'warn',
+      state: 'fail',
+      action: 'charge',
       detail: expect.stringContaining('10,000원'),
     })
+    expect(canStart(items)).toBe(false)
+  })
+
+  it('예치금을 확인하지 못하면 경고만 하고 시작은 한다', async () => {
+    const items = await runPreflight(
+      deps({
+        walletBalance: async () => {
+          throw new Error('500')
+        },
+      }),
+    )
+    expect(items.find((item) => item.key === 'wallet')?.state).toBe('warn')
     expect(canStart(items)).toBe(true)
+  })
+})
+
+describe('충전하러 가기', () => {
+  it('콘솔 예치금 화면에 시연 4번 분량 금액과 돌아올 곳을 담는다', () => {
+    const url = new URL(demoChargePath(), 'http://x')
+    expect(url.pathname).toBe('/console/wallet')
+    expect(url.searchParams.get('amount')).toBe(String(DEMO_CHARGE_AMOUNT))
+    expect(DEMO_CHARGE_AMOUNT).toBe(100_000)
+    expect(url.searchParams.get('return')).toBe('/console')
+    expect(url.searchParams.get('returnLabel')).toBe('자동 시연으로 돌아가기')
   })
 })
 

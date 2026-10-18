@@ -72,6 +72,9 @@ const adminOrders = page(() =>
 const adminPayments = page(() =>
   import('@/pages/admin/payments').then((m) => ({ Component: m.AdminPaymentsPage })),
 )
+const adminCatalog = page(() =>
+  import('@/pages/admin/catalog').then((m) => ({ Component: m.AdminCatalogPage })),
+)
 const adminSettlements = page(() =>
   import('@/pages/admin/settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
 )
@@ -192,6 +195,7 @@ export const router = createBrowserRouter(
             { to: paths.admin.members, label: '회원 관리' },
             { to: paths.admin.sellerApplications, label: '판매자 신청 심사' },
             { to: paths.admin.products, label: '상품 관리' },
+            { to: paths.admin.catalog, label: '상품 기준 데이터' },
             { to: paths.admin.orders, label: '전체 주문' },
             { to: paths.admin.payments, label: '전체 결제' },
             { to: paths.admin.settlements, label: '정산' },
@@ -209,6 +213,7 @@ export const router = createBrowserRouter(
         { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
         { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
         { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
+        { path: rel(paths.admin.home, paths.admin.catalog), ...adminCatalog },
         { path: '*', element: <NotFoundPage /> },
       ],
     },

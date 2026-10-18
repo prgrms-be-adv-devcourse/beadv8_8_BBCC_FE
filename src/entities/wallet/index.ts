@@ -16,10 +16,12 @@ export {
   toChargeConfirmation,
   toChargePayment,
   toConfirmChargeRequest,
+  toFailChargeRequest,
   toWalletTransaction,
 } from './model/wallet.mapper'
 export {
   canCancelCharge,
+  isAwaitingPayment,
   isChargeCancelling,
   isChargeConfirming,
   shortageOf,
