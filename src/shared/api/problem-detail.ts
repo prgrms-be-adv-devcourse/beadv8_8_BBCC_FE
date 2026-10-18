@@ -24,6 +24,18 @@ export function getErrorTitle(error: unknown): string | null {
   return isProblemDetail(data) ? data.title : null
 }
 
+/**
+ * 응답을 기다리다 시간 제한을 넘겼는지. 서버는 요청을 받아 처리했을 수 있으므로 실패로 단정하지 않을 때 쓴다
+ * (axios 기본은 ECONNABORTED, transitional.clarifyTimeoutError를 켜면 ETIMEDOUT)
+ */
+export function isTimeoutError(error: unknown): boolean {
+  return (
+    isAxiosError(error) &&
+    !error.response &&
+    (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT')
+  )
+}
+
 /** 화면에 보여 줄 오류 문구. ProblemDetail의 detail을 그대로 쓴다 */
 export function getErrorMessage(error: unknown): string {
   if (!isAxiosError(error)) {
@@ -33,7 +45,7 @@ export function getErrorMessage(error: unknown): string {
   if (isProblemDetail(data)) {
     return data.detail ?? data.title
   }
-  if (error.code === 'ECONNABORTED') {
+  if (isTimeoutError(error)) {
     return '응답이 늦어 요청을 끝내지 못했어요. 다시 시도해 주세요.'
   }
   if (!error.response) {

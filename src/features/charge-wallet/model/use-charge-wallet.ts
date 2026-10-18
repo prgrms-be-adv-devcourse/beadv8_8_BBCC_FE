@@ -108,8 +108,8 @@ export function useConfirmCharge(search: URLSearchParams) {
       runWithAction('예치금 충전 승인', async () =>
         toChargeConfirmation(await walletApi.confirmCharge(request!)),
       ),
-    onSuccess: () => {
-      // 잔액 · 충전 내역 · 거래 내역 (wallet 아래 모두)
+    // 실패 · 시간 초과여도 서버에서 충전 상태가 바뀌었을 수 있다 (잔액 · 충전 내역 · 거래 내역, wallet 아래 모두)
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: walletKeys.all })
     },
   })
@@ -123,5 +123,5 @@ export function useConfirmCharge(search: URLSearchParams) {
     }
   }, [request, mutate])
 
-  return { ...mutation, invalidRequest: request === null }
+  return { ...mutation, invalidRequest: request === null, amount: request?.amount ?? 0 }
 }

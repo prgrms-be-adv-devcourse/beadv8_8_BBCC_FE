@@ -20,6 +20,7 @@ export {
   getErrorMessage,
   getErrorStatus,
   getErrorTitle,
+  isTimeoutError,
   type ProblemDetail,
 } from './problem-detail'
 export type { Page } from './types'
