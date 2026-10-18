@@ -72,7 +72,7 @@ describe('예치금 거래 내역', () => {
 })
 
 describe('충전 내역', () => {
-  it('toCharge: 요청 시각(createdAt)을 함께 쓴다', () => {
+  it('toCharge: 요청 시각(createdAt) · 토스 주문번호 · 만료 시각을 함께 쓴다', () => {
     expect(
       toCharge({
         chargeId: 5,
@@ -80,13 +80,16 @@ describe('충전 내역', () => {
         amount: 10000,
         status: 'PENDING',
         approvedAt: null,
+        expiresAt: '2026-10-15T09:30:00',
         createdAt: '2026-10-15T09:00:00',
       }),
     ).toEqual({
       id: '5',
+      tossOrderId: 'toss-5',
       amount: 10000,
       status: 'PENDING',
       approvedAt: null,
+      expiresAt: '2026-10-15T09:30:00',
       createdAt: '2026-10-15T09:00:00',
     })
   })

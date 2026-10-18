@@ -9,9 +9,14 @@ export type ChargeDetailDto = {
   amount: number
   status: string
   approvedAt: string | null
+  /** 이 시각까지 결제창에서 돌아오지 않으면 서버가 만료로 끝낸다 */
+  expiresAt: string
   /** 충전 요청 시각 */
   createdAt: string
 }
+
+/** POST /wallets/me/charges/fail (토스 failUrl로 돌아온 값 그대로) → ChargeDetailDto */
+export type FailChargeRequestDto = { orderId: string; code: string }
 
 /** POST /wallets/me/charges → 토스 결제창에 넘길 값 */
 export type ChargeRequestResultDto = {
