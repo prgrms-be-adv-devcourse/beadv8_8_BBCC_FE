@@ -101,3 +101,6 @@ export {
   productImageFields,
   useImageUploading,
 } from './model/product-images'
+export { ALL_CATEGORIES_ICON } from './config/category-icons'
+export { categoryIconOf } from './model/category-icon.rules'
+export { CategoryIcon } from './ui/CategoryIcon'
