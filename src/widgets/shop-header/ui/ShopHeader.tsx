@@ -33,7 +33,7 @@ function HeaderSearch() {
     <form
       role="search"
       onSubmit={submit}
-      className="bg-primary-soft/60 focus-within:border-primary flex h-10 min-w-0 flex-1 items-center rounded-full border border-transparent pr-1 pl-4"
+      className="bg-primary-soft/60 focus-within:border-primary order-last flex h-10 min-w-0 basis-full items-center rounded-full border border-transparent pr-1 pl-4 md:order-none md:flex-1 md:basis-auto"
     >
       <input
         aria-label="상품 검색"
@@ -76,7 +76,8 @@ export function ShopHeader() {
           프로필 등록하기
         </Link>
       </p>
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 md:gap-6 md:px-6">
+      {/* 휴대폰은 검색 칸을 아래 줄로 내려 가로로 넘치지 않게 한다 */}
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:h-16 md:flex-nowrap md:gap-6 md:px-6 md:py-0">
         <Link
           to={paths.shop.home}
           className="text-primary relative shrink-0 text-2xl font-black tracking-tight md:text-3xl"
@@ -105,7 +106,7 @@ export function ShopHeader() {
           ))}
         </nav>
         <HeaderSearch />
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="ml-auto flex shrink-0 items-center gap-3 md:ml-0">
           <nav className="flex gap-3 text-sm whitespace-nowrap lg:hidden">
             {NAV.slice(2).map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className="hover:text-primary">
