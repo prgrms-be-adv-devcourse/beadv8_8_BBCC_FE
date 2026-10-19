@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { acceptConfirms } from './support/confirm'
+import { pickOption } from './support/option'
 
 // 시연 콘솔(/console)에서 정상 흐름 ①~⑦을 시연 순서대로 따라가며, 화면 결과와 흐름 확인(/verify) 판정까지 확인한다.
 // 가짜 백엔드(e2e/fake-backend) + FE 목(판매자 상품 목록 · 수정 등 BE에 없는 것)으로 돈다.
@@ -134,6 +135,8 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     // 판매 시작 → 상세로 이어진다 (실제 상세 API)
     await page.getByRole('link', { name: '상품 상세 보기' }).click()
     await expect(page.getByRole('heading', { name: '데일리 맨투맨', exact: true })).toBeVisible()
+    // 실측표는 접어 두고 「실측표 보기」로 편다
+    await page.getByText('실측표 보기').click()
     await expect(page.getByRole('table', { name: '사이즈 정보' })).toBeVisible()
   })
 
@@ -148,7 +151,9 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
   })
 
   await test.step('④ 담기 → 주문하기 → 결제 완료 (시드 상품 복사본 없이, 판매 시작이 만든 복사본으로)', async () => {
-    await page.getByRole('button', { name: /네이비 \/ 120/ }).click()
+    // 색상 칩 · 사이즈 칩을 따로 고르면 고른 옵션을 보여 준다
+    await pickOption(page, '네이비', '120')
+    await expect(page.getByText(/네이비 \/ 120 · 1개/)).toBeVisible()
     await page.getByRole('button', { name: '장바구니 담기' }).click()
     await expect(page.getByText('담았어요')).toBeVisible()
     await page.goto('/console/cart')

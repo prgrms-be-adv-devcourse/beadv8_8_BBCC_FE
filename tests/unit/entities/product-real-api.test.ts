@@ -337,6 +337,7 @@ describe('toProductDetail (BE ProductDetailResponse)', () => {
       {
         id: '1001',
         name: '네이비 / 110',
+        valueIds: ['101', '202'],
         size: '110',
         price: 25000,
         soldOut: false,
@@ -348,6 +349,7 @@ describe('toProductDetail (BE ProductDetailResponse)', () => {
       {
         id: '1002',
         name: '네이비 / 120',
+        valueIds: ['101', '203'],
         size: '120',
         price: 25000,
         soldOut: true,

@@ -21,6 +21,9 @@ export {
   type ProductImagesField,
   type ProductListItem,
   type ProductOption,
+  type OptionChip,
+  type OptionChipRow,
+  type OptionPicks,
   PRODUCT_SORT_LABEL,
   type ProductSearch,
   type ProductSort,
@@ -56,7 +59,6 @@ export {
   galleryIndexOf,
   canStopSale,
   categoryNameOf,
-  findOption,
   isFreeSize,
   isOnSale,
   filterSellerProducts,
@@ -86,7 +88,7 @@ export { ProductCard } from './ui/ProductCard'
 export { ProductDescription } from './ui/ProductDescription'
 export { ProductGallery } from './ui/ProductGallery'
 export { ProductImage } from './ui/ProductImage'
-export { ProductOptionList } from './ui/ProductOptionList'
+export { OptionChipPicker } from './ui/OptionChipPicker'
 export { ProductFormFields } from './ui/ProductFormFields'
 export { ProductSpecs } from './ui/ProductSpecs'
 export { garmentKindOf, wearFitOf, type WearFit } from './model/wear-preview'
@@ -101,3 +103,10 @@ export {
   productImageFields,
   useImageUploading,
 } from './model/product-images'
+export {
+  isChipPickable,
+  missingPickMessage,
+  optionChipRows,
+  pickedOption,
+  pickOptionValue,
+} from './model/option-picker.rules'
