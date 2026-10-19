@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { productApi } from '../api/product-api'
 import type { ProductDetailDto, ProductListItemDto } from '../api/product.dto'
@@ -18,7 +18,7 @@ import {
 export const productKeys = {
   all: ['products'] as const,
   list: ['products', 'list'] as const,
-  search: (search: ProductSearch) => ['products', 'list', search] as const,
+  search: (search: ProductSearch, page: number) => ['products', 'list', search, page] as const,
   detail: (productId: string) => ['products', 'detail', productId] as const,
   sellerList: ['products', 'seller'] as const,
   sellerDetail: (productId: string) => ['products', 'seller', productId] as const,
@@ -67,14 +67,16 @@ export function useCategoryInputsQuery(categoryId: string) {
 const NO_SEARCH: ProductSearch = { keyword: '', categoryId: null }
 
 /** 판매 중인 상품 (검색어 · 카테고리, BE GET /products) */
-export function useProductsQuery(search: ProductSearch = NO_SEARCH) {
+/** 전체 상품 한 페이지 (page는 0부터). 페이지를 넘기는 동안 앞 페이지를 그대로 보여 준다 */
+export function useProductsQuery(search: ProductSearch = NO_SEARCH, page = 0) {
   return useQuery({
-    queryKey: productKeys.search(search),
-    queryFn: () => productApi.list(toProductSearchParams(search)),
-    select: (page: Page<ProductListItemDto>) => ({
-      ...page,
-      content: page.content.map(toProductListItem),
+    queryKey: productKeys.search(search, page),
+    queryFn: () => productApi.list(toProductSearchParams(search), page),
+    select: (data: Page<ProductListItemDto>) => ({
+      ...data,
+      content: data.content.map(toProductListItem),
     }),
+    placeholderData: keepPreviousData,
   })
 }
 

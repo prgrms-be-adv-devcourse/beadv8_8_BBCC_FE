@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { readProductFilters, writeProductFilters } from '@/entities/product'
+import {
+  readProductFilters,
+  readProductPage,
+  writeProductFilters,
+  writeProductPage,
+} from '@/entities/product'
 import { orderTabOf } from '@/entities/order'
 
 describe('홈 거르기 ↔ 주소', () => {
@@ -30,6 +35,27 @@ describe('홈 거르기 ↔ 주소', () => {
     expect(writeProductFilters(new URLSearchParams(), readProductFilters(params)).toString()).toBe(
       params.toString(),
     )
+  })
+})
+
+describe('전체 상품 페이지 ↔ 주소 (?page=, 사람이 보는 번호라 1부터)', () => {
+  it.each([
+    ['', 0],
+    ['page=1', 0],
+    ['page=3', 2],
+    ['page=0', 0],
+    ['page=-2', 0],
+    ['page=abc', 0],
+    ['page=2.5', 0],
+  ])('%j → %i페이지(0부터)', (query, expected) => {
+    expect(readProductPage(new URLSearchParams(query))).toBe(expected)
+  })
+  it('쓰면 첫 페이지는 싣지 않고, 거르기를 바꾸면 첫 페이지로 돌아간다', () => {
+    expect(writeProductPage(new URLSearchParams('cat=11'), 2).toString()).toBe('cat=11&page=3')
+    expect(writeProductPage(new URLSearchParams('cat=11&page=3'), 0).toString()).toBe('cat=11')
+    expect(
+      writeProductFilters(new URLSearchParams('q=a&page=3'), { categoryId: '12' }).toString(),
+    ).toBe('q=a&cat=12')
   })
 })
 

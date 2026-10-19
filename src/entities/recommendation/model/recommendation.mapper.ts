@@ -1,6 +1,13 @@
 import { toImageUrl } from '@/shared/lib'
 import type { RecommendedProductDto, SizeRecommendationDto } from '../api/recommendation.dto'
-import type { Fit, RecommendedProduct, SizeRange, SizeRecommendation } from './recommendation'
+import type {
+  Fit,
+  RecommendedProduct,
+  RecommendedProductsQuery,
+  SizeRange,
+  SizeRecommendation,
+} from './recommendation'
+import type { RecommendedProductsParamsDto } from '../api/recommendation.dto'
 
 export function toSizeRecommendation(dto: SizeRecommendationDto): SizeRecommendation {
   return {
@@ -31,5 +38,16 @@ export function toRecommendedProduct(dto: RecommendedProductDto): RecommendedPro
     minPrice: dto.minPrice,
     imageUrl: toImageUrl(dto.thumbnailUrl),
     recommendedSize: dto.recommendedSize,
+  }
+}
+
+/** 맞춤 목록 조회 조건 → BE 요청 값 (카테고리가 없으면 보내지 않는다) */
+export function toRecommendedProductsParams(
+  query: RecommendedProductsQuery,
+): RecommendedProductsParamsDto {
+  return {
+    ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+    page: query.page ?? 0,
+    size: query.size ?? 20,
   }
 }

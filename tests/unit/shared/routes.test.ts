@@ -91,6 +91,7 @@ describe('shopNeedsLogin: 로그인해야 볼 수 있는 쇼핑 화면', () => {
     [paths.shop.wallet, true],
     [paths.shop.chargeSuccess, true],
     [paths.shop.child('1'), true],
+    [paths.shop.recommended('1'), true],
     [paths.shop.home, false],
     [paths.shop.product('1'), false],
     [paths.login, false],

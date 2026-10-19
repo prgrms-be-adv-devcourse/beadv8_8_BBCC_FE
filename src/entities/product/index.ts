@@ -95,7 +95,9 @@ export { garmentKindOf, wearFitOf, type WearFit } from './model/wear-preview'
 export { WearPreview } from './ui/WearPreview'
 export {
   readProductFilters,
+  readProductPage,
   writeProductFilters,
+  writeProductPage,
   type ProductFilters,
 } from './model/product-filter-params'
 export {

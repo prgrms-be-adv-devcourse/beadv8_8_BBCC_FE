@@ -36,3 +36,10 @@ export const FIT_LABEL: Record<Fit, string> = {
   PROPER: '적정',
   TIGHT: '작을 가능성 있음',
 }
+
+/** 맞춤 목록 조회 조건. 카테고리는 말단만 (중간 카테고리는 빈 목록) */
+export type RecommendedProductsQuery = {
+  categoryId?: string | null
+  page?: number
+  size?: number
+}

@@ -41,3 +41,4 @@ export {
   type EndpointSource,
   type MockEndpoint,
 } from './mock-endpoints'
+export { nextPageOf, pageNumbersOf } from './paging'

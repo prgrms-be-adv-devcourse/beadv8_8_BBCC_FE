@@ -23,9 +23,23 @@ export function writeProductFilters(
   filters: ProductFilters,
 ): URLSearchParams {
   const next = new URLSearchParams(params)
-  for (const key of ['cat', 'sort', 'attr']) next.delete(key)
+  for (const key of ['cat', 'sort', 'attr', 'page']) next.delete(key)
   if (filters.categoryId) next.set('cat', filters.categoryId)
   if (filters.sort && filters.sort !== 'NEWEST') next.set('sort', filters.sort)
   for (const value of filters.attributes ?? []) next.append('attr', value)
+  return next
+}
+
+/** 주소의 전체 상품 페이지 (?page=, 1부터) → 0부터. 틀린 값은 첫 페이지 */
+export function readProductPage(params: URLSearchParams): number {
+  const page = Number(params.get('page'))
+  return Number.isInteger(page) && page > 1 ? page - 1 : 0
+}
+
+/** 전체 상품 페이지(0부터) → 주소 (?page=, 1부터). 첫 페이지는 싣지 않는다 */
+export function writeProductPage(params: URLSearchParams, page: number): URLSearchParams {
+  const next = new URLSearchParams(params)
+  next.delete('page')
+  if (page > 0) next.set('page', String(page + 1))
   return next
 }
