@@ -90,7 +90,7 @@ export function ShopHomePage() {
         onSelect={(categoryId) => update({ categoryId, attributes: [] }, null)}
       />
 
-      <section ref={listRef} className="scroll-mt-28 space-y-4">
+      <section ref={listRef} className="scroll-mt-40 space-y-4 md:scroll-mt-28">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-primary text-xs font-bold tracking-widest">
