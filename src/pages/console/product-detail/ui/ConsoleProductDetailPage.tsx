@@ -3,8 +3,10 @@ import { useParams, useSearchParams } from 'react-router'
 import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY } from '@/entities/cart'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
+  detailImagesOf,
   findOption,
   isOnSale,
+  ProductDescription,
   PRODUCT_STATUS_LABEL,
   productMeta,
   ProductOptionList,
@@ -117,6 +119,11 @@ export function ConsoleProductDetailPage() {
       <Card>
         <ProductSpecs product={detail} />
       </Card>
+      <ProductDescription
+        description={detail.description}
+        images={detailImagesOf(detail)}
+        alt={detail.name}
+      />
     </div>
   )
 }
