@@ -270,6 +270,7 @@ describe('toProductDetail (BE ProductDetailResponse)', () => {
     productId: '7',
     name: '데일리 맨투맨',
     brand: '키들리',
+    businessName: ' 테스트상점 ',
     categoryId: '11',
     description: '  부드러운 면 맨투맨  ',
     status: 'ON_SALE',
@@ -324,6 +325,13 @@ describe('toProductDetail (BE ProductDetailResponse)', () => {
   it('카테고리명은 트리에서, 판매자명은 없다', () => {
     expect(detail).toMatchObject({ id: '7', categoryName: '상의', brand: '키들리', imageUrl: null })
     expect(detail).not.toHaveProperty('sellerName')
+  })
+  it.each([
+    [' 테스트상점 ', '테스트상점'],
+    ['  ', null],
+    [null, null],
+  ])('판매자 상호명 %j는 앞뒤 공백을 지우고 비어 있으면 null → %j', (businessName, expected) => {
+    expect(toProductDetail({ ...dto, businessName }).businessName).toBe(expected)
   })
   it.each([
     ['  부드러운 면 맨투맨  ', '부드러운 면 맨투맨'],

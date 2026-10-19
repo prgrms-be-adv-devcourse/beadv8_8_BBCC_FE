@@ -91,6 +91,7 @@ export function toProductDetail(dto: ProductDetailDto, categories: Category[] = 
     id: dto.productId,
     name: dto.name,
     brand: dto.brand?.trim() || null,
+    businessName: dto.businessName?.trim() || null,
     categoryId: dto.categoryId,
     categoryName: categoryNameOf(dto.categoryId, categories),
     description: dto.description?.trim() || null,

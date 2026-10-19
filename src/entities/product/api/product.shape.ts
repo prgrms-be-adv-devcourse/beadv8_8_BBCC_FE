@@ -8,6 +8,7 @@ export const productDetailShape = obj({
   productId: str,
   name: str,
   brand: nullable(str),
+  businessName: nullable(str),
   categoryId: str,
   description: nullable(str),
   status: STATUS,

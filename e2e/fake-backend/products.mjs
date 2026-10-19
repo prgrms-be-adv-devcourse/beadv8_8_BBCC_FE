@@ -248,6 +248,8 @@ export function detailOf(productId) {
     productId: p.productId,
     name: p.name,
     brand: p.brand,
+    // 판매자 복사본의 상호명 (목록과 같은 값)
+    businessName: '테스트상점',
     categoryId: String(p.categoryId),
     description: p.description ?? null,
     status: p.status,

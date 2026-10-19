@@ -7,6 +7,8 @@ export type ProductDetailDto = {
   productId: string
   name: string
   brand: string | null
+  /** 판매자 상호명 (판매자 복사본). 복사본이 아직 없으면 null */
+  businessName: string | null
   categoryId: string
   /** 판매자가 입력하지 않았으면 null */
   description: string | null

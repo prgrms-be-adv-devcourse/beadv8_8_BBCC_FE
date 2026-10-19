@@ -94,6 +94,8 @@ export type SizeSpec = {
 }
 
 export type ProductDetail = ProductSummary & {
+  /** 판매자 상호명. 없으면 null → 판매자 줄을 숨긴다 */
+  businessName: string | null
   /** 상품 설명. 없으면 null */
   description: string | null
   imageUrls: string[]
