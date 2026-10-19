@@ -52,24 +52,37 @@ export async function signOutDemo() {
   await signOut()
 }
 
-/** 새로고침 뒤: 쿠키로 재발급 → 안 되면 기억한 시연 계정으로 다시 발급 → 둘 다 없으면 비로그인 */
+/**
+ * 새로고침 · 토스 결제창 복귀 뒤: 기억한 시연 계정으로 다시 발급 → 안 되면 쿠키로 재발급 → 둘 다 없으면 비로그인.
+ * 시연 역할 전환은 쿠키를 지우지 않으므로, 쿠키를 먼저 쓰면 예전 카카오 계정으로 바뀌어
+ * 시연 계정으로 시작한 충전을 승인하지 못한다 (BE 404 "해당 충전 요청이 없습니다")
+ */
 export async function restoreSession() {
   const store = useSessionStore.getState()
   store.setStatus('restoring')
   try {
-    await signIn(await reissueAccessToken())
-  } catch {
-    // 시연 역할 전환을 끈 배포(개발 토큰 없음)에서는 기억한 시연 계정으로 다시 받지 않는다
-    const account = env.demoRoleSwitch ? loadDemoAccount() : null
-    try {
-      if (account) {
-        await signInAsDemo(account)
-      }
-    } catch {
-      store.clear()
+    if (!(await restoreDemoAccount())) {
+      await signIn(await reissueAccessToken())
     }
+  } catch {
+    store.clear()
   } finally {
     store.setStatus('ready')
+  }
+}
+
+/** 이 탭에서 고른 시연 계정으로 다시 로그인한다. 못 했으면 false */
+async function restoreDemoAccount(): Promise<boolean> {
+  // 시연 역할 전환을 끈 배포(개발 토큰 없음)에서는 기억한 시연 계정으로 다시 받지 않는다
+  const account = env.demoRoleSwitch ? loadDemoAccount() : null
+  if (!account) {
+    return false
+  }
+  try {
+    await signInAsDemo(account)
+    return true
+  } catch {
+    return false
   }
 }
 
