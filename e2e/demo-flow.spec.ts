@@ -205,8 +205,17 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
 
   await test.step('④ 충전 승인(토스 복귀) → 충전 취소', async () => {
     await switchRole(page, '보호자')
-    await page.goto('/console/wallet/charge/success?paymentKey=pk&orderId=toss-77&amount=50000')
+    // 가짜 백엔드를 다시 쓰는 로컬 실행에서도 새 충전이 되도록 주문번호를 매번 바꾼다
+    const successUrl = `/console/wallet/charge/success?paymentKey=pk&orderId=toss-77-${Date.now()}&amount=50000`
+    await page.goto(successUrl)
     await expect(page.getByText(/50,000원 충전했어요/)).toBeVisible()
+    // 승인이 끝나면 주소의 승인 값을 지워, 새로고침해도 다시 승인하지 않는다
+    await expect(page).toHaveURL(/\/console\/wallet\/charge\/success$/)
+    await page.reload()
+    await expect(page.getByText(/승인할 충전이 없어요/)).toBeVisible()
+    // 승인 값이 남은 주소로 다시 와도(뒤로 가기 등) 오류 대신 이미 처리된 충전으로 안내한다
+    await page.goto(successUrl)
+    await expect(page.getByText(/이미 처리된 충전이에요/)).toBeVisible()
     await page.goto('/console/wallet')
     // 충전 내역 · 거래 내역(BE 입출금 원장) 모두 실제 API
     await expect(page.getByText(/충전 #77/)).toBeVisible()

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   toCharge,
   toChargeConfirmation,
@@ -97,11 +97,14 @@ export function useAbandonCharge(tossOrderId: string) {
   })
 }
 
-/** 토스 successUrl로 돌아온 값으로 한 번만 승인한다. 돌아온 것만으로 잔액을 올리지 않는다 */
-export function useConfirmCharge(search: URLSearchParams) {
+/**
+ * 토스 successUrl로 돌아온 값으로 한 번만 승인한다. 돌아온 것만으로 잔액을 올리지 않는다.
+ * 승인 값은 처음 한 번만 읽는다. 승인이 끝나면 onSettled로 알려, 화면이 주소의 승인 값을 지워 새로고침해도 다시 승인하지 않게 한다
+ */
+export function useConfirmCharge(search: URLSearchParams, onSettled?: () => void) {
   const queryClient = useQueryClient()
   const started = useRef(false)
-  const request = toConfirmChargeRequest(search)
+  const [request] = useState(() => toConfirmChargeRequest(search))
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -111,6 +114,7 @@ export function useConfirmCharge(search: URLSearchParams) {
     // 실패 · 시간 초과여도 서버에서 충전 상태가 바뀌었을 수 있다 (잔액 · 충전 내역 · 거래 내역, wallet 아래 모두)
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: walletKeys.all })
+      onSettled?.()
     },
   })
   const { mutate } = mutation

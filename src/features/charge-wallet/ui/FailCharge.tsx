@@ -1,4 +1,5 @@
-import { getErrorMessage } from '@/shared/api'
+import { isChargeAlreadyEnded } from '@/entities/wallet'
+import { getErrorMessage, getErrorStatus } from '@/shared/api'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useFailCharge } from '../model/use-charge-wallet'
 
@@ -19,7 +20,12 @@ export function FailCharge({ search }: FailChargeProps) {
           이 충전은 결제되지 않았어요. 다시 충전하려면 새로 요청해 주세요.
         </StateMessage>
       )}
-      {fail.isError && <StateMessage tone="error">{getErrorMessage(fail.error)}</StateMessage>}
+      {fail.isError && isChargeAlreadyEnded(getErrorStatus(fail.error)) && (
+        <StateMessage>이미 끝난 충전이에요. 결과는 충전 내역에서 확인해 주세요.</StateMessage>
+      )}
+      {fail.isError && !isChargeAlreadyEnded(getErrorStatus(fail.error)) && (
+        <StateMessage tone="error">{getErrorMessage(fail.error)}</StateMessage>
+      )}
     </div>
   )
 }

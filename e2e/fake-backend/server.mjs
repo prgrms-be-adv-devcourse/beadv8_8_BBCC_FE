@@ -560,6 +560,9 @@ http
       return send(res, 201, a)
     }
     if (r('POST', /^\/wallets\/me\/charges\/confirm$/)) {
+      // BE: 대기 중이 아닌 충전(이미 승인 · 실패 · 만료)은 409 INVALID_CHARGE_STATUS
+      if (charges.some((c) => c.orderId === body.orderId))
+        return problem(res, 409, 'Conflict', '처리할 수 없는 충전 상태입니다.', req.url)
       wallets[me] = (wallets[me] ?? 0) + body.amount
       charges.push({
         chargeId: 77,

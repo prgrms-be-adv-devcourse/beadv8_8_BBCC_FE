@@ -1,5 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toChargeCancellation, walletApi, walletKeys } from '@/entities/wallet'
+import {
+  cancelChargeNoticeOf,
+  toChargeCancellation,
+  walletApi,
+  walletKeys,
+} from '@/entities/wallet'
 import { toast } from '@/shared/lib'
 import { runWithAction } from '@/shared/api'
 
@@ -11,8 +16,8 @@ export function useCancelCharge(chargeId: string) {
       runWithAction('충전 취소', async () =>
         toChargeCancellation(await walletApi.cancelCharge(chargeId)),
       ),
-    onSuccess: () => {
-      toast('충전을 취소했어요')
+    onSuccess: (result) => {
+      toast(cancelChargeNoticeOf(result))
     },
     // 실패 · 시간 초과여도 서버에서 충전 상태가 바뀌었을 수 있다 (잔액 · 충전 내역 · 거래 내역, wallet 아래 모두)
     onSettled: () => {
