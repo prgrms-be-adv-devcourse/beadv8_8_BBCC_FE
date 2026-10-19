@@ -33,7 +33,7 @@ export {
   type MockRequest,
   type MockResult,
 } from './mock-adapter'
-export { useMockSettings } from './mock-settings'
+export { activeMockDomains, useMockSettings } from './mock-settings'
 export {
   endpointOf,
   MOCK_ENDPOINTS,

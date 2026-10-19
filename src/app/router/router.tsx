@@ -1,8 +1,9 @@
 import type { ComponentType } from 'react'
-import { createBrowserRouter, Navigate, type RouteObject } from 'react-router'
+import { createBrowserRouter, type RouteObject } from 'react-router'
 import { NotFoundPage } from '@/pages/common/not-found'
-import { env, paths } from '@/shared/config'
+import { paths } from '@/shared/config'
 import { ConsoleLayout } from '../layouts/ConsoleLayout'
+import { DemoOnly } from '../layouts/DemoOnly'
 import { RouteError } from '../layouts/RouteError'
 import { RouteFallback } from '../layouts/RouteFallback'
 import { ShopLayout } from '../layouts/ShopLayout'
@@ -76,6 +77,9 @@ const adminCatalog = page(() =>
 )
 const adminSettlements = page(() =>
   import('@/pages/admin/settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
+)
+const adminSettings = page(() =>
+  import('@/pages/admin/settings').then((m) => ({ Component: m.AdminSettingsPage })),
 )
 
 /** 주소에서 앞의 영역 접두어를 뗀 상대 경로 */
@@ -195,6 +199,7 @@ export const router = createBrowserRouter(
             { to: paths.admin.orders, label: '전체 주문' },
             { to: paths.admin.payments, label: '전체 결제' },
             { to: paths.admin.settlements, label: '정산' },
+            { to: paths.admin.settings, label: '설정' },
           ]}
         />
       ),
@@ -207,14 +212,19 @@ export const router = createBrowserRouter(
         { path: rel(paths.admin.home, paths.admin.payments), ...adminPayments },
         { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
         { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
+        { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
         { path: rel(paths.admin.home, paths.admin.catalog), ...adminCatalog },
         { path: '*', element: <NotFoundPage /> },
       ],
     },
     {
       path: paths.console.home,
-      // 시연 기능을 끈 배포에서는 시연 콘솔을 열지 않고 쇼핑 홈으로 보낸다
-      element: env.demoRoleSwitch ? <ConsoleLayout /> : <Navigate to={paths.shop.home} replace />,
+      // 시연 기능을 끄면 시연 콘솔을 열지 않고 쇼핑 홈으로 보낸다 (설정을 바꾸면 바로 따라간다)
+      element: (
+        <DemoOnly>
+          <ConsoleLayout />
+        </DemoOnly>
+      ),
       HydrateFallback: RouteFallback,
       children: [
         {

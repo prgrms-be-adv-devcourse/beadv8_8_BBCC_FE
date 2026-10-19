@@ -2,6 +2,8 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { toAddressRequest } from '@/entities/address'
+import { toAppSettingRequest } from '@/entities/app-setting'
+import { appSettingShape } from '@/entities/app-setting/api/app-setting.shape'
 import {
   attributeShape,
   attributeValueShape,
@@ -286,6 +288,30 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const all = await call('GET', '/admin/members?filter=ALL', 3)
     expect(all.data.content.map((m: { id: number }) => m.id)).toContain(2)
     expect(all.data.content.map((m: { id: number }) => m.id)).not.toContain(3)
+  })
+
+  it('설정 조회(로그인 없이) · 관리자 변경 (BE #378)', async () => {
+    const initial = await call('GET', '/settings', null)
+    expect(initial.status).toBe(200)
+    expectContract(initial.data, appSettingShape)
+
+    const changed = await call(
+      'PUT',
+      '/admin/settings',
+      3,
+      toAppSettingRequest({ isMockEnabled: false, isDemoRoleSwitchEnabled: true }),
+    )
+    expect(changed.status).toBe(200)
+    expectContract(changed.data, appSettingShape)
+    expect((await call('GET', '/settings', null)).data).toEqual({
+      useMock: false,
+      demoRoleSwitch: true,
+    })
+    expect((await call('PUT', '/admin/settings', 1, initial.data)).status).toBe(403)
+    expect((await call('PUT', '/admin/settings', 3, { useMock: true })).status).toBe(400)
+
+    // 다른 테스트가 목 · 시연을 켠 상태를 전제하므로 되돌린다
+    await call('PUT', '/admin/settings', 3, initial.data)
   })
 
   it('충전 승인 · 충전 조회', async () => {

@@ -1,7 +1,7 @@
 import { reissueAccessToken } from '@/shared/api'
 import { env } from '@/shared/config'
 import { sessionApi } from '../api/session-api'
-import { loadDemoAccount, saveDemoAccount } from './demo-storage'
+import { clearDemoAccount, loadDemoAccount, saveDemoAccount } from './demo-storage'
 import type { DemoAccount } from './session'
 import { toDevTokenRequest, toMember } from './session.mapper'
 import { useSessionStore } from './session-store'
@@ -44,6 +44,12 @@ export async function signOut() {
   } finally {
     useSessionStore.getState().clear()
   }
+}
+
+/** 시연 기능을 끌 때: 개발용 토큰 세션을 끝내고 기억한 시연 계정도 지운다 (다시 켜도 저절로 로그인되지 않게) */
+export async function signOutDemo() {
+  clearDemoAccount()
+  await signOut()
 }
 
 /** 새로고침 뒤: 쿠키로 재발급 → 안 되면 기억한 시연 계정으로 다시 발급 → 둘 다 없으면 비로그인 */

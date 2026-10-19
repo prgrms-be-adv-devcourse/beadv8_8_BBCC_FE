@@ -57,6 +57,7 @@ export const paths = {
     products: '/admin/products',
     payments: '/admin/payments',
     settlements: '/admin/settlements',
+    settings: '/admin/settings',
     catalog: '/admin/catalog',
   },
   console: {

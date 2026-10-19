@@ -1,5 +1,5 @@
 import { getErrorMessage } from '@/shared/api'
-import { env } from '@/shared/config'
+import { useDemoRoleSwitch } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
 import { DEMO_ACCOUNTS } from '../config/demo-accounts'
 import { useSwitchDemoRole } from '../model/use-switch-demo-role'
@@ -12,9 +12,10 @@ type DemoRoleCheckProps = {
 /** 지금 시연 역할이 다르면 알려 주고 바로 바꾸는 버튼을 보여 준다 (같으면 아무것도 안 그림) */
 export function DemoRoleCheck({ label }: DemoRoleCheckProps) {
   const switchRole = useSwitchDemoRole()
+  const demoRoleSwitch = useDemoRoleSwitch()
   const account = DEMO_ACCOUNTS.find((candidate) => candidate.label === label)
 
-  if (!env.demoRoleSwitch || !account || switchRole.currentMemberId === account.memberId) {
+  if (!demoRoleSwitch || !account || switchRole.currentMemberId === account.memberId) {
     return null
   }
   return (

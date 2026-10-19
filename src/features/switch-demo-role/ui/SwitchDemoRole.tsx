@@ -1,5 +1,5 @@
 import { getErrorMessage } from '@/shared/api'
-import { env } from '@/shared/config'
+import { useDemoRoleSwitch } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
 import { DEMO_ACCOUNTS } from '../config/demo-accounts'
 import { useSwitchDemoRole } from '../model/use-switch-demo-role'
@@ -12,8 +12,9 @@ type SwitchDemoRoleProps = {
 /** 시연용: 개발용 토큰(local 전용)으로 보호자 · 판매자 · 관리자를 바로 바꾼다 */
 export function SwitchDemoRole({ onSwitched }: SwitchDemoRoleProps = {}) {
   const switchRole = useSwitchDemoRole()
+  const demoRoleSwitch = useDemoRoleSwitch()
 
-  if (!env.demoRoleSwitch) return null
+  if (!demoRoleSwitch) return null
   return (
     <div className="flex items-center gap-1">
       <span className="text-muted-foreground mr-1 text-xs">시연 역할</span>

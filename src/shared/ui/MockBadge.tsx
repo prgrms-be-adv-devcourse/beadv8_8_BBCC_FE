@@ -1,4 +1,5 @@
-import { endpointOf, isMockActive, useMockSettings } from '@/shared/api'
+import { activeMockDomains, endpointOf, isMockActive, useMockSettings } from '@/shared/api'
+import { useAppSettings } from '@/shared/config'
 import { cn } from '@/shared/lib'
 
 type MockBadgeProps = {
@@ -8,10 +9,12 @@ type MockBadgeProps = {
 }
 
 /**
- * 목 데이터로 응답하는 영역 표시. 엔드포인트가 'real'로 바뀌거나 흐름 패널에서 도메인을 끄면 저절로 사라진다
+ * 목 데이터로 응답하는 영역 표시. 엔드포인트가 'real'로 바뀌거나, 흐름 패널에서 도메인을 끄거나, 관리자 설정에서 목 데이터를 끄면 저절로 사라진다
  */
 export function MockBadge({ endpoints, className }: MockBadgeProps) {
-  const enabled = useMockSettings((state) => state.enabled)
+  const domains = useMockSettings((state) => state.enabled)
+  const isMockEnabled = useAppSettings((state) => state.isMockEnabled)
+  const enabled = activeMockDomains(domains, isMockEnabled)
   const active = endpoints.flatMap((endpoint) => {
     const [method, path] = endpoint.split(' ')
     return isMockActive(method, path, enabled) ? [endpointOf(method, path)] : []

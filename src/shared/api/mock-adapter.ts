@@ -6,7 +6,8 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 import { endpointOf } from './mock-endpoints'
-import { useMockSettings } from './mock-settings'
+import { appSettings } from '@/shared/config'
+import { activeMockDomains, useMockSettings } from './mock-settings'
 
 /**
  * 백엔드에 아직 없는 API(상품 · 추천 · 정산)에 목 응답을 준다.
@@ -88,11 +89,16 @@ export function registerMockHandlers(domain: string, list: MockHandler[]) {
   }
 }
 
+// 요청할 때마다 관리자 설정(목 데이터)과 도메인 스위치를 함께 본다. 그래서 설정을 바꾸면 새로고침 없이 바로 바뀐다
+function currentDomains(): Record<string, boolean> {
+  return activeMockDomains(useMockSettings.getState().enabled, appSettings.current().isMockEnabled)
+}
+
 /** 이 엔드포인트가 지금 목으로 응답하는지 (등록됐고 도메인이 켜져 있음). 화면 배지용 */
 export function isMockActive(
   method: string,
   path: string,
-  enabled: Record<string, boolean> = useMockSettings.getState().enabled,
+  enabled: Record<string, boolean> = currentDomains(),
 ): boolean {
   return handlers.some(
     (handler) => handler.method === method && handler.path === path && enabled[handler.domain],
@@ -127,7 +133,7 @@ function notifyObservers(
   response: AxiosResponse,
 ) {
   const method = (config.method ?? 'get').toUpperCase()
-  const enabled = useMockSettings.getState().enabled
+  const enabled = currentDomains()
   for (const observer of observers) {
     const match =
       enabled[observer.domain] && observer.method === method
@@ -154,7 +160,7 @@ export function createMockAdapter(realAdapter: AxiosAdapter): AxiosAdapter {
   return async (config) => {
     const [pathname, search = ''] = (config.url ?? '').split('?')
     const method = (config.method ?? 'get').toUpperCase()
-    const enabled = useMockSettings.getState().enabled
+    const enabled = currentDomains()
     for (const handler of handlers) {
       if (config.skipMock || !enabled[handler.domain]) {
         continue
