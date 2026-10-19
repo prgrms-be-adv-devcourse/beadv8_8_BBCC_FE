@@ -113,10 +113,27 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByLabel('네이비 / 120 재고')).toHaveCount(0)
     await page.getByRole('button', { name: '뺀 옵션 1개 다시 넣기' }).click()
     await expect(page.getByLabel('네이비 / 120 재고')).toBeVisible()
+    // 판매 시작만 한 번 실패시킨다 → 상품은 판매 대기로 남고, 다시 시작할 수 있다
+    await page.route(
+      '**/api/v1/seller/products/*/sale-status',
+      (route) =>
+        route.fulfill({
+          status: 409,
+          contentType: 'application/problem+json',
+          body: JSON.stringify({
+            type: 'about:blank',
+            title: '판매를 시작할 수 없습니다',
+            status: 409,
+            detail: '잠시 뒤 다시 시도해 주세요.',
+            instance: '/api/v1/seller/products/1/sale-status',
+          }),
+        }),
+      { times: 1 },
+    )
     const registering = page.waitForRequest(
       (request) => request.method() === 'POST' && request.url().endsWith('/seller/products'),
     )
-    await page.getByRole('button', { name: '등록하기' }).click()
+    await page.getByRole('button', { name: '등록하고 판매 시작' }).click()
     const body = (await registering).postDataJSON() as {
       description: string | null
       thumbnailUrl: string
@@ -129,12 +146,13 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     expect(body.thumbnailUrl).toBe(body.imageUrls[0])
     expect(body.thumbnailUrl).toMatch(BUCKET_IMAGE)
     // 등록 결과 줄의 판매 시작 (내 상품 목록이 먼저 다시 불려 같은 버튼이 목록에도 생긴다)
-    const registered = page.getByText(/상품 #\d+를 등록했어요/).locator('..')
+    const registered = page.getByText(/상품 #\d+를 등록/).locator('..')
+    await expect(registered).toContainText('판매 대기로 남았어요. 잠시 뒤 다시 시도해 주세요.')
     await registered.getByRole('button', { name: '판매 시작' }).click()
-    await expect(registered.getByText('판매를 시작했어요.')).toBeVisible()
-    await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
+    await expect(registered.getByText(/등록하고 판매를 시작했어요/)).toBeVisible()
+    await expect(page.getByRole('button', { name: '판매 시작', exact: true })).toHaveCount(0)
     // 같은 SKU 코드로 다시 등록하면 서버가 거절하고 그 설명을 그대로 보여 준다
-    await page.getByRole('button', { name: '등록하기' }).click()
+    await page.getByRole('button', { name: '등록하고 판매 시작' }).click()
     await expect(page.getByText(`겹친 코드는 ${sku}입니다.`)).toBeVisible()
   })
 
