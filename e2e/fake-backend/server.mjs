@@ -903,7 +903,8 @@ http
             orderId: String(o.orderId),
             orderedAt: o.orderedAt,
             shippingAddress: o.shippingAddress,
-            items: o.items,
+            // BE: 판매 주문 목록의 sellerName은 늘 null (OrderDetailResponse.Item 재사용)
+            items: o.items.map((it) => ({ ...it, sellerName: null })),
             deliveredAt: d.deliveredAt,
           })),
         ),

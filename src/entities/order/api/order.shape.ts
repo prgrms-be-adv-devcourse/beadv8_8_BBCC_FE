@@ -29,7 +29,14 @@ const orderItemShape = obj({
   unavailableReason: nullable(str),
   sellerName: nullable(str),
   child: nullable(
-    obj({ childId: str, name: str, heightCm: num, weightKg: num, bodyType: nullable(str) }),
+    obj({
+      childId: str,
+      // 주문 당시 자녀 이름: 회원의 자녀 변경 이벤트에 이름이 없어 null일 수 있다
+      name: nullable(str),
+      heightCm: num,
+      weightKg: num,
+      bodyType: nullable(str),
+    }),
   ),
 })
 

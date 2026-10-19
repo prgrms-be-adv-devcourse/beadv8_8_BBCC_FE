@@ -44,7 +44,7 @@ export function toOrder(dto: OrderDetailDto): Order {
       sellerName: item.sellerName?.trim() || null,
       child: item.child && {
         id: item.child.childId,
-        name: item.child.name,
+        name: item.child.name?.trim() || null,
         heightCm: item.child.heightCm,
         weightKg: item.child.weightKg,
       },
