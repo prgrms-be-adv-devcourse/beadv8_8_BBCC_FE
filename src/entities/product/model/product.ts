@@ -87,7 +87,9 @@ export type SellerProductDetail = {
   brand: string | null
   categoryId: string
   description: string | null
-  /** 저장된 순서, 첫 번째가 대표 */
+  /** 대표 사진. 없으면 null */
+  thumbnailUrl: string | null
+  /** 저장된 순서 (대표가 있으면 첫 번째가 대표) */
   imageUrls: string[]
   /** 정보 항목 ID → 고른 값 ID들(목록 항목) · 직접 입력 값 */
   attributes: { attributeId: string; valueIds: string[]; text: string | null }[]
@@ -98,6 +100,7 @@ export type SellerProductDetail = {
     price: number
     stock: number
     onSale: boolean
+    skuCode: string | null
   }[]
   prices: { valueIds: string[]; price: number }[]
   sizeSpecs: {
@@ -116,6 +119,9 @@ export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
 
 /** 고를 수 있는 카테고리 (트리의 끝). path = "상위 > 하위" */
 export type Category = { id: string; name: string; path: string }
+
+/** 등록 화면 2단 선택: 가장 위 카테고리와 그 아래 끝 카테고리 */
+export type CategoryGroup = { id: string; name: string; categories: Category[] }
 
 /** 등록 폼 항목 하나 (BE CategoryInputsResponse.InputAttribute) */
 export type InputAttribute = {
@@ -154,7 +160,11 @@ export type SizeSpecInput = {
 export type RegisterProductForm = {
   name: string
   brand: string
-  /** 올린 이미지 주소 (S3). 첫 번째가 대표 이미지 */
+  /** 상품 설명 (길이 제한 없음). 비어 있으면 null로 보낸다 */
+  description: string
+  /** 대표 사진 (S3). 목록 카드와 상세 첫 사진에 쓴다 */
+  thumbnailUrl: string | null
+  /** 상세 사진 (S3, 대표 제외) */
   imageUrls: string[]
   categoryId: string
   /** 정보 항목 ID → 고른 값 ID(목록 항목) 또는 직접 입력 값 */
@@ -163,6 +173,10 @@ export type RegisterProductForm = {
   optionValues: Record<string, string[]>
   /** 옵션 조합 키 → 처음 재고 */
   stocks: Record<string, number>
+  /** 옵션 조합 키 → SKU 코드 (선택, 판매자 관리용). 비어 있으면 null로 보낸다 */
+  skuCodes: Record<string, string>
+  /** 판매자가 뺀 옵션 조합 키. 고른 값의 조합 중 팔지 않을 것 */
+  removedCombos: string[]
   /** 가격 묶음 키 → 판매가 */
   prices: Record<string, number>
   /** 사이즈 값 ID → 권장 키 · 실측 */
@@ -174,7 +188,11 @@ export type ValueCombo = { key: string; valueIds: string[]; label: string }
 
 /** 사진 입력 칸(업로드 기능)에 넘기는 값. 업로드는 다른 기능이라 페이지가 등록 · 수정 폼에 슬롯으로 끼워 넣는다 */
 export type ProductImagesField = {
-  /** 올린 이미지 주소 (첫 번째가 대표) */
+  /** 칸 이름 (예: 대표 사진) */
+  label: string
+  /** 이 칸에 올릴 수 있는 장수 */
+  maxCount: number
+  /** 올린 이미지 주소 */
   value: string[]
   onChange: (imageUrls: string[]) => void
   /** 올리는 중에는 저장 버튼을 막는다 */

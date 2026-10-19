@@ -1,9 +1,11 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { Fragment, useState, type FormEvent, type ReactNode } from 'react'
 import {
   canEditSaleInputs,
   existingComboStocks,
   ProductFormFields,
+  productImageFields,
   toEditableProductForm,
+  useImageUploading,
   useCategoryInputsQuery,
   validateProductUpdateForm,
   type CategoryInputs,
@@ -47,7 +49,7 @@ function EditFields({ inputs, product, onDone, renderImages }: EditFieldsProps) 
     toEditableProductForm(inputs, product),
   )
   const [invalid, setInvalid] = useState<string | null>(null)
-  const [isUploading, setUploading] = useState(false)
+  const { isUploading, onUploadingChange } = useImageUploading()
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -67,11 +69,9 @@ function EditFields({ inputs, product, onDone, renderImages }: EditFieldsProps) 
         onChange={setForm}
         isSaleInputsLocked={!canEditSaleInputs(product)}
         fixedStocks={existingComboStocks(inputs, product)}
-        images={renderImages({
-          value: form.imageUrls,
-          onChange: (imageUrls) => setForm((prev) => ({ ...prev, imageUrls })),
-          onUploadingChange: setUploading,
-        })}
+        images={productImageFields(form, setForm, onUploadingChange).map((field) => (
+          <Fragment key={field.label}>{renderImages(field)}</Fragment>
+        ))}
       />
       <div className="flex flex-wrap items-center gap-2">
         <Button type="submit" disabled={update.isPending || isUploading}>

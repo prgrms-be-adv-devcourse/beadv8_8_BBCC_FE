@@ -12,6 +12,7 @@ import type {
 } from '../api/product.dto'
 import type {
   Category,
+  CategoryGroup,
   CategoryInputs,
   InputAttribute,
   ProductDetail,
@@ -133,6 +134,7 @@ export function toSellerProductDetail(dto: SellerProductDetailDto): SellerProduc
     brand: dto.brand,
     categoryId: dto.categoryId,
     description: dto.description,
+    thumbnailUrl: dto.thumbnailUrl,
     imageUrls: dto.imageUrls,
     attributes: dto.attributes,
     options: dto.options.map((option) => ({
@@ -142,6 +144,7 @@ export function toSellerProductDetail(dto: SellerProductDetailDto): SellerProduc
       price: option.price,
       stock: option.availableQuantity,
       onSale: option.saleStatus === 'ON_SALE',
+      skuCode: option.skuCode,
     })),
     prices: dto.prices,
     sizeSpecs: dto.sizeSpecs,
@@ -182,6 +185,13 @@ export function toCategoryInputs(dto: CategoryInputsDto): CategoryInputs {
 /** 화면의 문자열 ID → 요청의 숫자 ID */
 const toIds = (ids: string[]): number[] => ids.map(Number)
 
+/** 대표는 thumbnailUrl과 imageUrls 맨 앞에 함께 보낸다 (구매자 상세는 imageUrls만 받는다). 대표가 없으면 첫 상세가 대표 */
+function imagesOf(form: RegisterProductForm) {
+  const thumbnailUrl = form.thumbnailUrl ?? form.imageUrls[0] ?? null
+  const details = form.imageUrls.filter((url) => url !== thumbnailUrl)
+  return { thumbnailUrl, imageUrls: thumbnailUrl ? [thumbnailUrl, ...details] : [] }
+}
+
 /** 폼 → BE ProductRegisterRequest. 옵션은 고른 값의 모든 조합, 가격은 가격 구분 항목 묶음마다 */
 export function toRegisterProductRequest(
   inputs: CategoryInputs,
@@ -203,14 +213,13 @@ export function toRegisterProductRequest(
     name: form.name.trim(),
     brand: form.brand.trim() || null,
     categoryId: Number(form.categoryId),
-    description: null,
-    thumbnailUrl: form.imageUrls[0] ?? null,
-    imageUrls: form.imageUrls,
+    description: form.description.trim() || null,
+    ...imagesOf(form),
     attributes,
     options: optionCombos(inputs, form).map((combo) => ({
       valueIds: toIds(combo.valueIds),
       initialQuantity: form.stocks[combo.key] ?? 0,
-      skuCode: null,
+      skuCode: form.skuCodes[combo.key]?.trim() || null,
     })),
     prices: priceGroups(inputs, form).map((group) => ({
       valueIds: toIds(group.valueIds),
@@ -247,4 +256,13 @@ export function toCategories(tree: CategoryTreeDto[], parents: string[] = []): C
       ? [{ id: node.categoryId, name: node.name, path: path.join(' > ') }]
       : toCategories(node.children, path)
   })
+}
+
+/** 카테고리 트리 → 가장 위 카테고리마다 그 아래 끝 카테고리 묶음 (위 카테고리가 끝이면 자신만) */
+export function toCategoryGroups(tree: CategoryTreeDto[]): CategoryGroup[] {
+  return tree.map((node) => ({
+    id: node.categoryId,
+    name: node.name,
+    categories: toCategories([node]),
+  }))
 }

@@ -91,27 +91,50 @@ function combine(attributes: InputAttribute[], form: RegisterProductForm): Value
   )
 }
 
-/** 옵션 = 옵션 항목마다 고른 값의 모든 조합 (항목 순서대로). 값을 안 고른 항목이 있으면 빈 목록 */
-export function optionCombos(inputs: CategoryInputs, form: RegisterProductForm): ValueCombo[] {
+/** 고른 값의 모든 조합 (뺀 조합 포함). 값을 안 고른 항목이 있으면 빈 목록 */
+function allOptionCombos(inputs: CategoryInputs, form: RegisterProductForm): ValueCombo[] {
   const combos = combine(inputs.optionAttributes, form)
   return combos.length === 1 && combos[0].key === '' ? [] : combos
 }
 
-/** 가격 묶음 = 가격 구분 항목에서 고른 값의 조합. 가격 구분 항목이 없으면 묶음 하나(전체) */
+/** 값 묶음을 쓰는 조합을 판매자가 모두 뺐는지 (조합이 아직 없으면 빼지 않은 것으로 본다) */
+function isAllRemoved(inputs: CategoryInputs, form: RegisterProductForm, valueIds: string[]) {
+  const using = allOptionCombos(inputs, form).filter((combo) =>
+    valueIds.every((valueId) => combo.valueIds.includes(valueId)),
+  )
+  return using.length > 0 && using.every((combo) => form.removedCombos.includes(combo.key))
+}
+
+/** 옵션 = 옵션 항목마다 고른 값의 모든 조합 (항목 순서대로)에서 뺀 조합을 제외. 값을 안 고른 항목이 있으면 빈 목록 */
+export function optionCombos(inputs: CategoryInputs, form: RegisterProductForm): ValueCombo[] {
+  return allOptionCombos(inputs, form).filter((combo) => !form.removedCombos.includes(combo.key))
+}
+
+/** 뺀 조합의 수 (되돌리기 안내용) */
+export function removedComboCount(inputs: CategoryInputs, form: RegisterProductForm): number {
+  return allOptionCombos(inputs, form).filter((combo) => form.removedCombos.includes(combo.key))
+    .length
+}
+
+/** 가격 묶음 = 가격 구분 항목에서 고른 값의 조합 (남은 옵션이 쓰는 것만). 가격 구분 항목이 없으면 묶음 하나(전체) */
 export function priceGroups(inputs: CategoryInputs, form: RegisterProductForm): ValueCombo[] {
   const groups = combine(
     inputs.optionAttributes.filter((attribute) => attribute.priceAffecting),
     form,
   )
-  return groups.map((group) => (group.key === '' ? { ...group, label: '전체 옵션' } : group))
+  return groups
+    .filter((group) => group.key === '' || !isAllRemoved(inputs, form, group.valueIds))
+    .map((group) => (group.key === '' ? { ...group, label: '전체 옵션' } : group))
 }
 
-/** 실측 · 권장 키를 넣을 사이즈 = 사이즈 항목에서 고른 값 */
+/** 실측 · 권장 키를 넣을 사이즈 = 사이즈 항목에서 고른 값 (남은 옵션이 쓰는 것만, BE는 옵션에 없는 사이즈의 실측을 거절) */
 export function sizeValues(inputs: CategoryInputs, form: RegisterProductForm) {
   const sizeAttribute = inputs.optionAttributes.find((attribute) => attribute.sizeRole)
   if (!sizeAttribute) return []
   const picked = form.optionValues[sizeAttribute.id] ?? []
-  return sizeAttribute.values.filter((value) => picked.includes(value.id))
+  return sizeAttribute.values.filter(
+    (value) => picked.includes(value.id) && !isAllRemoved(inputs, form, [value.id]),
+  )
 }
 
 /** 서버(판매 시작 조건)와 같은 기준으로 미리 막는다. 문제가 없으면 null */
@@ -149,13 +172,20 @@ function validateSaleInputs(inputs: CategoryInputs, form: RegisterProductForm): 
     if ((form.optionValues[attribute.id] ?? []).length === 0)
       return `${attribute.name}을(를) 하나 이상 골라 주세요.`
   }
+  if (optionCombos(inputs, form).length === 0) return '옵션을 하나 이상 남겨 주세요.'
+  const sizes = sizeValues(inputs, form)
+  if (
+    sizes.some((value) => isFreeSize(value.name)) &&
+    sizes.some((value) => !isFreeSize(value.name))
+  )
+    return 'FREE와 숫자 사이즈는 함께 고를 수 없어요.'
   for (const combo of optionCombos(inputs, form)) {
     if (!((form.stocks[combo.key] ?? 0) >= 0)) return `${combo.label}: 재고는 0 이상이어야 해요.`
   }
   for (const group of priceGroups(inputs, form)) {
     if (!((form.prices[group.key] ?? 0) > 0)) return `${group.label}: 판매가를 입력해 주세요.`
   }
-  for (const value of sizeValues(inputs, form)) {
+  for (const value of sizes) {
     const spec = form.sizeSpecs[value.id]
     const hasHeight = !!spec?.minHeightCm && !!spec?.maxHeightCm
     if (!isFreeSize(value.name) && !hasHeight) return `${value.name}: 권장 키를 입력해 주세요.`

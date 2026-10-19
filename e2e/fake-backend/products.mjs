@@ -309,6 +309,8 @@ export function register(sellerId, body) {
     return { status: 400, detail: '항목 · 값 ID는 숫자로 보내 주세요.' }
   const built = buildSaleInputs(body)
   if (built.status) return built
+  const duplicated = duplicatedSku(sellerId, null, built.options)
+  if (duplicated) return duplicated
   const { options } = built
   const product = {
     productId: String(nextProductId++),
@@ -347,6 +349,27 @@ export function register(sellerId, body) {
   }
 }
 
+/** 같은 판매자의 다른 상품 옵션이나 새 옵션끼리 SKU 코드가 겹치면 409 (BE SkuCodes). 없는 코드(null)는 보지 않는다 */
+function duplicatedSku(sellerId, productId, options) {
+  const seen = new Set(
+    Object.values(products)
+      .filter((p) => p.sellerId === sellerId && String(p.productId) !== String(productId))
+      .flatMap((p) => p.options.map((o) => o.skuCode))
+      .filter(Boolean),
+  )
+  const duplicated = new Set()
+  for (const { skuCode } of options) {
+    if (!skuCode) continue
+    if (seen.has(skuCode)) duplicated.add(skuCode)
+    seen.add(skuCode)
+  }
+  if (duplicated.size === 0) return null
+  return {
+    status: 409,
+    detail: `같은 판매자의 다른 옵션과 겹치지 않게 SKU 코드를 넣어 주세요. 겹친 코드는 ${[...duplicated].join(', ')}입니다.`,
+  }
+}
+
 const ids = (list) => list.map(Number)
 const infoOf = (body) =>
   body.attributes.map((a) => ({
@@ -365,7 +388,7 @@ function buildSaleInputs(body) {
       valueIds,
       price: group?.price ?? 0,
       qty: o.initialQuantity,
-      skuCode: o.skuCode,
+      skuCode: o.skuCode ?? null,
     }
   })
   if (options.length === 0)
@@ -406,6 +429,8 @@ export function updateProduct(sellerId, productId, body) {
   if (sent === 3) {
     const built = buildSaleInputs(body)
     if (built.status) return built
+    const duplicated = duplicatedSku(sellerId, productId, built.options)
+    if (duplicated) return duplicated
     Object.assign(p, { options: built.options, prices: built.prices, sizeSpecs: built.sizeSpecs })
     built.options.forEach((o) => (stock[o.optionId] = o.qty))
   }

@@ -45,6 +45,7 @@ const inputsDto: CategoryInputsDto = {
       values: [
         { valueId: '202', value: '110', colorCode: null },
         { valueId: '203', value: '120', colorCode: null },
+        { valueId: '209', value: 'FREE', colorCode: null },
       ],
     },
     {
@@ -80,11 +81,15 @@ const inputs = toCategoryInputs(inputsDto)
 const form: RegisterProductForm = {
   name: ' 데일리 맨투맨 ',
   brand: '',
+  description: '  부드러운 면 맨투맨  ',
+  thumbnailUrl: null,
   imageUrls: ['https://cdn/a-1.jpg', 'https://cdn/a-2.jpg'],
   categoryId: '11',
   info: { '3': { valueId: '301', text: '' }, '4': { valueId: '', text: ' ' } },
   optionValues: { '1': ['101'], '2': ['202', '203'] },
   stocks: { '101,202': 10, '101,203': 0 },
+  skuCodes: {},
+  removedCombos: [],
   prices: { '': 25000 },
   sizeSpecs: {
     '202': {
@@ -125,6 +130,7 @@ describe('toRegisterProductRequest (BE ProductRegisterRequest)', () => {
       name: '데일리 맨투맨',
       brand: null,
       categoryId: 11,
+      description: '부드러운 면 맨투맨',
       thumbnailUrl: 'https://cdn/a-1.jpg',
       imageUrls: ['https://cdn/a-1.jpg', 'https://cdn/a-2.jpg'],
       attributes: [{ attributeId: 3, valueIds: [301], text: null }],
@@ -143,6 +149,81 @@ describe('toRegisterProductRequest (BE ProductRegisterRequest)', () => {
   })
 })
 
+describe('대표 · 상세 사진: 대표는 thumbnailUrl과 imageUrls 맨 앞에 함께 보낸다', () => {
+  const T = 'https://cdn/t.jpg'
+  const A = 'https://cdn/a-1.jpg'
+  const B = 'https://cdn/a-2.jpg'
+  it.each([
+    ['대표 + 상세', T, [A, B], T, [T, A, B]],
+    ['대표만', T, [], T, [T]],
+    ['상세만 (첫 상세가 대표가 된다)', null, [A, B], A, [A, B]],
+    ['사진 없음', null, [], null, []],
+  ])('%s', (_, thumbnailUrl, imageUrls, expectedThumbnail, expectedImages) => {
+    const request = toRegisterProductRequest(inputs, { ...form, thumbnailUrl, imageUrls })
+    expect(request.thumbnailUrl).toBe(expectedThumbnail)
+    expect(request.imageUrls).toEqual(expectedImages)
+  })
+})
+
+describe('상품 설명: 길이 제한 없이 앞뒤 공백을 지우고, 비어 있으면 null', () => {
+  it.each([
+    ['  부드러운 면  ', '부드러운 면'],
+    ['', null],
+    ['   ', null],
+  ])('%j → %j', (description, expected) => {
+    expect(toRegisterProductRequest(inputs, { ...form, description }).description).toBe(expected)
+  })
+})
+
+describe('SKU 코드: 옵션마다 선택, 앞뒤 공백을 지우고 비어 있으면 null', () => {
+  it.each([
+    [' NV-110 ', 'NV-110'],
+    ['', null],
+    ['  ', null],
+  ])('%j → %j', (skuCode, expected) => {
+    const request = toRegisterProductRequest(inputs, {
+      ...form,
+      skuCodes: { '101,202': skuCode },
+    })
+    expect(request.options.map((option) => option.skuCode)).toEqual([expected, null])
+  })
+})
+
+describe('옵션 빼기: 뺀 조합은 옵션 · 실측 · 가격 묶음에서 빠진다', () => {
+  const removed = { ...form, removedCombos: ['101,203'] }
+
+  it('뺀 조합은 옵션에 없고, 그 조합만 쓰던 사이즈는 실측을 받지 않는다', () => {
+    expect(optionCombos(inputs, removed).map((c) => c.label)).toEqual(['네이비 / 110'])
+    expect(sizeValues(inputs, removed).map((v) => v.name)).toEqual(['110'])
+    const request = toRegisterProductRequest(inputs, removed)
+    expect(request.options.map((o) => o.valueIds)).toEqual([[101, 202]])
+    expect(request.sizeSpecs.map((spec) => spec.sizeValueId)).toEqual([202])
+  })
+
+  it('남은 옵션이 쓰지 않는 가격 묶음은 받지 않는다', () => {
+    const priceBySize = toCategoryInputs({
+      ...inputsDto,
+      attributes: inputsDto.attributes.map((attribute) =>
+        attribute.code === 'SIZE' ? { ...attribute, priceAffecting: true } : attribute,
+      ),
+    })
+    expect(priceGroups(priceBySize, removed).map((g) => g.label)).toEqual(['110'])
+  })
+
+  it('뺀 사이즈의 실측이 비어 있어도 통과, 옵션을 모두 빼면 막는다', () => {
+    const emptySpec = { minHeightCm: 0, maxHeightCm: 0, measurements: {} }
+    expect(
+      validateRegisterProductForm(inputs, {
+        ...removed,
+        sizeSpecs: { ...form.sizeSpecs, '203': emptySpec },
+      }),
+    ).toBeNull()
+    expect(
+      validateRegisterProductForm(inputs, { ...form, removedCombos: ['101,202', '101,203'] }),
+    ).toBe('옵션을 하나 이상 남겨 주세요.')
+  })
+})
+
 describe('validateRegisterProductForm: 판매 시작 조건과 같은 기준', () => {
   it('정상 입력은 통과 (재고 0도 허용)', () => {
     expect(validateRegisterProductForm(inputs, form)).toBeNull()
@@ -157,6 +238,14 @@ describe('validateRegisterProductForm: 판매 시작 조건과 같은 기준', (
     expect(validateRegisterProductForm(inputs, { ...form, prices: { '': 0 } })).toBe(
       '전체 옵션: 판매가를 입력해 주세요.',
     )
+  })
+  it('FREE와 숫자 사이즈는 함께 고를 수 없다 (BE도 400)', () => {
+    expect(
+      validateRegisterProductForm(inputs, {
+        ...form,
+        optionValues: { '1': ['101'], '2': ['202', '209'] },
+      }),
+    ).toBe('FREE와 숫자 사이즈는 함께 고를 수 없어요.')
   })
   it('사이즈마다 권장 키 · 모든 실측 (FREE가 아닌 사이즈)', () => {
     const missingHeight = { ...form.sizeSpecs['202'], minHeightCm: 0 }

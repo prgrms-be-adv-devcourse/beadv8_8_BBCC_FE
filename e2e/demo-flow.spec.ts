@@ -119,15 +119,18 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
   await test.step('② 상품 등록 → 판매 시작 (실제 API: 카테고리 입력 항목 · 등록 · sale-status)', async () => {
     await switchRole(page, '판매자')
     await page.goto('/console/seller/products')
+    // 카테고리는 2단 선택: 의류 › 상의 (가장 아래 단계에만 등록)
+    await expect(page.getByLabel('카테고리', { exact: true }).locator('option:checked')).toHaveText(
+      '의류',
+    )
+    await expect(page.getByLabel('아래 단계 카테고리').locator('option:checked')).toHaveText('상의')
     // 카테고리 입력 항목을 받아 시연 값(네이비 · 110 / 120 · 면)으로 채운 폼
     await expect(page.getByRole('checkbox', { name: '네이비' })).toBeChecked()
     await expect(page.getByLabel('네이비 / 120 재고')).toHaveValue('10')
-    await page.getByRole('button', { name: '등록하기' }).click()
-    // 등록 결과 줄의 판매 시작 (내 상품 목록이 먼저 다시 불려 같은 버튼이 목록에도 생긴다)
-    const registered = page.getByText(/상품 #\d+를 등록했어요/).locator('..')
-    await registered.getByRole('button', { name: '판매 시작' }).click()
-    await expect(registered.getByText('판매를 시작했어요.')).toBeVisible()
-    await expect(registered.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
+    // 등록 → 판매 시작을 버튼 하나로 이어서 보낸다
+    await page.getByRole('button', { name: '등록하고 판매 시작' }).click()
+    const registered = page.getByText(/상품 #\d+를 등록하고 판매를 시작했어요/).locator('..')
+    await expect(registered).toBeVisible()
     // 판매 시작 → 상세로 이어진다 (실제 상세 API)
     await page.getByRole('link', { name: '상품 상세 보기' }).click()
     await expect(page.getByRole('heading', { name: '데일리 맨투맨', exact: true })).toBeVisible()

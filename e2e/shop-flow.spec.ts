@@ -94,7 +94,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     const uploaded = page.waitForRequest(
       (request) => request.method() === 'PUT' && request.url().includes('X-Amz-Signature='),
     )
-    await page.getByLabel(/상품 사진/).setInputFiles({
+    await page.getByLabel(/^대표 사진 \(/).setInputFiles({
       name: 'photo.png',
       mimeType: 'image/png',
       buffer: await pngOf(page, 2400, 1200),
@@ -103,24 +103,64 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     const put = await uploaded
     expect(put.headers()['content-type']).toBe('image/jpeg')
     expect(put.headers().authorization).toBeUndefined()
-    await expect(page.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
-    await expect(page.getByText('대표', { exact: true })).toBeVisible()
+    await expect(page.getByRole('img', { name: '대표 사진 1' })).toBeVisible()
+    // 대표 칸은 1장만, 상세 칸은 여러 장
+    await expect(page.getByLabel(/^대표 사진 \(/)).not.toHaveAttribute('multiple')
+    await page.getByLabel(/^상세 사진 \(/).setInputFiles([
+      { name: 'detail-1.png', mimeType: 'image/png', buffer: await pngOf(page, 800, 600) },
+      { name: 'detail-2.png', mimeType: 'image/png', buffer: await pngOf(page, 800, 600) },
+    ])
+    await expect(page.getByRole('img', { name: '상세 사진 2' })).toBeVisible()
+    // 상품 설명 · SKU 코드(선택)를 넣고, 뺀 옵션은 다시 넣을 수 있다
+    await page.getByLabel('상품 설명').fill('  부드러운 면 맨투맨  ')
+    const sku = `NV-110-${Date.now()}`
+    await page.getByLabel('네이비 / 110 SKU 코드').fill(` ${sku} `)
+    await page.getByRole('button', { name: '네이비 / 120 빼기' }).click()
+    await expect(page.getByLabel('네이비 / 120 재고')).toHaveCount(0)
+    await page.getByRole('button', { name: '뺀 옵션 1개 다시 넣기' }).click()
+    await expect(page.getByLabel('네이비 / 120 재고')).toBeVisible()
+    // 판매 시작만 한 번 실패시킨다 → 상품은 판매 대기로 남고, 다시 시작할 수 있다
+    await page.route(
+      '**/api/v1/seller/products/*/sale-status',
+      (route) =>
+        route.fulfill({
+          status: 409,
+          contentType: 'application/problem+json',
+          body: JSON.stringify({
+            type: 'about:blank',
+            title: '판매를 시작할 수 없습니다',
+            status: 409,
+            detail: '잠시 뒤 다시 시도해 주세요.',
+            instance: '/api/v1/seller/products/1/sale-status',
+          }),
+        }),
+      { times: 1 },
+    )
     const registering = page.waitForRequest(
       (request) => request.method() === 'POST' && request.url().endsWith('/seller/products'),
     )
-    await page.getByRole('button', { name: '등록하기' }).click()
+    await page.getByRole('button', { name: '등록하고 판매 시작' }).click()
     const body = (await registering).postDataJSON() as {
+      description: string | null
       thumbnailUrl: string
       imageUrls: string[]
+      options: { skuCode: string | null }[]
     }
-    expect(body.imageUrls).toHaveLength(1)
+    expect(body.description).toBe('부드러운 면 맨투맨')
+    expect(body.options.map((option) => option.skuCode)).toEqual([sku, null])
+    // 대표는 thumbnailUrl과 imageUrls 맨 앞에 함께 보낸다 (대표 1장 + 상세 2장)
+    expect(body.imageUrls).toHaveLength(3)
     expect(body.thumbnailUrl).toBe(body.imageUrls[0])
     expect(body.thumbnailUrl).toMatch(BUCKET_IMAGE)
     // 등록 결과 줄의 판매 시작 (내 상품 목록이 먼저 다시 불려 같은 버튼이 목록에도 생긴다)
-    const registered = page.getByText(/상품 #\d+를 등록했어요/).locator('..')
+    const registered = page.getByText(/상품 #\d+를 등록/).locator('..')
+    await expect(registered).toContainText('판매 대기로 남았어요. 잠시 뒤 다시 시도해 주세요.')
     await registered.getByRole('button', { name: '판매 시작' }).click()
-    await expect(registered.getByText('판매를 시작했어요.')).toBeVisible()
-    await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
+    await expect(registered.getByText(/등록하고 판매를 시작했어요/)).toBeVisible()
+    await expect(page.getByRole('button', { name: '판매 시작', exact: true })).toHaveCount(0)
+    // 같은 SKU 코드로 다시 등록하면 서버가 거절하고 그 설명을 그대로 보여 준다
+    await page.getByRole('button', { name: '등록하고 판매 시작' }).click()
+    await expect(page.getByText(`겹친 코드는 ${sku}입니다.`)).toBeVisible()
   })
 
   await test.step('판매자 센터: 상품 수정 · 사진 더하기 · 재고 조정 · 판매 중지 → 다시 판매 (실제 API)', async () => {
@@ -133,15 +173,17 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await mine.getByRole('button', { name: '수정' }).click()
     await expect(mine.getByText(/판매를 시작한 상품은 옵션/)).toBeVisible()
     await expect(mine.getByLabel('상품명')).toHaveValue(/데일리 맨투맨/)
-    await expect(mine.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
+    await expect(mine.getByLabel('상품 설명')).toHaveValue('부드러운 면 맨투맨')
+    await expect(mine.getByRole('img', { name: '대표 사진 1' })).toBeVisible()
+    await expect(mine.getByRole('img', { name: '상세 사진 2' })).toBeVisible()
     await mine.getByLabel('상품명').fill('데일리 맨투맨 (수정)')
-    // 지금 사진 뒤에 새 사진을 더한다
-    await mine.getByLabel(/^상품 사진 \(/).setInputFiles({
+    // 지금 상세 사진 뒤에 새 사진을 더한다
+    await mine.getByLabel(/^상세 사진 \(/).setInputFiles({
       name: 'photo-2.png',
       mimeType: 'image/png',
       buffer: await pngOf(page, 800, 600),
     })
-    await expect(mine.getByRole('img', { name: '상품 사진 2' })).toBeVisible()
+    await expect(mine.getByRole('img', { name: '상세 사진 3' })).toBeVisible()
     const updating = page.waitForRequest(
       (request) => request.method() === 'PUT' && /\/seller\/products\/\d+$/.test(request.url()),
     )
@@ -154,7 +196,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       sizeSpecs: unknown
     }
     expect(update.name).toBe('데일리 맨투맨 (수정)')
-    expect(update.imageUrls).toHaveLength(2)
+    expect(update.imageUrls).toHaveLength(4)
     expect([update.options, update.prices, update.sizeSpecs]).toEqual([null, null, null])
     await expect(mine.getByRole('button', { name: '수정 저장' })).toHaveCount(0)
     await expect(mine.getByText('데일리 맨투맨 (수정)')).toBeVisible()

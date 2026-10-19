@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toCategories, type CategoryTreeDto } from '@/entities/product'
+import { toCategories, toCategoryGroups, type CategoryTreeDto } from '@/entities/product'
 
 const node = (
   categoryId: string,
@@ -29,5 +29,31 @@ describe('toCategories: 카테고리 트리 → 고를 수 있는 끝 카테고�
 
   it('빈 트리', () => {
     expect(toCategories([])).toEqual([])
+  })
+})
+
+describe('toCategoryGroups: 등록 화면의 2단 선택 (가장 위 카테고리 → 그 아래 끝 카테고리)', () => {
+  it('가장 위 카테고리마다 그 아래 끝 카테고리를 순서대로 묶고, 위 카테고리가 끝이면 자신만 담는다', () => {
+    const tree = [
+      node('10', '상의', [node('11', '티셔츠'), node('12', '맨투맨')]),
+      node('20', '하의', [node('21', '바지', [node('22', '조거 팬츠')])]),
+      node('30', '아우터'),
+    ]
+    expect(toCategoryGroups(tree)).toEqual([
+      {
+        id: '10',
+        name: '상의',
+        categories: [
+          { id: '11', name: '티셔츠', path: '상의 > 티셔츠' },
+          { id: '12', name: '맨투맨', path: '상의 > 맨투맨' },
+        ],
+      },
+      {
+        id: '20',
+        name: '하의',
+        categories: [{ id: '22', name: '조거 팬츠', path: '하의 > 바지 > 조거 팬츠' }],
+      },
+      { id: '30', name: '아우터', categories: [{ id: '30', name: '아우터', path: '아우터' }] },
+    ])
   })
 })
