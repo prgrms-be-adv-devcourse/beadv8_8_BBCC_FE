@@ -95,6 +95,7 @@ const detail: SellerProductDetail = {
   brand: null,
   categoryId: '11',
   description: null,
+  thumbnailUrl: `${S3}/a.jpg`,
   imageUrls: [`${S3}/a.jpg`, `${S3}/b.jpg`],
   attributes: [
     { attributeId: '3', valueIds: ['301'], text: null },
@@ -148,7 +149,8 @@ describe('toEditableProductForm: 판매자 상세 → 등록 폼 값 (수정 화
       name: '데일리 맨투맨',
       brand: '',
       description: '',
-      imageUrls: [`${S3}/a.jpg`, `${S3}/b.jpg`],
+      thumbnailUrl: `${S3}/a.jpg`,
+      imageUrls: [`${S3}/b.jpg`],
       categoryId: '11',
       info: { '3': { valueId: '301', text: '' }, '4': { valueId: '', text: '면 100%' } },
       optionValues: { '1': ['101'], '2': ['202', '203'] },
@@ -179,6 +181,12 @@ describe('toEditableProductForm: 판매자 상세 → 등록 폼 값 (수정 화
       '202': 25000,
       '203': 27000,
     })
+  })
+
+  it('대표가 없던 상품은 저장된 사진을 모두 상세로 채운다', () => {
+    const edited = toEditableProductForm(inputs, { ...detail, thumbnailUrl: null })
+    expect(edited.thumbnailUrl).toBeNull()
+    expect(edited.imageUrls).toEqual([`${S3}/a.jpg`, `${S3}/b.jpg`])
   })
 
   it('저장된 설명은 그대로 채운다', () => {
@@ -358,7 +366,9 @@ describe('toProductUpdateRequest: 수정 폼 → PUT 요청 (BE ProductUpdateReq
   })
 
   it('사진을 모두 빼면 대표 사진은 null, 목록은 []', () => {
-    expect(toProductUpdateRequest(inputs, { ...form, imageUrls: [] }, detail)).toMatchObject({
+    expect(
+      toProductUpdateRequest(inputs, { ...form, thumbnailUrl: null, imageUrls: [] }, detail),
+    ).toMatchObject({
       thumbnailUrl: null,
       imageUrls: [],
     })

@@ -87,7 +87,9 @@ export type SellerProductDetail = {
   brand: string | null
   categoryId: string
   description: string | null
-  /** 저장된 순서, 첫 번째가 대표 */
+  /** 대표 사진. 없으면 null */
+  thumbnailUrl: string | null
+  /** 저장된 순서 (대표가 있으면 첫 번째가 대표) */
   imageUrls: string[]
   /** 정보 항목 ID → 고른 값 ID들(목록 항목) · 직접 입력 값 */
   attributes: { attributeId: string; valueIds: string[]; text: string | null }[]
@@ -160,7 +162,9 @@ export type RegisterProductForm = {
   brand: string
   /** 상품 설명 (길이 제한 없음). 비어 있으면 null로 보낸다 */
   description: string
-  /** 올린 이미지 주소 (S3). 첫 번째가 대표 이미지 */
+  /** 대표 사진 (S3). 목록 카드와 상세 첫 사진에 쓴다 */
+  thumbnailUrl: string | null
+  /** 상세 사진 (S3, 대표 제외) */
   imageUrls: string[]
   categoryId: string
   /** 정보 항목 ID → 고른 값 ID(목록 항목) 또는 직접 입력 값 */
@@ -184,7 +188,11 @@ export type ValueCombo = { key: string; valueIds: string[]; label: string }
 
 /** 사진 입력 칸(업로드 기능)에 넘기는 값. 업로드는 다른 기능이라 페이지가 등록 · 수정 폼에 슬롯으로 끼워 넣는다 */
 export type ProductImagesField = {
-  /** 올린 이미지 주소 (첫 번째가 대표) */
+  /** 칸 이름 (예: 대표 사진) */
+  label: string
+  /** 이 칸에 올릴 수 있는 장수 */
+  maxCount: number
+  /** 올린 이미지 주소 */
   value: string[]
   onChange: (imageUrls: string[]) => void
   /** 올리는 중에는 저장 버튼을 막는다 */

@@ -18,7 +18,7 @@ type ProductFormFieldsProps = {
   inputs: CategoryInputs
   form: RegisterProductForm
   onChange: (form: RegisterProductForm) => void
-  /** 사진 입력 칸 (사진 업로드 기능) */
+  /** 사진 입력 칸: 대표 · 상세 (사진 업로드 기능) */
   images: ReactNode
   /** 판매를 시작한 상품은 옵션 · 가격 · 실측을 바꿀 수 없다 (수정) */
   isSaleInputsLocked?: boolean
@@ -76,6 +76,8 @@ export function ProductFormFields({
         />
       </Label>
 
+      <div className="grid gap-3 md:grid-cols-2">{images}</div>
+
       <InfoFields inputs={inputs} info={form.info} onChange={(info) => set('info', info)} />
 
       <fieldset disabled={isSaleInputsLocked} className="space-y-4">
@@ -128,8 +130,6 @@ export function ProductFormFields({
           </div>
         )}
       </fieldset>
-
-      {images}
     </>
   )
 }

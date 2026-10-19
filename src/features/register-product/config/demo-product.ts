@@ -44,6 +44,7 @@ export function demoRegisterForm(inputs: CategoryInputs): RegisterProductForm {
     name: '데일리 맨투맨',
     brand: '키들리',
     description: '부드러운 면으로 만든 데일리 맨투맨이에요.',
+    thumbnailUrl: null,
     imageUrls: [],
     categoryId: inputs.categoryId,
     info,

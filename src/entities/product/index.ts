@@ -92,3 +92,8 @@ export {
   writeProductFilters,
   type ProductFilters,
 } from './model/product-filter-params'
+export {
+  DETAIL_IMAGE_MAX_COUNT,
+  productImageFields,
+  useImageUploading,
+} from './model/product-images'

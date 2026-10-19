@@ -94,7 +94,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     const uploaded = page.waitForRequest(
       (request) => request.method() === 'PUT' && request.url().includes('X-Amz-Signature='),
     )
-    await page.getByLabel(/상품 사진/).setInputFiles({
+    await page.getByLabel(/^대표 사진 \(/).setInputFiles({
       name: 'photo.png',
       mimeType: 'image/png',
       buffer: await pngOf(page, 2400, 1200),
@@ -103,8 +103,14 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     const put = await uploaded
     expect(put.headers()['content-type']).toBe('image/jpeg')
     expect(put.headers().authorization).toBeUndefined()
-    await expect(page.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
-    await expect(page.getByText('대표', { exact: true })).toBeVisible()
+    await expect(page.getByRole('img', { name: '대표 사진 1' })).toBeVisible()
+    // 대표 칸은 1장만, 상세 칸은 여러 장
+    await expect(page.getByLabel(/^대표 사진 \(/)).not.toHaveAttribute('multiple')
+    await page.getByLabel(/^상세 사진 \(/).setInputFiles([
+      { name: 'detail-1.png', mimeType: 'image/png', buffer: await pngOf(page, 800, 600) },
+      { name: 'detail-2.png', mimeType: 'image/png', buffer: await pngOf(page, 800, 600) },
+    ])
+    await expect(page.getByRole('img', { name: '상세 사진 2' })).toBeVisible()
     // 상품 설명 · SKU 코드(선택)를 넣고, 뺀 옵션은 다시 넣을 수 있다
     await page.getByLabel('상품 설명').fill('  부드러운 면 맨투맨  ')
     const sku = `NV-110-${Date.now()}`
@@ -142,7 +148,8 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     }
     expect(body.description).toBe('부드러운 면 맨투맨')
     expect(body.options.map((option) => option.skuCode)).toEqual([sku, null])
-    expect(body.imageUrls).toHaveLength(1)
+    // 대표는 thumbnailUrl과 imageUrls 맨 앞에 함께 보낸다 (대표 1장 + 상세 2장)
+    expect(body.imageUrls).toHaveLength(3)
     expect(body.thumbnailUrl).toBe(body.imageUrls[0])
     expect(body.thumbnailUrl).toMatch(BUCKET_IMAGE)
     // 등록 결과 줄의 판매 시작 (내 상품 목록이 먼저 다시 불려 같은 버튼이 목록에도 생긴다)
@@ -167,15 +174,16 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(mine.getByText(/판매를 시작한 상품은 옵션/)).toBeVisible()
     await expect(mine.getByLabel('상품명')).toHaveValue(/데일리 맨투맨/)
     await expect(mine.getByLabel('상품 설명')).toHaveValue('부드러운 면 맨투맨')
-    await expect(mine.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
+    await expect(mine.getByRole('img', { name: '대표 사진 1' })).toBeVisible()
+    await expect(mine.getByRole('img', { name: '상세 사진 2' })).toBeVisible()
     await mine.getByLabel('상품명').fill('데일리 맨투맨 (수정)')
-    // 지금 사진 뒤에 새 사진을 더한다
-    await mine.getByLabel(/^상품 사진 \(/).setInputFiles({
+    // 지금 상세 사진 뒤에 새 사진을 더한다
+    await mine.getByLabel(/^상세 사진 \(/).setInputFiles({
       name: 'photo-2.png',
       mimeType: 'image/png',
       buffer: await pngOf(page, 800, 600),
     })
-    await expect(mine.getByRole('img', { name: '상품 사진 2' })).toBeVisible()
+    await expect(mine.getByRole('img', { name: '상세 사진 3' })).toBeVisible()
     const updating = page.waitForRequest(
       (request) => request.method() === 'PUT' && /\/seller\/products\/\d+$/.test(request.url()),
     )
@@ -188,7 +196,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       sizeSpecs: unknown
     }
     expect(update.name).toBe('데일리 맨투맨 (수정)')
-    expect(update.imageUrls).toHaveLength(2)
+    expect(update.imageUrls).toHaveLength(4)
     expect([update.options, update.prices, update.sizeSpecs]).toEqual([null, null, null])
     await expect(mine.getByRole('button', { name: '수정 저장' })).toHaveCount(0)
     await expect(mine.getByText('데일리 맨투맨 (수정)')).toBeVisible()

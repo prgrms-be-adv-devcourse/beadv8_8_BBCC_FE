@@ -49,6 +49,14 @@ describe('상품 이미지 업로드 규칙 (BE ProductImageUpload)', () => {
   })
 
   it.each([
+    [0, 1, null],
+    [1, 1, '사진은 1장까지 올릴 수 있어요.'],
+    [0, 2, '사진은 1장까지 올릴 수 있어요.'],
+  ])('대표 칸(1장)은 이미 %i장 있을 때 %i장을 더하면 %s', (current, adding, expected) => {
+    expect(validateImageCount(current, adding, 1)).toBe(expected)
+  })
+
+  it.each([
     ['2026-10-16T03:04:59.999Z', false],
     ['2026-10-16T03:05:00.000Z', true],
     ['2026-10-16T03:05:00.001Z', true],

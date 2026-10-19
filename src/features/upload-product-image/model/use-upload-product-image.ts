@@ -5,8 +5,10 @@ import { canUploadImageType, validateImageCount } from './product-image.rules'
 import { uploadErrorMessage, uploadImages } from './upload-images'
 
 type UseUploadProductImageOptions = {
-  /** 지금 폼에 들어 있는 이미지 주소 (첫 번째가 대표) */
+  /** 지금 이 칸에 들어 있는 이미지 주소 */
   imageUrls: string[]
+  /** 이 칸에 올릴 수 있는 장수 */
+  maxCount: number
   onChange: (imageUrls: string[]) => void
 }
 
@@ -14,7 +16,11 @@ type UseUploadProductImageOptions = {
  * 사진을 고르면 줄여서 바로 S3에 올리고, 올린 주소를 폼에 이어 붙인다.
  * 미리보기는 줄인 파일로 보여 준다 (목 업로드는 S3에 파일이 없으므로)
  */
-export function useUploadProductImage({ imageUrls, onChange }: UseUploadProductImageOptions) {
+export function useUploadProductImage({
+  imageUrls,
+  maxCount,
+  onChange,
+}: UseUploadProductImageOptions) {
   const [previews, setPreviews] = useState<Record<string, string>>({})
   const [invalid, setInvalid] = useState<string | null>(null)
   const createdUrls = useRef<string[]>([])
@@ -40,7 +46,7 @@ export function useUploadProductImage({ imageUrls, onChange }: UseUploadProductI
   const addFiles = (files: File[]) => {
     if (files.length === 0) return
     const message =
-      validateImageCount(imageUrls.length, files.length) ??
+      validateImageCount(imageUrls.length, files.length, maxCount) ??
       (files.every((file) => canUploadImageType(file.type))
         ? null
         : 'JPG · PNG · WEBP 사진만 올릴 수 있어요.')

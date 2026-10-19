@@ -82,6 +82,7 @@ const form: RegisterProductForm = {
   name: ' 데일리 맨투맨 ',
   brand: '',
   description: '  부드러운 면 맨투맨  ',
+  thumbnailUrl: null,
   imageUrls: ['https://cdn/a-1.jpg', 'https://cdn/a-2.jpg'],
   categoryId: '11',
   info: { '3': { valueId: '301', text: '' }, '4': { valueId: '', text: ' ' } },
@@ -145,6 +146,22 @@ describe('toRegisterProductRequest (BE ProductRegisterRequest)', () => {
       maxHeightCm: 115,
       measurements: { TOTAL_LENGTH: 42, CHEST_WIDTH: 34 },
     })
+  })
+})
+
+describe('대표 · 상세 사진: 대표는 thumbnailUrl과 imageUrls 맨 앞에 함께 보낸다', () => {
+  const T = 'https://cdn/t.jpg'
+  const A = 'https://cdn/a-1.jpg'
+  const B = 'https://cdn/a-2.jpg'
+  it.each([
+    ['대표 + 상세', T, [A, B], T, [T, A, B]],
+    ['대표만', T, [], T, [T]],
+    ['상세만 (첫 상세가 대표가 된다)', null, [A, B], A, [A, B]],
+    ['사진 없음', null, [], null, []],
+  ])('%s', (_, thumbnailUrl, imageUrls, expectedThumbnail, expectedImages) => {
+    const request = toRegisterProductRequest(inputs, { ...form, thumbnailUrl, imageUrls })
+    expect(request.thumbnailUrl).toBe(expectedThumbnail)
+    expect(request.imageUrls).toEqual(expectedImages)
   })
 })
 

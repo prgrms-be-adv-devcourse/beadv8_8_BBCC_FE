@@ -1,7 +1,9 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { Fragment, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import {
   ProductFormFields,
+  productImageFields,
+  useImageUploading,
   validateRegisterProductForm,
   type CategoryInputs,
   type ProductImagesField,
@@ -26,7 +28,7 @@ export function ProductFields({ inputs, productHref, renderImages }: ProductFiel
   const register = useRegisterAndStartSale(inputs)
   const [form, setForm] = useState<RegisterProductFormValue>(() => demoRegisterForm(inputs))
   const [invalid, setInvalid] = useState<string | null>(null)
-  const [isUploading, setUploading] = useState(false)
+  const { isUploading, onUploadingChange } = useImageUploading()
   // 판매 시작만 실패해 다시 시작한 상품
   const [restartedId, setRestartedId] = useState<string | null>(null)
   // 고치다가 다른 화면으로 나가면 확인 (등록하면 풀린다)
@@ -53,11 +55,9 @@ export function ProductFields({ inputs, productHref, renderImages }: ProductFiel
         inputs={inputs}
         form={form}
         onChange={setForm}
-        images={renderImages({
-          value: form.imageUrls,
-          onChange: (imageUrls) => setForm((prev) => ({ ...prev, imageUrls })),
-          onUploadingChange: setUploading,
-        })}
+        images={productImageFields(form, setForm, onUploadingChange).map((field) => (
+          <Fragment key={field.label}>{renderImages(field)}</Fragment>
+        ))}
       />
 
       <div className="flex flex-wrap items-center gap-3">
