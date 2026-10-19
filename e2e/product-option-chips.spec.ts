@@ -88,3 +88,18 @@ test('상품 상세: 색상 · 사이즈 칩 고르기 (없음 · 품절 · 적�
   await expect(sizes.getByRole('button', { name: /^130/ })).toBeDisabled()
   await expect(page.getByText('색상: 코랄 핑크 / 사이즈: 110 · 1개')).toBeVisible()
 })
+
+test('상품 상세: 값이 하나뿐인 항목은 고정 줄로 보이고 고르지 않아도 된다', async ({ page }) => {
+  // 가짜 백엔드 상품 2(밴딩 조거 팬츠)는 그레이 · 120 하나뿐이다
+  await page.goto('/products/2')
+  await expect(page.getByText('색상: 그레이', { exact: true })).toBeVisible()
+  await expect(page.getByText('색상: 그레이', { exact: true }).locator('[data-swatch]')).toHaveCSS(
+    'background-color',
+    'rgb(156, 163, 175)',
+  )
+  await expect(page.getByText('사이즈: 120', { exact: true })).toBeVisible()
+  // 고정 줄은 누르는 칩이 아니다
+  await expect(page.getByRole('group', { name: '색상', exact: true })).toHaveCount(0)
+  // 고르지 않아도 그 조합이 정해져 있다
+  await expect(page.getByText(/그레이 \/ 120 · 1개/)).toBeVisible()
+})

@@ -136,7 +136,7 @@ describe('optionChipRows: 항목마다 등록된 값의 칩 한 줄', () => {
     expect(rows[0].chips.some((chip) => chip.isRecommended)).toBe(false)
   })
 
-  it('값이 하나뿐인 항목은 줄을 만들지 않는다 (FREE 하나뿐인 사이즈)', () => {
+  it('값이 하나뿐인 항목은 누를 수 없는 고정 줄로 보이고, 그 값으로 정해진다 (FREE 하나뿐인 사이즈)', () => {
     const free = productOf(
       [
         ['1', '19', true, 'AVAILABLE', null],
@@ -145,8 +145,31 @@ describe('optionChipRows: 항목마다 등록된 값의 칩 한 줄', () => {
       COLORS.slice(0, 2),
       [{ valueId: '19', value: 'FREE', colorCode: null }],
     )
-    expect(optionChipRows(free, {}).map((row) => row.name)).toEqual(['색상'])
+    const rows = optionChipRows(free, {})
+    expect(rows.map((row) => [row.name, row.isFixed, row.pickedName])).toEqual([
+      ['색상', false, null],
+      ['사이즈', true, 'FREE'],
+    ])
     expect(pickedOption(free, { '1': '2' })?.id).toBe('2-19')
+  })
+
+  it('색상이 하나뿐이면 색상 줄은 고정으로 색 점과 함께, 사이즈만 고른다', () => {
+    const navyOnly = productOf(
+      [
+        ['1', '11', true, 'AVAILABLE', null],
+        ['1', '12', true, 'AVAILABLE', null],
+      ],
+      COLORS.slice(0, 1),
+      SIZES.slice(0, 2),
+    )
+    const [color, size] = optionChipRows(navyOnly, {})
+    expect(color).toMatchObject({ name: '색상', isFixed: true, pickedName: '네이비' })
+    expect(color.chips.map((chip) => [chip.name, chip.colorCode, chip.isPicked])).toEqual([
+      ['네이비', '#1F2A44', true],
+    ])
+    expect(size.isFixed).toBe(false)
+    expect(size.chips.map((chip) => chip.state)).toEqual(['AVAILABLE', 'AVAILABLE'])
+    expect(pickedOption(navyOnly, { '2': '12' })?.id).toBe('1-12')
   })
 })
 

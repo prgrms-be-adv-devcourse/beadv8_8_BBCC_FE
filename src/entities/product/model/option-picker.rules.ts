@@ -43,7 +43,7 @@ export function isChipPickable(state: OptionChipState): boolean {
   return state === 'AVAILABLE' || state === 'LOW'
 }
 
-/** 항목마다 칩 한 줄 (값이 하나뿐인 항목은 뺀다). 앞 항목을 고르면 뒤 항목 칩이 그 기준으로 바뀐다 */
+/** 항목마다 칩 한 줄. 앞 항목을 고르면 뒤 항목 칩이 그 기준으로 바뀐다. 값이 하나뿐인 항목은 고정 줄 (그 값으로 정해져 있다) */
 export function optionChipRows(
   product: Picker,
   picks: OptionPicks,
@@ -51,13 +51,14 @@ export function optionChipRows(
 ): OptionChipRow[] {
   const effective = withSinglePicks(product, picks)
   return product.optionAttributes.flatMap((attribute, index) => {
-    if (attribute.values.length <= 1) return []
+    if (attribute.values.length === 0) return []
     const picked = attribute.values.find((value) => value.id === effective[attribute.id])
     return [
       {
         attributeId: attribute.id,
         name: attribute.name,
         pickedName: picked?.name ?? null,
+        isFixed: attribute.values.length === 1,
         chips: attribute.values.map((value) => ({
           valueId: value.id,
           name: value.name,
