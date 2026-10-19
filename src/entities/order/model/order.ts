@@ -25,7 +25,8 @@ export type OrderItem = {
   /** 판매자 상호명. 모르면 null */
   sellerName: string | null
   /** 주문 당시 자녀 정보. 고르지 않았으면 null */
-  child: { id: string; name: string; heightCm: number; weightKg: number } | null
+  /** name: 주문 당시 자녀 이름, 비어 있으면 null */
+  child: { id: string; name: string | null; heightCm: number; weightKg: number } | null
 }
 
 /** 판매자별 배송 */

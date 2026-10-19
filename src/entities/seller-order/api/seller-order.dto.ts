@@ -20,7 +20,12 @@ export type SellerOrderDto = {
     quantity: number
     amount: number
     status: string
-    child: { name: string; heightCm: number } | null
+    /** 재고 차감 실패로 살 수 없던 이유. 그 밖에는 null */
+    unavailableReason?: string | null
+    /** 판매자 상호. 판매 주문 목록에서는 null */
+    sellerName?: string | null
+    /** 주문 당시 자녀. 이름은 null일 수 있다 (회원의 자녀 변경 이벤트에 이름이 없음) */
+    child: { name: string | null; heightCm: number } | null
   }[]
 }
 

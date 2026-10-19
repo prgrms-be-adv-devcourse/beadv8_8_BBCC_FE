@@ -26,7 +26,8 @@ export type OrderItemDto = {
   sellerName?: string | null
   child: {
     childId: string
-    name: string
+    /** 주문 당시 자녀 이름. 회원의 자녀 변경 이벤트에 이름이 없어 null일 수 있다 */
+    name: string | null
     heightCm: number
     weightKg: number
     bodyType: string | null
