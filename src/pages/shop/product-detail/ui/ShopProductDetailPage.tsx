@@ -4,12 +4,16 @@ import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY } from '@/entities/cart'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
   detailImagesOf,
-  findOption,
   isOnSale,
   ProductDescription,
   ProductGallery,
   productMeta,
-  ProductOptionList,
+  missingPickMessage,
+  OptionChipPicker,
+  optionChipRows,
+  pickedOption,
+  pickOptionValue,
+  type OptionPicks,
   ProductSpecs,
   useProductQuery,
   WearPreview,
@@ -39,7 +43,7 @@ export function ShopProductDetailPage() {
   const children = useChildrenQuery({ enabled: Boolean(user) })
   const [childId, setChildId] = useState<string | null>(search.get('childId'))
   const recommendation = useSizeRecommendationQuery(productId, childId)
-  const [optionId, setOptionId] = useState<string | null>(null)
+  const [picks, setPicks] = useState<OptionPicks>({})
   const [quantity, setQuantity] = useState(1)
 
   if (product.isPending)
@@ -59,7 +63,9 @@ export function ShopProductDetailPage() {
 
   const detail = product.data
   const pickedChild = children.data?.find((item) => item.id === childId) ?? null
-  const selected = findOption(detail, optionId)
+  const selected = pickedOption(detail, picks)
+  const optionId = selected?.id ?? null
+  const missingPick = missingPickMessage(detail, picks)
   const isSelling = isOnSale(detail)
 
   return (
@@ -121,16 +127,20 @@ export function ShopProductDetailPage() {
           </Card>
 
           <div className="space-y-2">
-            <p className="font-semibold">옵션</p>
-            <ProductOptionList
-              options={detail.options}
-              selectedId={optionId}
-              recommendedSize={recommendation.data?.recommendedSize}
-              onSelect={setOptionId}
+            <OptionChipPicker
+              rows={optionChipRows(detail, picks, recommendation.data?.recommendedSize)}
+              onPick={(attributeId, valueId) =>
+                setPicks((prev) => pickOptionValue(detail, prev, attributeId, valueId))
+              }
             />
+            {selected && (
+              <p className="text-muted-foreground text-sm">
+                {selected.name} · {quantity}개
+              </p>
+            )}
           </div>
 
-          <ProductSpecs product={detail} />
+          <ProductSpecs product={detail} recommendedSize={recommendation.data?.recommendedSize} />
 
           {/* 휴대폰에서는 수량 · 금액 · 담기를 화면 아래에 고정한다 */}
           <div className="sticky bottom-0 -mx-4 space-y-3 border-t bg-white/95 px-4 pt-3 pb-4 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:backdrop-blur-none">
@@ -145,7 +155,7 @@ export function ShopProductDetailPage() {
                 onChange={(e) => setQuantity(clampQuantity(Number(e.target.value)))}
               />
               <span className="ml-auto text-xl font-extrabold">
-                {selected ? formatWon(selected.price * quantity) : '옵션을 골라 주세요'}
+                {selected ? formatWon(selected.price * quantity) : missingPick}
               </span>
             </div>
             {!isSelling && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}

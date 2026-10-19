@@ -2,8 +2,6 @@ import type {
   Category,
   CategoryInputs,
   InputAttribute,
-  ProductDetail,
-  ProductOption,
   RegisterProductForm,
   StockReason,
   ValueCombo,
@@ -41,15 +39,6 @@ export function canEditSaleInputs(product: { status: string }): boolean {
   return product.status === 'SALE_PENDING'
 }
 
-/** 살 수 없는 옵션은 고를 수 없다 (최종 판단은 서버 409) */
-export function isSelectable(option: ProductOption): boolean {
-  return !option.soldOut
-}
-
-export function findOption(product: ProductDetail, optionId: string | null): ProductOption | null {
-  return product.options.find((option) => option.id === optionId) ?? null
-}
-
 /** 상품 설명 아래에 쌓을 상세 사진: 판매자 화면이 imageUrls 맨 앞에 대표를 함께 보내므로 그 뒤 사진 */
 export function detailImagesOf(product: { imageUrls: string[] }): string[] {
   return product.imageUrls.slice(1)
@@ -69,14 +58,6 @@ export function heightRange(option: {
   return option.minHeightCm !== null && option.maxHeightCm !== null
     ? `${option.minHeightCm}~${option.maxHeightCm}cm`
     : null
-}
-
-/** 재고 표시: 적을 때만 수량, 없으면 품절 */
-export function stockLabel(option: ProductOption): string | null {
-  if (option.stockStatus === 'SOLD_OUT') return '품절'
-  if (option.stockStatus === 'LOW' && option.stockQuantity !== null)
-    return `${option.stockQuantity}개 남음`
-  return null
 }
 
 /** FREE 사이즈는 권장 키가 선택이다 (BE SIZE-05) */

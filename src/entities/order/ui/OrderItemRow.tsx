@@ -32,7 +32,7 @@ export function OrderItemRow({ item, delivery, cancelled = false, action }: Orde
         <p className="text-muted-foreground">
           {formatWon(item.unitPrice)} × {item.quantity} = {formatWon(item.amount)}
           {item.child &&
-            ` · 입을 자녀 ${item.child.name} (주문 당시 ${item.child.heightCm}cm · ${item.child.weightKg}kg)`}
+            ` · 입을 자녀${item.child.name ? ` ${item.child.name}` : ''} (주문 당시 ${item.child.heightCm}cm · ${item.child.weightKg}kg)`}
           {delivery && ` · ${DELIVERY_STATUS_LABEL[delivery.status]}`}
         </p>
       </div>

@@ -19,7 +19,10 @@ export function toSellerOrder(dto: SellerOrderDto): SellerOrder {
       size: item.size,
       quantity: item.quantity,
       amount: item.amount,
-      childLabel: item.child ? `${item.child.name}(${item.child.heightCm}cm)` : null,
+      // 자녀 이름이 비어 있으면 "자녀"로
+      childLabel: item.child
+        ? `${item.child.name?.trim() || '자녀'}(${item.child.heightCm}cm)`
+        : null,
     })),
   }
 }
