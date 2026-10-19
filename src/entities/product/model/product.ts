@@ -56,6 +56,8 @@ export type SizeSpec = {
 }
 
 export type ProductDetail = ProductSummary & {
+  /** 상품 설명. 없으면 null */
+  description: string | null
   imageUrls: string[]
   sizeFree: boolean
   options: ProductOption[]

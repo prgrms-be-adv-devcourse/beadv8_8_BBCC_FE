@@ -92,6 +92,7 @@ export function toProductDetail(dto: ProductDetailDto, categories: Category[] = 
     brand: dto.brand?.trim() || null,
     categoryId: dto.categoryId,
     categoryName: categoryNameOf(dto.categoryId, categories),
+    description: dto.description?.trim() || null,
     status: dto.status as ProductStatus,
     minPrice: dto.minPrice,
     imageUrl: toImageUrl(dto.imageUrls[0] ?? null),

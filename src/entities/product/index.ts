@@ -52,6 +52,8 @@ export {
 export {
   canEditSaleInputs,
   canStartSale,
+  detailImagesOf,
+  galleryIndexOf,
   canStopSale,
   categoryNameOf,
   findOption,
@@ -81,6 +83,8 @@ export {
   useSellerProductsQuery,
 } from './model/queries'
 export { ProductCard } from './ui/ProductCard'
+export { ProductDescription } from './ui/ProductDescription'
+export { ProductGallery } from './ui/ProductGallery'
 export { ProductImage } from './ui/ProductImage'
 export { ProductOptionList } from './ui/ProductOptionList'
 export { ProductFormFields } from './ui/ProductFormFields'

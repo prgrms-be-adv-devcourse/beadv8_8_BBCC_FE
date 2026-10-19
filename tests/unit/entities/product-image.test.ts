@@ -38,6 +38,7 @@ describe('상품 · 추천 매퍼: thumbnailUrl → imageUrl', () => {
       name: '데일리 맨투맨',
       brand: null,
       categoryId: '1',
+      description: null,
       status: 'ON_SALE',
       sizeFree: true,
       minPrice: null,

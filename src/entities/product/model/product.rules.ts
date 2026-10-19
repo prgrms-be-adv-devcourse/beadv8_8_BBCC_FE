@@ -50,6 +50,17 @@ export function findOption(product: ProductDetail, optionId: string | null): Pro
   return product.options.find((option) => option.id === optionId) ?? null
 }
 
+/** 상품 설명 아래에 쌓을 상세 사진: 판매자 화면이 imageUrls 맨 앞에 대표를 함께 보내므로 그 뒤 사진 */
+export function detailImagesOf(product: { imageUrls: string[] }): string[] {
+  return product.imageUrls.slice(1)
+}
+
+/** 사진을 밀어 넘긴 위치(scrollLeft)로 지금 보는 사진 번호를 구한다 (0부터, 범위 밖은 끝 번호) */
+export function galleryIndexOf(scrollLeft: number, width: number, count: number): number {
+  if (width <= 0 || count <= 0) return 0
+  return Math.min(count - 1, Math.max(0, Math.round(scrollLeft / width)))
+}
+
 /** 권장 키 범위 문구. 없으면 null */
 export function heightRange(option: {
   minHeightCm: number | null

@@ -3,9 +3,11 @@ import { Link, useLocation, useParams, useSearchParams } from 'react-router'
 import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY } from '@/entities/cart'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
+  detailImagesOf,
   findOption,
   isOnSale,
-  ProductImage,
+  ProductDescription,
+  ProductGallery,
   productMeta,
   ProductOptionList,
   ProductSpecs,
@@ -66,11 +68,7 @@ export function ShopProductDetailPage() {
         ← 상품 목록
       </Link>
       <div className="grid gap-8 md:grid-cols-2">
-        <ProductImage
-          src={detail.imageUrl}
-          alt={detail.name}
-          className="aspect-square rounded-2xl"
-        />
+        <ProductGallery images={detail.imageUrls} alt={detail.name} className="rounded-2xl" />
 
         <div className="space-y-5">
           <div>
@@ -171,6 +169,11 @@ export function ShopProductDetailPage() {
           </div>
         </div>
       </div>
+      <ProductDescription
+        description={detail.description}
+        images={detailImagesOf(detail)}
+        alt={detail.name}
+      />
     </div>
   )
 }
