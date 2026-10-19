@@ -110,3 +110,6 @@ export {
   pickedOption,
   pickOptionValue,
 } from './model/option-picker.rules'
+export { ALL_CATEGORIES_ICON } from './config/category-icons'
+export { categoryIconOf } from './model/category-icon.rules'
+export { CategoryIcon } from './ui/CategoryIcon'

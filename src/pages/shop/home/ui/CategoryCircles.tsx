@@ -1,4 +1,9 @@
-import type { Category } from '@/entities/product'
+import {
+  ALL_CATEGORIES_ICON,
+  CategoryIcon,
+  categoryIconOf,
+  type Category,
+} from '@/entities/product'
 import { cn } from '@/shared/lib'
 
 type CategoryCirclesProps = {
@@ -11,12 +16,13 @@ const TINTS = ['bg-primary-soft', 'bg-highlight-soft', 'bg-growth-soft']
 
 /** "무엇을 찾아볼까요?" 동그란 카테고리 */
 export function CategoryCircles({ categories, selectedId, onSelect }: CategoryCirclesProps) {
-  const items: { id: string | null; name: string; label: string }[] = [
-    { id: null, name: '전체보기', label: '전체 카테고리' },
+  const items: { id: string | null; name: string; label: string; icon: string[] | null }[] = [
+    { id: null, name: '전체보기', label: '전체 카테고리', icon: ALL_CATEGORIES_ICON },
     ...categories.map((category) => ({
       id: category.id,
       name: category.name,
       label: category.name,
+      icon: categoryIconOf(category.name),
     })),
   ]
   return (
@@ -39,10 +45,15 @@ export function CategoryCircles({ categories, selectedId, onSelect }: CategoryCi
                 className={cn(
                   'flex size-14 items-center justify-center rounded-full border-2 text-lg font-bold md:size-16',
                   item.id === null ? 'bg-white' : TINTS[index % TINTS.length],
+                  item.icon && 'text-primary',
                   active ? 'border-primary text-primary' : 'border-transparent',
                 )}
               >
-                {item.id === null ? '✦' : item.name.slice(0, 1)}
+                {item.icon ? (
+                  <CategoryIcon paths={item.icon} className="size-8 md:size-9" />
+                ) : (
+                  item.name.slice(0, 1)
+                )}
               </span>
               <span className={cn(active && 'text-primary font-bold')}>{item.name}</span>
             </button>
