@@ -1,4 +1,5 @@
 import type {
+  OptionChip,
   OptionChipRow,
   OptionChipState,
   OptionPicks,
@@ -26,24 +27,38 @@ function candidatesOf(product: Picker, index: number, valueId: string, picks: Op
   )
 }
 
-/** 값 칩의 상태: 앞 항목에서 고른 값 기준 (뒤 항목 선택은 보지 않는다) */
-function chipStateOf(candidates: ProductOption[]): {
+/**
+ * 값 칩의 상태: 앞 항목에서 고른 값 기준 (뒤 항목 선택은 보지 않는다).
+ * 남은 수량은 조합이 정해지는 마지막 항목에만 알린다 (앞 항목 줄마다 겹쳐 보이지 않게)
+ */
+function chipStateOf(
+  candidates: ProductOption[],
+  isLast: boolean,
+): {
   state: OptionChipState
   remaining: number | null
 } {
   if (candidates.length === 0) return { state: 'NONE', remaining: null }
   if (candidates.every((option) => option.soldOut)) return { state: 'SOLD_OUT', remaining: null }
-  const only = candidates.length === 1 ? candidates[0] : null
+  const only = isLast && candidates.length === 1 ? candidates[0] : null
   if (only?.stockStatus === 'LOW' && only.stockQuantity !== null)
     return { state: 'LOW', remaining: only.stockQuantity }
   return { state: 'AVAILABLE', remaining: null }
+}
+
+/** 칩 옆에 알릴 문구: 적게 남음 · 품절 · 없음. 살 수 있으면 null */
+export function chipNoteOf(chip: Pick<OptionChip, 'state' | 'remaining'>): string | null {
+  if (chip.state === 'LOW') return `${chip.remaining}개 남았어요`
+  if (chip.state === 'SOLD_OUT') return '품절'
+  if (chip.state === 'NONE') return '없음'
+  return null
 }
 
 export function isChipPickable(state: OptionChipState): boolean {
   return state === 'AVAILABLE' || state === 'LOW'
 }
 
-/** 항목마다 칩 한 줄 (값이 하나뿐인 항목은 뺀다). 앞 항목을 고르면 뒤 항목 칩이 그 기준으로 바뀐다 */
+/** 항목마다 칩 한 줄. 앞 항목을 고르면 뒤 항목 칩이 그 기준으로 바뀐다. 값이 하나뿐인 항목은 고정 줄 (그 값으로 정해져 있다) */
 export function optionChipRows(
   product: Picker,
   picks: OptionPicks,
@@ -51,18 +66,22 @@ export function optionChipRows(
 ): OptionChipRow[] {
   const effective = withSinglePicks(product, picks)
   return product.optionAttributes.flatMap((attribute, index) => {
-    if (attribute.values.length <= 1) return []
+    if (attribute.values.length === 0) return []
     const picked = attribute.values.find((value) => value.id === effective[attribute.id])
     return [
       {
         attributeId: attribute.id,
         name: attribute.name,
         pickedName: picked?.name ?? null,
+        isFixed: attribute.values.length === 1,
         chips: attribute.values.map((value) => ({
           valueId: value.id,
           name: value.name,
           colorCode: value.colorCode,
-          ...chipStateOf(candidatesOf(product, index, value.id, effective)),
+          ...chipStateOf(
+            candidatesOf(product, index, value.id, effective),
+            index === product.optionAttributes.length - 1,
+          ),
           isPicked: value.id === picked?.id,
           isRecommended: attribute.isSize && value.name === recommendedSize,
         })),
@@ -89,7 +108,7 @@ export function pickOptionValue(
       pickedId,
       withSinglePicks(product, next),
     )
-    if (!isChipPickable(chipStateOf(candidates).state)) delete next[attribute.id]
+    if (!isChipPickable(chipStateOf(candidates, false).state)) delete next[attribute.id]
   })
   return next
 }

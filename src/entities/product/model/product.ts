@@ -53,6 +53,8 @@ export type OptionChipRow = {
   name: string
   /** 고른 값 이름. 고르기 전에는 null */
   pickedName: string | null
+  /** 값이 하나뿐이라 고를 필요가 없는 항목 (누를 수 없는 「색상: 네이비」로 보인다) */
+  isFixed: boolean
   chips: OptionChip[]
 }
 

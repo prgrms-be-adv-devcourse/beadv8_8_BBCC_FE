@@ -1,47 +1,84 @@
 import { cn } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import type { OptionChip, OptionChipRow } from '../model/product'
-import { isChipPickable } from '../model/option-picker.rules'
+import { chipNoteOf, isChipPickable } from '../model/option-picker.rules'
 
 type OptionChipPickerProps = {
   rows: OptionChipRow[]
   onPick: (attributeId: string, valueId: string) => void
 }
 
-const CHIP_NOTE: Partial<Record<OptionChip['state'], string>> = {
-  SOLD_OUT: '품절',
-  NONE: '없음',
-}
-
-/** 옵션 항목마다 칩 한 줄 (예: 색상 칩 · 사이즈 칩). 막힌 칩은 흐리게 두고 고를 수 없다 */
+/** 옵션 항목마다 칩 한 줄 (예: 색상 칩 · 사이즈 칩). 막힌 칩은 흐리게 두고 고를 수 없다. 값이 하나뿐인 항목은 고정 글자 */
 export function OptionChipPicker({ rows, onPick }: OptionChipPickerProps) {
   return (
     <div className="space-y-3">
-      {rows.map((row) => (
-        <div key={row.attributeId} role="group" aria-label={row.name} className="space-y-1.5">
-          <p className="text-sm font-semibold">
-            {row.name}
-            {row.pickedName && ` · ${row.pickedName}`}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {row.chips.map((chip) => (
-              <OptionChipButton
-                key={chip.valueId}
-                chip={chip}
-                onPick={() => onPick(row.attributeId, chip.valueId)}
-              />
-            ))}
+      {rows.map((row) =>
+        row.isFixed ? (
+          <FixedOptionRow key={row.attributeId} row={row} />
+        ) : (
+          <div key={row.attributeId} role="group" aria-label={row.name} className="space-y-1.5">
+            <p className="text-sm font-semibold">
+              {row.name}
+              {row.pickedName && ` · ${row.pickedName}`}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {row.chips.map((chip) => (
+                <OptionChipButton
+                  key={chip.valueId}
+                  chip={chip}
+                  onPick={() => onPick(row.attributeId, chip.valueId)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ),
+      )}
     </div>
+  )
+}
+
+type FixedOptionRowProps = { row: OptionChipRow }
+
+/** 값이 하나뿐인 항목: 누를 수 없는 「색상: ● 네이비」 */
+function FixedOptionRow({ row }: FixedOptionRowProps) {
+  const chip = row.chips[0]
+  const note = chipNoteOf(chip)
+  return (
+    <p className="flex items-center gap-1.5 text-sm">
+      <span className="font-semibold">{row.name}:</span>{' '}
+      {chip.colorCode && <ColorSwatch colorCode={chip.colorCode} />}
+      <span>{chip.name}</span>{' '}
+      {note && (
+        <span
+          className={cn(
+            'text-xs',
+            isChipPickable(chip.state) ? 'text-destructive' : 'text-muted-foreground',
+          )}
+        >
+          {note}
+        </span>
+      )}
+    </p>
+  )
+}
+
+type ColorSwatchProps = { colorCode: string }
+
+function ColorSwatch({ colorCode }: ColorSwatchProps) {
+  return (
+    <span
+      aria-hidden
+      data-swatch
+      className="size-4 shrink-0 rounded-full border border-black/15"
+      style={{ backgroundColor: colorCode }}
+    />
   )
 }
 
 type OptionChipButtonProps = { chip: OptionChip; onPick: () => void }
 
 function OptionChipButton({ chip, onPick }: OptionChipButtonProps) {
-  const note = chip.state === 'LOW' ? `${chip.remaining}개 남았어요` : CHIP_NOTE[chip.state]
+  const note = chipNoteOf(chip)
   return (
     <button
       type="button"
@@ -53,14 +90,7 @@ function OptionChipButton({ chip, onPick }: OptionChipButtonProps) {
         chip.isPicked && 'border-primary bg-primary text-primary-foreground',
       )}
     >
-      {chip.colorCode && (
-        <span
-          aria-hidden
-          data-swatch
-          className="size-4 shrink-0 rounded-full border border-black/15"
-          style={{ backgroundColor: chip.colorCode }}
-        />
-      )}
+      {chip.colorCode && <ColorSwatch colorCode={chip.colorCode} />}
       <span className="font-medium">{chip.name}</span>
       {chip.isRecommended && <Badge variant="highlight">추천</Badge>}
       {note && (
