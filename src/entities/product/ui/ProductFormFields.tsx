@@ -1,9 +1,15 @@
 import type { ReactNode } from 'react'
-import { Input, Select } from '@/shared/ui/input'
+import { Input, Select, Textarea } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import type { CategoryInputs, RegisterProductForm, SizeSpecInput } from '../model/product'
-import { optionCombos, priceGroups, sizeValues } from '../model/product.rules'
+import type {
+  CategoryInputs,
+  RegisterProductForm,
+  SizeSpecInput,
+  ValueCombo,
+} from '../model/product'
+import { optionCombos, priceGroups, removedComboCount, sizeValues } from '../model/product.rules'
 import { OptionValuePicker } from './OptionValuePicker'
+import { ProductOptionTable } from './ProductOptionTable'
 import { SizeSpecTable } from './SizeSpecTable'
 
 const EMPTY_SPEC: SizeSpecInput = { minHeightCm: 0, maxHeightCm: 0, measurements: {} }
@@ -61,6 +67,14 @@ export function ProductFormFields({
           <Input value={form.brand} onChange={(e) => set('brand', e.target.value)} />
         </Label>
       </div>
+      <Label>
+        상품 설명
+        <Textarea
+          placeholder="상품 설명을 입력해 주세요"
+          value={form.description}
+          onChange={(e) => set('description', e.target.value)}
+        />
+      </Label>
 
       <InfoFields inputs={inputs} info={form.info} onChange={(info) => set('info', info)} />
 
@@ -71,27 +85,47 @@ export function ProductFormFields({
           </p>
         )}
         {inputs.optionAttributes.map((attribute) => (
-          <OptionValuePicker
-            key={attribute.id}
-            attribute={attribute}
-            selected={form.optionValues[attribute.id] ?? []}
-            onToggle={(valueId) => toggleValue(attribute.id, valueId)}
-          />
+          <div key={attribute.id} className="space-y-1">
+            <OptionValuePicker
+              attribute={attribute}
+              selected={form.optionValues[attribute.id] ?? []}
+              onToggle={(valueId) => toggleValue(attribute.id, valueId)}
+            />
+            {attribute.sizeRole && (
+              <p className="text-muted-foreground text-xs">
+                FREE와 숫자 사이즈는 함께 고를 수 없어요.
+              </p>
+            )}
+          </div>
         ))}
-        <StockAndPriceFields
-          inputs={inputs}
-          form={form}
+        <ProductOptionTable
+          combos={optionCombos(inputs, form)}
+          stocks={form.stocks}
+          skuCodes={form.skuCodes}
           fixedStocks={fixedStocks}
+          removedCount={removedComboCount(inputs, form)}
           onStock={(key, stock) => set('stocks', { ...form.stocks, [key]: stock })}
+          onSkuCode={(key, skuCode) => set('skuCodes', { ...form.skuCodes, [key]: skuCode })}
+          onRemove={(key) => set('removedCombos', [...form.removedCombos, key])}
+          onRestore={() => set('removedCombos', [])}
+        />
+        <PriceFields
+          groups={priceGroups(inputs, form)}
+          prices={form.prices}
           onPrice={(key, price) => set('prices', { ...form.prices, [key]: price })}
         />
         {sizes.length > 0 && (
-          <SizeSpecTable
-            sizes={sizes}
-            measurementItems={inputs.measurementItems}
-            specs={form.sizeSpecs}
-            onChange={setSpec}
-          />
+          <div className="space-y-1">
+            <SizeSpecTable
+              sizes={sizes}
+              measurementItems={inputs.measurementItems}
+              specs={form.sizeSpecs}
+              onChange={setSpec}
+            />
+            <p className="text-muted-foreground text-xs">
+              판매를 시작하려면 사이즈마다 권장 키와 실측을 모두 입력해야 해요.
+            </p>
+          </div>
         )}
       </fieldset>
 
@@ -109,96 +143,70 @@ type InfoFieldsProps = {
 function InfoFields({ inputs, info, onChange }: InfoFieldsProps) {
   if (inputs.infoAttributes.length === 0) return null
   return (
-    <div className="grid gap-3 md:grid-cols-3">
-      {inputs.infoAttributes.map((attribute) => {
-        const input = info[attribute.id] ?? { valueId: '', text: '' }
-        const update = (patch: Partial<typeof input>) =>
-          onChange({ ...info, [attribute.id]: { ...input, ...patch } })
-        return (
-          <Label key={attribute.id}>
-            {attribute.name}
-            {attribute.required && ' *'}
-            {attribute.values.length > 0 ? (
-              <Select value={input.valueId} onChange={(e) => update({ valueId: e.target.value })}>
-                <option value="">고르기</option>
-                {attribute.values.map((value) => (
-                  <option key={value.id} value={value.id}>
-                    {value.name}
-                  </option>
-                ))}
-              </Select>
-            ) : (
-              <Input value={input.text} onChange={(e) => update({ text: e.target.value })} />
-            )}
-          </Label>
-        )
-      })}
+    <div className="space-y-1">
+      <p className="text-muted-foreground text-xs">
+        소재는 옵션이 아니라 상품 정보예요. 목록에 없는 소재는 &lsquo;기타&rsquo;를 고르고 혼용률에
+        적어 주세요.
+      </p>
+      <div className="grid gap-3 md:grid-cols-3">
+        {inputs.infoAttributes.map((attribute) => {
+          const input = info[attribute.id] ?? { valueId: '', text: '' }
+          const update = (patch: Partial<typeof input>) =>
+            onChange({ ...info, [attribute.id]: { ...input, ...patch } })
+          return (
+            <Label key={attribute.id}>
+              {attribute.name}
+              {attribute.required && ' *'}
+              {attribute.values.length > 0 ? (
+                <Select value={input.valueId} onChange={(e) => update({ valueId: e.target.value })}>
+                  <option value="">고르기</option>
+                  {attribute.values.map((value) => (
+                    <option key={value.id} value={value.id}>
+                      {value.name}
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <Input value={input.text} onChange={(e) => update({ text: e.target.value })} />
+              )}
+            </Label>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
-type StockAndPriceFieldsProps = {
-  inputs: CategoryInputs
-  form: RegisterProductForm
-  fixedStocks: Record<string, number>
-  onStock: (comboKey: string, stock: number) => void
+type PriceFieldsProps = {
+  groups: ValueCombo[]
+  prices: Record<string, number>
   onPrice: (groupKey: string, price: number) => void
 }
 
-function StockAndPriceFields({
-  inputs,
-  form,
-  fixedStocks,
-  onStock,
-  onPrice,
-}: StockAndPriceFieldsProps) {
-  const combos = optionCombos(inputs, form)
-  if (combos.length === 0) return null
+function PriceFields({ groups, prices, onPrice }: PriceFieldsProps) {
+  if (groups.length === 0) return null
+  const isSinglePrice = groups.length === 1 && groups[0].key === ''
   return (
-    <div className="grid gap-2 md:grid-cols-2">
-      <div className="space-y-1">
-        <p className="text-sm font-medium">
-          {Object.keys(fixedStocks).length > 0
-            ? '옵션 · 재고 (새 옵션은 처음 재고)'
-            : '옵션 · 처음 재고'}
-        </p>
-        {combos.map((combo) =>
-          combo.key in fixedStocks ? (
-            <p key={combo.key} className="flex items-center justify-between gap-2 text-sm">
-              <span>{combo.label}</span>
-              <span className="text-muted-foreground">재고 {fixedStocks[combo.key]}</span>
-            </p>
-          ) : (
-            <Label key={combo.key} className="flex-row items-center justify-between gap-2">
-              <span className="text-sm font-normal">{combo.label}</span>
-              <Input
-                aria-label={`${combo.label} 재고`}
-                type="number"
-                min={0}
-                className="w-24"
-                value={form.stocks[combo.key] ?? 0}
-                onChange={(e) => onStock(combo.key, Number(e.target.value))}
-              />
-            </Label>
-          ),
-        )}
-      </div>
-      <div className="space-y-1">
-        <p className="text-sm font-medium">판매가 (원)</p>
-        {priceGroups(inputs, form).map((group) => (
-          <Label key={group.key} className="flex-row items-center justify-between gap-2">
-            <span className="text-sm font-normal">{group.label}</span>
-            <Input
-              aria-label={`${group.label} 판매가`}
-              type="number"
-              min={1}
-              className="w-32"
-              value={form.prices[group.key] ?? 0}
-              onChange={(e) => onPrice(group.key, Number(e.target.value))}
-            />
-          </Label>
-        ))}
-      </div>
+    <div className="space-y-1 md:max-w-sm">
+      <p className="text-sm font-medium">판매가 (원)</p>
+      {groups.map((group) => (
+        <Label key={group.key} className="flex-row items-center justify-between gap-2">
+          <span className="text-sm font-normal">{group.label}</span>
+          <Input
+            aria-label={`${group.label} 판매가`}
+            type="number"
+            min={1}
+            className="w-32"
+            value={prices[group.key] ?? 0}
+            onChange={(e) => onPrice(group.key, Number(e.target.value))}
+          />
+        </Label>
+      ))}
+      <p className="text-muted-foreground text-xs">
+        {isSinglePrice
+          ? '모든 옵션에 같은 판매가가 들어가요.'
+          : '같은 묶음의 옵션에는 같은 판매가가 들어가요.'}
+      </p>
     </div>
   )
 }

@@ -39,6 +39,7 @@ export function RegisterProductForm({ productHref, renderImages }: RegisterProdu
           ))}
         </Select>
       </Label>
+      <p className="text-muted-foreground text-xs">가장 아래 단계 카테고리에만 등록할 수 있어요.</p>
       {categories.isError && (
         <StateMessage tone="error">{getErrorMessage(categories.error)}</StateMessage>
       )}

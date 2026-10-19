@@ -98,6 +98,7 @@ export type SellerProductDetail = {
     price: number
     stock: number
     onSale: boolean
+    skuCode: string | null
   }[]
   prices: { valueIds: string[]; price: number }[]
   sizeSpecs: {
@@ -154,6 +155,8 @@ export type SizeSpecInput = {
 export type RegisterProductForm = {
   name: string
   brand: string
+  /** 상품 설명 (길이 제한 없음). 비어 있으면 null로 보낸다 */
+  description: string
   /** 올린 이미지 주소 (S3). 첫 번째가 대표 이미지 */
   imageUrls: string[]
   categoryId: string
@@ -163,6 +166,10 @@ export type RegisterProductForm = {
   optionValues: Record<string, string[]>
   /** 옵션 조합 키 → 처음 재고 */
   stocks: Record<string, number>
+  /** 옵션 조합 키 → SKU 코드 (선택, 판매자 관리용). 비어 있으면 null로 보낸다 */
+  skuCodes: Record<string, string>
+  /** 판매자가 뺀 옵션 조합 키. 고른 값의 조합 중 팔지 않을 것 */
+  removedCombos: string[]
   /** 가격 묶음 키 → 판매가 */
   prices: Record<string, number>
   /** 사이즈 값 ID → 권장 키 · 실측 */

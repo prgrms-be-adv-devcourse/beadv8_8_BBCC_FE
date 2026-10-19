@@ -108,6 +108,7 @@ const detail: SellerProductDetail = {
       price: 25000,
       stock: 10,
       onSale: true,
+      skuCode: null,
     },
     {
       id: '42',
@@ -116,6 +117,7 @@ const detail: SellerProductDetail = {
       price: 25000,
       stock: 0,
       onSale: true,
+      skuCode: null,
     },
   ],
   prices: [{ valueIds: [], price: 25000 }],
@@ -145,11 +147,14 @@ describe('toEditableProductForm: 판매자 상세 → 등록 폼 값 (수정 화
     expect(toEditableProductForm(inputs, detail)).toEqual({
       name: '데일리 맨투맨',
       brand: '',
+      description: '',
       imageUrls: [`${S3}/a.jpg`, `${S3}/b.jpg`],
       categoryId: '11',
       info: { '3': { valueId: '301', text: '' }, '4': { valueId: '', text: '면 100%' } },
       optionValues: { '1': ['101'], '2': ['202', '203'] },
       stocks: { '101,202': 10, '101,203': 0 },
+      skuCodes: {},
+      removedCombos: [],
       prices: { '': 25000 },
       sizeSpecs: {
         '202': {
@@ -174,6 +179,40 @@ describe('toEditableProductForm: 판매자 상세 → 등록 폼 값 (수정 화
       '202': 25000,
       '203': 27000,
     })
+  })
+
+  it('저장된 설명은 그대로 채운다', () => {
+    expect(
+      toEditableProductForm(inputs, { ...detail, description: '부드러운 면' }).description,
+    ).toBe('부드러운 면')
+  })
+
+  it('저장된 SKU 코드는 옵션 조합 키로 채우고, 없는 옵션은 뺀다', () => {
+    const withSku = {
+      ...detail,
+      options: detail.options.map((option) =>
+        option.id === '41' ? { ...option, skuCode: 'NV-110' } : option,
+      ),
+    }
+    const edited = toEditableProductForm(inputs, withSku)
+    expect(edited.skuCodes).toEqual({ '101,202': 'NV-110' })
+    expect(toProductUpdateRequest(inputs, edited, withSku).options).toMatchObject([
+      { valueIds: [101, 202], skuCode: 'NV-110' },
+      { valueIds: [101, 203], skuCode: null },
+    ])
+  })
+
+  it('고른 값의 조합 중 저장된 옵션이 없는 조합은 뺀 조합으로 채운다', () => {
+    const partial = {
+      ...detail,
+      options: [
+        detail.options[0],
+        { ...detail.options[1], id: '43', name: '그레이 / 120', valueIds: ['102', '203'] },
+      ],
+    }
+    const edited = toEditableProductForm(inputs, partial)
+    expect(edited.optionValues).toEqual({ '1': ['101', '102'], '2': ['202', '203'] })
+    expect(edited.removedCombos).toEqual(['101,203', '102,202'])
   })
 
   it('저장되지 않은 정보 항목은 빈 칸', () => {
@@ -223,11 +262,11 @@ describe('validateProductUpdateForm: 보낼 값만 검사한다', () => {
 describe('toProductUpdateRequest: 수정 폼 → PUT 요청 (BE ProductUpdateRequest)', () => {
   const form = toEditableProductForm(inputs, detail)
 
-  it('판매 시작 전이면 읽어 간 version과 옵션 · 가격 · 실측을 함께 보낸다 (설명은 받은 값 그대로)', () => {
+  it('판매 시작 전이면 읽어 간 version과 옵션 · 가격 · 실측을 함께 보낸다 (설명은 폼에서 고친 값)', () => {
     const request = toProductUpdateRequest(
       inputs,
-      { ...form, name: ' 새 이름 ', brand: ' 키들리 ' },
-      { ...detail, description: '부드러운 면' },
+      { ...form, name: ' 새 이름 ', brand: ' 키들리 ', description: ' 부드러운 면 ' },
+      { ...detail, description: '예전 설명' },
     )
     expect(request).toEqual({
       version: 3,

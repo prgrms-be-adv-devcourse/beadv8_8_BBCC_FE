@@ -105,14 +105,26 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     expect(put.headers().authorization).toBeUndefined()
     await expect(page.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
     await expect(page.getByText('대표', { exact: true })).toBeVisible()
+    // 상품 설명 · SKU 코드(선택)를 넣고, 뺀 옵션은 다시 넣을 수 있다
+    await page.getByLabel('상품 설명').fill('  부드러운 면 맨투맨  ')
+    const sku = `NV-110-${Date.now()}`
+    await page.getByLabel('네이비 / 110 SKU 코드').fill(` ${sku} `)
+    await page.getByRole('button', { name: '네이비 / 120 빼기' }).click()
+    await expect(page.getByLabel('네이비 / 120 재고')).toHaveCount(0)
+    await page.getByRole('button', { name: '뺀 옵션 1개 다시 넣기' }).click()
+    await expect(page.getByLabel('네이비 / 120 재고')).toBeVisible()
     const registering = page.waitForRequest(
       (request) => request.method() === 'POST' && request.url().endsWith('/seller/products'),
     )
     await page.getByRole('button', { name: '등록하기' }).click()
     const body = (await registering).postDataJSON() as {
+      description: string | null
       thumbnailUrl: string
       imageUrls: string[]
+      options: { skuCode: string | null }[]
     }
+    expect(body.description).toBe('부드러운 면 맨투맨')
+    expect(body.options.map((option) => option.skuCode)).toEqual([sku, null])
     expect(body.imageUrls).toHaveLength(1)
     expect(body.thumbnailUrl).toBe(body.imageUrls[0])
     expect(body.thumbnailUrl).toMatch(BUCKET_IMAGE)
@@ -121,6 +133,9 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await registered.getByRole('button', { name: '판매 시작' }).click()
     await expect(registered.getByText('판매를 시작했어요.')).toBeVisible()
     await expect(page.getByRole('button', { name: '판매 시작' })).toHaveCount(0)
+    // 같은 SKU 코드로 다시 등록하면 서버가 거절하고 그 설명을 그대로 보여 준다
+    await page.getByRole('button', { name: '등록하기' }).click()
+    await expect(page.getByText(`겹친 코드는 ${sku}입니다.`)).toBeVisible()
   })
 
   await test.step('판매자 센터: 상품 수정 · 사진 더하기 · 재고 조정 · 판매 중지 → 다시 판매 (실제 API)', async () => {
@@ -133,6 +148,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await mine.getByRole('button', { name: '수정' }).click()
     await expect(mine.getByText(/판매를 시작한 상품은 옵션/)).toBeVisible()
     await expect(mine.getByLabel('상품명')).toHaveValue(/데일리 맨투맨/)
+    await expect(mine.getByLabel('상품 설명')).toHaveValue('부드러운 면 맨투맨')
     await expect(mine.getByRole('img', { name: '상품 사진 1' })).toBeVisible()
     await mine.getByLabel('상품명').fill('데일리 맨투맨 (수정)')
     // 지금 사진 뒤에 새 사진을 더한다
