@@ -1,4 +1,11 @@
-import type { Child, ChildForm, GrowthRecord, GrowthSummary } from './child'
+import {
+  BODY_TYPE_LABEL,
+  PREFERRED_FIT_LABEL,
+  type Child,
+  type ChildForm,
+  type GrowthRecord,
+  type GrowthSummary,
+} from './child'
 
 const hasOneDecimal = (value: number) => Math.round(value * 10) === value * 10
 
@@ -47,4 +54,17 @@ export function growthMonths(records: { recordedAt: string }[]): number | null {
   if (records.length < 2) return null
   const times = records.map((record) => Date.parse(record.recordedAt)).sort((a, b) => a - b)
   return Math.max(1, Math.round((times.at(-1)! - times[0]) / (30.44 * 86_400_000)))
+}
+
+/** 맞춤 목록 머리말: 키 · 체형 · 선호 핏 (없는 값은 뺀다) */
+export function childProfileLine(
+  child: Pick<Child, 'heightCm' | 'bodyType' | 'preferredFit'>,
+): string {
+  return [
+    `키 ${child.heightCm}cm`,
+    child.bodyType && `체형 ${BODY_TYPE_LABEL[child.bodyType]}`,
+    child.preferredFit && `핏 ${PREFERRED_FIT_LABEL[child.preferredFit]}`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 }

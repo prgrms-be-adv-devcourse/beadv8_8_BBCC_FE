@@ -36,11 +36,11 @@ export const productApi = {
     apiClient
       .get<CategoryInputsDto>(`/categories/${categoryId}/attributes`)
       .then(expectShape(categoryInputsShape)),
-  /** 판매 중인 상품 (품절 포함, 최신순). 검색어 · 카테고리로 거른다. 로그인 없이 된다 */
-  list: (search: ProductSearchParamsDto = {}) =>
+  /** 판매 중인 상품 (품절 포함, 최신순). 검색어 · 카테고리로 거른다. 로그인 없이 된다. page는 0부터 */
+  list: (search: ProductSearchParamsDto = {}, page = 0) =>
     apiClient
       .get<Page<ProductListItemDto>>('/products', {
-        params: { ...search, page: 0, size: 20 },
+        params: { ...search, page, size: 20 },
         // 목록은 attributes=COLOR:3&attributes=SIZE:5 (Spring List 바인딩, 대괄호 없이)
         paramsSerializer: { indexes: null },
       })

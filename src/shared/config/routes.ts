@@ -22,6 +22,7 @@ export function areaOf(pathname: string): Area {
 }
 
 const C = '/console'
+const RECOMMENDED = '/recommended'
 
 export const paths = {
   login: '/login',
@@ -30,6 +31,8 @@ export const paths = {
     home: '/',
     product: (id: string, childId?: string | null) =>
       childId ? `/products/${id}?childId=${childId}` : `/products/${id}`,
+    /** 자녀 맞춤 목록 (홈 「더보기」) */
+    recommended: (childId: string) => `${RECOMMENDED}/${childId}`,
     cart: '/cart',
     orders: '/orders',
     order: (id: string) => `/orders/${id}`,
@@ -107,10 +110,12 @@ export function memberPathsOf(area: Area) {
   }
 }
 
-/** 로그인해야 볼 수 있는 쇼핑 화면: 장바구니 · 주문 · 마이페이지(자녀 · 배송지 · 예치금 포함). 홈 · 상품은 누구나 */
+/** 로그인해야 볼 수 있는 쇼핑 화면: 맞춤 목록 · 장바구니 · 주문 · 마이페이지(자녀 · 배송지 · 예치금 포함). 홈 · 상품은 누구나 */
 export function shopNeedsLogin(pathname: string): boolean {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
-  return [paths.shop.cart, paths.shop.orders, paths.shop.my].some((prefix) => under(prefix, path))
+  return [RECOMMENDED, paths.shop.cart, paths.shop.orders, paths.shop.my].some((prefix) =>
+    under(prefix, path),
+  )
 }
 
 /** 로그인 화면 주소. next = 로그인 뒤 돌아올 화면 (앱 안 주소만) */

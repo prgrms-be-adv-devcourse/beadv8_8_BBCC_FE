@@ -123,6 +123,14 @@ export const router = createBrowserRouter(
           ),
         },
         {
+          path: 'recommended/:childId',
+          ...page(() =>
+            import('@/pages/shop/recommended').then((m) => ({
+              Component: m.ShopRecommendedPage,
+            })),
+          ),
+        },
+        {
           path: rel('', paths.shop.cart),
           ...page(() => import('@/pages/shop/cart').then((m) => ({ Component: m.ShopCartPage }))),
         },

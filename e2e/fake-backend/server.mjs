@@ -113,6 +113,19 @@ const page = (content) => ({
   totalPages: 1,
   hasNext: false,
 })
+/** 요청의 page · size(기본 0 · 20)로 자른 PageResponse (BE PageResponse) */
+const pageFrom = (content, query) => {
+  const number = Math.max(0, Number(query.get('page') ?? 0))
+  const size = Number(query.get('size') ?? 20)
+  return {
+    content: content.slice(number * size, (number + 1) * size),
+    page: number,
+    size,
+    totalElements: content.length,
+    totalPages: Math.ceil(content.length / size),
+    hasNext: (number + 1) * size < content.length,
+  }
+}
 function who(req) {
   const t = (req.headers.authorization || '').split(' ')[1]
   if (!t) return null
@@ -213,7 +226,8 @@ http
         ? send(res, 200, inputs)
         : problem(res, 404, '찾을 수 없습니다', '카테고리를 찾을 수 없습니다.', req.url)
     }
-    if (r('GET', /^\/products$/)) return send(res, 200, page(productListOf(url.searchParams)))
+    if (r('GET', /^\/products$/))
+      return send(res, 200, pageFrom(productListOf(url.searchParams), url.searchParams))
     if ((x = r('GET', /^\/products\/(\d+)$/))) {
       const detail = productDetailOf(x[1])
       return detail
@@ -345,7 +359,10 @@ http
       const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
       if (!c)
         return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
-      const content = productListOf(new URLSearchParams()).flatMap((item) => {
+      // 말단 카테고리만 거른다 (BE: 정확히 같은 categoryId)
+      const categoryId = url.searchParams.get('categoryId')
+      const byCategory = new URLSearchParams(categoryId ? { categoryId } : {})
+      const content = productListOf(byCategory).flatMap((item) => {
         const rec = sizeRecommendationOf(productDetailOf(item.productId), c)
         if (!rec.recommendedSize && !item.sizeFree) return []
         return [
@@ -359,7 +376,7 @@ http
           },
         ]
       })
-      return send(res, 200, page(content))
+      return send(res, 200, pageFrom(content, url.searchParams))
     }
     // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
     if (r('GET', /^\/admin\/orders$/)) {

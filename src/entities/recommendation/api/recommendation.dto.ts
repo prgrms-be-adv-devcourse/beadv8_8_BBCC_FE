@@ -27,3 +27,10 @@ export type RecommendedProductDto = {
   /** 사이즈 무관 상품이면 null */
   recommendedSize: string | null
 }
+
+/** GET /children/{childId}/recommended-products 요청 값 */
+export type RecommendedProductsParamsDto = {
+  categoryId?: string
+  page: number
+  size: number
+}
