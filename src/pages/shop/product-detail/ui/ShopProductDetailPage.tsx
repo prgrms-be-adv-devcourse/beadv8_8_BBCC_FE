@@ -7,6 +7,7 @@ import {
   isOnSale,
   ProductDescription,
   ProductGallery,
+  ProductSellerLine,
   productMeta,
   missingPickMessage,
   OptionChipPicker,
@@ -79,7 +80,10 @@ export function ShopProductDetailPage() {
         <div className="space-y-5">
           <div>
             <p className="text-muted-foreground text-sm">{productMeta(detail)}</p>
-            <h1 className="mt-1 text-2xl font-bold">{detail.name}</h1>
+            <div className="mt-1 space-y-0.5">
+              <ProductSellerLine businessName={detail.businessName} />
+              <h1 className="text-2xl font-bold">{detail.name}</h1>
+            </div>
             {detail.minPrice !== null && (
               <p className="mt-2 text-2xl font-extrabold">{formatWon(detail.minPrice)}~</p>
             )}

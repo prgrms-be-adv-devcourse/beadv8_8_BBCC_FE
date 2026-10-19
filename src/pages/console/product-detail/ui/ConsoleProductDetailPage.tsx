@@ -6,6 +6,7 @@ import {
   detailImagesOf,
   isOnSale,
   ProductDescription,
+  ProductSellerLine,
   PRODUCT_STATUS_LABEL,
   productMeta,
   missingPickMessage,
@@ -55,6 +56,8 @@ export function ConsoleProductDetailPage() {
 
   return (
     <div className="space-y-4">
+      {/* 상품명(화면 제목) 바로 위 */}
+      <ProductSellerLine businessName={detail.businessName} />
       <PageHeader
         title={detail.name}
         description={[productMeta(detail), PRODUCT_STATUS_LABEL[detail.status]]

@@ -45,6 +45,7 @@ function productOf(
     productId: '4',
     name: '멀티 옵션 맨투맨',
     brand: null,
+    businessName: null,
     categoryId: '11',
     description: null,
     status: 'ON_SALE',
