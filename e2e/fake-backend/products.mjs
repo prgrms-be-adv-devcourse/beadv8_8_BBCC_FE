@@ -249,6 +249,7 @@ export function detailOf(productId) {
     name: p.name,
     brand: p.brand,
     categoryId: String(p.categoryId),
+    description: p.description ?? null,
     status: p.status,
     sizeFree: !p.options.some((o) => sizeOf(o.valueIds)),
     minPrice: p.options.length ? Math.min(...p.options.map((o) => o.price)) : null,

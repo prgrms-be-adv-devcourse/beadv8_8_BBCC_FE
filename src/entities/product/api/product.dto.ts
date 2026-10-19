@@ -8,6 +8,8 @@ export type ProductDetailDto = {
   name: string
   brand: string | null
   categoryId: string
+  /** 판매자가 입력하지 않았으면 null */
+  description: string | null
   status: string
   sizeFree: boolean
   /** 옵션이 없으면 null */

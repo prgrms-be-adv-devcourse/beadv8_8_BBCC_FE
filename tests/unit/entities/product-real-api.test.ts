@@ -271,6 +271,7 @@ describe('toProductDetail (BE ProductDetailResponse)', () => {
     name: '데일리 맨투맨',
     brand: '키들리',
     categoryId: '11',
+    description: '  부드러운 면 맨투맨  ',
     status: 'ON_SALE',
     sizeFree: false,
     minPrice: 25000,
@@ -320,10 +321,16 @@ describe('toProductDetail (BE ProductDetailResponse)', () => {
   }
   const detail = toProductDetail(dto, [{ id: '11', name: '상의', path: '의류 > 상의' }])
 
-  it('카테고리명은 트리에서, 판매자명 · 설명은 없다', () => {
+  it('카테고리명은 트리에서, 판매자명은 없다', () => {
     expect(detail).toMatchObject({ id: '7', categoryName: '상의', brand: '키들리', imageUrl: null })
     expect(detail).not.toHaveProperty('sellerName')
-    expect(detail).not.toHaveProperty('description')
+  })
+  it.each([
+    ['  부드러운 면 맨투맨  ', '부드러운 면 맨투맨'],
+    ['   ', null],
+    [null, null],
+  ])('설명 %j는 앞뒤 공백을 지우고 비어 있으면 null → %j', (description, expected) => {
+    expect(toProductDetail({ ...dto, description }).description).toBe(expected)
   })
   it('옵션: 사이즈 값 · 실측의 권장 키 · 재고 표시', () => {
     expect(detail.options).toEqual([
