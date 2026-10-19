@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  chipNoteOf,
   missingPickMessage,
   optionChipRows,
   pickedOption,
@@ -170,6 +171,35 @@ describe('optionChipRows: 항목마다 등록된 값의 칩 한 줄', () => {
     expect(size.isFixed).toBe(false)
     expect(size.chips.map((chip) => chip.state)).toEqual(['AVAILABLE', 'AVAILABLE'])
     expect(pickedOption(navyOnly, { '2': '12' })?.id).toBe('1-12')
+  })
+})
+
+describe('고정 줄도 칩 상태를 알린다 (하나뿐인 값이 품절 · 없음 · 적게 남음)', () => {
+  const free = productOf(
+    [
+      ['1', '19', true, 'LOW', 2],
+      ['2', '19', false, 'SOLD_OUT', null],
+    ],
+    COLORS.slice(0, 3),
+    [{ valueId: '19', value: 'FREE', colorCode: null }],
+  )
+  it.each([
+    ['1', 'LOW', '2개 남았어요'],
+    ['2', 'SOLD_OUT', '품절'],
+    ['3', 'NONE', '없음'],
+  ])('색상 %s를 고르면 고정 사이즈 줄은 %s → %s', (colorId, state, note) => {
+    const sizeRow = optionChipRows(free, { '1': colorId })[1]
+    expect(sizeRow.isFixed).toBe(true)
+    expect(sizeRow.chips[0].state).toBe(state)
+    expect(chipNoteOf(sizeRow.chips[0])).toBe(note)
+  })
+  it('「N개 남았어요」는 조합이 정해지는 마지막 항목에만 붙는다 (고정 줄이 둘이어도 한 번)', () => {
+    const single = productOf([['2', '12', true, 'LOW', 5]], COLORS.slice(1, 2), SIZES.slice(1, 2))
+    const [color, size] = optionChipRows(single, {})
+    expect([color.chips[0].state, size.chips[0].state]).toEqual(['AVAILABLE', 'LOW'])
+  })
+  it('살 수 있으면 알릴 것이 없다', () => {
+    expect(chipNoteOf({ state: 'AVAILABLE', remaining: null })).toBeNull()
   })
 })
 

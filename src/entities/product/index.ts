@@ -106,6 +106,7 @@ export {
   useImageUploading,
 } from './model/product-images'
 export {
+  chipNoteOf,
   isChipPickable,
   missingPickMessage,
   optionChipRows,

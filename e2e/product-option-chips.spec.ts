@@ -93,11 +93,12 @@ test('상품 상세: 값이 하나뿐인 항목은 고정 줄로 보이고 고�
   // 가짜 백엔드 상품 2(밴딩 조거 팬츠)는 그레이 · 120 하나뿐이다
   await page.goto('/products/2')
   await expect(page.getByText('색상: 그레이', { exact: true })).toBeVisible()
+  // 남은 수량(재고 5개)은 조합이 정해지는 마지막 줄에만 붙는다
+  await expect(page.getByText('사이즈: 120 5개 남았어요', { exact: true })).toBeVisible()
   await expect(page.getByText('색상: 그레이', { exact: true }).locator('[data-swatch]')).toHaveCSS(
     'background-color',
     'rgb(156, 163, 175)',
   )
-  await expect(page.getByText('사이즈: 120', { exact: true })).toBeVisible()
   // 고정 줄은 누르는 칩이 아니다
   await expect(page.getByRole('group', { name: '색상', exact: true })).toHaveCount(0)
   // 고르지 않아도 그 조합이 정해져 있다
