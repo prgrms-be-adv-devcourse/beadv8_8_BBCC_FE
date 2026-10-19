@@ -381,6 +381,8 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(bulk).toHaveCount(0)
     await page.getByRole('tab', { name: /전체/ }).click()
     await page.getByRole('button', { name: '발송' }).first().click()
+    // 서버에는 택배사 코드(CJ)를 보내고, 화면에는 이름으로 보인다
+    await expect(page.getByText(/CJ대한통운 \S+/).first()).toBeVisible()
     await page.getByRole('button', { name: '배송 완료 처리' }).first().click()
     await expect(page.getByText('배송 완료', { exact: true }).first()).toBeVisible()
   })

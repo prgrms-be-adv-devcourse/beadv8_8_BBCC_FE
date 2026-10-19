@@ -911,6 +911,26 @@ http
       )
     if ((x = r('POST', /^\/seller\/orders\/(\d+)\/ship$/))) {
       const { d, o } = sellerOrders().find(({ d }) => d.sellerOrderId === x[1])
+      // BE ShipRequest · OrderErrorCode: 택배사는 코드만(대문자 정확히), 송장 1~50자, 발송은 한 번
+      if (!['CJ', 'EPOST', 'HANJIN', 'LOTTE', 'LOGEN', 'DUMMY'].includes(body?.carrier))
+        return problem(
+          res,
+          400,
+          '지원하지 않는 택배사입니다',
+          '지원하는 택배사는 CJ · EPOST · HANJIN · LOTTE · LOGEN입니다.',
+          req.url,
+        )
+      const tracking = String(body?.trackingNumber ?? '')
+      if (!tracking.trim() || tracking.length > 50)
+        return problem(res, 400, '잘못된 요청입니다', '송장번호를 1~50자로 넣어 주세요.', req.url)
+      if (d.status !== 'READY')
+        return problem(
+          res,
+          409,
+          '이미 발송된 주문입니다',
+          '이미 발송된 주문입니다. 판매 주문 목록을 새로고침해 주세요.',
+          req.url,
+        )
       Object.assign(d, {
         status: 'SHIPPING',
         carrier: body.carrier,

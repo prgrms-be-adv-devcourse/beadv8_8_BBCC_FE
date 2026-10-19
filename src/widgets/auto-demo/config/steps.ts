@@ -221,7 +221,8 @@ export const AUTO_DEMO_STEPS: AutoDemoStep[] = [
       if (!sellerOrder) throw new AutoDemoError('판매 주문 목록에 이 주문이 없어요')
       await ctx.call('발송', () =>
         sellerOrderApi.ship(sellerOrder.sellerOrderId, {
-          carrier: 'CJ대한통운',
+          // 서버는 택배사 코드만 받는다 (화면 이름 "CJ대한통운"은 400)
+          carrier: 'CJ',
           trackingNumber: `AUTO${Date.now().toString().slice(-8)}`,
         }),
       )
