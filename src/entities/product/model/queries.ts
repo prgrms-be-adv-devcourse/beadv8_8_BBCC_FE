@@ -66,8 +66,7 @@ export function useCategoryInputsQuery(categoryId: string) {
 
 const NO_SEARCH: ProductSearch = { keyword: '', categoryId: null }
 
-/** 판매 중인 상품 (검색어 · 카테고리, BE GET /products) */
-/** 전체 상품 한 페이지 (page는 0부터). 페이지를 넘기는 동안 앞 페이지를 그대로 보여 준다 */
+/** 판매 중인 상품 한 페이지 (검색어 · 카테고리, BE GET /products, page는 0부터). 페이지를 넘기는 동안 앞 페이지를 그대로 보여 준다 */
 export function useProductsQuery(search: ProductSearch = NO_SEARCH, page = 0) {
   return useQuery({
     queryKey: productKeys.search(search, page),
