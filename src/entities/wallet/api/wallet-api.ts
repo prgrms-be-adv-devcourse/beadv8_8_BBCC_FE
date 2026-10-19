@@ -21,6 +21,13 @@ import {
 
 const CHARGES = '/wallets/me/charges'
 
+/**
+ * 토스를 부르는 요청(충전 승인 · 취소)의 시간 제한. 기본 10초보다 길다.
+ * BE는 토스 응답을 최대 33초(toss.connect-timeout 3초 + toss.read-timeout 30초) 기다린 뒤 결과를 모르면 202를 주므로,
+ * 그보다 오래 기다려야 BE가 끝낸 결과(승인 · 확인 중)를 받는다. BE 설정을 바꾸면 이 값도 함께 바꾼다
+ */
+const TOSS_CALL_TIMEOUT_MS = 40_000
+
 export const walletApi = {
   /** accessToken을 주면 지금 로그인과 상관없이 그 계정의 잔액 (자동 시연 시작 전 점검) */
   getMine: (accessToken?: string) =>
@@ -53,7 +60,9 @@ export const walletApi = {
       .then(expectShape(chargeRequestShape)),
   confirmCharge: (request: ConfirmChargeRequestDto) =>
     apiClient
-      .post<ConfirmChargeResultDto>(`${CHARGES}/confirm`, request)
+      .post<ConfirmChargeResultDto>(`${CHARGES}/confirm`, request, {
+        timeout: TOSS_CALL_TIMEOUT_MS,
+      })
       .then(expectShape(chargeConfirmShape)),
   /** 결제창이 끝나지 않은 충전을 실패로 끝낸다. 이미 실패한 충전이면 그대로 200 */
   failCharge: (request: FailChargeRequestDto) =>
@@ -61,6 +70,8 @@ export const walletApi = {
   /** 충전 취소 = 토스 결제 취소. 200 = 취소 완료, 202 = 토스 결과 확인 중 (충전액은 이미 빠짐) */
   cancelCharge: (chargeId: string) =>
     apiClient
-      .post<ChargeCancelResultDto>(`${CHARGES}/${chargeId}/cancel`)
+      .post<ChargeCancelResultDto>(`${CHARGES}/${chargeId}/cancel`, undefined, {
+        timeout: TOSS_CALL_TIMEOUT_MS,
+      })
       .then(expectShape(chargeCancelShape)),
 }

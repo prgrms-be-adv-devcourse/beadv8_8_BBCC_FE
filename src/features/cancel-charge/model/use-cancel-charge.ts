@@ -13,7 +13,9 @@ export function useCancelCharge(chargeId: string) {
       ),
     onSuccess: () => {
       toast('충전을 취소했어요')
-      // 잔액 · 충전 내역 · 거래 내역 (wallet 아래 모두)
+    },
+    // 실패 · 시간 초과여도 서버에서 충전 상태가 바뀌었을 수 있다 (잔액 · 충전 내역 · 거래 내역, wallet 아래 모두)
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: walletKeys.all })
     },
   })
