@@ -14,6 +14,7 @@ export {
   PRODUCT_STATUS_LABEL,
   STOCK_REASON_LABEL,
   type Category,
+  type CategoryGroup,
   type CategoryInputs,
   type InputAttribute,
   type ProductDetail,
@@ -35,6 +36,7 @@ export {
 } from './model/product'
 export {
   toCategories,
+  toCategoryGroups,
   toCategoryInputs,
   toProductDetail,
   toProductSearchParams,
@@ -71,6 +73,7 @@ export {
 export {
   productKeys,
   useCategoriesQuery,
+  useCategoryGroupsQuery,
   useCategoryInputsQuery,
   useProductQuery,
   useProductsQuery,

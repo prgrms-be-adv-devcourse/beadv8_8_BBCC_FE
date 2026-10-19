@@ -12,6 +12,7 @@ import type {
 } from '../api/product.dto'
 import type {
   Category,
+  CategoryGroup,
   CategoryInputs,
   InputAttribute,
   ProductDetail,
@@ -248,4 +249,13 @@ export function toCategories(tree: CategoryTreeDto[], parents: string[] = []): C
       ? [{ id: node.categoryId, name: node.name, path: path.join(' > ') }]
       : toCategories(node.children, path)
   })
+}
+
+/** 카테고리 트리 → 가장 위 카테고리마다 그 아래 끝 카테고리 묶음 (위 카테고리가 끝이면 자신만) */
+export function toCategoryGroups(tree: CategoryTreeDto[]): CategoryGroup[] {
+  return tree.map((node) => ({
+    id: node.categoryId,
+    name: node.name,
+    categories: toCategories([node]),
+  }))
 }

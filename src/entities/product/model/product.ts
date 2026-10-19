@@ -118,6 +118,9 @@ export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
 /** 고를 수 있는 카테고리 (트리의 끝). path = "상위 > 하위" */
 export type Category = { id: string; name: string; path: string }
 
+/** 등록 화면 2단 선택: 가장 위 카테고리와 그 아래 끝 카테고리 */
+export type CategoryGroup = { id: string; name: string; categories: Category[] }
+
 /** 등록 폼 항목 하나 (BE CategoryInputsResponse.InputAttribute) */
 export type InputAttribute = {
   id: string

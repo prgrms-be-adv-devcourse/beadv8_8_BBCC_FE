@@ -6,6 +6,7 @@ import type { Page } from '@/shared/api'
 import type { Category, ProductSearch } from './product'
 import {
   toCategories,
+  toCategoryGroups,
   toCategoryInputs,
   toProductDetail,
   toProductSearchParams,
@@ -33,6 +34,16 @@ export function useCategoriesQuery() {
     queryKey: productKeys.categories,
     queryFn: productApi.categories,
     select: (tree) => toCategories(tree),
+    staleTime: Infinity,
+  })
+}
+
+/** 등록 화면 2단 선택용 카테고리 묶음 (같은 트리를 한 번만 불러온다) */
+export function useCategoryGroupsQuery() {
+  return useQuery({
+    queryKey: productKeys.categories,
+    queryFn: productApi.categories,
+    select: (tree) => toCategoryGroups(tree),
     staleTime: Infinity,
   })
 }

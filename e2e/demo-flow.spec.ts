@@ -119,6 +119,11 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
   await test.step('② 상품 등록 → 판매 시작 (실제 API: 카테고리 입력 항목 · 등록 · sale-status)', async () => {
     await switchRole(page, '판매자')
     await page.goto('/console/seller/products')
+    // 카테고리는 2단 선택: 의류 › 상의 (가장 아래 단계에만 등록)
+    await expect(page.getByLabel('카테고리', { exact: true }).locator('option:checked')).toHaveText(
+      '의류',
+    )
+    await expect(page.getByLabel('아래 단계 카테고리').locator('option:checked')).toHaveText('상의')
     // 카테고리 입력 항목을 받아 시연 값(네이비 · 110 / 120 · 면)으로 채운 폼
     await expect(page.getByRole('checkbox', { name: '네이비' })).toBeChecked()
     await expect(page.getByLabel('네이비 / 120 재고')).toHaveValue('10')
