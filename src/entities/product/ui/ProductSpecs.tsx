@@ -1,10 +1,16 @@
+import { cn } from '@/shared/lib'
+import { Badge } from '@/shared/ui/badge'
 import type { ProductDetail } from '../model/product'
 import { heightRange } from '../model/product.rules'
 
-type ProductSpecsProps = { product: ProductDetail }
+type ProductSpecsProps = {
+  product: ProductDetail
+  /** 추천 사이즈 (그 줄을 강조) */
+  recommendedSize?: string | null
+}
 
 /** 상품 정보 항목 + 사이즈별 권장 키 · 실측 (BE 상세 productInfo · sizeSpecs) */
-export function ProductSpecs({ product }: ProductSpecsProps) {
+export function ProductSpecs({ product, recommendedSize }: ProductSpecsProps) {
   const info = product.info.filter((item) => item.value)
   const items = product.sizeSpecs[0]?.measurements ?? []
   if (info.length === 0 && product.sizeSpecs.length === 0) return null
@@ -21,34 +27,49 @@ export function ProductSpecs({ product }: ProductSpecsProps) {
         </dl>
       )}
       {product.sizeSpecs.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs" aria-label="사이즈 정보">
-            <thead className="text-muted-foreground">
-              <tr>
-                <th className="py-1 pr-3 font-medium">사이즈</th>
-                <th className="py-1 pr-3 font-medium">권장 키</th>
-                {items.map((item) => (
-                  <th key={item.name} className="py-1 pr-3 font-medium">
-                    {item.name}({item.unit})
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {product.sizeSpecs.map((spec) => (
-                <tr key={spec.size} className="border-t">
-                  <td className="py-1 pr-3 font-medium">{spec.size}</td>
-                  <td className="py-1 pr-3">{heightRange(spec) ?? '—'}</td>
-                  {spec.measurements.map((item) => (
-                    <td key={item.name} className="py-1 pr-3">
-                      {item.value ?? '—'}
-                    </td>
+        <details className="rounded-lg border px-3 py-2">
+          <summary className="cursor-pointer font-semibold">
+            실측표 보기 <span className="text-muted-foreground font-normal">단위 cm</span>
+          </summary>
+          <div className="mt-2 overflow-x-auto">
+            <table className="w-full text-left text-xs" aria-label="사이즈 정보">
+              <thead className="text-muted-foreground">
+                <tr>
+                  <th className="py-1 pr-3 font-medium">사이즈</th>
+                  <th className="py-1 pr-3 font-medium">권장 키</th>
+                  {items.map((item) => (
+                    <th key={item.name} className="py-1 pr-3 font-medium">
+                      {item.name}({item.unit})
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {product.sizeSpecs.map((spec) => (
+                  <tr
+                    key={spec.size}
+                    className={cn('border-t', spec.size === recommendedSize && 'bg-primary-soft')}
+                  >
+                    <td className="py-1 pr-3 font-medium">
+                      {spec.size}
+                      {spec.size === recommendedSize && (
+                        <Badge variant="highlight" className="ml-1">
+                          추천
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="py-1 pr-3">{heightRange(spec) ?? '—'}</td>
+                    {spec.measurements.map((item) => (
+                      <td key={item.name} className="py-1 pr-3">
+                        {item.value ?? '—'}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       )}
     </div>
   )

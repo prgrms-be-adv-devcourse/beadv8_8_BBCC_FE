@@ -4,12 +4,16 @@ import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY } from '@/entities/cart'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
   detailImagesOf,
-  findOption,
   isOnSale,
   ProductDescription,
   PRODUCT_STATUS_LABEL,
   productMeta,
-  ProductOptionList,
+  missingPickMessage,
+  OptionChipPicker,
+  optionChipRows,
+  pickedOption,
+  pickOptionValue,
+  type OptionPicks,
   ProductSpecs,
   useProductQuery,
   WearPreview,
@@ -35,7 +39,7 @@ export function ConsoleProductDetailPage() {
   const children = useChildrenQuery()
   const [childId, setChildId] = useState<string | null>(search.get('childId'))
   const recommendation = useSizeRecommendationQuery(productId, childId)
-  const [optionId, setOptionId] = useState<string | null>(null)
+  const [picks, setPicks] = useState<OptionPicks>({})
   const [quantity, setQuantity] = useState(1)
 
   if (product.isPending) return <StateMessage>불러오는 중…</StateMessage>
@@ -44,7 +48,9 @@ export function ConsoleProductDetailPage() {
 
   const detail = product.data
   const pickedChild = children.data?.find((item) => item.id === childId) ?? null
-  const selected = findOption(detail, optionId)
+  const selected = pickedOption(detail, picks)
+  const optionId = selected?.id ?? null
+  const missingPick = missingPickMessage(detail, picks)
   const isSelling = isOnSale(detail)
 
   return (
@@ -86,12 +92,17 @@ export function ConsoleProductDetailPage() {
 
       <Card className="space-y-3">
         <p className="font-semibold">옵션</p>
-        <ProductOptionList
-          options={detail.options}
-          selectedId={optionId}
-          recommendedSize={recommendation.data?.recommendedSize}
-          onSelect={setOptionId}
+        <OptionChipPicker
+          rows={optionChipRows(detail, picks, recommendation.data?.recommendedSize)}
+          onPick={(attributeId, valueId) =>
+            setPicks((prev) => pickOptionValue(detail, prev, attributeId, valueId))
+          }
         />
+        {selected && (
+          <p className="text-muted-foreground text-sm">
+            {selected.name} · {quantity}개
+          </p>
+        )}
         <div className="flex items-center gap-2">
           <span className="text-sm">수량</span>
           <Input
@@ -102,9 +113,9 @@ export function ConsoleProductDetailPage() {
             value={quantity}
             onChange={(e) => setQuantity(clampQuantity(Number(e.target.value)))}
           />
-          {selected && (
-            <span className="ml-auto font-semibold">{formatWon(selected.price * quantity)}</span>
-          )}
+          <span className="ml-auto font-semibold">
+            {selected ? formatWon(selected.price * quantity) : missingPick}
+          </span>
         </div>
         {!isSelling && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}
         <AddToCartButton
@@ -117,7 +128,7 @@ export function ConsoleProductDetailPage() {
       </Card>
 
       <Card>
-        <ProductSpecs product={detail} />
+        <ProductSpecs product={detail} recommendedSize={recommendation.data?.recommendedSize} />
       </Card>
       <ProductDescription
         description={detail.description}

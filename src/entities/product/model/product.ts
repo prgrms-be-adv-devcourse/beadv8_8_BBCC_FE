@@ -7,6 +7,8 @@ export type ProductOption = {
   id: string
   /** 예: "네이비 / 120" */
   name: string
+  /** 옵션 항목마다 고른 값 ID (항목 순서) */
+  valueIds: string[]
   /** 사이즈 항목의 값. 사이즈가 없는 상품이면 null */
   size: string | null
   price: number
@@ -18,6 +20,40 @@ export type ProductOption = {
   /** 이 사이즈의 권장 키 범위 (cm). 없으면 null */
   minHeightCm: number | null
   maxHeightCm: number | null
+}
+
+/** 구매자 상세의 옵션 항목 하나 (예: 색상) */
+export type OptionAttribute = {
+  id: string
+  name: string
+  /** 사이즈 항목이면 true (추천 사이즈 표시) */
+  isSize: boolean
+  values: { id: string; name: string; colorCode: string | null }[]
+}
+
+/** 옵션 항목 ID → 고른 값 ID */
+export type OptionPicks = Record<string, string>
+
+/** 칩 상태: 살 수 있음 · 적게 남음 · 품절 · 등록하지 않은 조합 */
+export type OptionChipState = 'AVAILABLE' | 'LOW' | 'SOLD_OUT' | 'NONE'
+
+export type OptionChip = {
+  valueId: string
+  name: string
+  colorCode: string | null
+  state: OptionChipState
+  /** 적게 남았을 때 남은 수량 */
+  remaining: number | null
+  isPicked: boolean
+  isRecommended: boolean
+}
+
+export type OptionChipRow = {
+  attributeId: string
+  name: string
+  /** 고른 값 이름. 고르기 전에는 null */
+  pickedName: string | null
+  chips: OptionChip[]
 }
 
 /** 상품 목록 카드 (BE GET /products) */
@@ -60,6 +96,8 @@ export type ProductDetail = ProductSummary & {
   description: string | null
   imageUrls: string[]
   sizeFree: boolean
+  /** 옵션 항목 (상품 유형에 연결한 순서). 값은 옵션에 실제로 쓴 것만 */
+  optionAttributes: OptionAttribute[]
   options: ProductOption[]
   /** 상품 정보 항목 (예: 주요소재). 입력하지 않았으면 value null */
   info: { name: string; value: string | null }[]

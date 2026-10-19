@@ -77,6 +77,7 @@ export function toProductDetail(dto: ProductDetailDto, categories: Category[] = 
     return {
       id: option.optionId,
       name: option.optionName,
+      valueIds: option.valueIds,
       size,
       price: option.price,
       soldOut: !option.purchasable,
@@ -98,6 +99,16 @@ export function toProductDetail(dto: ProductDetailDto, categories: Category[] = 
     imageUrl: toImageUrl(dto.imageUrls[0] ?? null),
     imageUrls: dto.imageUrls,
     sizeFree: dto.sizeFree,
+    optionAttributes: dto.optionAttributes.map((attribute) => ({
+      id: attribute.attributeId,
+      name: attribute.name,
+      isSize: attribute.attributeId === sizeAttribute?.attributeId,
+      values: attribute.values.map((value) => ({
+        id: value.valueId,
+        name: value.value,
+        colorCode: value.colorCode,
+      })),
+    })),
     options,
     info: dto.productInfo.map((item) => ({ name: item.name, value: item.value })),
     sizeSpecs: dto.sizeSpecs.map((spec) => ({
