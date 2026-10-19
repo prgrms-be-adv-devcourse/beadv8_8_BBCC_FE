@@ -123,7 +123,7 @@ export const router = createBrowserRouter(
           ),
         },
         {
-          path: 'recommended/:childId',
+          path: rel('', paths.shop.recommended(':childId')),
           ...page(() =>
             import('@/pages/shop/recommended').then((m) => ({
               Component: m.ShopRecommendedPage,

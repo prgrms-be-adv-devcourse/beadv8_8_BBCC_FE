@@ -20,6 +20,7 @@ export function ShopRecommendedPage() {
   const [params, setParams] = useSearchParams()
   const categoryId = params.get('cat')
   const child = useChildQuery(childId)
+  // 카테고리 목록은 말단만 담는다 (toCategories가 트리의 끝만 고른다) → 탭이 빈 목록이 되지 않는다
   const categories = useCategoriesQuery()
   const list = useRecommendedProductsInfiniteQuery(childId, categoryId)
 
