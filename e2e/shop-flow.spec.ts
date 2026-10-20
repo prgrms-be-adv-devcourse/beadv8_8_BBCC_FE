@@ -485,7 +485,9 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
         JSON.stringify({ path: '/cart', label: '주문서로 돌아가기' }),
       ),
     )
-    await page.goto('/my/wallet/charge/success?paymentKey=pk&orderId=toss-88&amount=1000')
+    await page.goto(
+      `/my/wallet/charge/success?paymentKey=pk&orderId=toss-88-${Date.now()}&amount=1000`,
+    )
     await page.getByRole('link', { name: '주문서로 돌아가기' }).click()
     await expect(page).toHaveURL(/\/cart$/)
 

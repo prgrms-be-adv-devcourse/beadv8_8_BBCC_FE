@@ -30,6 +30,19 @@ export function isChargeCancelling(result: { status: string }): boolean {
   return result.status === 'CANCELLING'
 }
 
+/** 충전 취소 응답 안내: 200은 취소 완료, 202는 토스 결과 확인 중 (충전액은 이미 빠짐) */
+export function cancelChargeNoticeOf(result: { status: string }): string {
+  return isChargeCancelling(result) ? '토스에서 취소를 확인하는 중이에요' : '충전을 취소했어요'
+}
+
+/**
+ * 승인 · 실패 처리 요청이 이미 끝난 충전(승인 · 실패 · 만료)에 갔는지. BE는 대기 중이 아닌 충전에 409를 준다.
+ * 성공 화면 새로고침, 30분 넘게 머문 결제창에서 돌아온 경우 등이다
+ */
+export function isChargeAlreadyEnded(status: number | null): boolean {
+  return status === 409
+}
+
 /** 토스 결과를 아직 몰라 승인 확인 중(202)인지 */
 export function isChargeConfirming(confirmation: { status: string }): boolean {
   return confirmation.status === 'CONFIRMING'

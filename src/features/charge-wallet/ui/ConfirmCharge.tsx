@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { isChargeConfirming } from '@/entities/wallet'
-import { getErrorMessage, isTimeoutError } from '@/shared/api'
+import { isChargeAlreadyEnded, isChargeConfirming } from '@/entities/wallet'
+import { getErrorMessage, getErrorStatus, isTimeoutError } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { readChargeReturn } from '../lib/charge-return'
@@ -10,6 +10,8 @@ import { useConfirmCharge } from '../model/use-charge-wallet'
 type ConfirmChargeProps = {
   search: URLSearchParams
   walletHref: string
+  /** 승인이 끝나면 (주소의 승인 값을 지우는 등) */
+  onSettled?: () => void
 }
 
 type ConfirmingNoticeProps = { amount: number; walletHref: string }
@@ -29,14 +31,30 @@ function ConfirmingNotice({ amount, walletHref }: ConfirmingNoticeProps) {
   )
 }
 
-export function ConfirmCharge({ search, walletHref }: ConfirmChargeProps) {
-  const confirm = useConfirmCharge(search)
+type HistoryNoticeProps = { message: string; walletHref: string }
+
+// 이 화면에서 승인할 충전이 없을 때: 새로고침 · 뒤로 가기로 다시 왔거나, 이미 처리된 충전(409)
+function HistoryNotice({ message, walletHref }: HistoryNoticeProps) {
+  return (
+    <div className="space-y-2">
+      <p>{message} 충전 결과는 충전 내역에서 확인해 주세요.</p>
+      <Link to={walletHref} className="text-primary underline">
+        충전 내역 보기
+      </Link>
+    </div>
+  )
+}
+
+export function ConfirmCharge({ search, walletHref, onSettled }: ConfirmChargeProps) {
+  const confirm = useConfirmCharge(search, onSettled)
   const [afterCharge] = useState(readChargeReturn)
 
   if (confirm.invalidRequest)
-    return <StateMessage tone="error">승인에 필요한 값이 없어요.</StateMessage>
+    return <HistoryNotice message="승인할 충전이 없어요." walletHref={walletHref} />
   if (confirm.isError && isTimeoutError(confirm.error))
     return <ConfirmingNotice amount={confirm.amount} walletHref={walletHref} />
+  if (confirm.isError && isChargeAlreadyEnded(getErrorStatus(confirm.error)))
+    return <HistoryNotice message="이미 처리된 충전이에요." walletHref={walletHref} />
   if (confirm.isError)
     return <StateMessage tone="error">{getErrorMessage(confirm.error)}</StateMessage>
   if (!confirm.data) return <StateMessage>충전을 승인하는 중이에요…</StateMessage>

@@ -20,8 +20,10 @@ export {
   toWalletTransaction,
 } from './model/wallet.mapper'
 export {
+  cancelChargeNoticeOf,
   canCancelCharge,
   isAwaitingPayment,
+  isChargeAlreadyEnded,
   isChargeCancelling,
   isChargeConfirming,
   shortageOf,
