@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  adminPathsOf,
   areaOf,
   loginPath,
   memberPathsOf,
@@ -135,5 +136,24 @@ describe('loginPath: 로그인 뒤 돌아올 주소를 담는다', () => {
   it('돌아올 곳이 없거나 앱 밖 주소면 로그인 화면만', () => {
     expect(loginPath(null)).toBe('/login')
     expect(loginPath('https://evil.example')).toBe('/login')
+  })
+})
+
+describe('adminPathsOf: 관리자 목록 · 상세 주소는 관리자와 콘솔에 각각 있다', () => {
+  it('관리자의 목록 · 상세 화면', () => {
+    const admin = adminPathsOf('admin')
+    expect(admin.members).toBe('/admin/members')
+    expect(admin.member('3')).toBe('/admin/members/3')
+    expect(admin.order('7')).toBe('/admin/orders/7')
+    expect(admin.payment('2')).toBe('/admin/payments/2')
+  })
+
+  it('콘솔의 상세 화면도 콘솔 안에 있다', () => {
+    const admin = adminPathsOf('console')
+    expect(admin.members).toBe('/console/admin/members')
+    expect(admin.member('3')).toBe('/console/admin/members/3')
+    expect(admin.order('7')).toBe('/console/admin/orders/7')
+    expect(admin.payment('2')).toBe('/console/admin/payments/2')
+    expect(areaOf(admin.payment('2'))).toBe('console')
   })
 })

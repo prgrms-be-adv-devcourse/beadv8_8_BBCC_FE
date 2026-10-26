@@ -8,6 +8,7 @@ import { RouteError } from '../layouts/RouteError'
 import { RouteFallback } from '../layouts/RouteFallback'
 import { ShopLayout } from '../layouts/ShopLayout'
 import { ShopMyLayout } from '../layouts/ShopMyLayout'
+import { AdminLayout } from '../layouts/AdminLayout'
 import { WorkspaceLayout } from '../layouts/WorkspaceLayout'
 
 // 영역: 쇼핑(/) · 판매자 센터(/center) · 관리자(/admin) · 시연 콘솔(/console). 주소는 shared/config/routes.ts
@@ -82,8 +83,14 @@ const adminOrders = page(() =>
 const adminPayments = page(() =>
   import('@/pages/admin/payments').then((m) => ({ Component: m.AdminPaymentsPage })),
 )
-const adminCatalog = page(() =>
-  import('@/pages/admin/catalog').then((m) => ({ Component: m.AdminCatalogPage })),
+const adminMemberDetail = page(() =>
+  import('@/pages/admin/member-detail').then((m) => ({ Component: m.AdminMemberDetailPage })),
+)
+const adminOrderDetail = page(() =>
+  import('@/pages/admin/order-detail').then((m) => ({ Component: m.AdminOrderDetailPage })),
+)
+const adminPaymentDetail = page(() =>
+  import('@/pages/admin/payment-detail').then((m) => ({ Component: m.AdminPaymentDetailPage })),
 )
 const adminSettlements = page(() =>
   import('@/pages/admin/settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
@@ -222,34 +229,93 @@ export const router = createBrowserRouter(
     },
     {
       path: paths.admin.home,
-      element: (
-        <WorkspaceLayout
-          title="Kidly 관리자"
-          role="ADMIN"
-          items={[
-            { to: paths.admin.home, label: '대시보드', end: true },
-            { to: paths.admin.members, label: '회원 관리' },
-            { to: paths.admin.sellerApplications, label: '판매자 신청 심사' },
-            { to: paths.admin.products, label: '상품 관리' },
-            { to: paths.admin.catalog, label: '상품 기준 데이터' },
-            { to: paths.admin.orders, label: '전체 주문' },
-            { to: paths.admin.payments, label: '전체 결제' },
-            { to: paths.admin.settlements, label: '정산' },
-            { to: paths.admin.settings, label: '설정' },
-          ]}
-        />
-      ),
+      element: <AdminLayout />,
       HydrateFallback: RouteFallback,
       children: [
         { index: true, ...adminHome },
         { path: rel(paths.admin.home, paths.admin.members), ...adminMembers },
+        { path: 'members/:memberId', ...adminMemberDetail },
         { path: rel(paths.admin.home, paths.admin.orders), ...adminOrders },
+        { path: 'orders/:orderId', ...adminOrderDetail },
         { path: rel(paths.admin.home, paths.admin.products), ...adminProducts },
         { path: rel(paths.admin.home, paths.admin.payments), ...adminPayments },
+        { path: 'payments/:paymentId', ...adminPaymentDetail },
         { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
         { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
         { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
-        { path: rel(paths.admin.home, paths.admin.catalog), ...adminCatalog },
+        // 상품 기준 데이터: 종류마다 목록 · 만들기 (관리자에만 있다)
+        {
+          path: rel(paths.admin.home, paths.admin.attributes),
+          ...page(() =>
+            import('@/pages/admin/catalog-attributes').then((m) => ({
+              Component: m.AdminCatalogAttributesPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.attributeNew),
+          ...page(() =>
+            import('@/pages/admin/catalog-attribute-new').then((m) => ({
+              Component: m.AdminCatalogAttributeNewPage,
+            })),
+          ),
+        },
+        {
+          path: 'catalog/attributes/:attributeId',
+          ...page(() =>
+            import('@/pages/admin/catalog-attribute-detail').then((m) => ({
+              Component: m.AdminCatalogAttributeDetailPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.measurementItems),
+          ...page(() =>
+            import('@/pages/admin/catalog-measurement-items').then((m) => ({
+              Component: m.AdminCatalogMeasurementItemsPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.measurementItemNew),
+          ...page(() =>
+            import('@/pages/admin/catalog-measurement-item-new').then((m) => ({
+              Component: m.AdminCatalogMeasurementItemNewPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.productTypes),
+          ...page(() =>
+            import('@/pages/admin/catalog-product-types').then((m) => ({
+              Component: m.AdminCatalogProductTypesPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.productTypeNew),
+          ...page(() =>
+            import('@/pages/admin/catalog-product-type-new').then((m) => ({
+              Component: m.AdminCatalogProductTypeNewPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.categories),
+          ...page(() =>
+            import('@/pages/admin/catalog-categories').then((m) => ({
+              Component: m.AdminCatalogCategoriesPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.categoryNew),
+          ...page(() =>
+            import('@/pages/admin/catalog-category-new').then((m) => ({
+              Component: m.AdminCatalogCategoryNewPage,
+            })),
+          ),
+        },
         { path: '*', element: <NotFoundPage /> },
       ],
     },
@@ -335,9 +401,12 @@ export const router = createBrowserRouter(
         },
         { path: rel(paths.console.home, paths.console.adminSettlements), ...adminSettlements },
         { path: rel(paths.console.home, paths.console.adminMembers), ...adminMembers },
+        { path: 'admin/members/:memberId', ...adminMemberDetail },
         { path: rel(paths.console.home, paths.console.adminOrders), ...adminOrders },
+        { path: 'admin/orders/:orderId', ...adminOrderDetail },
         { path: rel(paths.console.home, paths.console.adminProducts), ...adminProducts },
         { path: rel(paths.console.home, paths.console.adminPayments), ...adminPayments },
+        { path: 'admin/payments/:paymentId', ...adminPaymentDetail },
         { path: '*', element: <NotFoundPage /> },
       ],
     },

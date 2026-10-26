@@ -1,0 +1,46 @@
+/* 관리자 영역: 쇼핑(shop.css) · 판매자 센터(center.css)와 같은 토큰 · 글자를 쓴다.
+   관리자만의 색은 두지 않는다 (자두 하나: 주요 행동 · 지금 메뉴 · 상태). 상태 글자는 회색, 빨강은 문제일 때만.
+   실선만 쓰고 그림자는 쓰지 않는다. 카드보다 표, 한 화면에 한 가지 일, 목록 → 상세 */
+[data-area='admin'] {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  letter-spacing: -0.01em;
+}
+
+html:has([data-area='admin']),
+body:has([data-area='admin']) {
+  overflow-x: clip;
+  background: var(--paper);
+}
+
+html:has([data-area='admin']) {
+  scrollbar-color: var(--ink-3) var(--paper);
+}
+
+[data-area='admin'] ::selection {
+  background: var(--signal-soft);
+  color: var(--ink);
+}
+
+[data-area='admin'] :focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+[data-area='admin'] :is(h1, h2, h3) {
+  font-weight: 700;
+  font-synthesis: none;
+  letter-spacing: -0.02em;
+  overflow-wrap: break-word;
+  min-width: 0;
+  text-wrap: balance;
+}
+
+[data-area='admin'] p {
+  text-wrap: pretty;
+}
+
+[data-area='admin'] .figure {
+  font-variant-numeric: tabular-nums;
+}

@@ -80,28 +80,28 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     path: '/admin/product-types',
     source: 'real',
     backend: 'BE #424 develop 머지(10/17) → 실제',
-    screens: '관리자 상품 기준 데이터(상품 유형)',
+    screens: '관리자 상품 유형',
   },
   {
     method: 'POST',
     path: '/admin/product-types',
     source: 'real',
     backend: 'BE #424 develop 머지(10/17) → 실제',
-    screens: '관리자 상품 기준 데이터(상품 유형)',
+    screens: '관리자 상품 유형',
   },
   {
     method: 'GET',
     path: '/admin/categories',
     source: 'real',
     backend: 'BE #425 develop 머지(10/17) → 실제',
-    screens: '관리자 상품 기준 데이터(카테고리)',
+    screens: '관리자 카테고리',
   },
   {
     method: 'POST',
     path: '/admin/categories',
     source: 'real',
     backend: 'BE #425 develop 머지(10/17) → 실제',
-    screens: '관리자 상품 기준 데이터(카테고리)',
+    screens: '관리자 카테고리',
   },
 
   // 추천

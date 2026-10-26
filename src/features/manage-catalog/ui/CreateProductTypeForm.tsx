@@ -29,10 +29,10 @@ function newLink(attribute: Attribute): ProductTypeLinkForm {
   }
 }
 
-type CreateProductTypeFormProps = { attributes: Attribute[] }
+type CreateProductTypeFormProps = { attributes: Attribute[]; onCreated?: () => void }
 
 /** 상품 유형 만들기: 이름 + 연결할 항목과 그 설정. 넣은 순서가 등록 화면의 순서다 */
-export function CreateProductTypeForm({ attributes }: CreateProductTypeFormProps) {
+export function CreateProductTypeForm({ attributes, onCreated }: CreateProductTypeFormProps) {
   const create = useCreateProductType()
   const [form, setForm] = useState<ProductTypeForm>(EMPTY_FORM)
   const [invalid, setInvalid] = useState<string | null>(null)
@@ -48,15 +48,22 @@ export function CreateProductTypeForm({ attributes }: CreateProductTypeFormProps
     event.preventDefault()
     const message = validateProductTypeForm(form, attributes)
     setInvalid(message)
-    if (!message) create.mutate(form, { onSuccess: () => setForm(EMPTY_FORM) })
+    if (!message)
+      create.mutate(form, {
+        onSuccess: () => {
+          setForm(EMPTY_FORM)
+          onCreated?.()
+        },
+      })
   }
 
   return (
-    <form className="space-y-3" onSubmit={handleSubmit}>
-      <div className="grid gap-3 md:grid-cols-2">
+    <form className="space-y-5" onSubmit={handleSubmit}>
+      <div className="grid gap-4">
         <Label>
           유형 이름
           <Input
+            className="h-10"
             placeholder="예: 신발"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -64,7 +71,7 @@ export function CreateProductTypeForm({ attributes }: CreateProductTypeFormProps
         </Label>
         <Label>
           연결할 항목
-          <Select value="" onChange={(e) => addLink(e.target.value)}>
+          <Select className="h-10" value="" onChange={(e) => addLink(e.target.value)}>
             <option value="">항목 고르기</option>
             {attributes
               .filter((attribute) => !linked.has(attribute.id))
@@ -92,7 +99,7 @@ export function CreateProductTypeForm({ attributes }: CreateProductTypeFormProps
           )
         )
       })}
-      <Button type="submit" disabled={create.isPending}>
+      <Button type="submit" className="h-11 px-6 text-[15px]" disabled={create.isPending}>
         상품 유형 만들기
       </Button>
       {invalid && <StateMessage tone="error">{invalid}</StateMessage>}

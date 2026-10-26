@@ -63,13 +63,25 @@ export const paths = {
   admin: {
     home: '/admin',
     members: '/admin/members',
+    member: (id: string) => `/admin/members/${id}`,
     sellerApplications: '/admin/seller-applications',
     orders: '/admin/orders',
+    order: (id: string) => `/admin/orders/${id}`,
     products: '/admin/products',
     payments: '/admin/payments',
+    payment: (id: string) => `/admin/payments/${id}`,
     settlements: '/admin/settlements',
     settings: '/admin/settings',
-    catalog: '/admin/catalog',
+    /** 상품 기준 데이터: 종류마다 목록 · 만들기(목록과 따로) */
+    attributes: '/admin/catalog/attributes',
+    attributeNew: '/admin/catalog/attributes/new',
+    attribute: (id: string) => `/admin/catalog/attributes/${id}`,
+    measurementItems: '/admin/catalog/measurement-items',
+    measurementItemNew: '/admin/catalog/measurement-items/new',
+    productTypes: '/admin/catalog/product-types',
+    productTypeNew: '/admin/catalog/product-types/new',
+    categories: '/admin/catalog/categories',
+    categoryNew: '/admin/catalog/categories/new',
   },
   console: {
     home: C,
@@ -98,9 +110,12 @@ export const paths = {
     adminSellerApplications: `${C}/admin/seller-applications`,
     adminSettlements: `${C}/admin/settlements`,
     adminMembers: `${C}/admin/members`,
+    adminMember: (id: string) => `${C}/admin/members/${id}`,
     adminOrders: `${C}/admin/orders`,
+    adminOrder: (id: string) => `${C}/admin/orders/${id}`,
     adminProducts: `${C}/admin/products`,
     adminPayments: `${C}/admin/payments`,
+    adminPayment: (id: string) => `${C}/admin/payments/${id}`,
   },
 } as const
 
@@ -114,6 +129,23 @@ export function walletPathsOf(area: Area) {
     chargeSuccess: base.chargeSuccess,
     chargeFail: base.chargeFail,
   }
+}
+
+/** 관리자 화면 (회원 · 주문 · 결제의 목록 · 상세): 콘솔은 콘솔 안, 나머지는 관리자 */
+export function adminPathsOf(area: Area) {
+  if (area === 'console') {
+    const c = paths.console
+    return {
+      members: c.adminMembers,
+      member: c.adminMember,
+      orders: c.adminOrders,
+      order: c.adminOrder,
+      payments: c.adminPayments,
+      payment: c.adminPayment,
+    }
+  }
+  const { members, member, orders, order, payments, payment } = paths.admin
+  return { members, member, orders, order, payments, payment }
 }
 
 /** 영역마다 있는 회원 · 자녀 화면 (판매자 센터 · 관리자에서는 쇼핑 화면으로) */

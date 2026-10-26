@@ -12,9 +12,10 @@ export function AdminStopSaleForm({ productId }: AdminStopSaleFormProps) {
   return (
     <span className="flex items-center gap-2">
       <Button
-        size="sm"
         variant="outline"
+        className="max-lg:h-11"
         disabled={stop.isPending}
+        aria-busy={stop.isPending}
         onClick={async () => {
           if (
             await confirmAction({

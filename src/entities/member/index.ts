@@ -13,5 +13,7 @@ export {
   canRevokeAdmin,
   canSuspendMember,
   canSuspendSeller,
+  findAdminMember,
+  memberFilterOf,
 } from './model/member.rules'
-export { memberKeys, useAdminMembersQuery } from './model/queries'
+export { memberKeys, useAdminMemberQuery, useAdminMembersQuery } from './model/queries'
