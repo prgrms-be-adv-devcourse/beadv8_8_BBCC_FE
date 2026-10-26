@@ -35,7 +35,7 @@ export function ConsoleProductsPage() {
         label={(child) => `${child.name} 맞춤 (${child.heightCm}cm)`}
       />
       {children.data?.length === 0 && (
-        <Link to={paths.console.children} className="text-primary text-sm underline">
+        <Link to={paths.console.childNew} className="text-primary text-sm underline">
           자녀를 등록하면 맞는 옷만 골라 드려요
         </Link>
       )}

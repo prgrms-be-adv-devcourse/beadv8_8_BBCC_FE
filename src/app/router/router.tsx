@@ -7,6 +7,7 @@ import { DemoOnly } from '../layouts/DemoOnly'
 import { RouteError } from '../layouts/RouteError'
 import { RouteFallback } from '../layouts/RouteFallback'
 import { ShopLayout } from '../layouts/ShopLayout'
+import { ShopMyLayout } from '../layouts/ShopMyLayout'
 import { WorkspaceLayout } from '../layouts/WorkspaceLayout'
 
 // 영역: 쇼핑(/) · 판매자 센터(/center) · 관리자(/admin) · 시연 콘솔(/console). 주소는 shared/config/routes.ts
@@ -21,6 +22,15 @@ const kakaoCallback = page(() =>
 )
 const children = page(() =>
   import('@/pages/shop/children').then((m) => ({ Component: m.ShopChildrenPage })),
+)
+const walletCharge = page(() =>
+  import('@/pages/shop/wallet-charge').then((m) => ({ Component: m.ShopWalletChargePage })),
+)
+const walletHistory = page(() =>
+  import('@/pages/shop/wallet-history').then((m) => ({ Component: m.ShopWalletHistoryPage })),
+)
+const childNew = page(() =>
+  import('@/pages/shop/child-new').then((m) => ({ Component: m.ShopChildNewPage })),
 )
 const childDetail = page(() =>
   import('@/pages/shop/child-detail').then((m) => ({ Component: m.ShopChildDetailPage })),
@@ -147,14 +157,32 @@ export const router = createBrowserRouter(
           ),
         },
         {
-          path: rel('', paths.shop.my),
-          ...page(() => import('@/pages/shop/my').then((m) => ({ Component: m.ShopMyPage }))),
+          path: rel('', paths.shop.notifications),
+          ...page(() =>
+            import('@/pages/shop/notifications').then((m) => ({
+              Component: m.ShopNotificationsPage,
+            })),
+          ),
+        },
+        {
+          // 마이페이지 묶음: 왼쪽 메뉴를 같이 쓴다 (자녀 화면은 넓은 배치라 뺀다)
+          element: <ShopMyLayout />,
+          children: [
+            {
+              path: rel('', paths.shop.my),
+              ...page(() => import('@/pages/shop/my').then((m) => ({ Component: m.ShopMyPage }))),
+            },
+            { path: rel('', paths.shop.profile), ...profile },
+            { path: rel('', paths.shop.addresses), ...addresses },
+            { path: rel('', paths.shop.wallet), ...wallet },
+            { path: rel('', paths.shop.walletHistory), ...walletHistory },
+          ],
         },
         { path: rel('', paths.shop.children), ...children },
+        { path: rel('', paths.shop.childNew), ...childNew },
         { path: 'my/children/:childId', ...childDetail },
-        { path: rel('', paths.shop.profile), ...profile },
-        { path: rel('', paths.shop.addresses), ...addresses },
-        { path: rel('', paths.shop.wallet), ...wallet },
+        // 충전은 메뉴 없이 한 가지 일만 (마이페이지 묶음 밖)
+        { path: rel('', paths.shop.walletCharge), ...walletCharge },
         { path: rel('', paths.shop.chargeSuccess), ...chargeSuccess },
         { path: rel('', paths.shop.chargeFail), ...chargeFail },
         { path: '*', element: <NotFoundPage /> },
@@ -254,6 +282,7 @@ export const router = createBrowserRouter(
           ),
         },
         { path: rel(paths.console.home, paths.console.children), ...children },
+        { path: rel(paths.console.home, paths.console.childNew), ...childNew },
         { path: 'children/:childId', ...childDetail },
         { path: rel(paths.console.home, paths.console.profile), ...profile },
         { path: rel(paths.console.home, paths.console.addresses), ...addresses },
@@ -292,6 +321,8 @@ export const router = createBrowserRouter(
           ),
         },
         { path: rel(paths.console.home, paths.console.wallet), ...wallet },
+        { path: rel(paths.console.home, paths.console.walletHistory), ...walletHistory },
+        { path: rel(paths.console.home, paths.console.walletCharge), ...walletCharge },
         { path: rel(paths.console.home, paths.console.chargeSuccess), ...chargeSuccess },
         { path: rel(paths.console.home, paths.console.chargeFail), ...chargeFail },
         { path: rel(paths.console.home, paths.console.sellerApply), ...centerApply },

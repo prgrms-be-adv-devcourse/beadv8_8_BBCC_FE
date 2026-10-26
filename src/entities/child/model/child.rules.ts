@@ -41,6 +41,20 @@ export function summarizeGrowth(records: GrowthRecord[]): GrowthSummary {
   }
 }
 
+/** 성장 이력 한 줄: 기록 + 바로 앞(더 오래된) 기록보다 얼마나 컸는지 (0.1cm, 첫 기록은 null) */
+export type GrowthTimelineRow = { record: GrowthRecord; changeCm: number | null }
+
+/** 성장 이력 줄 (최신이 위) */
+export function growthTimeline(records: GrowthRecord[]): GrowthTimelineRow[] {
+  const sorted = [...records].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt))
+  return sorted
+    .map((record, i) => ({
+      record,
+      changeCm: i === 0 ? null : Math.round((record.heightCm - sorted[i - 1].heightCm) * 10) / 10,
+    }))
+    .reverse()
+}
+
 /** 만 나이 (생일이 지났는지까지 본다) */
 export function ageOf(birthDate: string, today: Date = new Date()): number {
   const [y, m, d] = birthDate.split('-').map(Number)

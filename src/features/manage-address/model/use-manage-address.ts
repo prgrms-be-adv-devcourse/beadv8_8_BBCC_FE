@@ -3,14 +3,15 @@ import { addressApi, addressKeys, toAddressRequest, type AddressForm } from '@/e
 import { toast } from '@/shared/lib'
 import { runWithAction } from '@/shared/api'
 
-export function useRegisterAddress() {
+export function useRegisterAddress({ onDone }: { onDone?: () => void } = {}) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (form: AddressForm) =>
       runWithAction('배송지 등록', () => addressApi.create(toAddressRequest(form))),
     onSuccess: () => {
       toast('배송지를 등록했어요')
-      return queryClient.invalidateQueries({ queryKey: addressKeys.all })
+      void queryClient.invalidateQueries({ queryKey: addressKeys.all })
+      onDone?.()
     },
   })
 }

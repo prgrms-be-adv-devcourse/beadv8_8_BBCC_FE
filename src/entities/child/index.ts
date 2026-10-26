@@ -19,6 +19,8 @@ export {
   childProfileLine,
   findChild,
   growthMonths,
+  growthTimeline,
+  type GrowthTimelineRow,
   summarizeGrowth,
   validateChildForm,
 } from './model/child.rules'
@@ -34,3 +36,5 @@ export {
   type SizeBand,
 } from './model/growth-forecast'
 export { GrowthChart } from './ui/GrowthChart'
+export { sizeRulerOf, type SizeRuler } from './model/size-ruler.rules'
+export { SizeRulerBar } from './ui/SizeRulerBar'

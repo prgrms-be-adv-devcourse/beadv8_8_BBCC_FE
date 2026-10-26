@@ -28,6 +28,8 @@ export {
   isChargeConfirming,
   shortageOf,
   suggestChargeAmount,
+  transactionsByDay,
+  type WalletTransactionDay,
   validateChargeAmount,
 } from './model/wallet.rules'
 export {

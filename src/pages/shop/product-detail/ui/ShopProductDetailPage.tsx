@@ -19,20 +19,16 @@ import {
   useProductQuery,
   WearPreview,
 } from '@/entities/product'
-import {
-  SizeRecommendationSummary,
-  sizeRangesOf,
-  useSizeRecommendationQuery,
-} from '@/entities/recommendation'
+import { sizeRangesOf, useSizeRecommendationQuery } from '@/entities/recommendation'
 import { useSessionStore } from '@/entities/session'
 import { AddToCartButton } from '@/features/add-to-cart'
 import { getErrorMessage } from '@/shared/api'
 import { loginPath, paths } from '@/shared/config'
 import { formatWon } from '@/shared/lib'
-import { Card } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { SizeAdvice } from './SizeAdvice'
 
 export function ShopProductDetailPage() {
   const { productId = '' } = useParams()
@@ -50,7 +46,7 @@ export function ShopProductDetailPage() {
   if (product.isPending)
     return (
       <div role="status" aria-label="불러오는 중" className="grid gap-6 md:grid-cols-2">
-        <Skeleton className="aspect-square rounded-2xl" />
+        <Skeleton className="rounded-card aspect-square" />
         <div className="space-y-3">
           <Skeleton className="h-4 w-1/4" />
           <Skeleton className="h-8 w-3/4" />
@@ -68,121 +64,159 @@ export function ShopProductDetailPage() {
   const optionId = selected?.id ?? null
   const missingPick = missingPickMessage(detail, picks)
   const isSelling = isOnSale(detail)
+  // 추천 한 줄은 사이즈 칩 바로 위에 (사이즈 항목이 없는 상품이면 옵션 맨 위)
+  const sizeAttributeId = detail.optionAttributes.find((attribute) => attribute.isSize)?.id ?? null
+  const sizeAdvice = (
+    <>
+      {recommendation.isFetching && <StateMessage>추천 계산 중…</StateMessage>}
+      {recommendation.isError && (
+        <StateMessage tone="error">{getErrorMessage(recommendation.error)}</StateMessage>
+      )}
+      {pickedChild && recommendation.data && (
+        <SizeAdvice
+          child={pickedChild}
+          recommendation={recommendation.data}
+          sizes={sizeRangesOf(detail.sizeSpecs)}
+          preview={
+            <WearPreview
+              specs={detail.sizeSpecs}
+              child={pickedChild}
+              initialSize={recommendation.data.recommendedSize}
+              isCompact
+            />
+          }
+        />
+      )}
+    </>
+  )
 
   return (
-    <div className="space-y-4">
-      <Link to={paths.shop.home} className="text-muted-foreground text-sm hover:underline">
-        ← 상품 목록
-      </Link>
-      <div className="grid gap-8 md:grid-cols-2">
-        <ProductGallery images={detail.imageUrls} alt={detail.name} className="rounded-2xl" />
+    <div className="shop-look space-y-14 md:space-y-24">
+      <section aria-label={detail.name} className="space-y-4">
+        <Link
+          to={paths.shop.home}
+          className="text-ink-3 hover:text-ink inline-flex items-center gap-1 rounded-md text-[13px] font-semibold transition-colors"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="size-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            aria-hidden
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+          상품 목록
+        </Link>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
+          <ProductGallery
+            images={detail.imageUrls}
+            alt={detail.name}
+            className="rounded-card max-lg:aspect-[4/3]"
+          />
 
-        <div className="space-y-5">
-          <div>
-            <p className="text-muted-foreground text-sm">{productMeta(detail)}</p>
-            <div className="mt-1 space-y-0.5">
-              <ProductSellerLine businessName={detail.businessName} />
-              <h1 className="text-2xl font-bold">{detail.name}</h1>
+          <div className="shop-offer space-y-5">
+            {/* 셀러 마켓 상세: 상점 줄을 맨 위에 두고, 카테고리 · 이름 · 가격 순서 */}
+            <div className="space-y-2">
+              {detail.businessName && (
+                <div className="border-rule border-b pb-3">
+                  <ProductSellerLine businessName={detail.businessName} />
+                </div>
+              )}
+              <p className="text-ink-3 pt-1 text-[13px]">{productMeta(detail)}</p>
+              <h1 className="text-page">{detail.name}</h1>
+              {detail.minPrice !== null && (
+                <p className="figure pt-1 text-2xl font-bold">{formatWon(detail.minPrice)}~</p>
+              )}
             </div>
-            {detail.minPrice !== null && (
-              <p className="mt-2 text-2xl font-extrabold">{formatWon(detail.minPrice)}~</p>
-            )}
-          </div>
 
-          <Card className="border-growth space-y-3">
-            <p className="font-semibold">누가 입나요? 자녀를 고르면 사이즈를 추천해요</p>
-            {!user ? (
-              <Link
-                to={loginPath(location.pathname + location.search)}
-                className="text-primary text-sm underline"
-              >
-                로그인하면 자녀별 추천 사이즈를 알려 드려요
-              </Link>
-            ) : children.data?.length === 0 ? (
-              <Link to={paths.shop.children} className="text-primary text-sm underline">
-                자녀를 등록하면 맞는 사이즈를 알려 드려요
-              </Link>
-            ) : (
-              <ChildPicker
-                children={children.data ?? []}
-                selectedId={childId}
-                onSelect={setChildId}
-                noneLabel={childId !== null ? '선택 안 함' : undefined}
+            {/* 옵션: 누가 입나요(주문에 같이 실린다) → 색상 → 추천 한 줄 → 사이즈 칩 */}
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <p className="text-sm font-semibold">누가 입나요?</p>
+                {!user ? (
+                  <Link
+                    to={loginPath(location.pathname + location.search)}
+                    className="shop-link text-sm"
+                  >
+                    로그인하고 맞는 사이즈 보기
+                  </Link>
+                ) : children.data?.length === 0 ? (
+                  <Link to={paths.shop.childNew} className="shop-link text-sm">
+                    자녀 등록하고 맞는 사이즈 보기
+                  </Link>
+                ) : (
+                  <ChildPicker
+                    children={children.data ?? []}
+                    selectedId={childId}
+                    onSelect={setChildId}
+                    noneLabel={childId !== null ? '선택 안 함' : undefined}
+                  />
+                )}
+              </div>
+              {!sizeAttributeId && sizeAdvice}
+              <OptionChipPicker
+                rows={optionChipRows(detail, picks, recommendation.data?.recommendedSize)}
+                onPick={(attributeId, valueId) =>
+                  setPicks((prev) => pickOptionValue(detail, prev, attributeId, valueId))
+                }
+                aboveRow={sizeAttributeId ? { [sizeAttributeId]: sizeAdvice } : undefined}
               />
-            )}
-            {recommendation.isFetching && <StateMessage>추천 계산 중…</StateMessage>}
-            {recommendation.isError && (
-              <StateMessage tone="error">{getErrorMessage(recommendation.error)}</StateMessage>
-            )}
-            {recommendation.data && (
-              <SizeRecommendationSummary
-                recommendation={recommendation.data}
-                sizes={sizeRangesOf(detail.sizeSpecs)}
-                child={pickedChild}
-              />
-            )}
-            {pickedChild && (
-              <WearPreview
-                specs={detail.sizeSpecs}
-                child={pickedChild}
-                initialSize={recommendation.data?.recommendedSize}
-              />
-            )}
-          </Card>
-
-          <div className="space-y-2">
-            <OptionChipPicker
-              rows={optionChipRows(detail, picks, recommendation.data?.recommendedSize)}
-              onPick={(attributeId, valueId) =>
-                setPicks((prev) => pickOptionValue(detail, prev, attributeId, valueId))
-              }
-            />
-            {selected && (
-              <p className="text-muted-foreground text-sm">
-                {selected.name} · {quantity}개
-              </p>
-            )}
-          </div>
-
-          <ProductSpecs product={detail} recommendedSize={recommendation.data?.recommendedSize} />
-
-          {/* 휴대폰에서는 수량 · 금액 · 담기를 화면 아래에 고정한다 */}
-          <div className="sticky bottom-0 -mx-4 space-y-3 border-t bg-white/95 px-4 pt-3 pb-4 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:backdrop-blur-none">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">수량</span>
-              <Input
-                type="number"
-                min={MIN_QUANTITY}
-                max={MAX_QUANTITY}
-                className="w-20"
-                value={quantity}
-                onChange={(e) => setQuantity(clampQuantity(Number(e.target.value)))}
-              />
-              <span className="ml-auto text-xl font-extrabold">
-                {selected ? formatWon(selected.price * quantity) : missingPick}
-              </span>
+              {selected && (
+                <p className="text-ink-2 text-sm">
+                  {selected.name} · {quantity}개
+                </p>
+              )}
             </div>
-            {!isSelling && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}
-            {user ? (
-              <AddToCartButton
-                optionId={optionId}
-                childId={childId}
-                quantity={quantity}
-                disabled={!isSelling}
-                cartHref={paths.shop.cart}
-                continueHref={paths.shop.home}
-              />
-            ) : (
-              <Link
-                to={loginPath(location.pathname + location.search)}
-                className="bg-primary text-primary-foreground block rounded-lg py-3 text-center font-semibold"
-              >
-                로그인하고 담기
-              </Link>
-            )}
+
+            {/* 휴대폰에서는 수량 · 금액 · 담기를 화면 아래에 고정한다 */}
+            <div className="border-rule bg-paper/95 sticky bottom-0 -mx-4 space-y-3 border-t px-4 pt-3 pb-3 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pt-4 md:pb-0 md:backdrop-blur-none">
+              <div className="flex items-center gap-3">
+                <span className="text-ink-2 text-sm">수량</span>
+                <Input
+                  type="number"
+                  min={MIN_QUANTITY}
+                  max={MAX_QUANTITY}
+                  className="h-11 w-20 text-base"
+                  value={quantity}
+                  onChange={(e) => setQuantity(clampQuantity(Number(e.target.value)))}
+                />
+                <span
+                  className={
+                    selected
+                      ? 'figure ml-auto text-right text-xl font-bold'
+                      : 'text-ink-2 ml-auto text-right text-sm'
+                  }
+                >
+                  {selected ? formatWon(selected.price * quantity) : missingPick}
+                </span>
+              </div>
+              {!isSelling && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}
+              {user ? (
+                <AddToCartButton
+                  optionId={optionId}
+                  childId={childId}
+                  quantity={quantity}
+                  disabled={!isSelling}
+                  cartHref={paths.shop.cart}
+                  continueHref={paths.shop.home}
+                />
+              ) : (
+                <Link
+                  to={loginPath(location.pathname + location.search)}
+                  className="shop-btn w-full"
+                >
+                  로그인하고 담기
+                </Link>
+              )}
+            </div>
+
+            {/* 소재 · 실측표는 담기 아래에 둔다 (담기 버튼이 첫 화면 안에 오도록) */}
+            <ProductSpecs product={detail} recommendedSize={recommendation.data?.recommendedSize} />
           </div>
         </div>
-      </div>
+      </section>
       <ProductDescription
         description={detail.description}
         images={detailImagesOf(detail)}

@@ -11,7 +11,6 @@ import { DeleteChildButton, EditChildForm, EditGrowthRecord } from '@/features/e
 import { getErrorMessage } from '@/shared/api'
 import { memberPathsOf } from '@/shared/config'
 import { useArea } from '@/shared/lib'
-import { Card, CardTitle } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
@@ -35,9 +34,22 @@ export function ShopChildDetailPage() {
     )
 
   return (
-    <div className="space-y-4">
-      <Link to={memberPaths.children} className="text-muted-foreground text-sm hover:underline">
-        ← 자녀 목록
+    <div className="shop-look space-y-6">
+      <Link
+        to={memberPaths.children}
+        className="text-ink-3 hover:text-ink inline-flex items-center gap-1 rounded-md text-[13px] font-semibold transition-colors"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="size-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          aria-hidden
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+        자녀 프로필
       </Link>
       <PageHeader
         title={`${child.data.name} 프로필`}
@@ -52,23 +64,35 @@ export function ShopChildDetailPage() {
           />
         }
       />
-      <ChildCard child={child.data} />
-      <EditChildForm key={child.data.id} child={child.data} />
-      <Card className="space-y-2">
-        <CardTitle>성장 이력</CardTitle>
-        {growth.isPending && <StateMessage>불러오는 중…</StateMessage>}
-        {growth.isError && (
-          <StateMessage tone="error">{getErrorMessage(growth.error)}</StateMessage>
-        )}
-        {growth.data && <GrowthChart records={growth.data} currentHeightCm={child.data.heightCm} />}
-        {growth.data && (
-          <GrowthRecordList
-            records={growth.data}
-            summary={summarizeGrowth(growth.data)}
-            action={(record) => <EditGrowthRecord childId={child.data.id} record={record} />}
-          />
-        )}
-      </Card>
+      {/* 넓은 화면: 왼쪽 자녀 카드 · 성장 이력, 오른쪽 정보 수정 */}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+        <div className="space-y-6">
+          <ChildCard child={child.data} />
+          <section
+            aria-label="성장 이력"
+            className="border-rule space-y-4 rounded-lg border p-4 md:p-5"
+          >
+            <h2 className="text-section">성장 이력</h2>
+            {growth.isPending && <StateMessage>불러오는 중…</StateMessage>}
+            {growth.isError && (
+              <StateMessage tone="error">{getErrorMessage(growth.error)}</StateMessage>
+            )}
+            {growth.data && (
+              <GrowthChart records={growth.data} currentHeightCm={child.data.heightCm} />
+            )}
+            {growth.data && (
+              <GrowthRecordList
+                records={growth.data}
+                summary={summarizeGrowth(growth.data)}
+                action={(record) => <EditGrowthRecord childId={child.data.id} record={record} />}
+              />
+            )}
+          </section>
+        </div>
+        <div className="lg:sticky lg:top-32">
+          <EditChildForm key={child.data.id} child={child.data} />
+        </div>
+      </div>
     </div>
   )
 }

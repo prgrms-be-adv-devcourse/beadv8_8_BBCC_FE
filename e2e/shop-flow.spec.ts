@@ -222,10 +222,14 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
   await test.step('마이페이지: 자녀 · 배송지 등록', async () => {
     await switchRole(page, '보호자')
-    await page.goto('/my/children')
+    // 자녀 등록은 목록과 따로인 화면. 등록하면 목록으로 돌아온다
+    await page.goto('/my/children/new')
     await page.getByRole('button', { name: '등록하기' }).click()
+    await expect(page).toHaveURL(/\/my\/children$/)
     await expect(page.getByText('#').first()).toBeVisible()
     await page.goto('/my/addresses')
+    // 입력은 시트에서 한다
+    await page.getByRole('button', { name: '+ 새 배송지 추가' }).click()
     await page.getByRole('button', { name: '등록하기' }).click()
     await expect(page.getByText('기본', { exact: true }).first()).toBeVisible()
   })
@@ -307,7 +311,9 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await recommended.getByText('데일리 맨투맨 (상품 A)').first().click()
     await expect(page).toHaveURL(/\/products\/\d+\?childId=/)
     await expect(page.getByText('추천 사이즈')).toBeVisible()
-    // 착용 미리보기: 추천 사이즈로 시작, 사이즈를 바꾸면 그림 · 문구가 바뀐다
+    // 착용 미리보기는 사이즈 칩 위 추천 한 줄의 「사이즈 자세히」를 펼치면 보인다.
+    // 추천 사이즈로 시작, 사이즈를 바꾸면 그림 · 문구가 바뀐다
+    await page.getByRole('button', { name: '사이즈 자세히' }).click()
     await expect(
       page.getByRole('img', { name: /키 118cm에 120 사이즈: 엉덩이를 덮어요/ }),
     ).toBeVisible()
@@ -583,6 +589,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
   await test.step('내 정보: 닉네임 수정 → 토큰 다시 받기 → 탈퇴(목)', async () => {
     await page.goto('/my/profile')
+    await page.getByRole('button', { name: '변경', exact: true }).click()
     await page.getByLabel(/닉네임/).fill('보호자맘')
     await page.getByRole('button', { name: '닉네임 바꾸기' }).click()
     await expect(page.getByText('보호자맘 · 회원 1').first()).toBeVisible()

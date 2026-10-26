@@ -36,12 +36,20 @@ export const paths = {
     cart: '/cart',
     orders: '/orders',
     order: (id: string) => `/orders/${id}`,
+    /** 알림함 (알림 기능 전, 화면만) */
+    notifications: '/notifications',
     my: '/my',
     children: '/my/children',
+    /** 자녀 등록 (목록과 따로) */
+    childNew: '/my/children/new',
     child: (id: string) => `/my/children/${id}`,
     profile: '/my/profile',
     addresses: '/my/addresses',
     wallet: '/my/wallet',
+    /** 예치금 이용 내역 · 충전 내역 (예치금과 따로) */
+    walletHistory: '/my/wallet/history',
+    /** 예치금 충전 (예치금과 따로, 메뉴 없이 한 가지 일만) */
+    walletCharge: '/my/wallet/charge',
     chargeSuccess: '/my/wallet/charge/success',
     chargeFail: '/my/wallet/charge/fail',
   },
@@ -68,6 +76,7 @@ export const paths = {
     verify: `${C}/verify`,
     connect: `${C}/connect`,
     children: `${C}/children`,
+    childNew: `${C}/children/new`,
     child: (id: string) => `${C}/children/${id}`,
     profile: `${C}/profile`,
     addresses: `${C}/addresses`,
@@ -78,6 +87,8 @@ export const paths = {
     orders: `${C}/orders`,
     order: (id: string) => `${C}/orders/${id}`,
     wallet: `${C}/wallet`,
+    walletHistory: `${C}/wallet/history`,
+    walletCharge: `${C}/wallet/charge`,
     chargeSuccess: `${C}/wallet/charge/success`,
     chargeFail: `${C}/wallet/charge/fail`,
     sellerApply: `${C}/seller/apply`,
@@ -96,7 +107,13 @@ export const paths = {
 /** 영역마다 따로 있는 예치금 · 충전 결과 화면 (충전은 쇼핑 · 콘솔에서만) */
 export function walletPathsOf(area: Area) {
   const base = area === 'console' ? paths.console : paths.shop
-  return { wallet: base.wallet, chargeSuccess: base.chargeSuccess, chargeFail: base.chargeFail }
+  return {
+    wallet: base.wallet,
+    history: base.walletHistory,
+    charge: base.walletCharge,
+    chargeSuccess: base.chargeSuccess,
+    chargeFail: base.chargeFail,
+  }
 }
 
 /** 영역마다 있는 회원 · 자녀 화면 (판매자 센터 · 관리자에서는 쇼핑 화면으로) */
@@ -104,18 +121,23 @@ export function memberPathsOf(area: Area) {
   const base = area === 'console' ? paths.console : paths.shop
   return {
     children: base.children,
+    childNew: base.childNew,
     child: base.child,
     addresses: base.addresses,
     profile: base.profile,
   }
 }
 
-/** 로그인해야 볼 수 있는 쇼핑 화면: 맞춤 목록 · 장바구니 · 주문 · 마이페이지(자녀 · 배송지 · 예치금 포함). 홈 · 상품은 누구나 */
+/** 로그인해야 볼 수 있는 쇼핑 화면: 맞춤 목록 · 장바구니 · 주문 · 알림함 · 마이페이지(자녀 · 배송지 · 예치금 포함). 홈 · 상품은 누구나 */
 export function shopNeedsLogin(pathname: string): boolean {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
-  return [RECOMMENDED, paths.shop.cart, paths.shop.orders, paths.shop.my].some((prefix) =>
-    under(prefix, path),
-  )
+  return [
+    RECOMMENDED,
+    paths.shop.cart,
+    paths.shop.orders,
+    paths.shop.notifications,
+    paths.shop.my,
+  ].some((prefix) => under(prefix, path))
 }
 
 /** 로그인 화면 주소. next = 로그인 뒤 돌아올 화면 (앱 안 주소만) */

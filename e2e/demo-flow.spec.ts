@@ -28,10 +28,14 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
   })
 
   await test.step('① 자녀 · 배송지 등록', async () => {
-    await page.goto('/console/children')
+    // 자녀 등록은 목록과 따로인 화면. 등록하면 목록으로 돌아온다
+    await page.goto('/console/children/new')
     await page.getByRole('button', { name: '등록하기' }).click()
+    await expect(page).toHaveURL(/\/console\/children$/)
     await expect(page.getByText('#').first()).toBeVisible()
     await page.goto('/console/addresses')
+    // 입력은 시트에서 한다
+    await page.getByRole('button', { name: '+ 새 배송지 추가' }).click()
     await page.getByRole('button', { name: '등록하기' }).click()
     await expect(page.getByText('기본', { exact: true })).toBeVisible()
   })
@@ -216,14 +220,16 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     // 승인 값이 남은 주소로 다시 와도(뒤로 가기 등) 오류 대신 이미 처리된 충전으로 안내한다
     await page.goto(successUrl)
     await expect(page.getByText(/이미 처리된 충전이에요/)).toBeVisible()
-    await page.goto('/console/wallet')
-    // 충전 내역 · 거래 내역(BE 입출금 원장) 모두 실제 API
-    await expect(page.getByText(/충전 #77/)).toBeVisible()
+    // 이용 내역(BE 입출금 원장) · 충전 내역은 예치금과 따로인 이용 내역 화면의 두 탭. 모두 실제 API
+    await page.goto('/console/wallet/history')
     await expect(page.getByRole('listitem', { name: '거래 충전' })).toBeVisible()
     await expect(page.getByRole('listitem', { name: '거래 주문 결제' }).first()).toBeVisible()
+    await page.getByRole('tab', { name: '충전 내역' }).click()
+    await expect(page.getByText(/충전 #77/)).toBeVisible()
     await page.getByRole('button', { name: '충전 취소' }).click()
-    // 충전 내역이 다시 조회돼 '취소됨'이 되고, 거래 내역에 충전 취소가 생긴다
+    // 충전 내역이 다시 조회돼 '취소됨'이 되고, 이용 내역에 충전 취소가 생긴다
     await expect(page.getByText('취소됨').first()).toBeVisible()
+    await page.getByRole('tab', { name: '이용 내역' }).click()
     await expect(page.getByRole('listitem', { name: '거래 충전 취소' })).toBeVisible()
   })
 

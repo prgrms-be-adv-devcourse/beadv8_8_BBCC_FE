@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { areaOf, loginPath, memberPathsOf, paths, shopNeedsLogin } from '@/shared/config'
+import {
+  areaOf,
+  loginPath,
+  memberPathsOf,
+  paths,
+  shopNeedsLogin,
+  walletPathsOf,
+} from '@/shared/config'
 
 describe('areaOf: 주소로 화면 영역을 나눈다', () => {
   it.each([
@@ -53,6 +60,18 @@ describe('회원 · 자녀 보완 화면 주소', () => {
     expect(memberPathsOf('shop').profile).toBe('/my/profile')
     expect(memberPathsOf('console').profile).toBe('/console/profile')
   })
+  it('예치금 이용 내역은 예치금과 따로인 주소 (쇼핑 · 콘솔)', () => {
+    expect(walletPathsOf('shop').history).toBe('/my/wallet/history')
+    expect(walletPathsOf('console').history).toBe('/console/wallet/history')
+  })
+  it('예치금 충전은 예치금과 따로인 주소 (쇼핑 · 콘솔)', () => {
+    expect(walletPathsOf('shop').charge).toBe('/my/wallet/charge')
+    expect(walletPathsOf('console').charge).toBe('/console/wallet/charge')
+  })
+  it('자녀 등록은 목록과 따로인 주소 (쇼핑 · 콘솔)', () => {
+    expect(memberPathsOf('shop').childNew).toBe('/my/children/new')
+    expect(memberPathsOf('console').childNew).toBe('/console/children/new')
+  })
   it('판매자 센터 · 관리자에서는 쇼핑 주소를 쓴다', () => {
     expect(memberPathsOf('center').children).toBe('/my/children')
     expect(memberPathsOf('admin').child('1')).toBe('/my/children/1')
@@ -92,6 +111,7 @@ describe('shopNeedsLogin: 로그인해야 볼 수 있는 쇼핑 화면', () => {
     [paths.shop.chargeSuccess, true],
     [paths.shop.child('1'), true],
     [paths.shop.recommended('1'), true],
+    [paths.shop.notifications, true],
     [paths.shop.home, false],
     [paths.shop.product('1'), false],
     [paths.login, false],

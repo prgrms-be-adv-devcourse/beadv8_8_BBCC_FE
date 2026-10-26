@@ -13,6 +13,11 @@ export function validateAddressForm(form: AddressForm): string | null {
   return null
 }
 
+/** 기본 배송지를 맨 위로. 나머지는 받은 순서 그대로 */
+export function defaultFirst(addresses: ShippingAddress[]) {
+  return [...addresses].sort((a, b) => Number(b.isDefault) - Number(a.isDefault))
+}
+
 /** 고른 배송지 → 없으면 기본 배송지 → 없으면 null */
 export function pickShippingAddress(addresses: ShippingAddress[], selectedId: string | null) {
   return (

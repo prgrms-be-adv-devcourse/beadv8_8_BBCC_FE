@@ -20,5 +20,7 @@ export {
   useRecommendedProductsQuery,
   useSizeRecommendationQuery,
 } from './model/queries'
+export { sizeScaleOf, type SizeScale } from './model/size-scale.rules'
+export { FIT_LABEL } from './model/recommendation'
 export { FitBadge } from './ui/FitBadge'
 export { SizeRecommendationSummary } from './ui/SizeRecommendationSummary'

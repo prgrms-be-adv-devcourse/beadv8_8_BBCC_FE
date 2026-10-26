@@ -8,7 +8,6 @@ import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { formatWon, optionLabel } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
-import { Card, CardTitle } from '@/shared/ui/card'
 import { Select } from '@/shared/ui/input'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -39,27 +38,27 @@ export function ShopCartPage() {
       : `${paths.shop.wallet}?amount=${chargeAmount}&return=${encodeURIComponent(paths.shop.cart)}`
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">장바구니</h1>
+    <div className="shop-look space-y-6">
+      <h1 className="text-page">장바구니</h1>
       {cart.isPending && <ListSkeleton />}
       {cart.isError && <StateMessage tone="error">{getErrorMessage(cart.error)}</StateMessage>}
       {cart.data?.lines.length === 0 && (
-        <Card className="py-10 text-center">
-          <p className="text-muted-foreground">장바구니가 비었어요.</p>
-          <Link to={paths.shop.home} className="text-primary mt-2 inline-block underline">
+        <div className="bg-paper-2 rounded-card space-y-3 py-16 text-center">
+          <p className="text-ink-2 text-base">장바구니가 비었어요.</p>
+          <Link to={paths.shop.home} className="shop-link">
             상품 보러 가기
           </Link>
-        </Card>
+        </div>
       )}
 
       {cart.data && cart.data.lines.length > 0 && (
-        <div className="grid items-start gap-6 md:grid-cols-[1fr_320px]">
-          <div className="space-y-3">
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm font-medium">
+              <label className="flex min-h-11 items-center gap-3 font-semibold">
                 <input
                   type="checkbox"
-                  className="accent-primary size-4"
+                  className="accent-signal size-5"
                   checked={allSelected}
                   disabled={orderableIds.size === 0}
                   onChange={toggleAll}
@@ -72,63 +71,71 @@ export function ShopCartPage() {
               <section
                 key={group.sellerId ?? 'unknown'}
                 aria-label={sellerGroupLabel(group)}
-                className="space-y-2"
+                className="border-rule rounded-card border"
               >
-                <div className="text-muted-foreground flex items-center justify-between border-b pb-1 text-sm">
-                  <span className="text-foreground font-semibold">{sellerGroupLabel(group)}</span>
-                  <span>
-                    {group.lines.length}개 · {formatWon(sumLineAmount(group.lines))}
+                {/* 상점 묶음 머리: 상점 이름 · 담은 수 · 합계 */}
+                <div className="border-rule flex items-baseline justify-between gap-4 border-b px-4 py-3">
+                  <span className="text-[15px] font-bold">{sellerGroupLabel(group)}</span>
+                  <span className="text-ink-3 figure flex gap-3 text-[13px]">
+                    <span>{group.lines.length}개</span>
+                    <span className="text-ink font-semibold">
+                      {formatWon(sumLineAmount(group.lines))}
+                    </span>
                   </span>
                 </div>
-                {group.lines.map((line) => (
-                  <Card
-                    key={line.id}
-                    className="flex flex-wrap items-center gap-3 sm:flex-nowrap sm:gap-4"
-                  >
-                    <input
-                      type="checkbox"
-                      className="accent-primary size-4 shrink-0"
-                      aria-label={`${line.productName} ${optionLabel(line) ?? ''} 주문하기`}
-                      checked={orderableIds.has(line.id) && isSelected(line.id)}
-                      disabled={!orderableIds.has(line.id)}
-                      onChange={() => toggleLine(line.id)}
-                    />
-                    <ProductImage
-                      src={null}
-                      alt={line.productName}
-                      className="size-16 shrink-0 rounded-lg"
-                    />
-                    <div className="min-w-0 flex-1 basis-48">
-                      <p className="font-medium">
-                        {line.productName}{' '}
-                        {!line.purchasable && <Badge variant="destructive">구매 불가</Badge>}
-                      </p>
-                      <p className="text-muted-foreground text-sm">
-                        {[
-                          optionLabel(line),
-                          line.childId &&
-                            `${findChild(children.data, line.childId)?.name ?? `자녀 #${line.childId}`}가 입어요`,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                      <p className="text-sm font-semibold">{formatWon(line.lineAmount)}</p>
-                    </div>
-                    <div className="ml-auto">
-                      <CartItemControls line={line} />
-                    </div>
-                  </Card>
-                ))}
+                <ul className="divide-rule divide-y px-4">
+                  {group.lines.map((line) => (
+                    <li
+                      key={line.id}
+                      className="flex flex-wrap items-center gap-4 py-4 sm:flex-nowrap"
+                    >
+                      <input
+                        type="checkbox"
+                        className="accent-signal size-5 shrink-0"
+                        aria-label={`${line.productName} ${optionLabel(line) ?? ''} 주문하기`}
+                        checked={orderableIds.has(line.id) && isSelected(line.id)}
+                        disabled={!orderableIds.has(line.id)}
+                        onChange={() => toggleLine(line.id)}
+                      />
+                      <ProductImage
+                        src={null}
+                        alt={line.productName}
+                        className="rounded-card aspect-[3/4] w-16 shrink-0"
+                      />
+                      <div className="min-w-0 flex-1 basis-48 space-y-1">
+                        <p className="text-sm font-semibold">
+                          {line.productName}{' '}
+                          {!line.purchasable && <Badge variant="destructive">구매 불가</Badge>}
+                        </p>
+                        <p className="text-ink-3 flex flex-wrap gap-x-3 text-[13px]">
+                          {[
+                            optionLabel(line),
+                            line.childId &&
+                              `${findChild(children.data, line.childId)?.name ?? `자녀 #${line.childId}`}가 입어요`,
+                          ]
+                            .filter(Boolean)
+                            .map((text) => (
+                              <span key={String(text)}>{text}</span>
+                            ))}
+                        </p>
+                        <p className="figure text-[15px] font-bold">{formatWon(line.lineAmount)}</p>
+                      </div>
+                      <div className="ml-auto">
+                        <CartItemControls line={line} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </section>
             ))}
           </div>
 
-          <Card className="space-y-4 md:sticky md:top-4">
-            <CardTitle>주문서</CardTitle>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">배송지</p>
+          <aside className="bg-paper-2 rounded-card space-y-5 p-5 lg:sticky lg:top-32">
+            <h2 className="text-lg font-bold">주문서</h2>
+            <div className="space-y-2">
+              <p className="text-ink-2 text-sm">배송지</p>
               {addresses.data?.length === 0 ? (
-                <Link to={paths.shop.addresses} className="text-primary text-sm underline">
+                <Link to={paths.shop.addresses} className="shop-link text-sm">
                   배송지를 먼저 등록해 주세요
                 </Link>
               ) : (
@@ -141,7 +148,7 @@ export function ShopCartPage() {
                 </Select>
               )}
             </div>
-            <div className="space-y-1 border-t pt-3 text-sm">
+            <div className="border-rule figure space-y-2 border-t pt-4 text-sm">
               <div className="flex justify-between">
                 <span>선택한 상품 {lines.length}개</span>
                 <span>{formatWon(orderAmount)}</span>
@@ -150,7 +157,7 @@ export function ShopCartPage() {
                 <span>결제 수단</span>
                 <span>예치금</span>
               </div>
-              <div className="text-muted-foreground flex justify-between">
+              <div className="text-ink-2 flex justify-between">
                 <span>예치금 잔액</span>
                 <span>
                   {wallet.data
@@ -160,9 +167,11 @@ export function ShopCartPage() {
                       : '…'}
                 </span>
               </div>
-              <div className="flex justify-between border-t pt-2 text-base font-bold">
-                <span>결제 금액</span>
-                <span>{formatWon(orderAmount)}</span>
+              <div className="border-rule flex items-baseline justify-between border-t pt-3">
+                <span className="text-base font-semibold">결제 금액</span>
+                <span className="text-signal figure text-lg font-bold">
+                  {formatWon(orderAmount)}
+                </span>
               </div>
             </div>
             {shortage > 0 && (
@@ -181,7 +190,7 @@ export function ShopCartPage() {
               totalAmount={orderAmount}
               onPlaced={(order) => navigate(paths.shop.order(order.id))}
             />
-          </Card>
+          </aside>
         </div>
       )}
     </div>

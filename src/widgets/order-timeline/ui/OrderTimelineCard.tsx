@@ -24,17 +24,18 @@ const STATUS_TEXT: Record<TimelineStepStatus, string> = {
   NOT_APPLICABLE: '해당 없음',
 }
 
-function markOf(step: TimelineStep) {
-  if (step.cancelled) return { mark: '✕', tone: 'border-destructive bg-destructive text-white' }
+/** 단계 점: 완료는 채운 자두, 일부는 자두 테두리, 대기는 회색 테두리, 해당 없음은 옅은 회색, 취소는 빨강 */
+function dotOf(step: TimelineStep) {
+  if (step.cancelled) return 'bg-destructive'
   switch (step.status) {
     case 'DONE':
-      return { mark: '✓', tone: 'border-green-600 bg-green-600 text-white' }
+      return 'bg-primary'
     case 'PARTIAL':
-      return { mark: '◐', tone: 'border-primary text-primary bg-background' }
+      return 'border-primary bg-card border-2'
     case 'WAITING':
-      return { mark: '', tone: 'border-muted-foreground/40 bg-background' }
+      return 'border-muted-foreground/40 bg-card border'
     default:
-      return { mark: '–', tone: 'border-muted bg-muted text-muted-foreground' }
+      return 'bg-muted'
   }
 }
 
@@ -57,7 +58,6 @@ export function OrderTimelineCard({ order }: OrderTimelineCardProps) {
       {timeline.data && (
         <ol aria-label="처리 과정" className="space-y-0">
           {timeline.data.steps.map((step, index) => {
-            const { mark, tone } = markOf(step)
             const last = index === timeline.data.steps.length - 1
             const skipped = step.status === 'NOT_APPLICABLE'
             const progress = doneCount(step)
@@ -67,23 +67,18 @@ export function OrderTimelineCard({ order }: OrderTimelineCardProps) {
                 aria-label={
                   step.cancelled ? step.label : `${step.label} ${STATUS_TEXT[step.status]}`
                 }
-                className={cn('relative flex gap-3 pb-4', skipped && 'opacity-50')}
+                className={cn('relative flex gap-3.5 pb-5 last:pb-0', skipped && 'opacity-50')}
               >
                 {!last && (
                   <span
-                    className="bg-border absolute top-6 bottom-0 left-[11px] w-0.5"
+                    className="bg-border absolute top-4 bottom-0 left-[4.5px] w-px"
                     aria-hidden
                   />
                 )}
                 <span
                   aria-hidden
-                  className={cn(
-                    'z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold',
-                    tone,
-                  )}
-                >
-                  {mark}
-                </span>
+                  className={cn('z-10 mt-1.5 size-2.5 shrink-0 rounded-full', dotOf(step))}
+                />
                 <div className="min-w-0 flex-1 space-y-1 text-sm">
                   <div className="flex flex-wrap items-baseline gap-x-2">
                     <span
@@ -135,9 +130,6 @@ export function OrderTimelineCard({ order }: OrderTimelineCardProps) {
                           key={detail.key}
                           className="text-muted-foreground flex flex-wrap items-baseline gap-x-2 text-xs"
                         >
-                          <span className={cn(detail.status === 'DONE' && 'text-green-700')}>
-                            {detail.status === 'DONE' ? '✓' : '○'}
-                          </span>
                           <span className="text-foreground">{detail.label}</span>
                           {detail.confirmType && (
                             <span className="rounded border px-1">
