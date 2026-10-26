@@ -67,7 +67,18 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
       actor: '관리자',
       todo: ['"승인"을 눌러요 (거절하면 사유를 남기고 다시 신청할 수 있어요)'],
       watch: '상태 변화 탭: 판매자 신청 PENDING → APPROVED, 다음 토큰부터 SELLER 역할',
-      next: { label: '② 상품 등록', to: C.sellerProducts },
+      next: { label: '② 상품 등록', to: C.sellerProductNew },
+    },
+  },
+  {
+    path: C.sellerProductNew,
+    guide: {
+      step: '②',
+      actor: '판매자',
+      todo: ['카테고리 항목에 맞춰 입력하고 "등록하고 판매 시작"을 눌러요'],
+      watch:
+        'PUT sale-status → 서버 이벤트 product.changed (추천 · 주문 복사본 갱신). 등록 · 판매 시작은 실제, 내 상품 목록은 목',
+      next: { label: '③ 사이즈 추천', to: C.products },
     },
   },
   {
@@ -75,9 +86,11 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
     guide: {
       step: '②',
       actor: '판매자',
-      todo: ['카테고리 항목에 맞춰 "등록하기"로 상품을 만들고', '"판매 시작"을 눌러요'],
-      watch:
-        'PUT sale-status → 서버 이벤트 product.changed (추천 · 주문 복사본 갱신). 등록 · 판매 시작은 실제, 내 상품 목록은 목',
+      todo: [
+        '방금 등록한 상품이 표 맨 위에 있는지 봐요',
+        '상품명을 누르면 옵션별 재고 조정 · 수정 화면으로 가요',
+      ],
+      watch: 'GET /seller/products — 내 상품 요약(옵션 수 · 총 재고 · 최저가)',
       next: { label: '③ 사이즈 추천', to: C.products },
     },
   },
@@ -146,6 +159,16 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
     guide: {
       step: '⑤',
       actor: '판매자',
+      todo: ['방금 주문을 열고 송장을 넣어 "발송"을 눌러요', '"배송 완료 처리"를 눌러요'],
+      watch: '상태 변화 탭: 배송 READY → SHIPPING → DELIVERED',
+      next: { label: '⑥ 구매확정', to: C.orders },
+    },
+  },
+  {
+    path: `${C.sellerOrders}/:id`,
+    guide: {
+      step: '⑤',
+      actor: '판매자',
       todo: ['송장을 넣고 "발송"을 눌러요', '"배송 완료 처리"를 눌러요'],
       watch: '상태 변화 탭: 배송 READY → SHIPPING → DELIVERED',
       next: { label: '⑥ 구매확정', to: C.orders },
@@ -182,9 +205,19 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
       actor: '판매자',
       todo: [
         '정산서 "상세"에서 수수료 10%를 뺀 지급액을 봐요',
-        '오늘 구매확정한 상품은 "정산 대상"에 있다가 내일 정산돼요',
+        '오늘 구매확정한 상품은 "정산 예정"에 있다가 내일 정산돼요',
       ],
       watch: 'GET /seller/settlements — 구매확정 → 정산 → 예치금 입금(지급 완료)까지 이어진 결과',
+      next: { label: '흐름 확인', to: C.verify },
+    },
+  },
+  {
+    path: `${C.sellerSettlements}/:id`,
+    guide: {
+      step: '⑦',
+      actor: '판매자',
+      todo: ['수수료 10%를 뺀 지급액과 정산 항목(구매확정한 주문상품)을 봐요'],
+      watch: 'GET /seller/settlements/{id} — 정산서 상세(항목 · 실패 사유)',
       next: { label: '흐름 확인', to: C.verify },
     },
   },

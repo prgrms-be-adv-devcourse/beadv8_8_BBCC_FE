@@ -6,19 +6,22 @@ import {
   filterSellerOrdersByTab,
   nextShippingStep,
   SELLER_ORDER_TABS,
-  SellerOrderCard,
   sellerOrderTabOf,
   useSellerOrdersQuery,
   type SellerOrderTab,
 } from '@/entities/seller-order'
-import { BulkShippingBar, ShipOrderControls } from '@/features/ship-order'
+import { BulkShippingBar } from '@/features/ship-order'
 import { getErrorMessage } from '@/shared/api'
-import { cn } from '@/shared/lib'
+import { sellerPathsOf } from '@/shared/config'
+import { cn, useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { SellerOrderTable } from './SellerOrderTable'
 
+/** 주문 · 배송: 배송 상태 탭 → 고르기 · 일괄 처리 → 판매 주문 표 (발송은 상세에서) */
 export function CenterOrdersPage() {
+  const sellerPaths = sellerPathsOf(useArea())
   const orders = useSellerOrdersQuery()
   // 탭은 주소(?tab=)에 둔다 → 홈 할 일에서 바로 열린다
   const [params, setParams] = useSearchParams()
@@ -42,14 +45,18 @@ export function CenterOrdersPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="shop-look space-y-5">
       <PageHeader
         title="주문 · 배송"
         step="⑤"
         description="결제된 주문을 발송하고 배송 완료로 바꿔요. 여러 건을 골라 한 번에 처리할 수 있어요."
         note="결제 완료된 주문 중 내 몫만 보여요. 송장을 넣어 발송하고 배송 완료로 바꿔요."
       />
-      <div role="tablist" aria-label="배송 상태" className="flex gap-2 overflow-x-auto">
+      <div
+        role="tablist"
+        aria-label="배송 상태"
+        className="border-rule flex gap-6 overflow-x-auto border-b"
+      >
         {SELLER_ORDER_TABS.map((item) => (
           <button
             key={item.value}
@@ -61,18 +68,18 @@ export function CenterOrdersPage() {
               setSelected(new Set())
             }}
             className={cn(
-              'shrink-0 rounded-full border px-3 py-1 text-sm',
+              '-mb-px flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 text-[15px] font-bold transition-colors',
               tab === item.value
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'hover:border-primary bg-white',
+                ? 'border-ink text-ink'
+                : 'text-ink-3 hover:text-ink active:text-ink border-transparent',
             )}
           >
-            {item.label} <span className="font-bold">{counts[item.value]}</span>
+            {item.label} <span className="figure text-sm">{counts[item.value]}</span>
           </button>
         ))}
       </div>
       {actionable.length > 0 && (
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 w-fit cursor-pointer items-center gap-2 text-sm lg:min-h-8">
           <input
             type="checkbox"
             className="accent-primary size-4"
@@ -81,7 +88,10 @@ export function CenterOrdersPage() {
               setSelected(allChosen ? new Set() : new Set(actionable.map((order) => order.id)))
             }
           />
-          처리할 주문 전체 선택 ({chosen}/{actionable.length})
+          처리할 주문 전체 선택{' '}
+          <span className="text-ink-3 figure">
+            ({chosen}/{actionable.length})
+          </span>
         </label>
       )}
       {chosen > 0 && (
@@ -94,25 +104,19 @@ export function CenterOrdersPage() {
       {orders.isPending && <ListSkeleton />}
       {orders.isError && <StateMessage tone="error">{getErrorMessage(orders.error)}</StateMessage>}
       {orders.data && visible.length === 0 && (
-        <StateMessage>
+        <p className="bg-paper-2 text-ink-2 rounded-lg py-12 text-center text-sm">
           {tab === 'ALL' ? '판매 주문이 없어요.' : '이 상태의 판매 주문이 없어요.'}
-        </StateMessage>
+        </p>
       )}
-      {visible.map((order) => (
-        <div key={order.id} className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            aria-label={`판매 주문 #${order.id} 선택`}
-            className="accent-primary mt-5 size-4 shrink-0"
-            disabled={nextShippingStep(order) === null}
-            checked={selected.has(order.id)}
-            onChange={() => toggle(order.id)}
-          />
-          <div className="min-w-0 flex-1">
-            <SellerOrderCard order={order} action={<ShipOrderControls sellerOrder={order} />} />
-          </div>
-        </div>
-      ))}
+      {visible.length > 0 && (
+        <SellerOrderTable
+          orders={visible}
+          selected={selected}
+          onToggle={toggle}
+          orderHref={sellerPaths.order}
+          listSearch={params.toString()}
+        />
+      )}
     </div>
   )
 }

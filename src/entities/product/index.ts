@@ -67,6 +67,8 @@ export {
   type StockLevel,
   optionCombos,
   priceGroups,
+  registerPreviewOf,
+  type RegisterPreview,
   listItemMeta,
   productMeta,
   sizeValues,

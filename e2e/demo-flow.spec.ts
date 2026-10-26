@@ -123,7 +123,7 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
 
   await test.step('② 상품 등록 → 판매 시작 (실제 API: 카테고리 입력 항목 · 등록 · sale-status)', async () => {
     await switchRole(page, '판매자')
-    await page.goto('/console/seller/products')
+    await page.goto('/console/seller/products/new')
     // 카테고리는 2단 선택: 의류 › 상의 (가장 아래 단계에만 등록)
     await expect(page.getByLabel('카테고리', { exact: true }).locator('option:checked')).toHaveText(
       '의류',
@@ -172,6 +172,14 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
   await test.step('⑤ 판매자 발송 → 배송 완료', async () => {
     await switchRole(page, '판매자')
     await page.goto('/console/seller/orders')
+    // 방금 주문(④의 주문 번호)의 판매 주문 상세에서 발송한다
+    const orderId = new URL(orderUrl).pathname.split('/').pop()
+    await page
+      .getByRole('row')
+      .filter({ has: page.getByText(`주문번호 ${orderId}`, { exact: true }) })
+      .getByRole('link', { name: /판매 주문 #\d+/ })
+      .click()
+    await expect(page).toHaveURL(/\/console\/seller\/orders\/\d+$/)
     await page.getByRole('button', { name: '발송' }).click()
     await page.getByRole('button', { name: '배송 완료 처리' }).click()
     await expect(page.getByText('배송 완료', { exact: true }).first()).toBeVisible()
@@ -203,7 +211,7 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByText('정산 대상이 없어요.')).toBeVisible()
     await expect(page.getByText('지급 완료', { exact: true })).toBeVisible()
     await expect(page.getByText(/지급 22,500원/)).toBeVisible()
-    await page.getByRole('button', { name: '상세' }).click()
+    await page.getByRole('link', { name: '상세' }).click()
     await expect(page.getByText(/주문 #\d+ · 주문상품 #\d+ · 25,000원 · 구매확정/)).toBeVisible()
   })
 
@@ -268,6 +276,8 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     // 판매자 상호명 수정은 아직 목 → 끄면 가짜 백엔드의 없는 API 응답
     await switchRole(page, '판매자')
     await page.goto('/center')
+    // 상호명 수정은 상점 정보 화면에서
+    await page.getByRole('main').getByRole('link', { name: '상점 정보' }).click()
     await page.getByRole('button', { name: '상호명 수정' }).click()
     await page.getByRole('textbox', { name: '상호명' }).fill('목 끈 상점')
     await page.getByRole('button', { name: '상호명 저장' }).click()

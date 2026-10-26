@@ -16,6 +16,12 @@ describe('findDemoGuide: 콘솔 주소 → 시연 안내', () => {
     expect(findDemoGuide(paths.console.order('12'))?.actor).toBe('보호자')
   })
 
+  it('판매자 등록 · 상세 화면도 그 단계 안내를 찾는다', () => {
+    expect(findDemoGuide(paths.console.sellerProductNew)?.step).toBe('②')
+    expect(findDemoGuide(paths.console.sellerOrder('4'))?.step).toBe('⑤')
+    expect(findDemoGuide(paths.console.sellerSettlement('2'))?.step).toBe('⑦')
+  })
+
   it('끝의 / 는 무시한다', () => {
     expect(findDemoGuide(`${paths.console.cart}/`)?.step).toBe('④')
   })

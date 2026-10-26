@@ -6,8 +6,12 @@ import { useRefreshSellerRole } from '../model/use-apply-seller'
 export function RefreshSellerRoleButton() {
   const refresh = useRefreshSellerRole()
   return (
-    <div className="flex items-center gap-2">
-      <Button size="sm" disabled={refresh.isPending} onClick={() => refresh.mutate()}>
+    <div className="flex flex-wrap items-center gap-3">
+      <Button
+        className="h-10 px-4 text-sm"
+        disabled={refresh.isPending}
+        onClick={() => refresh.mutate()}
+      >
         판매자 역할 받기 (토큰 재발급)
       </Button>
       {refresh.isError && (

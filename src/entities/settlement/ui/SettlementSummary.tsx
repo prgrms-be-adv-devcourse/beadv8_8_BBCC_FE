@@ -1,37 +1,40 @@
-import type { ReactNode } from 'react'
 import { formatDateTime, formatWon } from '@/shared/lib'
-import { Badge } from '@/shared/ui/badge'
-import { SETTLEMENT_STATUS_LABEL, type Settlement } from '../model/settlement'
+import type { Settlement } from '../model/settlement'
 
-type SettlementSummaryProps = {
-  settlement: Settlement
-  action?: ReactNode
-}
+type SettlementSummaryProps = { settlement: Settlement }
 
-const STATUS_VARIANT = { COMPLETED: 'muted', PAID: 'success', FAILED: 'destructive' } as const
-
-/** 정산서 한 줄: 기간 · 판매 − 수수료 = 지급 · 상태 */
-export function SettlementSummary({ settlement, action }: SettlementSummaryProps) {
+/** 정산서 계산(판매 금액 − 수수료 = 지급액)과 기간 · 예치금 입금 시각 */
+export function SettlementSummary({ settlement }: SettlementSummaryProps) {
   return (
-    <div className="text-sm">
-      <div className="flex items-center justify-between gap-2">
-        <p className="font-medium">
-          정산서 #{settlement.id} · {settlement.periodStart} ~ {settlement.periodEnd}{' '}
-          <Badge variant={STATUS_VARIANT[settlement.status]}>
-            {SETTLEMENT_STATUS_LABEL[settlement.status]}
-          </Badge>
-        </p>
-        {action}
-      </div>
-      <p className="text-muted-foreground">
-        판매 {formatWon(settlement.totalAmount)} − 수수료 {formatWon(settlement.feeAmount)} (
-        {settlement.feeRatePercent}
-        %) ={' '}
-        <span className="text-foreground font-semibold">
-          지급 {formatWon(settlement.payoutAmount)}
-        </span>
-        {settlement.paidAt && ` · 예치금 입금 ${formatDateTime(settlement.paidAt)}`}
-      </p>
+    <div className="space-y-4 text-sm">
+      <dl className="space-y-2">
+        <div className="flex justify-between gap-4">
+          <dt className="text-ink-3">판매 금액</dt>
+          <dd className="figure">{formatWon(settlement.totalAmount)}</dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-ink-3">
+            수수료 <span className="figure">({settlement.feeRatePercent}%)</span>
+          </dt>
+          <dd className="figure">− {formatWon(settlement.feeAmount)}</dd>
+        </div>
+        <div className="border-rule flex items-baseline justify-between gap-4 border-t pt-3">
+          <dt className="font-semibold">지급액</dt>
+          <dd className="figure text-base font-bold">{formatWon(settlement.payoutAmount)}</dd>
+        </div>
+      </dl>
+      <dl className="border-rule space-y-2 border-t pt-4">
+        <div className="flex justify-between gap-4">
+          <dt className="text-ink-3">기간</dt>
+          <dd className="figure">
+            {settlement.periodStart} ~ {settlement.periodEnd}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-ink-3">예치금 입금</dt>
+          <dd className="figure">{formatDateTime(settlement.paidAt)}</dd>
+        </div>
+      </dl>
     </div>
   )
 }

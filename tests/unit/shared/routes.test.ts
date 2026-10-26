@@ -5,6 +5,7 @@ import {
   loginPath,
   memberPathsOf,
   paths,
+  sellerPathsOf,
   shopNeedsLogin,
   walletPathsOf,
 } from '@/shared/config'
@@ -136,6 +137,31 @@ describe('loginPath: 로그인 뒤 돌아올 주소를 담는다', () => {
   it('돌아올 곳이 없거나 앱 밖 주소면 로그인 화면만', () => {
     expect(loginPath(null)).toBe('/login')
     expect(loginPath('https://evil.example')).toBe('/login')
+  })
+})
+
+describe('sellerPathsOf: 판매자 화면 주소는 판매자 센터와 콘솔에 각각 있다', () => {
+  it('판매자 센터의 등록 · 상세 화면', () => {
+    const seller = sellerPathsOf('center')
+    expect(seller.products).toBe('/center/products')
+    expect(seller.productNew).toBe('/center/products/new')
+    expect(seller.product('3')).toBe('/center/products/3')
+    expect(seller.order('7')).toBe('/center/orders/7')
+    expect(seller.settlement('2')).toBe('/center/settlements/2')
+  })
+
+  it('콘솔의 등록 · 상세 화면도 콘솔 안에 있다', () => {
+    const seller = sellerPathsOf('console')
+    expect(seller.productNew).toBe('/console/seller/products/new')
+    expect(seller.product('3')).toBe('/console/seller/products/3')
+    expect(seller.order('7')).toBe('/console/seller/orders/7')
+    expect(seller.settlement('2')).toBe('/console/seller/settlements/2')
+    expect(areaOf(seller.order('7'))).toBe('console')
+  })
+
+  it('쇼핑 · 관리자에서는 판매자 센터 주소로', () => {
+    expect(sellerPathsOf('shop').orders).toBe('/center/orders')
+    expect(sellerPathsOf('admin').product('1')).toBe('/center/products/1')
   })
 })
 

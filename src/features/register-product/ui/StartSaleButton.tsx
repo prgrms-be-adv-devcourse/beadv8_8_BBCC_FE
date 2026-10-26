@@ -14,7 +14,8 @@ export function StartSaleButton({ productId, onStarted }: StartSaleButtonProps) 
     <div className="flex items-center gap-2">
       <Button
         type="button"
-        size="sm"
+        variant="outline"
+        className="max-lg:h-11"
         disabled={start.isPending}
         onClick={() => start.mutate(productId, { onSuccess: onStarted })}
       >

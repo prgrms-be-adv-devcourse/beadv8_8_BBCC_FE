@@ -115,7 +115,7 @@ export const AUTO_DEMO_STEPS: AutoDemoStep[] = [
         ctx.say('이미 승인된 판매자 신청 → 건너뜀')
       }
       await ctx.as('판매자')
-      await ctx.show(C.sellerProducts, '판매자: 상품 등록 (카테고리 입력 항목으로)')
+      await ctx.show(C.sellerProductNew, '판매자: 상품 등록 (카테고리 입력 항목으로)')
       const categories = toCategories(await productApi.categories())
       const categoryId = demoCategoryId(categories)
       if (!categoryId)
@@ -266,7 +266,7 @@ export const AUTO_DEMO_STEPS: AutoDemoStep[] = [
       }
       await ctx.wait(1500)
       await ctx.as('판매자')
-      await ctx.show(C.sellerSettlements, '판매자: 정산 대상(방금 확정분) · 정산서 확인')
+      await ctx.show(C.sellerSettlements, '판매자: 정산 예정(방금 확정분) · 정산서 확인')
       await ctx.wait(1000)
     },
   },

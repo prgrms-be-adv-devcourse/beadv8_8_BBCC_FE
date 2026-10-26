@@ -22,7 +22,7 @@ export const DEMO_STEPS: {
     links: [
       { to: paths.console.sellerApply, label: '판매자 신청', role: 'BUYER' },
       { to: paths.console.adminSellerApplications, label: '승인', role: 'ADMIN' },
-      { to: paths.console.sellerProducts, label: '상품 등록', role: 'SELLER' },
+      { to: paths.console.sellerProductNew, label: '상품 등록', role: 'SELLER' },
     ],
   },
   {

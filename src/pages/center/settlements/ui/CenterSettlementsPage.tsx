@@ -1,93 +1,112 @@
-import { useState } from 'react'
+import type { ReactNode } from 'react'
 import {
   SettlementItemList,
-  SettlementSummary,
-  useSettlementQuery,
+  sumSettlementItems,
   useSettlementsQuery,
   useSettlementTargetsQuery,
-  type Settlement,
 } from '@/entities/settlement'
-import { useWalletQuery, WalletBalanceCard } from '@/entities/wallet'
+import { useWalletQuery } from '@/entities/wallet'
 import { getErrorMessage } from '@/shared/api'
-import { formatDateTime, formatWon } from '@/shared/lib'
-import { Button } from '@/shared/ui/button'
-import { Card, CardTitle } from '@/shared/ui/card'
+import { sellerPathsOf } from '@/shared/config'
+import { formatWon, useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { SettlementTable } from './SettlementTable'
 
+/** 정산: 예치금 잔액 · 정산 예정 금액 한 줄 → 정산 예정(구매확정분) 표 → 정산서 장부. 정산서는 따로인 화면 */
 export function CenterSettlementsPage() {
   const targets = useSettlementTargetsQuery()
   const settlements = useSettlementsQuery()
   const wallet = useWalletQuery()
+  const sellerPaths = sellerPathsOf(useArea())
 
   return (
-    <div className="space-y-4">
+    <div className="shop-look space-y-10">
       <PageHeader
         title="정산"
         step="⑦"
         description="구매확정된 판매 금액에서 수수료를 빼고 예치금으로 입금돼요."
         note="구매확정된 주문상품이 정산 대상으로 쌓이고, 정산이 실행되면 수수료 10%를 뺀 금액이 판매자 예치금으로 입금돼요(지급 완료)."
       />
-      <WalletBalanceCard
-        title="내 예치금 지갑"
-        wallet={wallet.data}
-        pending={wallet.isPending}
-        error={wallet.error}
-      />
-      <Card className="space-y-2">
-        <CardTitle>정산 대상 (아직 정산 안 된 구매확정분)</CardTitle>
+
+      {/* 판매자가 가장 먼저 보는 두 수치 */}
+      <section
+        aria-label="정산 요약"
+        className="border-rule divide-rule grid grid-cols-2 divide-x border-y"
+      >
+        <Figure label="예치금 잔액" pending={wallet.isPending} error={wallet.error}>
+          {wallet.data && formatWon(wallet.data.balance)}
+        </Figure>
+        <Figure
+          label="정산 예정 금액"
+          hint="수수료 빼기 전"
+          pending={targets.isPending}
+          error={targets.error}
+        >
+          {targets.data && formatWon(sumSettlementItems(targets.data.content))}
+        </Figure>
+      </section>
+
+      <section aria-label="정산 예정" className="space-y-3">
+        <h2 className="text-section">
+          정산 예정
+          {targets.data && (
+            <span className="text-ink-3 figure ml-2 text-sm font-medium">
+              {targets.data.content.length}건
+            </span>
+          )}
+        </h2>
+        <p className="text-ink-3 text-[13px]">아직 정산 안 된 구매확정분이에요.</p>
+        {targets.isPending && <StateMessage>불러오는 중…</StateMessage>}
         {targets.isError && (
           <StateMessage tone="error">{getErrorMessage(targets.error)}</StateMessage>
         )}
         {targets.data?.content.length === 0 && <StateMessage>정산 대상이 없어요.</StateMessage>}
-        {targets.data?.content.map((target) => (
-          <div key={target.orderItemId} className="flex justify-between border-t pt-2 text-sm">
-            <span>
-              주문 #{target.orderId} · 주문상품 #{target.orderItemId} · 구매확정{' '}
-              {formatDateTime(target.confirmedAt)}
-            </span>
-            <span>{formatWon(target.amount)}</span>
-          </div>
-        ))}
-      </Card>
-      <Card className="space-y-2">
-        <CardTitle>내 정산서</CardTitle>
+        {targets.data && targets.data.content.length > 0 && (
+          <SettlementItemList label="정산 예정" items={targets.data.content} isAmountLast />
+        )}
+      </section>
+
+      <section aria-label="정산서 목록" className="space-y-3">
+        <h2 className="text-section">정산서</h2>
+        {settlements.isPending && <StateMessage>불러오는 중…</StateMessage>}
         {settlements.isError && (
           <StateMessage tone="error">{getErrorMessage(settlements.error)}</StateMessage>
         )}
         {settlements.data?.content.length === 0 && <StateMessage>정산서가 없어요.</StateMessage>}
-        {settlements.data?.content.map((settlement) => (
-          <SettlementRow key={settlement.id} settlement={settlement} />
-        ))}
-      </Card>
+        {settlements.data && settlements.data.content.length > 0 && (
+          <SettlementTable
+            settlements={settlements.data.content}
+            detailTo={sellerPaths.settlement}
+          />
+        )}
+      </section>
     </div>
   )
 }
 
-type SettlementRowProps = { settlement: Settlement }
+type FigureProps = {
+  label: string
+  /** 이름 옆 작은 설명 */
+  hint?: string
+  pending: boolean
+  error: unknown
+  children: ReactNode
+}
 
-/** 펼치면 정산서 상세를 조회한다 */
-function SettlementRow({ settlement }: SettlementRowProps) {
-  const [open, setOpen] = useState(false)
-  const detail = useSettlementQuery(open ? settlement.id : null)
-
+/** 수치 줄의 칸 하나: 이름 · 큰 수치 (불러오는 중 · 오류는 그 자리에) */
+function Figure({ label, hint, pending, error, children }: FigureProps) {
   return (
-    <div className="border-t pt-2">
-      <SettlementSummary
-        settlement={settlement}
-        action={
-          <Button size="xs" variant="ghost" onClick={() => setOpen((value) => !value)}>
-            {open ? '접기' : '상세'}
-          </Button>
-        }
-      />
-      {open && detail.isError && (
-        <StateMessage tone="error">{getErrorMessage(detail.error)}</StateMessage>
+    <div className="space-y-1 px-4 py-4 first:pl-0 md:px-6 md:py-5 md:first:pl-0">
+      <p className="text-ink-3 flex flex-wrap items-baseline gap-x-2 text-[13px]">
+        {label}
+        {hint && <span className="text-xs">{hint}</span>}
+      </p>
+      {pending && <StateMessage>불러오는 중…</StateMessage>}
+      {Boolean(error) && <StateMessage tone="error">{getErrorMessage(error)}</StateMessage>}
+      {!pending && !error && (
+        <p className="figure text-ink text-2xl font-bold tracking-tight">{children}</p>
       )}
-      {open && detail.data?.failReason && (
-        <StateMessage tone="error">실패 사유: {detail.data.failReason}</StateMessage>
-      )}
-      {open && detail.data && <SettlementItemList items={detail.data.items} />}
     </div>
   )
 }

@@ -17,4 +17,5 @@ export {
   useSettlementTargetsQuery,
 } from './model/queries'
 export { SettlementItemList } from './ui/SettlementItemList'
+export { SettlementStatusTag } from './ui/SettlementStatusTag'
 export { SettlementSummary } from './ui/SettlementSummary'

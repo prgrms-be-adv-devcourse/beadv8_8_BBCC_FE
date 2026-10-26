@@ -8,8 +8,8 @@ import { RouteError } from '../layouts/RouteError'
 import { RouteFallback } from '../layouts/RouteFallback'
 import { ShopLayout } from '../layouts/ShopLayout'
 import { ShopMyLayout } from '../layouts/ShopMyLayout'
+import { CenterLayout } from '../layouts/CenterLayout'
 import { AdminLayout } from '../layouts/AdminLayout'
-import { WorkspaceLayout } from '../layouts/WorkspaceLayout'
 
 // 영역: 쇼핑(/) · 판매자 센터(/center) · 관리자(/admin) · 시연 콘솔(/console). 주소는 shared/config/routes.ts
 // 레이아웃만 바로 불러오고, 화면은 들어갈 때 불러온다 (번들 크기 경고 해소)
@@ -62,6 +62,20 @@ const centerOrders = page(() =>
 )
 const centerSettlements = page(() =>
   import('@/pages/center/settlements').then((m) => ({ Component: m.CenterSettlementsPage })),
+)
+const centerProductNew = page(() =>
+  import('@/pages/center/product-new').then((m) => ({ Component: m.CenterProductNewPage })),
+)
+const centerProductDetail = page(() =>
+  import('@/pages/center/product-detail').then((m) => ({ Component: m.CenterProductDetailPage })),
+)
+const centerOrderDetail = page(() =>
+  import('@/pages/center/order-detail').then((m) => ({ Component: m.CenterOrderDetailPage })),
+)
+const centerSettlementDetail = page(() =>
+  import('@/pages/center/settlement-detail').then((m) => ({
+    Component: m.CenterSettlementDetailPage,
+  })),
 )
 const adminSellerApplications = page(() =>
   import('@/pages/admin/seller-applications').then((m) => ({
@@ -197,21 +211,7 @@ export const router = createBrowserRouter(
     },
     {
       path: paths.center.home,
-      element: (
-        <WorkspaceLayout
-          title="판매자 센터"
-          role="SELLER"
-          openPaths={[paths.center.apply]}
-          guide={{ to: paths.center.apply, label: '판매자 신청하러 가기' }}
-          items={[
-            { to: paths.center.home, label: '홈', end: true },
-            { to: paths.center.products, label: '상품 관리' },
-            { to: paths.center.orders, label: '주문 · 배송' },
-            { to: paths.center.settlements, label: '정산' },
-            { to: paths.center.apply, label: '판매자 신청' },
-          ]}
-        />
-      ),
+      element: <CenterLayout />,
       HydrateFallback: RouteFallback,
       children: [
         {
@@ -220,10 +220,20 @@ export const router = createBrowserRouter(
             import('@/pages/center/home').then((m) => ({ Component: m.CenterHomePage })),
           ),
         },
+        {
+          path: rel(paths.center.home, paths.center.store),
+          ...page(() =>
+            import('@/pages/center/store').then((m) => ({ Component: m.CenterStorePage })),
+          ),
+        },
         { path: rel(paths.center.home, paths.center.apply), ...centerApply },
         { path: rel(paths.center.home, paths.center.products), ...centerProducts },
+        { path: rel(paths.center.home, paths.center.productNew), ...centerProductNew },
+        { path: 'products/:productId', ...centerProductDetail },
         { path: rel(paths.center.home, paths.center.orders), ...centerOrders },
+        { path: 'orders/:sellerOrderId', ...centerOrderDetail },
         { path: rel(paths.center.home, paths.center.settlements), ...centerSettlements },
+        { path: 'settlements/:settlementId', ...centerSettlementDetail },
         { path: '*', element: <NotFoundPage /> },
       ],
     },
@@ -393,8 +403,12 @@ export const router = createBrowserRouter(
         { path: rel(paths.console.home, paths.console.chargeFail), ...chargeFail },
         { path: rel(paths.console.home, paths.console.sellerApply), ...centerApply },
         { path: rel(paths.console.home, paths.console.sellerProducts), ...centerProducts },
+        { path: rel(paths.console.home, paths.console.sellerProductNew), ...centerProductNew },
+        { path: 'seller/products/:productId', ...centerProductDetail },
         { path: rel(paths.console.home, paths.console.sellerOrders), ...centerOrders },
+        { path: 'seller/orders/:sellerOrderId', ...centerOrderDetail },
         { path: rel(paths.console.home, paths.console.sellerSettlements), ...centerSettlements },
+        { path: 'seller/settlements/:settlementId', ...centerSettlementDetail },
         {
           path: rel(paths.console.home, paths.console.adminSellerApplications),
           ...adminSellerApplications,

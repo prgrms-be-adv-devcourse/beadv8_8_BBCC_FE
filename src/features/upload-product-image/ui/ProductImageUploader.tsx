@@ -38,40 +38,40 @@ export function ProductImageUploader({
   }
 
   return (
-    <div className="space-y-2">
-      <Label>
-        {label} (JPG · PNG · WEBP, {maxCount}장까지)
+    <div className="space-y-3">
+      <Label className="text-ink-2 gap-2">
+        {label} (JPG, PNG, WEBP, {maxCount}장까지)
         <Input
           type="file"
           accept="image/jpeg,image/png,image/webp"
           multiple={maxCount > 1}
           disabled={uploader.isUploading}
           onChange={handleSelect}
+          className="file:bg-paper-2 file:text-ink hover:file:bg-paper-3 h-10 py-1 pl-1 file:mr-3 file:h-full file:cursor-pointer file:rounded-sm file:border-0 file:px-3 file:text-[13px] file:font-semibold file:transition-colors"
         />
       </Label>
       {uploader.isUploading && <StateMessage>사진을 줄여서 올리는 중…</StateMessage>}
       {uploader.error && <StateMessage tone="error">{uploader.error}</StateMessage>}
       {value.length > 0 && (
-        <ul className="flex flex-wrap gap-2" aria-label={`올린 ${label}`}>
+        <ul className="flex flex-wrap gap-3" aria-label={`올린 ${label}`}>
           {value.map((imageUrl, index) => (
-            <li key={imageUrl} className="w-24 space-y-1">
+            <li key={imageUrl} className="w-20 space-y-1">
               <img
                 src={uploader.previewOf(imageUrl)}
                 alt={`${label} ${index + 1}`}
-                className="bg-muted aspect-square w-full rounded-md object-cover"
+                className="bg-paper-2 aspect-square w-full rounded-sm object-cover"
               />
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  aria-label={`${label} ${index + 1} 빼기`}
-                  disabled={uploader.isUploading}
-                  onClick={() => uploader.remove(imageUrl)}
-                >
-                  빼기
-                </Button>
-              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-ink-2 w-full max-lg:h-11"
+                aria-label={`${label} ${index + 1} 빼기`}
+                disabled={uploader.isUploading}
+                onClick={() => uploader.remove(imageUrl)}
+              >
+                빼기
+              </Button>
             </li>
           ))}
         </ul>

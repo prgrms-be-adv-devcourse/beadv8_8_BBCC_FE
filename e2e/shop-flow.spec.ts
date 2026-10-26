@@ -91,6 +91,9 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
     // 단계 번호 · 백엔드 설명은 콘솔에서만 보인다
     await expect(page.getByText('product.changed')).toHaveCount(0)
+    // 등록은 따로인 화면: 목록 제목 줄의 「상품 등록」으로 간다
+    await page.getByRole('main').getByRole('link', { name: '상품 등록' }).click()
+    await expect(page.getByRole('heading', { name: '상품 등록' })).toBeVisible()
     // 긴 변 2400px PNG를 고르면 JPG로 줄여 발급받고(가짜 백엔드), 받은 주소로 S3에 PUT한다
     const uploaded = page.waitForRequest(
       (request) => request.method() === 'PUT' && request.url().includes('X-Amz-Signature='),
@@ -153,7 +156,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     expect(body.imageUrls).toHaveLength(3)
     expect(body.thumbnailUrl).toBe(body.imageUrls[0])
     expect(body.thumbnailUrl).toMatch(BUCKET_IMAGE)
-    // 등록 결과 줄의 판매 시작 (내 상품 목록이 먼저 다시 불려 같은 버튼이 목록에도 생긴다)
+    // 등록 결과 줄의 판매 시작 (다시 시작하면 화면에 판매 시작 버튼이 남지 않는다)
     const registered = page.getByText(/상품 #\d+를 등록/).locator('..')
     await expect(registered).toContainText('판매 대기로 남았어요. 잠시 뒤 다시 시도해 주세요.')
     await registered.getByRole('button', { name: '판매 시작' }).click()
@@ -165,11 +168,11 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
   })
 
   await test.step('판매자 센터: 상품 수정 · 사진 더하기 · 재고 조정 · 판매 중지 → 다시 판매 (실제 API)', async () => {
-    // 내 상품은 등록 최신순 → 방금 등록한 상품이 맨 위
-    const mine = page
-      .locator('[data-slot="card"]')
-      .filter({ hasText: /상품 #\d+ · 옵션/ })
-      .first()
+    // 내 상품은 등록 최신순 → 방금 등록한 상품이 목록 표 맨 위 행. 상품명을 눌러 상세로 간다
+    await page.getByRole('main').getByRole('link', { name: '상품 관리' }).click()
+    await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
+    await page.getByRole('table', { name: '내 상품' }).getByRole('link').first().click()
+    const mine = page.getByRole('main')
     // 수정 폼은 등록과 같은 칸을 지금 값으로 채운다. 판매 중이라 옵션 · 판매가 · 실측은 잠긴다
     await mine.getByRole('button', { name: '수정' }).click()
     await expect(mine.getByText(/판매를 시작한 상품은 옵션/)).toBeVisible()
@@ -205,7 +208,13 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await mine.getByLabel('네이비 / 110 증감 수량').fill('5')
     await mine.getByRole('button', { name: '조정', exact: true }).click()
     await expect(mine.getByText('재고 15')).toBeVisible()
-    // 재고 적은 상품만 (상품 B 재고 5)
+    await mine.getByRole('button', { name: '판매 중지' }).click()
+    await expect(mine.getByRole('button', { name: '판매 시작' })).toBeVisible()
+    await mine.getByRole('button', { name: '판매 시작' }).click()
+    await expect(mine.getByRole('button', { name: '판매 중지' })).toBeVisible()
+    // 재고 적은 상품만 (상품 B 재고 5): 거르기는 목록 화면에서
+    await mine.getByRole('link', { name: '상품 관리' }).click()
+    await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
     // 거르기는 주소(?stock=low)에 저장돼 조금 늦게 체크되므로 click 뒤 상태를 기다린다
     const lowOnly = page.getByRole('checkbox', { name: '재고 적은 상품만' })
     await lowOnly.click()
@@ -214,10 +223,6 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText(/^(재고 적음|품절)$/).first()).toBeVisible()
     await lowOnly.click()
     await expect(lowOnly).not.toBeChecked()
-    await mine.getByRole('button', { name: '판매 중지' }).click()
-    await expect(mine.getByRole('button', { name: '판매 시작' })).toBeVisible()
-    await mine.getByRole('button', { name: '판매 시작' }).click()
-    await expect(mine.getByRole('button', { name: '판매 중지' })).toBeVisible()
   })
 
   await test.step('마이페이지: 자녀 · 배송지 등록', async () => {
@@ -364,11 +369,17 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('발송할 주문')).toBeVisible()
     await expect(page.getByText('테스트상점').first()).toBeVisible()
     await expect(page.getByText('판매 가능')).toBeVisible()
+    // 상호명 수정은 상점 정보 화면에서 (홈 머리 줄은 읽기만)
+    await page.getByRole('main').getByRole('link', { name: '상점 정보' }).click()
     await page.getByRole('button', { name: '상호명 수정' }).click()
     await page.getByRole('textbox', { name: '상호명' }).fill('테스트상점 본점')
     await page.getByRole('button', { name: '상호명 저장' }).click()
     await expect(page.getByText('테스트상점 본점')).toBeVisible()
-    // 할 일 타일 → 그 탭으로 바로
+    await page
+      .getByRole('navigation', { name: '판매자 센터 메뉴' })
+      .getByRole('link', { name: '홈', exact: true })
+      .click()
+    // 오늘 할 일 → 그 탭으로 바로
     await page.getByRole('link', { name: /발송할 주문/ }).click()
     await expect(page).toHaveURL(/\/center\/orders\?tab=READY$/)
     await expect(page.getByRole('tab', { name: /발송할 주문/ })).toHaveAttribute(
@@ -388,6 +399,14 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       .uncheck()
     await expect(bulk).toHaveCount(0)
     await page.getByRole('tab', { name: /전체/ }).click()
+    // 발송은 판매 주문 상세에서: 첫 발송할 주문을 연다
+    await page
+      .getByRole('row')
+      .filter({ hasText: '발송 준비' })
+      .first()
+      .getByRole('link', { name: /판매 주문 #\d+/ })
+      .click()
+    await expect(page).toHaveURL(/\/center\/orders\/\d+$/)
     await page.getByRole('button', { name: '발송' }).first().click()
     // 서버에는 택배사 코드(CJ)를 보내고, 화면에는 이름으로 보인다
     await expect(page.getByText(/CJ대한통운 \S+/).first()).toBeVisible()

@@ -1,0 +1,49 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: brand (shop.css) · redesign: full · job: sell · scope: app · posture: restrained (the shop's white paper, one plum for the primary action, the current menu item and state; status words in grey, red only for a fault; hairlines, no shadows) · nav: Kidly wordmark and 판매자 센터 in one row, 쇼핑 홈 at the right, sticky from md · menu: the 마이페이지 menu's grouped text links (판매, 상점), a sideways row under 60rem · signature: the home's 오늘 할 일 line, 발송할 주문 set largest and opening that tab · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V3 · weakest: V, the shell is the 마이페이지 layout on purpose (one marketplace, one system); the screens differ by what leads: the to-do line, the product table, the shipping queue, the payout ledger */
+/* Hallmark · waive 26b · not a form control, no aria-disabled anywhere: the register preview holds no button, link or input · the preview draws the buyer's list tile and detail head read-only, so nothing in it can be pressed or disabled */
+/* Hallmark · direction: the seller back office of the same Korean seller-app marketplace (Zigzag and Ably partner centres): tables before cards, one screen one job, list → detail */
+
+/* 판매자 센터 영역: 쇼핑(shop.css)과 같은 토큰 · 글자를 쓴다. 판매자 센터만의 색은 두지 않는다 (자두 하나) */
+[data-area='center'] {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  letter-spacing: -0.01em;
+}
+
+html:has([data-area='center']),
+body:has([data-area='center']) {
+  overflow-x: clip;
+  background: var(--paper);
+}
+
+html:has([data-area='center']) {
+  scrollbar-color: var(--ink-3) var(--paper);
+}
+
+[data-area='center'] ::selection {
+  background: var(--signal-soft);
+  color: var(--ink);
+}
+
+[data-area='center'] :focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+[data-area='center'] :is(h1, h2, h3) {
+  font-weight: 700;
+  font-synthesis: none;
+  letter-spacing: -0.02em;
+  overflow-wrap: break-word;
+  min-width: 0;
+  text-wrap: balance;
+}
+
+[data-area='center'] p {
+  text-wrap: pretty;
+}
+
+[data-area='center'] .figure {
+  font-variant-numeric: tabular-nums;
+}

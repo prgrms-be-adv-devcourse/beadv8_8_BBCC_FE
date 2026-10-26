@@ -55,10 +55,17 @@ export const paths = {
   },
   center: {
     home: '/center',
+    /** 상점 정보 (상호명 · 판매 상태) */
+    store: '/center/store',
     apply: '/center/apply',
     products: '/center/products',
+    /** 상품 등록 (목록과 따로) */
+    productNew: '/center/products/new',
+    product: (id: string) => `/center/products/${id}`,
     orders: '/center/orders',
+    order: (id: string) => `/center/orders/${id}`,
     settlements: '/center/settlements',
+    settlement: (id: string) => `/center/settlements/${id}`,
   },
   admin: {
     home: '/admin',
@@ -105,8 +112,12 @@ export const paths = {
     chargeFail: `${C}/wallet/charge/fail`,
     sellerApply: `${C}/seller/apply`,
     sellerProducts: `${C}/seller/products`,
+    sellerProductNew: `${C}/seller/products/new`,
+    sellerProduct: (id: string) => `${C}/seller/products/${id}`,
     sellerOrders: `${C}/seller/orders`,
+    sellerOrder: (id: string) => `${C}/seller/orders/${id}`,
     sellerSettlements: `${C}/seller/settlements`,
+    sellerSettlement: (id: string) => `${C}/seller/settlements/${id}`,
     adminSellerApplications: `${C}/admin/seller-applications`,
     adminSettlements: `${C}/admin/settlements`,
     adminMembers: `${C}/admin/members`,
@@ -129,6 +140,24 @@ export function walletPathsOf(area: Area) {
     chargeSuccess: base.chargeSuccess,
     chargeFail: base.chargeFail,
   }
+}
+
+/** 판매자 화면 (상품 · 주문 · 정산의 목록 · 등록 · 상세): 콘솔은 콘솔 안, 나머지는 판매자 센터 */
+export function sellerPathsOf(area: Area) {
+  if (area === 'console') {
+    const c = paths.console
+    return {
+      products: c.sellerProducts,
+      productNew: c.sellerProductNew,
+      product: c.sellerProduct,
+      orders: c.sellerOrders,
+      order: c.sellerOrder,
+      settlements: c.sellerSettlements,
+      settlement: c.sellerSettlement,
+    }
+  }
+  const { products, productNew, product, orders, order, settlements, settlement } = paths.center
+  return { products, productNew, product, orders, order, settlements, settlement }
 }
 
 /** 관리자 화면 (회원 · 주문 · 결제의 목록 · 상세): 콘솔은 콘솔 안, 나머지는 관리자 */

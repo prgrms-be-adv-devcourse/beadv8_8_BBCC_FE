@@ -20,23 +20,25 @@ export function EditBusinessNameForm({ current, onDone }: EditBusinessNameFormPr
   }
 
   return (
-    <form className="flex flex-wrap items-center gap-2" onSubmit={handleSubmit}>
-      <Input
-        aria-label="상호명"
-        className="w-60"
-        maxLength={BUSINESS_NAME_MAX + 10}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <Button type="submit" size="sm" disabled={invalid !== null || update.isPending}>
-        상호명 저장
-      </Button>
-      <Button type="button" size="sm" variant="ghost" onClick={onDone}>
-        취소
-      </Button>
+    <form className="space-y-2" onSubmit={handleSubmit}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          aria-label="상호명"
+          className="h-10 min-w-48 flex-1 text-[15px]"
+          maxLength={BUSINESS_NAME_MAX + 10}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <Button type="submit" className="h-10 px-4" disabled={invalid !== null || update.isPending}>
+          상호명 저장
+        </Button>
+        <Button type="button" variant="ghost" className="h-10 px-3" onClick={onDone}>
+          취소
+        </Button>
+        <MockBadge endpoints={['PATCH /seller/me']} />
+      </div>
       {name && invalid && <StateMessage tone="error">{invalid}</StateMessage>}
       {update.isError && <StateMessage tone="error">{getErrorMessage(update.error)}</StateMessage>}
-      <MockBadge endpoints={['PATCH /seller/me']} />
     </form>
   )
 }

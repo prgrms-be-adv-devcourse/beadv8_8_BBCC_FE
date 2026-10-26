@@ -13,6 +13,7 @@ export {
   loginPath,
   memberPathsOf,
   paths,
+  sellerPathsOf,
   shopNeedsLogin,
   walletPathsOf,
   type Area,
