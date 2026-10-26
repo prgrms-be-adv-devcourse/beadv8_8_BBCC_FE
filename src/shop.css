@@ -1,0 +1,244 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: brand · redesign: full · job: buy · scope: app · posture: restrained (white paper so product photos sit flat; plum for the brand, actions and the child's own height; coral only where a size fits the child; hairline frames around the child's own areas)
+ * paper: oklch(100% 0 0) · accent: oklch(38.6% 0.157 322) · display: Pretendard Variable · body: Pretendard Variable · wordmark: the brand's own Geist logotype · nav: wordmark, filled search, then 알림 · 마이페이지 · 장바구니 · 로그인 shortcuts in one row, no tab row, sticky from md · footer: grey info block · signature: the height ruler, the child's height pinned in plum on the coral range of the size that fits, over the picks tagged in coral
+ * axes: light/grotesk-sans/chromatic-plum · contrast: pass · v2.0.0 */
+/* Hallmark · direction: a Korean seller-app marketplace, read from Zigzag and Ably: white paper, round category shortcuts, photo-led product rows with the shop's name bold over a grey product name, small grey tags under the price */
+/* Hallmark · dropped the home hero, the Fit Passport band and intro, the seller band and the empty-state pitch · owner: show products first and do not repeat what the 마이페이지 menu's 자녀 프로필, the 맞춤 상품 section and the footer's 판매자 입점 link already say */
+/* Hallmark · dropped {loggedIn ? paths.shop.children : paths.login}, {paths.shop.child(child.id)}, onClick={onNextChild}, onClick={onShopSize}, onNextChild={kids.length > 1 ? () => setHeroIndex, onShopSize={shopHeroSize} · the home hero and Fit Passport band went; the header's 로그인 link, the 마이페이지 menu's 자녀 프로필, and the child chips in 맞춤 상품, do the same jobs */
+/* Hallmark · dropped "우리 아이에게 맞는 사이즈를 알려 드려요", "Fit Passport", "키즈 브랜드 입점 모집", "무엇을 찾아볼까요?" · owner: no repeats; the 마이페이지 menu's 자녀 프로필 and the product page's 자녀 등록하고 맞는 사이즈 보기 link carry the first, the 마이페이지 menu carries 자녀 프로필, the footer carries 판매자 입점, the round category shortcuts need no heading (the row is named 카테고리) */
+/* Hallmark · dropped "오늘도 멋지게 자라나는 너에게 ♥" · 66 names it (rotated decoration text in the hero) */
+/* Hallmark · dropped "FOR 우리 아이", "ALL PRODUCTS", "SEARCH", "SIZE … IN STOCK" · 54 and 67 name them (eyebrows) · the child's height and recommended size stay as one line under 맞춤 상품's head */
+/* Hallmark · dropped the header banner "자녀 프로필을 등록하면 키에 맞는 사이즈만 보여드려요" and its {paths.shop.childNew} link · owner: the 마이페이지 menu's 자녀 프로필 and the product page's 자녀 등록 link (owner asked to remove it as unneeded) */
+/* Hallmark · waive 49b · a whole sentence, two lines at 320px only · the login link explains what size advice logging in gives and cannot shorten */
+/* Hallmark · waive 72 · demo bar role switch outside data-area shop, size chart details measured closed · the 시연 역할 switch and the 실측표 보기 details are shared Kidly parts outside the shop's own markup */
+/* Hallmark · waive 39b · category buttons are 86px round icon-and-name shortcuts, the 28px buttons sit in the demo bar outside data-area shop · the Kidly 카테고리 shortcuts carry an icon and a name, so they stand taller than a control */
+/* Hallmark · answered F19 · weight 500 comes from the shared shadcn badges and option chips; the shop's own type runs 400, 600 and 700 */
+/* Hallmark · dismissed F18 · data-slot="button" is the shadcn component marker in the demo bar, not a picture slot */
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+
+/* 쇼핑 영역 색 체계: 바탕은 흰색(상품 사진이 상자처럼 뜨지 않게), 나머지는 브랜드 변수(index.css)에서 만든다
+   → ThemeLab이 --primary를 바꾸면 같이 바뀐다. 차가운 자두와 따뜻한 코랄의 온도 대비 하나로 화면을 끌고 간다.
+   - 자두(--signal): 브랜드 · 행동 · 선택 · 아이 키 (로고, 주요 버튼, 장바구니 개수, 눈금자 핀)
+   - 코랄(--fit): 「맞다」 한 가지 뜻에만. 추천 사이즈 구간 · 「120 잘 맞아요」 · 추천 칩
+     --fit은 막대 같은 면(흰 바탕 3:1), 글자는 --fit-ink(4.5:1 이상), 꼬리표 바탕은 --fit-soft
+   - 자녀 영역(맞춤 상품 · 사이즈 추천)은 색 면 대신 가는 테두리로 묶는다 */
+:root {
+  --paper: oklch(100% 0 0);
+  --paper-2: color-mix(in oklab, var(--foreground) 4%, var(--paper));
+  --paper-3: color-mix(in oklab, var(--foreground) 8%, var(--paper));
+  --ink: var(--foreground);
+  --ink-2: color-mix(in oklab, var(--foreground) 78%, var(--paper));
+  --ink-3: color-mix(in oklab, var(--foreground) 62%, var(--paper));
+  --rule: color-mix(in oklab, var(--foreground) 10%, var(--paper));
+  --field-edge: color-mix(in oklab, var(--foreground) 50%, var(--paper));
+  --signal: var(--primary);
+  --signal-deep: var(--primary-deep);
+  --signal-soft: color-mix(in oklab, var(--primary) 8%, var(--paper));
+  --signal-ink: color-mix(in oklab, var(--primary-foreground) 94%, var(--primary));
+  --fit: oklch(66.5% 0.165 36);
+  --fit-ink: oklch(50% 0.15 36);
+  --fit-soft: color-mix(in oklab, var(--fit) 13%, var(--paper));
+  --focus: var(--primary);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --ease-arrive: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-3: var(--paper-3);
+  --color-fit: var(--fit);
+  --color-fit-ink: var(--fit-ink);
+  --color-fit-soft: var(--fit-soft);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-field-edge: var(--field-edge);
+  --color-signal: var(--signal);
+  --color-signal-deep: var(--signal-deep);
+  --color-signal-soft: var(--signal-soft);
+  --color-signal-ink: var(--signal-ink);
+  --font-body: 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, sans-serif;
+}
+
+@theme {
+  --text-page: clamp(1.375rem, 0.4vw + 1.2rem, 1.625rem);
+  --text-page--line-height: 1.3;
+  --text-section: 1.1875rem;
+  --text-section--line-height: 1.4;
+  --radius-card: 0.25rem;
+  --radius-input: 0.375rem;
+}
+
+[data-area='shop'] {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  letter-spacing: -0.01em;
+}
+
+/* 리디자인한 쇼핑 화면(.shop-look) 안에서만 shadcn 변수를 다시 가리킨다.
+   공용 컴포넌트와 마이페이지 하위 화면은 고치지 않는다 */
+.shop-look {
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --muted: var(--paper-2);
+  --muted-foreground: var(--ink-3);
+  --secondary: var(--paper-2);
+  --secondary-foreground: var(--ink);
+  --accent: var(--paper-2);
+  --accent-foreground: var(--ink);
+  --border: var(--rule);
+  --input: var(--field-edge);
+  --ring: var(--focus);
+  --background: var(--paper);
+  --primary-soft: var(--signal-soft);
+  --highlight: var(--fit-soft);
+  --highlight-foreground: var(--fit-ink);
+  --highlight-soft: color-mix(in oklab, var(--fit) 6%, var(--paper));
+  /* 성장(세이지)도 쇼핑에서는 자두로: 화면 색은 자두 · 코랄 둘만 */
+  --growth: var(--signal);
+  --growth-deep: var(--signal-deep);
+  --growth-soft: var(--signal-soft);
+}
+
+html:has([data-area='shop']),
+body:has([data-area='shop']) {
+  overflow-x: clip;
+}
+
+/* 쇼핑 화면은 바닥까지 흰색: 끝까지 내리거나 당겨도 앱 기본 바탕(크림)이 비치지 않게 */
+html:has([data-area='shop']) {
+  scrollbar-color: var(--ink-3) var(--paper);
+  background: var(--paper);
+}
+
+body:has([data-area='shop']) {
+  background: var(--paper);
+}
+
+[data-area='shop'] ::selection {
+  background: var(--fit-soft);
+  color: var(--ink);
+}
+
+[data-area='shop'] :focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+[data-area='shop'] :is(h1, h2, h3) {
+  font-weight: 700;
+  font-synthesis: none;
+  letter-spacing: -0.02em;
+  overflow-wrap: break-word;
+  min-width: 0;
+  text-wrap: balance;
+}
+
+[data-area='shop'] p {
+  text-wrap: pretty;
+}
+
+[data-area='shop'] .figure {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 흰 카드 대신 같은 바탕 + 실선 하나 (그림자와 테두리를 같이 쓰지 않는다) */
+.shop-look [data-slot='card'] {
+  background-color: var(--paper);
+  border-color: var(--rule);
+  border-radius: 0.5rem;
+  box-shadow: none;
+}
+
+.shop-look [data-slot='card-title'] {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.shop-look [data-slot='button'] {
+  font-weight: 600;
+}
+
+/* 공용 사진 자리(이미지 준비 중)는 보라 그림 대신 무채색으로. 실제 사진은 그대로 */
+.shop-look img[alt$='(이미지 준비 중)'] {
+  filter: grayscale(1);
+  mix-blend-mode: multiply;
+}
+
+.shop-offer [data-slot='button'][data-size='default'] {
+  min-height: 48px;
+  font-size: 1rem;
+}
+
+/* 버튼 · 글자 링크: components 층에 두어 화면에서 유틸리티로 조정할 수 있게 한다 */
+@layer components {
+  /* 버튼: 여덟 상태 */
+  .shop-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0 1.5rem;
+    border: 1px solid var(--signal);
+    border-radius: var(--radius-input);
+    background: var(--signal);
+    color: var(--signal-ink);
+    font-weight: 700;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-short) var(--ease-arrive),
+      transform var(--dur-micro) var(--ease-arrive);
+  }
+
+  .shop-btn:hover {
+    background: var(--signal-deep);
+  }
+
+  .shop-btn:active {
+    transform: translateY(1px);
+  }
+
+  .shop-btn:disabled,
+  .shop-btn[aria-disabled='true'] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .shop-btn[aria-busy='true'] {
+    cursor: progress;
+  }
+
+  /* 글자 링크 */
+  .shop-link {
+    color: var(--signal);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+    transition: color var(--dur-micro) var(--ease-arrive);
+  }
+
+  .shop-link:hover {
+    color: var(--signal-deep);
+  }
+
+  .shop-link:active {
+    color: var(--ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shop-btn,
+    .shop-link {
+      transition: none;
+    }
+  }
+}

@@ -24,9 +24,9 @@ const FAILURE_SCENARIOS = [
 ]
 
 const SCENARIO = [
-  ['보호자', paths.console.children, '① 자녀 등록 (테스트 · 115cm · 보통 · 여유)'],
+  ['보호자', paths.console.childNew, '① 자녀 등록 (테스트 · 115cm · 보통 · 여유)'],
   ['보호자', paths.console.addresses, '① 배송지 등록'],
-  ['판매자', paths.console.sellerProducts, '② 상품 등록 → 판매 시작 (목)'],
+  ['판매자', paths.console.sellerProductNew, '② 상품 등록 → 판매 시작 (목)'],
   ['보호자', paths.console.products, '③ 자녀 맞춤 목록 → 상품 A 상세 → 추천 사이즈 120 (목)'],
   ['보호자', paths.console.cart, '④ 담기 → 주문하기 → 주문 상세에서 PAID 확인'],
   ['판매자', paths.console.sellerOrders, '⑤ 발송 → 배송 완료'],

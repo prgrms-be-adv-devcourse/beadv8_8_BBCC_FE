@@ -15,10 +15,13 @@ test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 �
   await page.getByRole('button', { name: '관리자', exact: true }).first().click()
   await expect(page.getByText('관리자 · 회원 3')).toBeVisible()
   await page.goto('/admin')
-  await page.getByRole('link', { name: '상품 기준 데이터' }).click()
-  await expect(page.getByRole('heading', { name: '상품 기준 데이터' })).toBeVisible()
+  // 기준 데이터는 종류마다 메뉴 · 목록 · 만들기 화면이 따로 있다 (목록 · 뒤로 링크와 이름이 겹쳐 메뉴 안에서 찾는다)
+  const menu = page.getByRole('navigation', { name: '관리자 메뉴' })
+  await menu.getByRole('link', { name: '항목 · 목록 값' }).click()
+  await expect(page.getByRole('heading', { name: '항목 · 목록 값', level: 1 })).toBeVisible()
 
-  await test.step('항목 만들기: 코드 형식이 틀리면 막고, 맞으면 목록에 보인다', async () => {
+  await test.step('항목 만들기: 코드 형식이 틀리면 막고, 맞으면 그 항목 화면으로 간다', async () => {
+    await page.getByRole('link', { name: '항목 만들기' }).click()
     const form = page
       .locator('form')
       .filter({ has: page.getByRole('button', { name: '항목 만들기' }) })
@@ -32,24 +35,26 @@ test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 �
 
     await form.getByLabel('코드 (대문자 · _)').fill(`DEMO_COLOR_${RUN}`)
     await form.getByRole('button', { name: '항목 만들기' }).click()
+    await expect(page).toHaveURL(/\/admin\/catalog\/attributes\/\d+$/)
+    await expect(page.getByRole('heading', { name: '시연 색', level: 1 })).toBeVisible()
     await expect(page.getByText(`DEMO_COLOR_${RUN}`)).toBeVisible()
   })
 
   await test.step('기존 항목에 목록 값 더하기', async () => {
-    const card = page
-      .locator('div')
-      .filter({ hasText: `DEMO_COLOR_${RUN}` })
-      .filter({
-        has: page.getByRole('button', { name: '값 더하기' }),
-      })
-    await card.last().getByRole('textbox', { name: '목록 값 이름' }).fill('민트')
-    await card.last().getByRole('textbox', { name: '색 코드' }).fill('#a8e6cf')
-    await card.last().getByRole('button', { name: '값 더하기' }).click()
-    await expect(card.last().getByText('민트')).toBeVisible()
+    const values = page.getByRole('list', { name: '목록 값' })
+    await expect(values.getByText('라벤더')).toBeVisible()
+    await page.getByRole('textbox', { name: '목록 값 이름' }).fill('민트')
+    await page.getByRole('textbox', { name: '색 코드' }).fill('#a8e6cf')
+    await page.getByRole('button', { name: '값 더하기' }).click()
+    await expect(values.getByText('민트')).toBeVisible()
   })
 
   await test.step('실측 항목 만들기: 코드 형식이 틀리면 막고, 맞으면 목록에 보인다', async () => {
-    await page.getByRole('button', { name: '실측 항목', exact: true }).click()
+    await menu.getByRole('link', { name: '실측 항목', exact: true }).click()
+    await expect(
+      page.getByRole('heading', { name: '실측 항목', level: 1, exact: true }),
+    ).toBeVisible()
+    await page.getByRole('link', { name: '실측 항목 만들기' }).click()
     await page.getByLabel('실측 항목 이름').fill('시연 길이')
     await page.getByLabel('코드 (대문자 · _)').fill('demo-length')
     await page.getByRole('button', { name: '실측 항목 만들기' }).click()
@@ -57,11 +62,15 @@ test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 �
 
     await page.getByLabel('코드 (대문자 · _)').fill(`DEMO_LENGTH_${RUN}`)
     await page.getByRole('button', { name: '실측 항목 만들기' }).click()
-    await expect(page.getByText(`DEMO_LENGTH_${RUN}`)).toBeVisible()
+    await expect(page).toHaveURL(/\/admin\/catalog\/measurement-items$/)
+    await expect(
+      page.getByRole('table', { name: '실측 항목' }).getByText(`DEMO_LENGTH_${RUN}`),
+    ).toBeVisible()
   })
 
   await test.step('상품 유형 만들기: 허용 값이 없으면 막고, 고르면 목록에 보인다', async () => {
-    await page.getByRole('button', { name: '상품 유형', exact: true }).click()
+    await menu.getByRole('link', { name: '상품 유형', exact: true }).click()
+    await page.getByRole('link', { name: '상품 유형 만들기' }).click()
     await page.getByLabel('유형 이름').fill(`시연 유형 ${RUN}`)
     await page.getByLabel('연결할 항목').selectOption({ label: '색상 (COLOR)' })
     await page.getByLabel('모든 값 허용').uncheck()
@@ -72,15 +81,14 @@ test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 �
 
     await page.getByLabel('네이비').check()
     await page.getByRole('button', { name: '상품 유형 만들기' }).click()
-    const created = page
-      .locator('div')
-      .filter({ hasText: `시연 유형 ${RUN}` })
-      .last()
+    await expect(page).toHaveURL(/\/admin\/catalog\/product-types$/)
+    const created = page.getByRole('row').filter({ hasText: `시연 유형 ${RUN}` })
     await expect(created.getByText('옵션 · 필수 · 허용 값 네이비')).toBeVisible()
   })
 
   await test.step('카테고리 만들기: 말단은 유형을 골라야 하고, 만들면 트리에 보인다', async () => {
-    await page.getByRole('button', { name: '카테고리', exact: true }).click()
+    await menu.getByRole('link', { name: '카테고리', exact: true }).click()
+    await page.getByRole('link', { name: '카테고리 만들기' }).click()
     await page.getByLabel('카테고리 이름').fill(`시연 바지 ${RUN}`)
     await page.getByLabel('부모 카테고리').selectOption({ label: '의류' })
     await page.getByRole('button', { name: '카테고리 만들기' }).click()
@@ -89,6 +97,7 @@ test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 �
     await page.getByLabel('상품 유형').selectOption({ label: '의류' })
     await page.getByLabel('총장').check()
     await page.getByRole('button', { name: '카테고리 만들기' }).click()
+    await expect(page).toHaveURL(/\/admin\/catalog\/categories$/)
     await expect(page.getByText(`└ 시연 바지 ${RUN}`)).toBeVisible()
   })
 })

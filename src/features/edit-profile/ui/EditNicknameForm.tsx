@@ -20,12 +20,20 @@ export function EditNicknameForm({ current }: EditNicknameFormProps) {
   }
 
   return (
-    <form className="flex items-end gap-2" onSubmit={handleSubmit}>
-      <Label className="flex-1">
+    <form className="flex flex-wrap items-end gap-2" onSubmit={handleSubmit}>
+      <Label className="min-w-48 flex-1">
         닉네임 ({NICKNAME_MIN}~{NICKNAME_MAX}자)
-        <Input value={nickname} onChange={(e) => setNickname(e.target.value)} />
+        <Input
+          className="h-11 text-base"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+        />
       </Label>
-      <Button type="submit" disabled={invalid !== null || update.isPending}>
+      <Button
+        type="submit"
+        className="h-11 px-5 text-[15px]"
+        disabled={invalid !== null || update.isPending}
+      >
         닉네임 바꾸기
       </Button>
       {nickname && invalid && <StateMessage tone="error">{invalid}</StateMessage>}

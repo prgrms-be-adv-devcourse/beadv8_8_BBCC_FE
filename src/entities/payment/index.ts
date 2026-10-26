@@ -13,7 +13,7 @@ export {
   type PaymentStatus,
 } from './model/payment'
 export { toAdminPayment, toPayment } from './model/payment.mapper'
-export { checkOrderPayment, findPaymentOfOrder } from './model/payment.rules'
+export { checkOrderPayment, findPaymentOfOrder, paymentIssueNote } from './model/payment.rules'
 export { paymentKeys, useAdminPaymentsQuery, usePaymentsQuery } from './model/queries'
 export { PaymentCard } from './ui/PaymentCard'
-export { PaymentRow } from './ui/PaymentRow'
+export { PaymentStatusTag } from './ui/PaymentStatusTag'

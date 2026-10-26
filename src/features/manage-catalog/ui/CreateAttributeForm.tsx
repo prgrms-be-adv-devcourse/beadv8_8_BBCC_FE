@@ -4,6 +4,7 @@ import {
   hasValueList,
   needsColorCode,
   validateAttributeForm,
+  type Attribute,
   type AttributeForm,
   type AttributeInputType,
 } from '@/entities/catalog'
@@ -18,8 +19,10 @@ import { AttributeValueFields } from './AttributeValueFields'
 const EMPTY_VALUE = { name: '', colorCode: '' }
 const EMPTY_FORM: AttributeForm = { name: '', code: '', inputType: 'LIST', values: [EMPTY_VALUE] }
 
+type CreateAttributeFormProps = { onCreated?: (attribute: Attribute) => void }
+
 /** 항목 만들기: 이름 · 코드 · 입력 방식 + 목록 값 (직접 입력이면 목록 값 없음) */
-export function CreateAttributeForm() {
+export function CreateAttributeForm({ onCreated }: CreateAttributeFormProps) {
   const create = useCreateAttribute()
   const [form, setForm] = useState<AttributeForm>(EMPTY_FORM)
   const [invalid, setInvalid] = useState<string | null>(null)
@@ -31,19 +34,30 @@ export function CreateAttributeForm() {
     event.preventDefault()
     const message = validateAttributeForm(form)
     setInvalid(message)
-    if (!message) create.mutate(form, { onSuccess: () => setForm(EMPTY_FORM) })
+    if (!message)
+      create.mutate(form, {
+        onSuccess: (attribute) => {
+          setForm(EMPTY_FORM)
+          onCreated?.(attribute)
+        },
+      })
   }
 
   return (
-    <form className="space-y-3" onSubmit={handleSubmit}>
-      <div className="grid gap-3 md:grid-cols-3">
+    <form className="space-y-5" onSubmit={handleSubmit}>
+      <div className="grid gap-4">
         <Label>
           항목 이름
-          <Input value={form.name} onChange={(e) => set({ name: e.target.value })} />
+          <Input
+            className="h-10"
+            value={form.name}
+            onChange={(e) => set({ name: e.target.value })}
+          />
         </Label>
         <Label>
           코드 (대문자 · _)
           <Input
+            className="h-10"
             placeholder="예: MAIN_MATERIAL"
             value={form.code}
             onChange={(e) => set({ code: e.target.value })}
@@ -52,6 +66,7 @@ export function CreateAttributeForm() {
         <Label>
           입력 방식
           <Select
+            className="h-10"
             value={form.inputType}
             onChange={(e) => set({ inputType: e.target.value as AttributeInputType })}
           >
@@ -93,7 +108,7 @@ export function CreateAttributeForm() {
           </Button>
         </div>
       )}
-      <Button type="submit" disabled={create.isPending}>
+      <Button type="submit" className="h-11 px-6 text-[15px]" disabled={create.isPending}>
         항목 만들기
       </Button>
       {invalid && <StateMessage tone="error">{invalid}</StateMessage>}

@@ -27,15 +27,17 @@ export function BulkShippingBar({ toShip, toDeliver, onDone }: BulkShippingBarPr
   return (
     <section
       aria-label="일괄 처리"
-      className="border-primary/30 bg-primary-soft sticky top-2 z-10 space-y-3 rounded-2xl border p-4"
+      className="bg-paper-2 sticky top-2 z-10 space-y-3 rounded-lg p-4 md:top-20"
     >
       {toShip.length > 0 && (
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold">발송할 주문 {toShip.length}건</span>
+            <span className="text-sm font-semibold">
+              발송할 주문 <span className="figure">{toShip.length}</span>건
+            </span>
             <Select
               aria-label="일괄 발송 택배사"
-              className="w-36 bg-white"
+              className="bg-paper h-9 w-36 rounded-md max-sm:h-11"
               value={carrier}
               onChange={(e) => setCarrier(e.target.value)}
             >
@@ -46,8 +48,7 @@ export function BulkShippingBar({ toShip, toDeliver, onDone }: BulkShippingBarPr
               ))}
             </Select>
             <Button
-              size="sm"
-              className="ml-auto"
+              className="ml-auto h-9 rounded-md px-4 max-sm:h-11"
               disabled={pending || missing.length > 0}
               onClick={async () => {
                 if (
@@ -73,11 +74,11 @@ export function BulkShippingBar({ toShip, toDeliver, onDone }: BulkShippingBarPr
           <ul className="grid gap-2 sm:grid-cols-2">
             {toShip.map((order) => (
               <li key={order.id} className="flex items-center gap-2 text-sm">
-                <span className="w-24 shrink-0">판매 주문 #{order.id}</span>
+                <span className="figure w-24 shrink-0">판매 주문 #{order.id}</span>
                 <Input
                   aria-label={`판매 주문 #${order.id} 송장 번호`}
                   placeholder="송장 번호"
-                  className="bg-white"
+                  className="bg-paper figure h-9 rounded-md max-sm:h-11"
                   value={numberOf(order)}
                   onChange={(e) => setTracking({ ...tracking, [order.id]: e.target.value })}
                 />
@@ -85,7 +86,7 @@ export function BulkShippingBar({ toShip, toDeliver, onDone }: BulkShippingBarPr
             ))}
           </ul>
           {missing.length > 0 && (
-            <p className="text-muted-foreground text-xs">
+            <p className="text-ink-3 text-[13px]">
               송장 번호를 모두 넣으면 발송할 수 있어요 (남은 {missing.length}건).
             </p>
           )}
@@ -93,11 +94,12 @@ export function BulkShippingBar({ toShip, toDeliver, onDone }: BulkShippingBarPr
       )}
       {toDeliver.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-semibold">배송 중 {toDeliver.length}건</span>
+          <span className="text-sm font-semibold">
+            배송 중 <span className="figure">{toDeliver.length}</span>건
+          </span>
           <Button
-            size="sm"
             variant="outline"
-            className="ml-auto bg-white"
+            className="border-field-edge bg-paper ml-auto h-9 rounded-md px-4 max-sm:h-11"
             disabled={pending}
             onClick={async () => {
               if (

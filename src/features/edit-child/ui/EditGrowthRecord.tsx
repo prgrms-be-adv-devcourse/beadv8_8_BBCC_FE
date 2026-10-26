@@ -28,18 +28,18 @@ export function EditGrowthRecord({ childId, record }: EditGrowthRecordProps) {
     )
   }
   return (
-    <span className="flex items-center gap-1">
+    <span className="flex flex-wrap items-center justify-end gap-1.5">
       <Input
         aria-label="기록 키"
         type="number"
         step="0.1"
-        className="h-8 w-20"
+        className="figure h-9 w-24 rounded-md"
         value={heightCm}
         onChange={(e) => setHeightCm(Number(e.target.value))}
       />
       <Select
         aria-label="기록 체형"
-        className="h-8 w-24"
+        className="h-9 w-24 rounded-md"
         value={bodyType ?? ''}
         onChange={(e) => setBodyType((e.target.value || null) as BodyType | null)}
       >

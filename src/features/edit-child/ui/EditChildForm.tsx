@@ -27,15 +27,18 @@ export function EditChildForm({ child }: EditChildFormProps) {
   }
 
   return (
-    <Card>
-      <CardTitle className="mb-3">정보 수정</CardTitle>
+    <Card className="space-y-5 p-5 md:p-6">
+      <div className="space-y-1">
+        <CardTitle>정보 수정</CardTitle>
+        <p className="text-muted-foreground text-[13px]">키를 바꾸면 성장 이력에 한 줄 쌓여요.</p>
+      </div>
       <form onSubmit={handleSubmit}>
         <ChildFormFields
           form={form}
           onChange={setForm}
           footer={
             <>
-              <Button type="submit" disabled={update.isPending}>
+              <Button type="submit" className="h-11 px-6 text-[15px]" disabled={update.isPending}>
                 저장하기
               </Button>
               {invalid && <StateMessage tone="error">{invalid}</StateMessage>}

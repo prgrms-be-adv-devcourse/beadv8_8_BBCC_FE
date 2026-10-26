@@ -1,11 +1,10 @@
 import { Link, useParams, useSearchParams } from 'react-router'
-import { childProfileLine, useChildQuery } from '@/entities/child'
-import { ProductCard, useCategoriesQuery } from '@/entities/product'
+import { childProfileLine, SizeRulerBar, sizeRulerOf, useChildQuery } from '@/entities/child'
+import { ProductTile, useCategoriesQuery } from '@/entities/product'
 import { useRecommendedProductsInfiniteQuery } from '@/entities/recommendation'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn } from '@/shared/lib'
-import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { MockBadge } from '@/shared/ui/MockBadge'
 import { CardGridSkeleton } from '@/shared/ui/Skeleton'
@@ -27,25 +26,49 @@ export function ShopRecommendedPage() {
   const selectTab = (next: string | null) => setParams(next ? { cat: next } : {}, { replace: true })
 
   return (
-    <div className="space-y-6">
-      <Link to={paths.shop.home} className="text-muted-foreground text-sm hover:underline">
-        ← 홈
+    <div className="shop-look space-y-6">
+      <Link
+        to={paths.shop.home}
+        className="text-ink-3 hover:text-ink inline-flex items-center gap-1 rounded-md text-[13px] font-semibold transition-colors"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="size-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          aria-hidden
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+        홈
       </Link>
-      <header className="bg-growth-soft space-y-1 rounded-3xl p-6">
-        <h1 className="text-2xl font-extrabold">
-          {child.data ? `${child.data.name}에게 맞는 옷` : '맞는 옷'}
-          <MockBadge endpoints={['GET /children/:childId/recommended-products']} />
-        </h1>
+      <header className="border-rule grid gap-x-10 gap-y-4 rounded-lg border p-5 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:items-end md:p-6">
+        <div className="space-y-1">
+          <h1 className="text-page">
+            {child.data ? `${child.data.name}에게 맞는 옷` : '맞는 옷'}
+            <MockBadge endpoints={['GET /children/:childId/recommended-products']} />
+          </h1>
+          {child.data && (
+            <p className="text-ink text-sm font-semibold">{childProfileLine(child.data)}</p>
+          )}
+          {child.isError && (
+            <StateMessage tone="error">{getErrorMessage(child.error)}</StateMessage>
+          )}
+          <p className="text-ink-3 text-[13px]">
+            키에 맞는 사이즈가 판매 중인 상품만, 새로 나온 순서로 보여 드려요.
+          </p>
+        </div>
         {child.data && (
-          <p className="text-growth-deep text-sm font-semibold">{childProfileLine(child.data)}</p>
+          <SizeRulerBar ruler={sizeRulerOf(child.data.heightCm)} name={child.data.name} />
         )}
-        {child.isError && <StateMessage tone="error">{getErrorMessage(child.error)}</StateMessage>}
-        <p className="text-muted-foreground text-xs">
-          키에 맞는 사이즈가 판매 중인 상품만, 새로 나온 순서로 보여 드려요.
-        </p>
       </header>
 
-      <div role="tablist" aria-label="카테고리" className="flex gap-2 overflow-x-auto pb-1">
+      <div
+        role="tablist"
+        aria-label="카테고리"
+        className="border-rule flex gap-6 overflow-x-auto border-b"
+      >
         {[{ id: null, name: '전체' }, ...(categories.data ?? [])].map((tab) => (
           <button
             key={tab.id ?? 'all'}
@@ -54,8 +77,10 @@ export function ShopRecommendedPage() {
             aria-selected={tab.id === categoryId}
             onClick={() => selectTab(tab.id)}
             className={cn(
-              'shrink-0 rounded-full border px-4 py-1.5 text-sm',
-              tab.id === categoryId && 'border-primary bg-primary text-primary-foreground',
+              '-mb-px flex min-h-11 shrink-0 items-center border-b-2 text-[15px] font-bold transition-colors',
+              tab.id === categoryId
+                ? 'border-ink text-ink'
+                : 'text-ink-3 hover:text-ink border-transparent',
             )}
           >
             {tab.name}
@@ -69,21 +94,21 @@ export function ShopRecommendedPage() {
         <StateMessage>맞는 사이즈가 판매 중인 상품이 없어요.</StateMessage>
       )}
       {list.data && list.data.products.length > 0 && (
-        <p className="text-muted-foreground text-sm">상품 {list.data.totalElements}개</p>
+        <p className="text-ink-3 text-sm">상품 {list.data.totalElements}개</p>
       )}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 md:gap-x-4 lg:grid-cols-4">
         {list.data?.products.map((product) => (
-          <ProductCard
+          <ProductTile
             key={product.id}
             to={paths.shop.product(product.id, childId)}
             name={product.name}
-            meta={product.businessName ?? ''}
+            seller={product.businessName}
             price={product.minPrice}
             imageUrl={product.imageUrl}
-            badge={
-              <Badge variant="growth">
-                {product.recommendedSize ? `${product.recommendedSize} 잘 맞아요` : '사이즈 무관'}
-              </Badge>
+            tag={
+              product.recommendedSize
+                ? { text: `${product.recommendedSize} 잘 맞아요`, fit: true }
+                : { text: '사이즈 무관' }
             }
           />
         ))}

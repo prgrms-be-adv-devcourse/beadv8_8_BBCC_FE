@@ -7,7 +7,9 @@ import { DemoOnly } from '../layouts/DemoOnly'
 import { RouteError } from '../layouts/RouteError'
 import { RouteFallback } from '../layouts/RouteFallback'
 import { ShopLayout } from '../layouts/ShopLayout'
-import { WorkspaceLayout } from '../layouts/WorkspaceLayout'
+import { ShopMyLayout } from '../layouts/ShopMyLayout'
+import { CenterLayout } from '../layouts/CenterLayout'
+import { AdminLayout } from '../layouts/AdminLayout'
 
 // 영역: 쇼핑(/) · 판매자 센터(/center) · 관리자(/admin) · 시연 콘솔(/console). 주소는 shared/config/routes.ts
 // 레이아웃만 바로 불러오고, 화면은 들어갈 때 불러온다 (번들 크기 경고 해소)
@@ -21,6 +23,15 @@ const kakaoCallback = page(() =>
 )
 const children = page(() =>
   import('@/pages/shop/children').then((m) => ({ Component: m.ShopChildrenPage })),
+)
+const walletCharge = page(() =>
+  import('@/pages/shop/wallet-charge').then((m) => ({ Component: m.ShopWalletChargePage })),
+)
+const walletHistory = page(() =>
+  import('@/pages/shop/wallet-history').then((m) => ({ Component: m.ShopWalletHistoryPage })),
+)
+const childNew = page(() =>
+  import('@/pages/shop/child-new').then((m) => ({ Component: m.ShopChildNewPage })),
 )
 const childDetail = page(() =>
   import('@/pages/shop/child-detail').then((m) => ({ Component: m.ShopChildDetailPage })),
@@ -52,6 +63,20 @@ const centerOrders = page(() =>
 const centerSettlements = page(() =>
   import('@/pages/center/settlements').then((m) => ({ Component: m.CenterSettlementsPage })),
 )
+const centerProductNew = page(() =>
+  import('@/pages/center/product-new').then((m) => ({ Component: m.CenterProductNewPage })),
+)
+const centerProductDetail = page(() =>
+  import('@/pages/center/product-detail').then((m) => ({ Component: m.CenterProductDetailPage })),
+)
+const centerOrderDetail = page(() =>
+  import('@/pages/center/order-detail').then((m) => ({ Component: m.CenterOrderDetailPage })),
+)
+const centerSettlementDetail = page(() =>
+  import('@/pages/center/settlement-detail').then((m) => ({
+    Component: m.CenterSettlementDetailPage,
+  })),
+)
 const adminSellerApplications = page(() =>
   import('@/pages/admin/seller-applications').then((m) => ({
     Component: m.AdminSellerApplicationsPage,
@@ -72,8 +97,14 @@ const adminOrders = page(() =>
 const adminPayments = page(() =>
   import('@/pages/admin/payments').then((m) => ({ Component: m.AdminPaymentsPage })),
 )
-const adminCatalog = page(() =>
-  import('@/pages/admin/catalog').then((m) => ({ Component: m.AdminCatalogPage })),
+const adminMemberDetail = page(() =>
+  import('@/pages/admin/member-detail').then((m) => ({ Component: m.AdminMemberDetailPage })),
+)
+const adminOrderDetail = page(() =>
+  import('@/pages/admin/order-detail').then((m) => ({ Component: m.AdminOrderDetailPage })),
+)
+const adminPaymentDetail = page(() =>
+  import('@/pages/admin/payment-detail').then((m) => ({ Component: m.AdminPaymentDetailPage })),
 )
 const adminSettlements = page(() =>
   import('@/pages/admin/settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
@@ -147,14 +178,32 @@ export const router = createBrowserRouter(
           ),
         },
         {
-          path: rel('', paths.shop.my),
-          ...page(() => import('@/pages/shop/my').then((m) => ({ Component: m.ShopMyPage }))),
+          path: rel('', paths.shop.notifications),
+          ...page(() =>
+            import('@/pages/shop/notifications').then((m) => ({
+              Component: m.ShopNotificationsPage,
+            })),
+          ),
+        },
+        {
+          // 마이페이지 묶음: 왼쪽 메뉴를 같이 쓴다 (자녀 화면은 넓은 배치라 뺀다)
+          element: <ShopMyLayout />,
+          children: [
+            {
+              path: rel('', paths.shop.my),
+              ...page(() => import('@/pages/shop/my').then((m) => ({ Component: m.ShopMyPage }))),
+            },
+            { path: rel('', paths.shop.profile), ...profile },
+            { path: rel('', paths.shop.addresses), ...addresses },
+            { path: rel('', paths.shop.wallet), ...wallet },
+            { path: rel('', paths.shop.walletHistory), ...walletHistory },
+          ],
         },
         { path: rel('', paths.shop.children), ...children },
+        { path: rel('', paths.shop.childNew), ...childNew },
         { path: 'my/children/:childId', ...childDetail },
-        { path: rel('', paths.shop.profile), ...profile },
-        { path: rel('', paths.shop.addresses), ...addresses },
-        { path: rel('', paths.shop.wallet), ...wallet },
+        // 충전은 메뉴 없이 한 가지 일만 (마이페이지 묶음 밖)
+        { path: rel('', paths.shop.walletCharge), ...walletCharge },
         { path: rel('', paths.shop.chargeSuccess), ...chargeSuccess },
         { path: rel('', paths.shop.chargeFail), ...chargeFail },
         { path: '*', element: <NotFoundPage /> },
@@ -162,21 +211,7 @@ export const router = createBrowserRouter(
     },
     {
       path: paths.center.home,
-      element: (
-        <WorkspaceLayout
-          title="판매자 센터"
-          role="SELLER"
-          openPaths={[paths.center.apply]}
-          guide={{ to: paths.center.apply, label: '판매자 신청하러 가기' }}
-          items={[
-            { to: paths.center.home, label: '홈', end: true },
-            { to: paths.center.products, label: '상품 관리' },
-            { to: paths.center.orders, label: '주문 · 배송' },
-            { to: paths.center.settlements, label: '정산' },
-            { to: paths.center.apply, label: '판매자 신청' },
-          ]}
-        />
-      ),
+      element: <CenterLayout />,
       HydrateFallback: RouteFallback,
       children: [
         {
@@ -185,43 +220,112 @@ export const router = createBrowserRouter(
             import('@/pages/center/home').then((m) => ({ Component: m.CenterHomePage })),
           ),
         },
+        {
+          path: rel(paths.center.home, paths.center.store),
+          ...page(() =>
+            import('@/pages/center/store').then((m) => ({ Component: m.CenterStorePage })),
+          ),
+        },
         { path: rel(paths.center.home, paths.center.apply), ...centerApply },
         { path: rel(paths.center.home, paths.center.products), ...centerProducts },
+        { path: rel(paths.center.home, paths.center.productNew), ...centerProductNew },
+        { path: 'products/:productId', ...centerProductDetail },
         { path: rel(paths.center.home, paths.center.orders), ...centerOrders },
+        { path: 'orders/:sellerOrderId', ...centerOrderDetail },
         { path: rel(paths.center.home, paths.center.settlements), ...centerSettlements },
+        { path: 'settlements/:settlementId', ...centerSettlementDetail },
         { path: '*', element: <NotFoundPage /> },
       ],
     },
     {
       path: paths.admin.home,
-      element: (
-        <WorkspaceLayout
-          title="Kidly 관리자"
-          role="ADMIN"
-          items={[
-            { to: paths.admin.home, label: '대시보드', end: true },
-            { to: paths.admin.members, label: '회원 관리' },
-            { to: paths.admin.sellerApplications, label: '판매자 신청 심사' },
-            { to: paths.admin.products, label: '상품 관리' },
-            { to: paths.admin.catalog, label: '상품 기준 데이터' },
-            { to: paths.admin.orders, label: '전체 주문' },
-            { to: paths.admin.payments, label: '전체 결제' },
-            { to: paths.admin.settlements, label: '정산' },
-            { to: paths.admin.settings, label: '설정' },
-          ]}
-        />
-      ),
+      element: <AdminLayout />,
       HydrateFallback: RouteFallback,
       children: [
         { index: true, ...adminHome },
         { path: rel(paths.admin.home, paths.admin.members), ...adminMembers },
+        { path: 'members/:memberId', ...adminMemberDetail },
         { path: rel(paths.admin.home, paths.admin.orders), ...adminOrders },
+        { path: 'orders/:orderId', ...adminOrderDetail },
         { path: rel(paths.admin.home, paths.admin.products), ...adminProducts },
         { path: rel(paths.admin.home, paths.admin.payments), ...adminPayments },
+        { path: 'payments/:paymentId', ...adminPaymentDetail },
         { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
         { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
         { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
-        { path: rel(paths.admin.home, paths.admin.catalog), ...adminCatalog },
+        // 상품 기준 데이터: 종류마다 목록 · 만들기 (관리자에만 있다)
+        {
+          path: rel(paths.admin.home, paths.admin.attributes),
+          ...page(() =>
+            import('@/pages/admin/catalog-attributes').then((m) => ({
+              Component: m.AdminCatalogAttributesPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.attributeNew),
+          ...page(() =>
+            import('@/pages/admin/catalog-attribute-new').then((m) => ({
+              Component: m.AdminCatalogAttributeNewPage,
+            })),
+          ),
+        },
+        {
+          path: 'catalog/attributes/:attributeId',
+          ...page(() =>
+            import('@/pages/admin/catalog-attribute-detail').then((m) => ({
+              Component: m.AdminCatalogAttributeDetailPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.measurementItems),
+          ...page(() =>
+            import('@/pages/admin/catalog-measurement-items').then((m) => ({
+              Component: m.AdminCatalogMeasurementItemsPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.measurementItemNew),
+          ...page(() =>
+            import('@/pages/admin/catalog-measurement-item-new').then((m) => ({
+              Component: m.AdminCatalogMeasurementItemNewPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.productTypes),
+          ...page(() =>
+            import('@/pages/admin/catalog-product-types').then((m) => ({
+              Component: m.AdminCatalogProductTypesPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.productTypeNew),
+          ...page(() =>
+            import('@/pages/admin/catalog-product-type-new').then((m) => ({
+              Component: m.AdminCatalogProductTypeNewPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.categories),
+          ...page(() =>
+            import('@/pages/admin/catalog-categories').then((m) => ({
+              Component: m.AdminCatalogCategoriesPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.categoryNew),
+          ...page(() =>
+            import('@/pages/admin/catalog-category-new').then((m) => ({
+              Component: m.AdminCatalogCategoryNewPage,
+            })),
+          ),
+        },
         { path: '*', element: <NotFoundPage /> },
       ],
     },
@@ -254,6 +358,7 @@ export const router = createBrowserRouter(
           ),
         },
         { path: rel(paths.console.home, paths.console.children), ...children },
+        { path: rel(paths.console.home, paths.console.childNew), ...childNew },
         { path: 'children/:childId', ...childDetail },
         { path: rel(paths.console.home, paths.console.profile), ...profile },
         { path: rel(paths.console.home, paths.console.addresses), ...addresses },
@@ -292,21 +397,30 @@ export const router = createBrowserRouter(
           ),
         },
         { path: rel(paths.console.home, paths.console.wallet), ...wallet },
+        { path: rel(paths.console.home, paths.console.walletHistory), ...walletHistory },
+        { path: rel(paths.console.home, paths.console.walletCharge), ...walletCharge },
         { path: rel(paths.console.home, paths.console.chargeSuccess), ...chargeSuccess },
         { path: rel(paths.console.home, paths.console.chargeFail), ...chargeFail },
         { path: rel(paths.console.home, paths.console.sellerApply), ...centerApply },
         { path: rel(paths.console.home, paths.console.sellerProducts), ...centerProducts },
+        { path: rel(paths.console.home, paths.console.sellerProductNew), ...centerProductNew },
+        { path: 'seller/products/:productId', ...centerProductDetail },
         { path: rel(paths.console.home, paths.console.sellerOrders), ...centerOrders },
+        { path: 'seller/orders/:sellerOrderId', ...centerOrderDetail },
         { path: rel(paths.console.home, paths.console.sellerSettlements), ...centerSettlements },
+        { path: 'seller/settlements/:settlementId', ...centerSettlementDetail },
         {
           path: rel(paths.console.home, paths.console.adminSellerApplications),
           ...adminSellerApplications,
         },
         { path: rel(paths.console.home, paths.console.adminSettlements), ...adminSettlements },
         { path: rel(paths.console.home, paths.console.adminMembers), ...adminMembers },
+        { path: 'admin/members/:memberId', ...adminMemberDetail },
         { path: rel(paths.console.home, paths.console.adminOrders), ...adminOrders },
+        { path: 'admin/orders/:orderId', ...adminOrderDetail },
         { path: rel(paths.console.home, paths.console.adminProducts), ...adminProducts },
         { path: rel(paths.console.home, paths.console.adminPayments), ...adminPayments },
+        { path: 'admin/payments/:paymentId', ...adminPaymentDetail },
         { path: '*', element: <NotFoundPage /> },
       ],
     },

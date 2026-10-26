@@ -1,19 +1,20 @@
 import { getErrorMessage } from '@/shared/api'
-import { ReasonForm } from '@/shared/ui/ReasonForm'
 import { useSuspendSeller } from '../model/use-suspend'
+import { SuspendReasonForm } from './SuspendReasonForm'
 
-type SuspendSellerFormProps = { sellerId: string }
+type SuspendSellerFormProps = { sellerId: string; onClose: () => void }
 
-export function SuspendSellerForm({ sellerId }: SuspendSellerFormProps) {
+/** 판매자 자격 정지 사유 입력. 정지되면 닫는다 */
+export function SuspendSellerForm({ sellerId, onClose }: SuspendSellerFormProps) {
   const suspend = useSuspendSeller(sellerId)
   return (
-    <ReasonForm
-      openLabel="판매자 자격 정지"
+    <SuspendReasonForm
       reasonLabel="판매자 정지 사유"
       submitLabel="자격 정지하기"
       pending={suspend.isPending}
       error={suspend.isError ? getErrorMessage(suspend.error) : null}
-      onSubmit={(reason) => suspend.mutate(reason)}
+      onSubmit={(reason) => suspend.mutate(reason, { onSuccess: onClose })}
+      onCancel={onClose}
     />
   )
 }

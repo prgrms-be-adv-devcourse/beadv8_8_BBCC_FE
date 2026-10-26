@@ -10,9 +10,10 @@ type AttributeValueFieldsProps = {
 /** 목록 값 한 줄: 이름 (+ 팔레트면 색 코드와 견본) */
 export function AttributeValueFields({ value, hasColor, onChange }: AttributeValueFieldsProps) {
   return (
-    <span className="flex flex-1 items-center gap-2">
+    <span className="flex min-w-0 flex-1 items-center gap-2">
       <Input
         aria-label="목록 값 이름"
+        className="h-10"
         placeholder="값 이름 (예: 110)"
         value={value.name}
         onChange={(e) => onChange({ ...value, name: e.target.value })}
@@ -22,7 +23,7 @@ export function AttributeValueFields({ value, hasColor, onChange }: AttributeVal
           <Input
             aria-label="색 코드"
             placeholder="#rrggbb"
-            className="w-28"
+            className="h-10 w-28 shrink-0"
             value={value.colorCode}
             onChange={(e) => onChange({ ...value, colorCode: e.target.value })}
           />

@@ -59,10 +59,13 @@ function EditFields({ inputs, product, onDone, renderImages }: EditFieldsProps) 
   }
 
   return (
-    <form className="space-y-4 border-t pt-3" onSubmit={handleSubmit}>
-      <p className="text-muted-foreground text-sm">
-        카테고리: {inputs.categoryName} (바꿀 수 없어요)
-      </p>
+    <form className="space-y-8" onSubmit={handleSubmit}>
+      <dl className="flex flex-wrap items-baseline gap-x-3 text-sm">
+        <dt className="text-ink-3">카테고리</dt>
+        <dd className="text-ink font-semibold">
+          {inputs.categoryName} <span className="text-ink-3 font-normal">(바꿀 수 없어요)</span>
+        </dd>
+      </dl>
       <ProductFormFields
         inputs={inputs}
         form={form}
@@ -73,11 +76,16 @@ function EditFields({ inputs, product, onDone, renderImages }: EditFieldsProps) 
           <Fragment key={field.label}>{renderImages(field)}</Fragment>
         ))}
       />
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" disabled={update.isPending || isUploading}>
+      <div className="border-rule flex flex-wrap items-center gap-3 border-t pt-6">
+        <button
+          type="submit"
+          className="shop-btn min-h-10 text-[15px] max-lg:min-h-11"
+          disabled={update.isPending || isUploading}
+          aria-busy={update.isPending}
+        >
           수정 저장
-        </Button>
-        <Button type="button" variant="ghost" onClick={onDone}>
+        </button>
+        <Button type="button" variant="outline" className="h-10 px-4 max-lg:h-11" onClick={onDone}>
           취소
         </Button>
         {invalid && <StateMessage tone="error">{invalid}</StateMessage>}

@@ -2,6 +2,7 @@ export { orderApi } from './api/order-api'
 export type { AdminOrderDto, OrderDetailDto, OrderTimelineDto } from './api/order.dto'
 export {
   CANCEL_REASON_LABEL,
+  ITEM_STATUS_LABEL,
   type AdminOrder,
   ORDER_STATUS_LABEL,
   type CancelReason,
@@ -18,6 +19,8 @@ export {
   canConfirmItem,
   countOrdersByTab,
   deliveryOf,
+  orderSellerGroups,
+  type OrderSellerGroup,
   filterOrdersByTab,
   isPaymentDelayed,
   needsCartReview,
@@ -61,4 +64,5 @@ export { OrderProcessSteps } from './ui/OrderProcessSteps'
 export { OrderProgressBar } from './ui/OrderProgressBar'
 export { OrderStatusBadge } from './ui/OrderStatusBadge'
 export { OrderStatusBanner } from './ui/OrderStatusBanner'
+export { OrderStatusTag } from './ui/OrderStatusTag'
 export { OrderTimeline } from './ui/OrderTimeline'

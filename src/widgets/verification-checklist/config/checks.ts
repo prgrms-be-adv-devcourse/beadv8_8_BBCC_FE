@@ -151,7 +151,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '자녀 등록',
     expected: 'POST /children 2xx',
     role: '보호자',
-    screen: paths.console.children,
+    screen: paths.console.childNew,
     call: { method: 'POST', pattern: /^\/children$/ },
   },
   {
@@ -219,7 +219,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     title: '상품 등록',
     expected: 'POST /seller/products 2xx',
     role: '판매자',
-    screen: paths.console.sellerProducts,
+    screen: paths.console.sellerProductNew,
     call: { method: 'POST', pattern: /^\/seller\/products$/ },
   },
   {

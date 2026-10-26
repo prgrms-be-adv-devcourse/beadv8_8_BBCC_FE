@@ -29,14 +29,14 @@ export function AddAttributeValueForm({ attributeId, inputType }: AddAttributeVa
   }
 
   return (
-    <form className="space-y-1" onSubmit={handleSubmit}>
+    <form className="space-y-2" onSubmit={handleSubmit}>
       <div className="flex items-center gap-2">
         <AttributeValueFields
           value={value}
           hasColor={needsColorCode(inputType)}
           onChange={setValue}
         />
-        <Button type="submit" size="sm" variant="outline" disabled={add.isPending}>
+        <Button type="submit" variant="outline" className="h-10 px-4" disabled={add.isPending}>
           값 더하기
         </Button>
       </div>

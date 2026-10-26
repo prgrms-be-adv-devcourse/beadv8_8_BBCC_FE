@@ -1,11 +1,26 @@
 import { formatWon } from '@/shared/lib'
-import type { OrderPaymentInput, Payment, PaymentCheck } from './payment'
+import {
+  PAYMENT_FAILURE_LABEL,
+  type OrderPaymentInput,
+  type Payment,
+  type PaymentCheck,
+} from './payment'
 
 export function findPaymentOfOrder(
   payments: Payment[] | undefined,
   orderId: string,
 ): Payment | null {
   return payments?.find((payment) => payment.orderId === orderId) ?? null
+}
+
+/** 결제 한 건의 실패 이유 · 환불 금액 한 줄 (둘 다 없으면 빈 글자) */
+export function paymentIssueNote(payment: Payment): string {
+  return [
+    payment.failureCode && PAYMENT_FAILURE_LABEL[payment.failureCode],
+    payment.refundedAmount > 0 && `환불 ${formatWon(payment.refundedAmount)}`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 }
 
 const fullyRefunded = (payment: Payment) =>

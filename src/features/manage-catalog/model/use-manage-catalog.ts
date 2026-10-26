@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   catalogApi,
   catalogKeys,
+  toAttribute,
   toAttributeCreateRequest,
   toAttributeValueRequest,
   toCategoryCreateRequest,
@@ -25,14 +26,14 @@ function useRefetch(queryKey: readonly string[], message: string) {
   }
 }
 
-/** 항목 만들기 (목록 값 함께). 코드가 겹치면 409 */
+/** 항목 만들기 (목록 값 함께). 코드가 겹치면 409. 만든 항목을 돌려준다 (상세로 이동) */
 export function useCreateAttribute() {
   const onSuccess = useRefetch(catalogKeys.attributes, '항목을 만들었어요')
   return useMutation({
     mutationFn: (form: AttributeForm) =>
       runWithAction('항목 만들기', () =>
         catalogApi.createAttribute(toAttributeCreateRequest(form)),
-      ),
+      ).then(toAttribute),
     onSuccess,
   })
 }

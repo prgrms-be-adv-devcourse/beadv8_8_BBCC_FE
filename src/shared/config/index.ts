@@ -7,11 +7,13 @@ export {
 } from './app-settings'
 export { env } from './env'
 export {
+  adminPathsOf,
   AREA_LABEL,
   areaOf,
   loginPath,
   memberPathsOf,
   paths,
+  sellerPathsOf,
   shopNeedsLogin,
   walletPathsOf,
   type Area,

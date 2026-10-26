@@ -1,3 +1,4 @@
+import { Fragment, type ReactNode } from 'react'
 import { cn } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import type { OptionChip, OptionChipRow } from '../model/product'
@@ -6,33 +7,38 @@ import { chipNoteOf, isChipPickable } from '../model/option-picker.rules'
 type OptionChipPickerProps = {
   rows: OptionChipRow[]
   onPick: (attributeId: string, valueId: string) => void
+  /** 항목 줄 바로 위에 끼울 것 (항목 ID → 내용). 예: 사이즈 칩 위 추천 한 줄 */
+  aboveRow?: Record<string, ReactNode>
 }
 
 /** 옵션 항목마다 칩 한 줄 (예: 색상 칩 · 사이즈 칩). 막힌 칩은 흐리게 두고 고를 수 없다. 값이 하나뿐인 항목은 고정 글자 */
-export function OptionChipPicker({ rows, onPick }: OptionChipPickerProps) {
+export function OptionChipPicker({ rows, onPick, aboveRow }: OptionChipPickerProps) {
   return (
     <div className="space-y-3">
-      {rows.map((row) =>
-        row.isFixed ? (
-          <FixedOptionRow key={row.attributeId} row={row} />
-        ) : (
-          <div key={row.attributeId} role="group" aria-label={row.name} className="space-y-1.5">
-            <p className="text-sm font-semibold">
-              {row.name}
-              {row.pickedName && ` · ${row.pickedName}`}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {row.chips.map((chip) => (
-                <OptionChipButton
-                  key={chip.valueId}
-                  chip={chip}
-                  onPick={() => onPick(row.attributeId, chip.valueId)}
-                />
-              ))}
+      {rows.map((row) => (
+        <Fragment key={row.attributeId}>
+          {aboveRow?.[row.attributeId]}
+          {row.isFixed ? (
+            <FixedOptionRow row={row} />
+          ) : (
+            <div role="group" aria-label={row.name} className="space-y-1.5">
+              <p className="text-sm font-semibold">
+                {row.name}
+                {row.pickedName && ` · ${row.pickedName}`}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {row.chips.map((chip) => (
+                  <OptionChipButton
+                    key={chip.valueId}
+                    chip={chip}
+                    onPick={() => onPick(row.attributeId, chip.valueId)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        ),
-      )}
+          )}
+        </Fragment>
+      ))}
     </div>
   )
 }

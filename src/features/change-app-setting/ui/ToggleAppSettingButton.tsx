@@ -25,11 +25,12 @@ export function ToggleAppSettingButton({ setting, field }: ToggleAppSettingButto
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col items-end gap-1">
       <Button
-        size="sm"
         variant={isOn ? 'outline' : 'default'}
+        className="min-w-16 max-lg:h-11"
         disabled={change.isPending}
+        aria-busy={change.isPending}
         onClick={toggle}
       >
         {isOn ? '끄기' : '켜기'}

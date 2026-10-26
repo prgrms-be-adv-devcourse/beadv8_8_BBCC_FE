@@ -129,6 +129,43 @@ export function sizeValues(inputs: CategoryInputs, form: RegisterProductForm) {
   )
 }
 
+/** 등록 폼을 구매자 화면 모양으로 미리 보는 값 (판매 시작 전, 서버를 부르지 않는다) */
+export type RegisterPreview = {
+  name: string | null
+  brand: string | null
+  categoryName: string
+  imageUrl: string | null
+  /** 구매자 목록의 「N원부터」. 판매가를 아직 안 넣었으면 null */
+  minPrice: number | null
+  /** 옵션 항목마다 남은 옵션이 쓰는 값 이름 */
+  options: { name: string; values: string[] }[]
+}
+
+export function registerPreviewOf(
+  inputs: CategoryInputs,
+  form: RegisterProductForm,
+): RegisterPreview {
+  const prices = priceGroups(inputs, form)
+    .map((group) => form.prices[group.key] ?? 0)
+    .filter((price) => price > 0)
+  return {
+    name: form.name.trim() || null,
+    brand: form.brand.trim() || null,
+    categoryName: inputs.categoryName,
+    imageUrl: form.thumbnailUrl,
+    minPrice: prices.length > 0 ? Math.min(...prices) : null,
+    options: inputs.optionAttributes.map((attribute) => {
+      const picked = form.optionValues[attribute.id] ?? []
+      return {
+        name: attribute.name,
+        values: attribute.values
+          .filter((value) => picked.includes(value.id) && !isAllRemoved(inputs, form, [value.id]))
+          .map((value) => value.name),
+      }
+    }),
+  }
+}
+
 /** 서버(판매 시작 조건)와 같은 기준으로 미리 막는다. 문제가 없으면 null */
 export function validateRegisterProductForm(
   inputs: CategoryInputs,

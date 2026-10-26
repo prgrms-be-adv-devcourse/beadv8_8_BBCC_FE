@@ -13,8 +13,9 @@ export function WithdrawButton({ onDone }: WithdrawButtonProps) {
   return (
     <div className="flex items-center gap-2">
       <Button
-        variant="destructive"
+        variant="ghost"
         size="sm"
+        className="text-ink-3 underline underline-offset-2"
         disabled={withdraw.isPending}
         onClick={async () => {
           if (

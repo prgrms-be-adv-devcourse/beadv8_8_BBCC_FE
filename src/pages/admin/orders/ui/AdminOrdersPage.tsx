@@ -1,163 +1,117 @@
-import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import {
   CANCEL_REASON_LABEL,
   ORDER_STATUS_LABEL,
-  OrderStatusBadge,
   useAdminOrdersQuery,
   type AdminOrder,
   type OrderStatus,
 } from '@/entities/order'
-import { PAYMENT_STATUS_LABEL, useAdminPaymentsQuery } from '@/entities/payment'
 import { getErrorMessage } from '@/shared/api'
-import { formatDateTime, formatWon } from '@/shared/lib'
-import { Button } from '@/shared/ui/button'
-import { DataTable, type DataColumn } from '@/shared/ui/DataTable'
-import { DetailList } from '@/shared/ui/DetailList'
+import { adminPathsOf } from '@/shared/config'
+import { cn, downloadCsv, formatDateTime, toCsv, useArea, type CsvColumn } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
-import { SideSheet } from '@/shared/ui/SideSheet'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { AdminOrderTable } from './AdminOrderTable'
 
 const STATUSES = Object.keys(ORDER_STATUS_LABEL) as OrderStatus[]
+const TABS: { value: OrderStatus | null; label: string }[] = [
+  { value: null, label: '전체' },
+  ...STATUSES.map((status) => ({ value: status, label: ORDER_STATUS_LABEL[status] })),
+]
 
-const COLUMNS: DataColumn<AdminOrder>[] = [
-  { key: 'id', header: '주문', cell: (o) => `주문 ${o.id}`, sortValue: (o) => Number(o.id) },
+const CSV_COLUMNS: CsvColumn<AdminOrder>[] = [
+  { header: '주문', value: (o) => o.id },
+  { header: '회원', value: (o) => o.memberId },
+  { header: '주문 일시', value: (o) => formatDateTime(o.orderedAt) },
+  { header: '상품 수', value: (o) => o.itemCount },
+  { header: '금액', value: (o) => o.totalAmount },
+  { header: '상태', value: (o) => ORDER_STATUS_LABEL[o.status] },
   {
-    key: 'member',
-    header: '회원',
-    cell: (o) => `회원 ${o.memberId}`,
-    sortValue: (o) => Number(o.memberId),
-  },
-  {
-    key: 'items',
-    header: '상품 수',
-    cell: (o) => `${o.itemCount}개`,
-    sortValue: (o) => o.itemCount,
-  },
-  {
-    key: 'orderedAt',
-    header: '주문 일시',
-    cell: (o) => formatDateTime(o.orderedAt),
-    sortValue: (o) => o.orderedAt,
-  },
-  {
-    key: 'amount',
-    header: '금액',
-    cell: (o) => formatWon(o.totalAmount),
-    sortValue: (o) => o.totalAmount,
-    align: 'right',
-  },
-  {
-    key: 'status',
-    header: '상태',
-    cell: (o) => <OrderStatusBadge status={o.status} />,
-    sortValue: (o) => ORDER_STATUS_LABEL[o.status],
-  },
-  {
-    key: 'cancel',
     header: '취소 사유',
-    cell: (o) => (o.cancelReason ? CANCEL_REASON_LABEL[o.cancelReason] : ''),
-    csvValue: (o) => (o.cancelReason ? CANCEL_REASON_LABEL[o.cancelReason] : ''),
+    value: (o) => (o.cancelReason ? CANCEL_REASON_LABEL[o.cancelReason] : ''),
   },
 ]
 
-/** 관리자 전체 주문 (기획서 8장 보완): 상태 거르기 · 표 · 상세 서랍(결제 연결) · CSV */
+/** 관리자 전체 주문 (기획서 8장 보완): 상태 탭(주소 ?status=) → 주문 표 → 주문을 누르면 주문 상세 */
 export function AdminOrdersPage() {
-  // 상태 거르기는 주소(?status=)에 둔다 → 대시보드에서 바로 열린다
+  const adminPaths = adminPathsOf(useArea())
+  // 상태 탭은 주소(?status=)에 둔다 → 대시보드에서 바로 열린다
   const [params, setParams] = useSearchParams()
   const raw = params.get('status')
   const status = STATUSES.includes(raw as OrderStatus) ? (raw as OrderStatus) : null
-  const orders = useAdminOrdersQuery(status)
-  const payments = useAdminPaymentsQuery()
-  const [openId, setOpenId] = useState<string | null>(null)
-  const opened = orders.data?.content.find((order) => order.id === openId) ?? null
-  const related = payments.data?.filter((payment) => payment.orderId === openId) ?? []
+  // BE는 상태로 거르지 않는다: 같은 목록(최근 100건)을 한 번 받아 탭 건수와 표를 만든다
+  const all = useAdminOrdersQuery(null)
+  const visible = useAdminOrdersQuery(status)
+  const orders = visible.data?.content ?? []
+  const countOf = (value: OrderStatus | null) =>
+    all.data?.content.filter((order) => value === null || order.status === value).length
 
   return (
-    <div className="space-y-4">
+    <div className="shop-look space-y-5">
       <PageHeader
         mockEndpoints={['GET /admin/orders']}
         title="전체 주문"
-        description="모든 회원의 주문을 상태별로 봐요. 행을 누르면 결제까지 이어서 봐요."
+        description="모든 회원의 주문을 상태별로 봐요. 주문을 누르면 결제까지 이어서 봐요."
         note="GET /admin/orders (BE #323). 최근 100건 안에서 화면이 상태로 거른다."
       />
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          variant={status === null ? 'default' : 'outline'}
-          onClick={() => setParams({}, { replace: true })}
-        >
-          전체
-        </Button>
-        {STATUSES.map((key) => (
-          <Button
-            key={key}
-            size="sm"
-            variant={status === key ? 'default' : 'outline'}
-            onClick={() => setParams({ status: key }, { replace: true })}
+      <div
+        role="tablist"
+        aria-label="주문 상태"
+        className="border-rule flex gap-6 overflow-x-auto border-b"
+      >
+        {TABS.map((tab) => (
+          <button
+            key={tab.label}
+            type="button"
+            role="tab"
+            aria-selected={status === tab.value}
+            onClick={() => setParams(tab.value ? { status: tab.value } : {}, { replace: true })}
+            className={cn(
+              '-mb-px flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 text-[15px] font-bold transition-colors',
+              status === tab.value
+                ? 'border-ink text-ink'
+                : 'text-ink-3 hover:text-ink active:text-ink border-transparent',
+            )}
           >
-            {ORDER_STATUS_LABEL[key]}
-          </Button>
+            {tab.label} <span className="figure text-sm">{countOf(tab.value)}</span>
+          </button>
         ))}
       </div>
-      {orders.isPending && <ListSkeleton />}
-      {orders.isError && <StateMessage tone="error">{getErrorMessage(orders.error)}</StateMessage>}
-      {orders.data && (
-        <DataTable
-          label="전체 주문"
-          rows={orders.data.content}
-          columns={COLUMNS}
-          rowKey={(order) => order.id}
-          onRowClick={(order) => setOpenId(order.id)}
-          emptyText="주문이 없어요."
-          csvFileName={`kidly-orders-${status ?? 'all'}`}
-        />
+      {visible.isPending && <ListSkeleton />}
+      {visible.isError && (
+        <StateMessage tone="error">{getErrorMessage(visible.error)}</StateMessage>
       )}
-      <SideSheet
-        title={opened ? `주문 ${opened.id}` : '주문'}
-        open={opened !== null}
-        onClose={() => setOpenId(null)}
-      >
-        {opened && (
-          <>
-            <DetailList
-              items={[
-                { label: '상태', value: <OrderStatusBadge status={opened.status} /> },
-                { label: '회원', value: `회원 ${opened.memberId}` },
-                { label: '주문 일시', value: formatDateTime(opened.orderedAt) },
-                { label: '상품 수', value: `${opened.itemCount}개` },
-                { label: '금액', value: formatWon(opened.totalAmount) },
-                ...(opened.cancelReason
-                  ? [{ label: '취소 사유', value: CANCEL_REASON_LABEL[opened.cancelReason] }]
-                  : []),
-              ]}
-            />
-            <h3 className="font-semibold">이 주문의 결제</h3>
-            {related.length === 0 ? (
-              <StateMessage>결제 기록이 없어요 (결제 전에 취소됐거나 아직 처리 중).</StateMessage>
-            ) : (
-              related.map((payment) => (
-                <DetailList
-                  key={payment.id}
-                  items={[
-                    { label: '결제', value: `결제 ${payment.id}` },
-                    { label: '상태', value: PAYMENT_STATUS_LABEL[payment.status] },
-                    { label: '금액', value: formatWon(payment.amount) },
-                    {
-                      label: '일시',
-                      value: formatDateTime(payment.paidAt ?? payment.createdAt),
-                    },
-                    ...(payment.refundedAmount > 0
-                      ? [{ label: '환불', value: formatWon(payment.refundedAmount) }]
-                      : []),
-                  ]}
-                />
-              ))
+      {visible.data && (
+        <section aria-label="주문 목록" className="space-y-2">
+          <div className="text-ink-3 flex min-h-11 items-center justify-between text-[13px]">
+            <span className="figure">{orders.length}건</span>
+            {orders.length > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  downloadCsv(`kidly-orders-${status ?? 'all'}`, toCsv(orders, CSV_COLUMNS))
+                }
+                className="text-ink-2 hover:text-ink inline-flex min-h-11 items-center font-semibold underline underline-offset-4 transition-colors lg:min-h-8"
+              >
+                CSV 내려받기
+              </button>
             )}
-          </>
-        )}
-      </SideSheet>
+          </div>
+          {orders.length === 0 ? (
+            <p className="bg-paper-2 text-ink-2 rounded-lg py-12 text-center text-sm">
+              {status === null ? '주문이 없어요.' : '이 상태의 주문이 없어요.'}
+            </p>
+          ) : (
+            <AdminOrderTable
+              orders={orders}
+              orderHref={adminPaths.order}
+              memberHref={adminPaths.member}
+              listSearch={params.toString()}
+            />
+          )}
+        </section>
+      )}
     </div>
   )
 }

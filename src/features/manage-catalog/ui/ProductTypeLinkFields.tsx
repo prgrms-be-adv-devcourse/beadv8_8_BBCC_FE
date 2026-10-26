@@ -21,8 +21,13 @@ type CheckProps = { checked: boolean; onChange: (checked: boolean) => void; chil
 
 function Check({ checked, onChange, children }: CheckProps) {
   return (
-    <label className="flex items-center gap-1 text-sm">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+    <label className="flex min-h-8 items-center gap-1.5 text-sm">
+      <input
+        type="checkbox"
+        className="accent-signal size-4"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
       {children}
     </label>
   )
@@ -48,10 +53,10 @@ export function ProductTypeLinkFields({
     set(role === 'OPTION' ? { role } : { role, sizeRole: false, priceAffecting: false })
 
   return (
-    <div className="space-y-2 rounded-md border p-3">
+    <div className="border-rule space-y-3 rounded-lg border p-4">
       <div className="flex flex-wrap items-center gap-3">
         <span className="font-medium">{attribute.name}</span>
-        <span className="text-muted-foreground text-xs">
+        <span className="text-ink-3 text-xs">
           {attribute.code} · {ATTRIBUTE_INPUT_TYPE_LABEL[attribute.inputType]}
         </span>
         <Select
@@ -99,7 +104,7 @@ export function ProductTypeLinkFields({
         </Button>
       </div>
       {attribute.inputType !== 'TEXT' && !link.allValuesAllowed && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
           {attribute.values.map((value) => (
             <Check
               key={value.id}

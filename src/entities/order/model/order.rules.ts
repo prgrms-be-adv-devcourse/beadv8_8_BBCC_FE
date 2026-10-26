@@ -3,6 +3,7 @@ import {
   CANCEL_REASON_LABEL,
   UNAVAILABLE_REASON_LABEL,
   type Order,
+  type OrderDelivery,
   type OrderItem,
   type OrderStatus,
   type OrderTimelineEvent,
@@ -21,6 +22,35 @@ export function canConfirmItem(item: OrderItem): boolean {
 /** 주문상품을 보내는 판매자의 배송 */
 export function deliveryOf(order: Order, item: OrderItem) {
   return order.deliveries.find((delivery) => delivery.sellerId === item.sellerId) ?? null
+}
+
+/** 주문 상품 판매자 묶음 (판매자마다 배송이 하나) */
+export type OrderSellerGroup = {
+  sellerId: string
+  /** 주문상품 → 배송 → 「판매자 {ID}」 순서로 찾은 상호명 */
+  sellerName: string
+  /** 결제 전 · 취소면 null */
+  delivery: OrderDelivery | null
+  items: OrderItem[]
+}
+
+/** 주문 상품을 판매자별로 묶는다 (처음 나온 판매자 순서) */
+export function orderSellerGroups(order: Order): OrderSellerGroup[] {
+  const groups = new Map<string, OrderItem[]>()
+  for (const item of order.items)
+    groups.set(item.sellerId, [...(groups.get(item.sellerId) ?? []), item])
+  return [...groups].map(([sellerId, items]) => {
+    const delivery = order.deliveries.find((each) => each.sellerId === sellerId) ?? null
+    return {
+      sellerId,
+      sellerName:
+        items.find((item) => item.sellerName)?.sellerName ??
+        delivery?.sellerName ??
+        `판매자 ${sellerId}`,
+      delivery,
+      items,
+    }
+  })
 }
 
 /** 잔액 부족으로 취소된 주문이면 충전으로 안내한다 */

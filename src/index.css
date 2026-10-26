@@ -2,6 +2,9 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/geist';
+@import './shop.css';
+@import './center.css';
+@import './admin.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -169,18 +172,6 @@
     animation: none;
     opacity: 0.6;
   }
-}
-
-:root [data-area='center'] {
-  /* 판매자 센터: 청록 (쇼핑의 보라와 구분) */
-  --primary: #0f766e;
-  --ring: #0f766e;
-}
-
-:root [data-area='admin'] {
-  /* 관리자: 차콜 (운영 도구) */
-  --primary: #18181b;
-  --ring: #18181b;
 }
 
 .dark {

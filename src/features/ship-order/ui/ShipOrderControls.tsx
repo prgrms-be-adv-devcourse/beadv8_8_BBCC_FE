@@ -20,21 +20,31 @@ export function ShipOrderControls({ sellerOrder }: ShipOrderControlsProps) {
   return (
     <div className="space-y-2">
       {step === 'SHIP' && (
-        <div className="flex items-center gap-2">
-          <Select className="w-36" value={carrier} onChange={(e) => setCarrier(e.target.value)}>
-            {CARRIERS.map((item) => (
-              <option key={item.code} value={item.code}>
-                {item.name}
-              </option>
-            ))}
-          </Select>
-          <Input
-            className="w-40"
-            value={trackingNumber}
-            onChange={(e) => setTrackingNumber(e.target.value)}
-          />
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="space-y-1">
+            <span className="text-ink-3 block text-[13px]">택배사</span>
+            <Select
+              className="bg-paper h-10 w-36 rounded-md max-sm:h-11"
+              value={carrier}
+              onChange={(e) => setCarrier(e.target.value)}
+            >
+              {CARRIERS.map((item) => (
+                <option key={item.code} value={item.code}>
+                  {item.name}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className="min-w-40 flex-1 space-y-1 sm:max-w-56">
+            <span className="text-ink-3 block text-[13px]">송장 번호</span>
+            <Input
+              className="bg-paper figure h-10 rounded-md max-sm:h-11"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+            />
+          </label>
           <Button
-            size="sm"
+            className="h-10 rounded-md px-5 max-sm:h-11"
             disabled={pending || invalid !== null}
             onClick={() => ship({ carrier, trackingNumber })}
           >
@@ -43,7 +53,7 @@ export function ShipOrderControls({ sellerOrder }: ShipOrderControlsProps) {
         </div>
       )}
       {step === 'DELIVER' && (
-        <Button size="sm" disabled={pending} onClick={deliver}>
+        <Button className="h-10 rounded-md px-5 max-sm:h-11" disabled={pending} onClick={deliver}>
           배송 완료 처리
         </Button>
       )}

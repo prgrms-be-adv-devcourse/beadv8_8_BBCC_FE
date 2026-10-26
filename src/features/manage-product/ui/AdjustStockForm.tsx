@@ -25,16 +25,16 @@ export function AdjustStockForm({ option }: AdjustStockFormProps) {
 
   if (!open) {
     return (
-      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+      <Button variant="outline" className="max-lg:h-11" onClick={() => setOpen(true)}>
         재고 조정
       </Button>
     )
   }
   return (
-    <span className="flex flex-wrap items-center gap-1">
+    <span className="flex flex-wrap items-center gap-1.5 lg:justify-end">
       <Select
         aria-label={`${option.name} 조정 사유`}
-        className="h-8 w-20"
+        className="w-20"
         value={reason}
         onChange={(e) => setReason(e.target.value as StockReason)}
       >
@@ -47,12 +47,12 @@ export function AdjustStockForm({ option }: AdjustStockFormProps) {
       <Input
         aria-label={`${option.name} 증감 수량`}
         type="number"
-        className="h-8 w-20"
+        className="figure w-20"
         value={delta}
         onChange={(e) => setDelta(Number(e.target.value))}
       />
       <Button
-        size="sm"
+        className="max-lg:h-11"
         disabled={invalid !== null || adjust.isPending}
         onClick={() =>
           adjust.mutate(

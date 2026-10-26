@@ -91,6 +91,9 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
     // 단계 번호 · 백엔드 설명은 콘솔에서만 보인다
     await expect(page.getByText('product.changed')).toHaveCount(0)
+    // 등록은 따로인 화면: 목록 제목 줄의 「상품 등록」으로 간다
+    await page.getByRole('main').getByRole('link', { name: '상품 등록' }).click()
+    await expect(page.getByRole('heading', { name: '상품 등록' })).toBeVisible()
     // 긴 변 2400px PNG를 고르면 JPG로 줄여 발급받고(가짜 백엔드), 받은 주소로 S3에 PUT한다
     const uploaded = page.waitForRequest(
       (request) => request.method() === 'PUT' && request.url().includes('X-Amz-Signature='),
@@ -153,7 +156,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     expect(body.imageUrls).toHaveLength(3)
     expect(body.thumbnailUrl).toBe(body.imageUrls[0])
     expect(body.thumbnailUrl).toMatch(BUCKET_IMAGE)
-    // 등록 결과 줄의 판매 시작 (내 상품 목록이 먼저 다시 불려 같은 버튼이 목록에도 생긴다)
+    // 등록 결과 줄의 판매 시작 (다시 시작하면 화면에 판매 시작 버튼이 남지 않는다)
     const registered = page.getByText(/상품 #\d+를 등록/).locator('..')
     await expect(registered).toContainText('판매 대기로 남았어요. 잠시 뒤 다시 시도해 주세요.')
     await registered.getByRole('button', { name: '판매 시작' }).click()
@@ -165,11 +168,11 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
   })
 
   await test.step('판매자 센터: 상품 수정 · 사진 더하기 · 재고 조정 · 판매 중지 → 다시 판매 (실제 API)', async () => {
-    // 내 상품은 등록 최신순 → 방금 등록한 상품이 맨 위
-    const mine = page
-      .locator('[data-slot="card"]')
-      .filter({ hasText: /상품 #\d+ · 옵션/ })
-      .first()
+    // 내 상품은 등록 최신순 → 방금 등록한 상품이 목록 표 맨 위 행. 상품명을 눌러 상세로 간다
+    await page.getByRole('main').getByRole('link', { name: '상품 관리' }).click()
+    await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
+    await page.getByRole('table', { name: '내 상품' }).getByRole('link').first().click()
+    const mine = page.getByRole('main')
     // 수정 폼은 등록과 같은 칸을 지금 값으로 채운다. 판매 중이라 옵션 · 판매가 · 실측은 잠긴다
     await mine.getByRole('button', { name: '수정' }).click()
     await expect(mine.getByText(/판매를 시작한 상품은 옵션/)).toBeVisible()
@@ -205,7 +208,13 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await mine.getByLabel('네이비 / 110 증감 수량').fill('5')
     await mine.getByRole('button', { name: '조정', exact: true }).click()
     await expect(mine.getByText('재고 15')).toBeVisible()
-    // 재고 적은 상품만 (상품 B 재고 5)
+    await mine.getByRole('button', { name: '판매 중지' }).click()
+    await expect(mine.getByRole('button', { name: '판매 시작' })).toBeVisible()
+    await mine.getByRole('button', { name: '판매 시작' }).click()
+    await expect(mine.getByRole('button', { name: '판매 중지' })).toBeVisible()
+    // 재고 적은 상품만 (상품 B 재고 5): 거르기는 목록 화면에서
+    await mine.getByRole('link', { name: '상품 관리' }).click()
+    await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
     // 거르기는 주소(?stock=low)에 저장돼 조금 늦게 체크되므로 click 뒤 상태를 기다린다
     const lowOnly = page.getByRole('checkbox', { name: '재고 적은 상품만' })
     await lowOnly.click()
@@ -214,18 +223,18 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText(/^(재고 적음|품절)$/).first()).toBeVisible()
     await lowOnly.click()
     await expect(lowOnly).not.toBeChecked()
-    await mine.getByRole('button', { name: '판매 중지' }).click()
-    await expect(mine.getByRole('button', { name: '판매 시작' })).toBeVisible()
-    await mine.getByRole('button', { name: '판매 시작' }).click()
-    await expect(mine.getByRole('button', { name: '판매 중지' })).toBeVisible()
   })
 
   await test.step('마이페이지: 자녀 · 배송지 등록', async () => {
     await switchRole(page, '보호자')
-    await page.goto('/my/children')
+    // 자녀 등록은 목록과 따로인 화면. 등록하면 목록으로 돌아온다
+    await page.goto('/my/children/new')
     await page.getByRole('button', { name: '등록하기' }).click()
+    await expect(page).toHaveURL(/\/my\/children$/)
     await expect(page.getByText('#').first()).toBeVisible()
     await page.goto('/my/addresses')
+    // 입력은 시트에서 한다
+    await page.getByRole('button', { name: '+ 새 배송지 추가' }).click()
     await page.getByRole('button', { name: '등록하기' }).click()
     await expect(page.getByText('기본', { exact: true }).first()).toBeVisible()
   })
@@ -307,7 +316,9 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await recommended.getByText('데일리 맨투맨 (상품 A)').first().click()
     await expect(page).toHaveURL(/\/products\/\d+\?childId=/)
     await expect(page.getByText('추천 사이즈')).toBeVisible()
-    // 착용 미리보기: 추천 사이즈로 시작, 사이즈를 바꾸면 그림 · 문구가 바뀐다
+    // 착용 미리보기는 사이즈 칩 위 추천 한 줄의 「사이즈 자세히」를 펼치면 보인다.
+    // 추천 사이즈로 시작, 사이즈를 바꾸면 그림 · 문구가 바뀐다
+    await page.getByRole('button', { name: '사이즈 자세히' }).click()
     await expect(
       page.getByRole('img', { name: /키 118cm에 120 사이즈: 엉덩이를 덮어요/ }),
     ).toBeVisible()
@@ -358,11 +369,17 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('발송할 주문')).toBeVisible()
     await expect(page.getByText('테스트상점').first()).toBeVisible()
     await expect(page.getByText('판매 가능')).toBeVisible()
+    // 상호명 수정은 상점 정보 화면에서 (홈 머리 줄은 읽기만)
+    await page.getByRole('main').getByRole('link', { name: '상점 정보' }).click()
     await page.getByRole('button', { name: '상호명 수정' }).click()
     await page.getByRole('textbox', { name: '상호명' }).fill('테스트상점 본점')
     await page.getByRole('button', { name: '상호명 저장' }).click()
     await expect(page.getByText('테스트상점 본점')).toBeVisible()
-    // 할 일 타일 → 그 탭으로 바로
+    await page
+      .getByRole('navigation', { name: '판매자 센터 메뉴' })
+      .getByRole('link', { name: '홈', exact: true })
+      .click()
+    // 오늘 할 일 → 그 탭으로 바로
     await page.getByRole('link', { name: /발송할 주문/ }).click()
     await expect(page).toHaveURL(/\/center\/orders\?tab=READY$/)
     await expect(page.getByRole('tab', { name: /발송할 주문/ })).toHaveAttribute(
@@ -382,6 +399,14 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       .uncheck()
     await expect(bulk).toHaveCount(0)
     await page.getByRole('tab', { name: /전체/ }).click()
+    // 발송은 판매 주문 상세에서: 첫 발송할 주문을 연다
+    await page
+      .getByRole('row')
+      .filter({ hasText: '발송 준비' })
+      .first()
+      .getByRole('link', { name: /판매 주문 #\d+/ })
+      .click()
+    await expect(page).toHaveURL(/\/center\/orders\/\d+$/)
     await page.getByRole('button', { name: '발송' }).first().click()
     // 서버에는 택배사 코드(CJ)를 보내고, 화면에는 이름으로 보인다
     await expect(page.getByText(/CJ대한통운 \S+/).first()).toBeVisible()
@@ -528,33 +553,51 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('오늘 주문', { exact: true })).toBeVisible()
     await page.getByRole('link', { name: '회원 관리' }).click()
     await expect(page.getByRole('heading', { name: '회원 관리' })).toBeVisible()
-    await page.getByRole('button', { name: '판매자', exact: true }).nth(1).click()
+    // 목록은 찾기만, 정지 · 권한은 회원 상세에서 (닉네임 링크는 표 안에서 찾는다: 탭 · 메뉴에 같은 이름이 있다)
+    const memberTable = page.getByRole('table', { name: '회원' })
+    await page.getByRole('tab', { name: '판매자', exact: true }).click()
     await page.getByRole('textbox', { name: '회원 검색' }).fill('테스트')
     await page.getByRole('button', { name: '검색' }).click()
+    await memberTable.getByRole('link', { name: '테스트상점' }).click()
+    await expect(page.getByRole('heading', { name: '회원 #2' })).toBeVisible()
     await page.getByRole('button', { name: '판매자 자격 정지' }).click()
     await page.getByRole('textbox', { name: '판매자 정지 사유' }).fill('정책 위반 상품 반복 등록')
     await page.getByRole('button', { name: '자격 정지하기' }).click()
-    await expect(page.getByText('판매자 자격 정지', { exact: true })).toBeVisible()
+    const memberStatus = page.getByRole('region', { name: '상태 · 권한' })
+    await expect(memberStatus.getByText('자격 정지', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: '판매자 자격 정지' })).toHaveCount(0)
 
     // 관리자 지정 · 해제 (BE #356): 관리자는 관리자 탭에서만 보이고, 본인은 해제할 수 없다
+    await page.getByRole('main').getByRole('link', { name: '회원 관리' }).click()
     await page.getByRole('textbox', { name: '회원 검색' }).fill('')
     await page.getByRole('button', { name: '검색' }).click()
-    await page.getByRole('button', { name: '보호자', exact: true }).nth(1).click()
-    const guardian = page.locator('[data-slot="card"]').filter({ hasText: '회원 1' })
-    await guardian.getByRole('button', { name: '관리자 지정' }).click()
+    await page.getByRole('tab', { name: '보호자', exact: true }).click()
+    const guardian = memberTable.getByRole('link', { name: '보호자' })
+    await guardian.click()
+    await expect(page.getByRole('heading', { name: '회원 #1' })).toBeVisible()
+    await page.getByRole('button', { name: '관리자 지정' }).click()
+    await expect(page.getByRole('button', { name: '권한 해제' })).toBeVisible()
+    await page.getByRole('main').getByRole('link', { name: '회원 관리' }).click()
     await expect(guardian).toHaveCount(0)
-    await page.getByRole('button', { name: '관리자', exact: true }).nth(1).click()
-    const me = page.locator('[data-slot="card"]').filter({ hasText: '회원 3' })
-    await expect(me).toBeVisible()
-    await expect(me.getByRole('button', { name: '권한 해제' })).toHaveCount(0)
-    await guardian.getByRole('button', { name: '권한 해제' }).click()
+    await page.getByRole('tab', { name: '관리자', exact: true }).click()
+    await memberTable.getByRole('link', { name: '관리자' }).click()
+    await expect(page.getByRole('heading', { name: '회원 #3' })).toBeVisible()
+    await expect(page.getByRole('button', { name: '권한 해제' })).toHaveCount(0)
+    await page.getByRole('main').getByRole('link', { name: '회원 관리' }).click()
+    await guardian.click()
+    await page.getByRole('button', { name: '권한 해제' }).click()
+    await expect(page.getByRole('button', { name: '관리자 지정' })).toBeVisible()
+    await page.getByRole('main').getByRole('link', { name: '회원 관리' }).click()
     await expect(guardian).toHaveCount(0)
 
     await page.getByRole('link', { name: '상품 관리' }).click()
     // 목록은 실제 GET /products(BE #288), 관리자 판매 중지는 아직 목 → 버튼 옆 준비 중(목) 배지.
     // 목 판매 중지는 실제 목록에 반영되지 않으므로 오류 없이 요청이 끝나는 것까지만 본다
     // 관리자 판매 중지는 실제 API(BE #315) → 판매 중 목록에서 빠진다. 이 흐름에서 등록한 상품으로 확인
-    const onSale = page.locator('[data-slot="card"]').filter({ hasText: '데일리 맨투맨' })
+    const onSale = page
+      .getByRole('table', { name: '판매 중 상품' })
+      .getByRole('row')
+      .filter({ hasText: '데일리 맨투맨' })
     await expect(onSale.first()).toBeVisible()
     const before = await onSale.count()
     await onSale.first().getByRole('button', { name: '판매 중지' }).click()
@@ -562,12 +605,16 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
     await page.getByRole('link', { name: '전체 주문' }).click()
     await expect(page.getByText(/^주문 \d+$/).first()).toBeVisible()
-    // 공통 표: 행을 누르면 상세 서랍 (결제 연결), CSV 내려받기
-    await page.getByRole('table', { name: '전체 주문' }).getByRole('row').nth(1).click()
-    const sheet = page.getByRole('dialog', { name: /^주문 \d+$/ })
-    await expect(sheet.getByText('이 주문의 결제')).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(sheet).toHaveCount(0)
+    // 목록 → 상세 화면 (결제 연결), 뒤로 와서 CSV 내려받기
+    await page
+      .getByRole('table', { name: '전체 주문' })
+      .getByRole('link', { name: /^주문 \d+$/ })
+      .first()
+      .click()
+    await expect(page.getByRole('heading', { level: 1, name: /^주문 \d+$/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /^이 주문의 결제/ })).toBeVisible()
+    await page.getByRole('main').getByRole('link', { name: '전체 주문' }).click()
+    await expect(page).toHaveURL(/\/admin\/orders$/)
     const download = page.waitForEvent('download')
     await page.getByRole('button', { name: 'CSV 내려받기' }).click()
     expect((await download).suggestedFilename()).toBe('kidly-orders-all.csv')
@@ -583,6 +630,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
   await test.step('내 정보: 닉네임 수정 → 토큰 다시 받기 → 탈퇴(목)', async () => {
     await page.goto('/my/profile')
+    await page.getByRole('button', { name: '변경', exact: true }).click()
     await page.getByLabel(/닉네임/).fill('보호자맘')
     await page.getByRole('button', { name: '닉네임 바꾸기' }).click()
     await expect(page.getByText('보호자맘 · 회원 1').first()).toBeVisible()

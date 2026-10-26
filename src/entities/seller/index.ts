@@ -1,5 +1,6 @@
 export { sellerApi } from './api/seller-api'
 export {
+  APPLICATION_STATUS_LABEL,
   SELLER_STATUS_LABEL,
   type Seller,
   type SellerApplication,

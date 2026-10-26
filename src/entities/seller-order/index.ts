@@ -12,4 +12,4 @@ export {
   type SellerOrderTab,
 } from './model/seller-order.rules'
 export { sellerOrderKeys, useSellerOrdersQuery } from './model/queries'
-export { SellerOrderCard } from './ui/SellerOrderCard'
+export { SellerOrderItems } from './ui/SellerOrderItems'

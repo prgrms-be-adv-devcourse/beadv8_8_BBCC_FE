@@ -19,7 +19,7 @@ async function restoreSettings() {
 }
 
 function settingCard(page: Page, title: string) {
-  return page.locator('[data-slot="card"]').filter({ hasText: title })
+  return page.getByRole('region', { name: title })
 }
 
 test.afterEach(restoreSettings)

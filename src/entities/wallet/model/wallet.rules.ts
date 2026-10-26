@@ -1,4 +1,4 @@
-import type { Charge } from './wallet'
+import type { Charge, WalletTransaction } from './wallet'
 
 const CHARGE_MIN = 1_000
 const CHARGE_MAX = 1_000_000
@@ -55,4 +55,24 @@ export function suggestChargeAmount(shortage: number): number | null {
   }
   const rounded = Math.ceil(shortage / 1_000) * 1_000
   return Math.min(CHARGE_MAX, Math.max(CHARGE_MIN, rounded))
+}
+
+const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토']
+
+/** 이용 내역 하루 묶음: 날짜(YYYY-MM-DD) · 이름(「10월 20일 화요일」) · 그날 거래 (최신이 위) */
+export type WalletTransactionDay = { date: string; label: string; items: WalletTransaction[] }
+
+/** 예치금 이용 내역을 날짜별로 묶는다 (최신 날짜 · 최신 거래가 위) */
+export function transactionsByDay(transactions: WalletTransaction[]): WalletTransactionDay[] {
+  const sorted = [...transactions].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  const days = new Map<string, WalletTransaction[]>()
+  for (const tx of sorted) {
+    const date = tx.createdAt.slice(0, 10)
+    days.set(date, [...(days.get(date) ?? []), tx])
+  }
+  return [...days].map(([date, items]) => {
+    const [y, m, d] = date.split('-').map(Number)
+    const weekday = WEEKDAY[new Date(y, m - 1, d).getDay()]
+    return { date, label: `${m}월 ${d}일 ${weekday}요일`, items }
+  })
 }

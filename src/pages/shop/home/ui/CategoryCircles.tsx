@@ -12,12 +12,10 @@ type CategoryCirclesProps = {
   onSelect: (categoryId: string | null) => void
 }
 
-const TINTS = ['bg-primary-soft', 'bg-highlight-soft', 'bg-growth-soft']
-
-/** "무엇을 찾아볼까요?" 동그란 카테고리 */
+/** 카테고리 바로가기: 동그라미 아이콘 줄 (아이콘이 없으면 첫 글자). 좁으면 가로로 민다 */
 export function CategoryCircles({ categories, selectedId, onSelect }: CategoryCirclesProps) {
   const items: { id: string | null; name: string; label: string; icon: string[] | null }[] = [
-    { id: null, name: '전체보기', label: '전체 카테고리', icon: ALL_CATEGORIES_ICON },
+    { id: null, name: '전체', label: '전체 카테고리', icon: ALL_CATEGORIES_ICON },
     ...categories.map((category) => ({
       id: category.id,
       name: category.name,
@@ -26,10 +24,14 @@ export function CategoryCircles({ categories, selectedId, onSelect }: CategoryCi
     })),
   ]
   return (
-    <section className="space-y-4">
-      <h2 className="text-xl font-extrabold">무엇을 찾아볼까요?</h2>
-      <div className="flex gap-4 overflow-x-auto pb-1 md:gap-8">
-        {items.map((item, index) => {
+    <section
+      aria-label="카테고리"
+      className="-mx-4 [scrollbar-width:none] overflow-x-auto px-4 md:-mx-1 md:px-1"
+    >
+      {/* 위아래 · 왼쪽 여백: 고른 동그라미의 바깥 고리가 가로 스크롤 영역에 잘리지 않게.
+          가운데 정렬은 w-max + mx-auto로 (justify-center는 넘칠 때 왼쪽이 잘린다) */}
+      <div className="mx-auto flex w-max gap-3 py-1 md:gap-5">
+        {items.map((item) => {
           const active = selectedId === item.id
           return (
             <button
@@ -38,24 +40,31 @@ export function CategoryCircles({ categories, selectedId, onSelect }: CategoryCi
               aria-label={item.label}
               aria-pressed={active}
               onClick={() => onSelect(item.id)}
-              className="flex w-16 shrink-0 flex-col items-center gap-2 text-sm md:w-20"
+              className="group flex w-16 shrink-0 flex-col items-center gap-1.5 rounded-md pb-1"
             >
               <span
                 aria-hidden
                 className={cn(
-                  'flex size-14 items-center justify-center rounded-full border-2 text-lg font-bold md:size-16',
-                  item.id === null ? 'bg-white' : TINTS[index % TINTS.length],
-                  item.icon && 'text-primary',
-                  active ? 'border-primary text-primary' : 'border-transparent',
+                  'flex size-14 items-center justify-center rounded-full text-base font-bold transition-colors',
+                  active
+                    ? 'bg-signal-soft text-signal ring-signal ring-2'
+                    : 'bg-paper-2 text-ink-2 group-hover:bg-paper-3',
                 )}
               >
                 {item.icon ? (
-                  <CategoryIcon paths={item.icon} className="size-8 md:size-9" />
+                  <CategoryIcon paths={item.icon} className="size-7" />
                 ) : (
                   item.name.slice(0, 1)
                 )}
               </span>
-              <span className={cn(active && 'text-primary font-bold')}>{item.name}</span>
+              <span
+                className={cn(
+                  'text-[13px]',
+                  active ? 'text-ink font-bold' : 'text-ink-2 font-medium',
+                )}
+              >
+                {item.name}
+              </span>
             </button>
           )
         })}
