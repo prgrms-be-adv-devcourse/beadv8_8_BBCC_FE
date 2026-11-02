@@ -308,7 +308,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
 
   await test.step('쇼핑: 자녀 맞춤 상품 → 상세 추천 → 담기', async () => {
     await page.getByRole('link', { name: 'Kidly', exact: true }).click()
-    // 홈 위 맞춤 영역: 자녀에게 맞는 사이즈가 있는 상품 (GET /children/:childId/recommended-products)
+    // 홈 위 맞춤 영역: 자녀에게 맞는 사이즈가 있는 상품 (GET /recommendations/products?childId=)
     const recommended = page.getByRole('region', { name: '맞춤 상품' })
     const testKid = recommended.getByRole('button', { name: /^테스트 \(/ })
     if ((await testKid.count()) > 0) await testKid.first().click()

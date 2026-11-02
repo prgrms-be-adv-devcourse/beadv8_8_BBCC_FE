@@ -90,7 +90,7 @@ export const CONNECTION_CHECKS: ConnectionCheck[] = [
   {
     id: 'size',
     label: '사이즈 추천',
-    api: 'GET /products/{id}/size-recommendation',
+    api: 'GET /recommendations/size',
     role: null,
     needs: 'childId',
     run: (ids) => {

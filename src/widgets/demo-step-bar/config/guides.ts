@@ -103,7 +103,7 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
         '자녀 버튼("테스트 맞춤")을 눌러 맞는 사이즈가 있는 상품만 봐요',
         '상품 A를 눌러 상세로 가요',
       ],
-      watch: 'GET /children/{id}/recommended-products — 추천이 자기 복사본으로 계산 (목)',
+      watch: 'GET /recommendations/products — 추천이 자기 복사본으로 계산 (목)',
       next: { label: '④ 장바구니', to: C.cart },
     },
   },
@@ -113,8 +113,7 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
       step: '③',
       actor: '보호자',
       todo: ['"추천 사이즈"를 확인하고 그 옵션을 골라요', '"장바구니 담기"를 눌러요'],
-      watch:
-        'GET /products/{id}/size-recommendation → 추천 · 적합도 · 후보 · 안내, POST /cart/items',
+      watch: 'GET /recommendations/size → 추천 · 적합도 · 후보 · 안내, POST /cart/items',
       next: { label: '④ 예치금 확인', to: C.wallet },
     },
   },

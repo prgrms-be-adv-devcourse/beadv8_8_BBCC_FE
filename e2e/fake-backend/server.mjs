@@ -354,9 +354,11 @@ http
       settlementRuns.push(run)
       return send(res, 201, run)
     }
-    // 자녀 맞춤 목록 (BE #316): 판매 중 상품 중 자녀에게 맞는 사이즈가 있는 것, 최신순
-    if ((x = r('GET', /^\/children\/(\d+)\/recommended-products$/))) {
-      const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
+    // 자녀 맞춤 목록 (BE #316 · #681): 판매 중 상품 중 자녀에게 맞는 사이즈가 있는 것, 최신순
+    if (r('GET', /^\/recommendations\/products$/)) {
+      const childId = url.searchParams.get('childId')
+      if (!childId) return problem(res, 400, '잘못된 요청입니다', 'childId는 필수입니다.', req.url)
+      const c = children.find((c) => c.id === +childId && c.memberId === me && !c.deleted)
       if (!c)
         return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
       // 말단 카테고리만 거른다 (BE: 정확히 같은 categoryId)
@@ -415,13 +417,16 @@ http
         ),
       )
     }
-    // 사이즈 추천 (BE #262). 규칙은 단순화: 키가 권장 키 ±2cm 안이면 후보, 둘 이상이면 체형 · 선호 핏으로 고름
-    if ((x = r('GET', /^\/products\/(\d+)\/size-recommendation$/))) {
-      const detail = productDetailOf(x[1])
+    // 사이즈 추천 (BE #262 · #681). 규칙은 단순화: 키가 권장 키 ±2cm 안이면 후보, 둘 이상이면 체형 · 선호 핏으로 고름
+    if (r('GET', /^\/recommendations\/size$/)) {
+      const productId = url.searchParams.get('productId')
+      const childId = url.searchParams.get('childId')
+      if (!productId || !childId)
+        return problem(res, 400, '잘못된 요청입니다', 'productId · childId는 필수입니다.', req.url)
+      const detail = productDetailOf(productId)
       if (!detail || detail.status !== 'ON_SALE')
         return problem(res, 404, '상품을 찾을 수 없습니다', '상품을 찾을 수 없습니다.', req.url)
-      const childId = Number(url.searchParams.get('childId'))
-      const c = children.find((c) => c.id === childId && c.memberId === me && !c.deleted)
+      const c = children.find((c) => c.id === +childId && c.memberId === me && !c.deleted)
       if (!c)
         return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
       return send(res, 200, sizeRecommendationOf(detail, c))

@@ -19,8 +19,7 @@ export const DOMAINS: { id: DomainId; name: string; external?: boolean }[] = [
 const PATH_DOMAINS: [RegExp, DomainId][] = [
   // 브라우저가 서명된 주소로 직접 올리는 S3
   [/^https:\/\/[^/]+\.amazonaws\.com\//, 's3'],
-  [/^\/products\/[^/]+\/size-recommendation/, 'recommend'],
-  [/^\/children\/[^/]+\/recommended-products/, 'recommend'],
+  [/^\/recommendations\//, 'recommend'],
   [/^\/((seller|admin)\/)?(products|product-images)|^\/categories/, 'product'],
   // 관리자 상품 기준 데이터 (항목 · 목록 값 · 실측 항목 · 상품 유형 · 카테고리)
   [/^\/admin\/(attributes|measurement-items|product-types|categories)/, 'product'],
