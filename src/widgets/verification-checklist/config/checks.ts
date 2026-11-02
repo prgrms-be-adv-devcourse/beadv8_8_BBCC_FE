@@ -244,7 +244,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     screen: paths.console.products,
     call: {
       method: 'GET',
-      pattern: /^\/products\/[^/]+\/size-recommendation/,
+      pattern: /^\/recommendations\/size/,
       expect: (log) => typeof body(log).recommendedSize === 'string',
     },
   },
@@ -257,7 +257,7 @@ export const VERIFICATION_CHECKS: VerificationCheck[] = [
     screen: paths.console.products,
     call: {
       method: 'GET',
-      pattern: /^\/children\/[^/]+\/recommended-products/,
+      pattern: /^\/recommendations\/products/,
       expect: (log) => ((body(log).content as unknown[]) ?? []).length > 0,
     },
   },

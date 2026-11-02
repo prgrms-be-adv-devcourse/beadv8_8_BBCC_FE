@@ -47,7 +47,7 @@ export function ShopRecommendedPage() {
         <div className="space-y-1">
           <h1 className="text-page">
             {child.data ? `${child.data.name}에게 맞는 옷` : '맞는 옷'}
-            <MockBadge endpoints={['GET /children/:childId/recommended-products']} />
+            <MockBadge endpoints={['GET /recommendations/products']} />
           </h1>
           {child.data && (
             <p className="text-ink text-sm font-semibold">{childProfileLine(child.data)}</p>

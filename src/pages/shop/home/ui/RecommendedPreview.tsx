@@ -33,7 +33,7 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
         <div className="space-y-1">
           <h2 className="text-section">
             {child.name}에게 맞는 옷
-            <MockBadge endpoints={['GET /children/:childId/recommended-products']} />
+            <MockBadge endpoints={['GET /recommendations/products']} />
           </h2>
           <p className="text-ink-2 text-[13px]">
             키 <span className="figure">{child.heightCm}cm</span>에는{' '}

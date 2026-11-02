@@ -1,6 +1,6 @@
 // 사이즈 추천(BE #262) · 자녀 맞춤 목록(BE #316) 모두 실제 API. 값 이름은 백엔드 recommend 도메인(Fit · SizeNotice)을 따른다
 
-/** GET /products/{productId}/size-recommendation?childId= */
+/** GET /recommendations/size?productId=&childId= */
 export type SizeRecommendationDto = {
   productId: string
   childId: string
@@ -16,7 +16,7 @@ export type SizeRecommendationDto = {
   lastPurchasedSize: string | null
 }
 
-/** GET /children/{childId}/recommended-products 한 줄 */
+/** GET /recommendations/products?childId= 한 줄 */
 export type RecommendedProductDto = {
   productId: string
   name: string
@@ -28,7 +28,7 @@ export type RecommendedProductDto = {
   recommendedSize: string | null
 }
 
-/** GET /children/{childId}/recommended-products 요청 값 */
+/** GET /recommendations/products 요청 값 (childId는 요청 함수가 붙인다) */
 export type RecommendedProductsParamsDto = {
   categoryId?: string
   page: number

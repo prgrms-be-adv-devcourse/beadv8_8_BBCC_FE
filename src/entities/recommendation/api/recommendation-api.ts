@@ -9,14 +9,14 @@ import { recommendedProductPageShape, sizeRecommendationShape } from './recommen
 export const recommendationApi = {
   getSize: (productId: string, childId: string) =>
     apiClient
-      .get<SizeRecommendationDto>(`/products/${productId}/size-recommendation`, {
-        params: { childId },
+      .get<SizeRecommendationDto>('/recommendations/size', {
+        params: { productId, childId },
       })
       .then(expectShape(sizeRecommendationShape)),
   getProducts: (childId: string, params: RecommendedProductsParamsDto) =>
     apiClient
-      .get<Page<RecommendedProductDto>>(`/children/${childId}/recommended-products`, {
-        params,
+      .get<Page<RecommendedProductDto>>('/recommendations/products', {
+        params: { childId, ...params },
       })
       .then(expectShape(recommendedProductPageShape)),
 }

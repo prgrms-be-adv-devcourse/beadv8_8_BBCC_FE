@@ -51,7 +51,9 @@ async function asParentWithChild(page: Page) {
   )
   await page.route('**/api/v1/children/501', (route) => route.fulfill({ json: CHILD }))
   await page.route(
-    (url) => url.pathname.endsWith('/children/501/recommended-products'),
+    (url) =>
+      url.pathname.endsWith('/recommendations/products') &&
+      url.searchParams.get('childId') === '501',
     fulfillRecommended,
   )
   await page.goto('/')
@@ -79,8 +81,10 @@ test('홈 맞춤 영역 4개 → 더보기 → 맞춤 목록 탭 · 더 보기',
   await expect(page.getByRole('button', { name: '더 보기' })).toHaveCount(0)
 
   // 상의 탭: categoryId=11로 다시 부른다
-  const requested = page.waitForRequest((request) =>
-    request.url().includes('recommended-products?categoryId=11'),
+  const requested = page.waitForRequest(
+    (request) =>
+      request.url().includes('/recommendations/products') &&
+      new URL(request.url()).searchParams.get('categoryId') === '11',
   )
   await page.getByRole('tab', { name: '상의' }).click()
   await requested
