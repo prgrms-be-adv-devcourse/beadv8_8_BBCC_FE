@@ -20,6 +20,11 @@ export function isAwaitingPayment(charge: Charge, now: Date): boolean {
   return charge.status === 'PENDING' && new Date(charge.expiresAt).getTime() > now.getTime()
 }
 
+/** 탈퇴할 때 운영자가 환급할 예치금이 남았는지. 잔액을 모르면 남지 않은 것으로 본다 (BE #670) */
+export function hasBalanceToRefund(balance: number | undefined): boolean {
+  return balance !== undefined && balance > 0
+}
+
 /** 주문 금액보다 모자란 금액 (모자라지 않으면 0) */
 export function shortageOf(balance: number | undefined, amount: number): number {
   return balance === undefined ? 0 : Math.max(0, amount - balance)

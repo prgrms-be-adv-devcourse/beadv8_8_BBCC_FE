@@ -1,8 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { ROLE_LABEL, useSessionStore } from '@/entities/session'
+import { hasBalanceToRefund, useWalletQuery } from '@/entities/wallet'
 import { EditNicknameForm, WithdrawButton } from '@/features/edit-profile'
-import { paths } from '@/shared/config'
+import { paths, walletPathsOf } from '@/shared/config'
+import { formatWon, useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
@@ -12,6 +14,9 @@ import { StateMessage } from '@/shared/ui/StateMessage'
  */
 export function ShopProfilePage() {
   const navigate = useNavigate()
+  const area = useArea()
+  const wallet = useWalletQuery()
+  const balance = wallet.data?.balance
   const user = useSessionStore((state) => state.user)
   const member = useSessionStore((state) => state.member)
   // 닉네임이 바뀌면(토큰 재발급) 펼친 폼이 저절로 닫히게 바꾸던 닉네임을 기억한다
@@ -27,7 +32,7 @@ export function ShopProfilePage() {
         title="내 정보"
         step="①"
         description="닉네임을 바꾸면 토큰을 다시 받아 바로 반영돼요."
-        note="PATCH /members/me → 토큰 재발급(시연 계정은 개발용 토큰 다시 발급). 탈퇴는 백엔드에 없어 목이에요."
+        note="PATCH /members/me → 토큰 재발급(시연 계정은 개발용 토큰 다시 발급). 탈퇴 안내는 GET /wallets/me 잔액으로 보여 주고, 탈퇴 요청(DELETE /members/me)은 목이에요. 서버는 탈퇴하면 예치금 지갑을 동결해요."
       />
 
       <section aria-label="프로필" className="flex items-center gap-4">
@@ -108,8 +113,24 @@ export function ShopProfilePage() {
         aria-label="탈퇴"
         className="border-rule flex flex-wrap items-center justify-between gap-3 border-t pt-6"
       >
-        <p className="text-ink-3 text-[13px]">탈퇴 조건은 아직 정해지지 않았어요 (기획서 2.1).</p>
-        <WithdrawButton onDone={() => navigate(paths.shop.home, { replace: true })} />
+        {hasBalanceToRefund(balance) ? (
+          <p className="text-ink-3 text-[13px]">
+            예치금 <strong className="text-ink figure">{formatWon(balance ?? 0)}</strong>이 남아
+            있어요. 탈퇴하면 지갑이 동결되고 남은 예치금은 운영자가 환급해 드려요. 먼저{' '}
+            <Link to={walletPathsOf(area).wallet} className="underline underline-offset-2">
+              예치금
+            </Link>
+            에서 충전을 취소하거나 사용하면 바로 정리돼요.
+          </p>
+        ) : (
+          <p className="text-ink-3 text-[13px]">
+            탈퇴하면 예치금 지갑이 동결돼 충전 · 결제를 할 수 없어요.
+          </p>
+        )}
+        <WithdrawButton
+          balance={balance}
+          onDone={() => navigate(paths.shop.home, { replace: true })}
+        />
       </section>
     </div>
   )
