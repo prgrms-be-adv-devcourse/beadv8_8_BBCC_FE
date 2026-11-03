@@ -9,8 +9,6 @@ export {
 } from './model/member'
 export { toAdminMember } from './model/member.mapper'
 export {
-  canGrantAdmin,
-  canRevokeAdmin,
   canSuspendMember,
   canSuspendSeller,
   findAdminMember,

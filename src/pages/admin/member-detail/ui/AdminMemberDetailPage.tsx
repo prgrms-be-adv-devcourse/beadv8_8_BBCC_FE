@@ -1,16 +1,12 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
 import {
-  canGrantAdmin,
-  canRevokeAdmin,
   canSuspendMember,
   canSuspendSeller,
   MEMBER_STATUS_LABEL,
   useAdminMemberQuery,
 } from '@/entities/member'
 import { SELLER_STATUS_LABEL } from '@/entities/seller'
-import { useSessionStore } from '@/entities/session'
-import { GrantAdminButton, RevokeAdminButton } from '@/features/manage-admin-role'
 import { SuspendMemberForm, SuspendSellerForm } from '@/features/suspend-member'
 import { getErrorMessage } from '@/shared/api'
 import { adminPathsOf } from '@/shared/config'
@@ -35,7 +31,6 @@ export function AdminMemberDetailPage() {
   // 목록에서 넘겨준 구분 · 검색어(?filter= · ?q=)로 돌아간다
   const listSearch = (useLocation().state as { listSearch?: string } | null)?.listSearch ?? ''
   const { member, isPending, error } = useAdminMemberQuery(memberId)
-  const myMemberId = useSessionStore((s) => s.user?.memberId)
   const [openForm, setOpenForm] = useState<OpenForm>(null)
   const close = () => setOpenForm(null)
 
@@ -60,7 +55,7 @@ export function AdminMemberDetailPage() {
       <PageHeader
         title={`회원 #${memberId}`}
         description="이용을 정지하거나 판매자 자격을 정지하고, 관리자를 지정 · 해제해요. 권한을 바꾼 회원은 새로고침해야 메뉴가 바뀌어요."
-        note="회원 하나 API가 없어 목록 API(filter=ALL · ADMIN, keyword=회원 번호)에서 찾아요. 이용 정지 → 로그인 · 재발급 막힘. 판매자 자격 정지 → seller.changed. 관리자 지정 · 해제 → 다음 토큰 재발급부터 ADMIN 역할 반영 (BE #356)"
+        note="회원 하나 API가 없어 목록 API(filter=ALL · ADMIN, keyword=회원 번호)에서 찾아요. 이용 정지 → 로그인 · 재발급 막힘. 판매자 자격 정지 → seller.changed."
       />
       {isPending && <ListSkeleton rows={2} />}
       {error && <StateMessage tone="error">{getErrorMessage(error)}</StateMessage>}
@@ -156,19 +151,7 @@ export function AdminMemberDetailPage() {
                   </div>
                 )}
               </div>
-              <InfoRow
-                label="권한"
-                action={
-                  <>
-                    {canGrantAdmin(member) && <GrantAdminButton memberId={member.id} />}
-                    {canRevokeAdmin(member, myMemberId) && (
-                      <RevokeAdminButton memberId={member.id} />
-                    )}
-                  </>
-                }
-              >
-                {member.isAdmin ? '관리자' : '일반 회원'}
-              </InfoRow>
+              <InfoRow label="권한">{member.isAdmin ? '관리자' : '일반 회원'}</InfoRow>
             </dl>
           </section>
         </>

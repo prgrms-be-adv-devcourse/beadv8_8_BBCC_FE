@@ -1024,36 +1024,6 @@ http
       Object.assign(m, { status: 'SUSPENDED', suspendReason: body.reason, suspendedAt: now() })
       return send(res, 204)
     }
-    if ((x = r('POST', /^\/admin\/members\/(\d+)\/grant-admin$/))) {
-      const m = members[x[1]]
-      if (!m)
-        return problem(res, 404, '찾을 수 없습니다', '요청한 리소스를 찾을 수 없습니다.', req.url)
-      if (m.status !== 'ACTIVE' || m.role === 'ADMIN')
-        return problem(
-          res,
-          409,
-          '관리자로 지정할 수 없는 회원입니다',
-          '정지 · 탈퇴했거나 이미 관리자인 회원입니다.',
-          req.url,
-        )
-      m.role = 'ADMIN'
-      return send(res, 204)
-    }
-    if ((x = r('POST', /^\/admin\/members\/(\d+)\/revoke-admin$/))) {
-      const m = members[x[1]]
-      if (!m)
-        return problem(res, 404, '찾을 수 없습니다', '요청한 리소스를 찾을 수 없습니다.', req.url)
-      if (m.role !== 'ADMIN' || +x[1] === me)
-        return problem(
-          res,
-          409,
-          '관리자 권한을 해제할 수 없는 회원입니다',
-          '관리자가 아니거나 본인입니다.',
-          req.url,
-        )
-      m.role = 'USER'
-      return send(res, 204)
-    }
     if ((x = r('POST', /^\/admin\/sellers\/(\d+)\/suspend$/))) {
       const m = members[x[1]]
       if (!m || m.sellerStatus !== 'ACTIVE')
