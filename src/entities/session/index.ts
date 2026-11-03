@@ -21,9 +21,12 @@ export {
 export {
   describeUser,
   hasRole,
+  viewerRoles,
   NICKNAME_MAX,
   NICKNAME_MIN,
   validateNickname,
 } from './model/session.rules'
 export { isDemoSession } from './model/demo-storage'
 export { useSessionStore } from './model/session-store'
+export { restoreAdminSession, signInAdmin, signOutAdmin } from './model/admin-session-actions'
+export { useAdminSessionStore } from './model/admin-session-store'

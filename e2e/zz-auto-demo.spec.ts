@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { signInAdmin } from './support/admin'
 
 // 자동 시연: 버튼 하나로 ①~⑦ (화면 이동 + API 호출). 테스트 속도로 끝까지 가는지, 흐름 패널에 기록이 남는지.
 // 파일 이름 zz-: 회원 1을 판매자로 승인하는 등 가짜 백엔드 공용 상태를 바꾸므로 다른 E2E 뒤에 돈다 (파일 이름 순서)
@@ -7,6 +8,8 @@ test('자동 시연: 버튼 하나로 정상 흐름 ①~⑦', async ({ page }) =
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
 
+  // 관리자 단계(②승인 · ⑦정산)는 관리자 계정 토큰을 쓴다 (시연 역할 전환으로는 관리자가 될 수 없다)
+  await signInAdmin(page)
   await page.goto('/console')
   await page.getByRole('button', { name: '보호자', exact: true }).first().click()
   await expect(page.getByText('보호자 · 회원 1')).toBeVisible()

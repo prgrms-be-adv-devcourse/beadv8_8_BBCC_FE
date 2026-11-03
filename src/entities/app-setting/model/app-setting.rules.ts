@@ -23,17 +23,17 @@ export function reloadNotice(
   if (!needsReload(applied, saved)) return null
   const turningDemoOff = applied.isDemoRoleSwitchEnabled && !saved.isDemoRoleSwitchEnabled
   if (turningDemoOff && isDemoSession) {
-    return '새로고침하면 시연 기능이 꺼지고 시연 계정은 로그아웃돼요. 카카오로 로그인한 관리자만 다시 켤 수 있어요.'
+    return '새로고침하면 시연 기능이 꺼지고 시연 계정은 로그아웃돼요. 관리자 계정 로그인은 그대로라 다시 켤 수 있어요.'
   }
   return RELOAD_NOTICE
 }
 
-/** 시연 기능 끄기 확인. 시연 계정이면 다시 켤 수 없게 될 수 있다고 경고한다 */
+/** 시연 기능 끄기 확인. 시연 계정이면 로그아웃된다고 경고한다 */
 export function turnOffDemoConfirm(isDemoSession: boolean): ConfirmOptions {
   return {
     title: '시연 기능을 끌까요?',
     description: isDemoSession
-      ? '지금은 시연 계정으로 로그인해 있어요. 끄면 바로 로그아웃되고 로그인 화면으로 이동해요. 카카오로 로그인한 관리자만 다시 켤 수 있어요.'
+      ? '지금은 시연 계정으로 로그인해 있어요. 끄면 바로 로그아웃되고 로그인 화면으로 이동해요. 관리자 계정 로그인은 그대로라 다시 켤 수 있어요.'
       : '모든 방문자에게 역할 전환 · 시연 콘솔 · API 흐름 패널이 사라지고 카카오 로그인만 남아요.',
     confirmLabel: '끄기',
     tone: 'danger',

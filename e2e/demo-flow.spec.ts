@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { signInAdmin } from './support/admin'
 import { acceptConfirms } from './support/confirm'
 import { pickOption } from './support/option'
 
@@ -8,7 +9,6 @@ import { pickOption } from './support/option'
 const NICKNAME = {
   보호자: '보호자 · 회원 1',
   판매자: '테스트상점 · 회원 2',
-  관리자: '관리자 · 회원 3',
 } as const
 
 async function switchRole(page: Page, role: keyof typeof NICKNAME) {
@@ -21,7 +21,9 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
   page.on('pageerror', (error) => consoleErrors.push(error.message))
   await acceptConfirms(page)
 
-  await test.step('시작: 보호자로 전환', async () => {
+  await test.step('시작: 관리자 계정 로그인 (시연 역할과 따로) → 보호자로 전환', async () => {
+    // 관리자 화면은 관리자 계정 토큰만 받는다 (BE #755). 한 번 로그인하면 재발급 쿠키로 이어진다
+    await signInAdmin(page)
     await page.goto('/console')
     await expect(page.getByText('Kidly 시연')).toBeVisible()
     await switchRole(page, '보호자')
@@ -101,7 +103,6 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await page.goto('/console/seller/apply')
     await page.getByRole('button', { name: '신청하기' }).click()
     await expect(page.getByText('심사 중')).toBeVisible()
-    await switchRole(page, '관리자')
     await page.goto('/console/admin/seller-applications')
     await page.getByRole('button', { name: '거절', exact: true }).click()
     await page.getByRole('textbox', { name: '거절 사유' }).fill('사업자 서류를 다시 확인해 주세요')
@@ -115,7 +116,6 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await page.getByRole('button', { name: '신청하기' }).click()
     await expect(page.getByText('심사 중')).toBeVisible()
 
-    await switchRole(page, '관리자')
     await page.goto('/console/admin/seller-applications')
     await page.getByRole('button', { name: '승인' }).click()
     await expect(page.getByText('승인됨')).toBeVisible()
@@ -197,7 +197,6 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await switchRole(page, '판매자')
     await page.goto('/console/seller/settlements')
     await expect(page.getByText(/주문 #\d+ · 주문상품 #\d+ · 구매확정/)).toBeVisible()
-    await switchRole(page, '관리자')
     await page.goto('/console/admin/settlements')
     // 기준일은 오늘(BE: 오늘 이후는 400) → 어제까지 구매확정분이 대상. 방금 확정한 상품을 하루 전 확정으로 옮겨 정산한다
     await expect(page.getByText(/오늘 구매확정분은 내일/).first()).toBeVisible()

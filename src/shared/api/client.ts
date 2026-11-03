@@ -27,14 +27,29 @@ type AuthHandlers = {
   onAuthFailed: () => void
 }
 
-let authHandlers: AuthHandlers = {
+/** 로그인 주체. 회원과 관리자는 토큰 · 재발급 쿠키가 따로다 (BE #736) */
+export type Principal = 'member' | 'admin'
+
+/** 관리자 API(/admin/…)는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 ADMIN 역할이 있어도 403) */
+export function principalOf(url: string | undefined): Principal {
+  return url?.startsWith('/admin/') ? 'admin' : 'member'
+}
+
+const REISSUE_PATH: Record<Principal, string> = {
+  member: '/auth/reissue',
+  admin: '/auth/admin/reissue',
+}
+
+const noAuth: AuthHandlers = {
   getAccessToken: () => null,
   onTokenReissued: () => {},
   onAuthFailed: () => {},
 }
 
-export function configureAuth(handlers: AuthHandlers) {
-  authHandlers = handlers
+const authHandlers: Record<Principal, AuthHandlers> = { member: noAuth, admin: noAuth }
+
+export function configureAuth(principal: Principal, handlers: AuthHandlers) {
+  authHandlers[principal] = handlers
 }
 
 export const apiClient = axios.create({
@@ -45,29 +60,29 @@ export const apiClient = axios.create({
   adapter: createMockAdapter(defaultAdapter),
 })
 
-let reissuing: Promise<string> | null = null
+const reissuing: Record<Principal, Promise<string> | null> = { member: null, admin: null }
 
-/** 동시에 여러 요청이 401을 받아도 재발급은 한 번만 보낸다 (Refresh Token이 매번 교체되므로) */
-export function reissueAccessToken(): Promise<string> {
-  reissuing ??= apiClient
-    .post<{ accessToken: string }>('/auth/reissue', undefined, {
+/** 동시에 여러 요청이 401을 받아도 재발급은 주체마다 한 번만 보낸다 (Refresh Token이 매번 교체되므로) */
+export function reissueAccessToken(principal: Principal = 'member'): Promise<string> {
+  reissuing[principal] ??= apiClient
+    .post<{ accessToken: string }>(REISSUE_PATH[principal], undefined, {
       skipAuth: true,
       retried: true,
       expected: { statuses: [401], reason: '재발급 쿠키 없음 (로그인 전 · 역할 전환)' },
     })
     .then((response) => {
-      authHandlers.onTokenReissued(response.data.accessToken)
+      authHandlers[principal].onTokenReissued(response.data.accessToken)
       return response.data.accessToken
     })
     .finally(() => {
-      reissuing = null
+      reissuing[principal] = null
     })
-  return reissuing
+  return reissuing[principal]
 }
 
 apiClient.interceptors.request.use((config) => {
   config.startedAt = performance.now()
-  const accessToken = authHandlers.getAccessToken()
+  const accessToken = authHandlers[principalOf(config.url)].getAccessToken()
   if (!config.skipAuth && accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
@@ -92,7 +107,7 @@ function record(config: InternalAxiosRequestConfig, response: AxiosResponse | un
   })
 }
 
-/** 토큰 sub(회원 ID)만 읽는다. 서명 검증은 서버가 한다 */
+/** 토큰 sub(회원 ID, 관리자는 "admin:7")만 읽는다. 서명 검증은 서버가 한다 */
 function actorOf(config: InternalAxiosRequestConfig): string | null {
   const payload = String(config.headers.Authorization ?? '')
     .replace('Bearer ', '')
@@ -138,12 +153,13 @@ apiClient.interceptors.response.use(
       throw error
     }
     config.retried = true
+    const principal = principalOf(config.url)
     try {
-      const accessToken = await reissueAccessToken()
+      const accessToken = await reissueAccessToken(principal)
       config.headers.Authorization = `Bearer ${accessToken}`
     } catch {
       // 재발급 실패: 로그인 상태를 정리하고 토큰 없이 한 번 더 보낸다 (공개 API는 이것으로 성공)
-      authHandlers.onAuthFailed()
+      authHandlers[principal].onAuthFailed()
       config.headers.delete('Authorization')
       config.skipAuth = true
     }

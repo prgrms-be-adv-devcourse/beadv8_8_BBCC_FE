@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router'
-import { signInAsDemo } from '@/entities/session'
+import { restoreAdminSession, signInAsDemo, useAdminSessionStore } from '@/entities/session'
 import { DEMO_ACCOUNTS } from '@/features/switch-demo-role'
 import { useApiFlowLog } from '@/shared/api'
 import { paths } from '@/shared/config'
@@ -8,7 +8,7 @@ import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { DEMO_CHARGE_AMOUNT, demoChargePath } from '../config/demo-charge'
 import { checkBeforeDemo } from '../config/preflight-deps'
-import { AUTO_DEMO_STEPS, type DemoRole } from '../config/steps'
+import { AUTO_DEMO_STEPS, AutoDemoError, type DemoRole } from '../config/steps'
 import { AUTO_DEMO_SPEEDS, type AutoDemoSpeed, useAutoDemo } from '../model/auto-demo-store'
 import type { PreflightItem } from '../model/preflight'
 import {
@@ -41,6 +41,13 @@ export function AutoDemoBar() {
     navigate: (path) => navigate(path),
     refresh: () => queryClient.invalidateQueries(),
     signIn: async (role: DemoRole) => {
+      // 관리자는 개발용 토큰으로 될 수 없다 (BE #755). 관리자 계정으로 따로 로그인한 토큰을 쓴다
+      if (role === '관리자') {
+        if (!useAdminSessionStore.getState().accessToken) await restoreAdminSession()
+        if (!useAdminSessionStore.getState().accessToken)
+          throw new AutoDemoError('관리자 화면에서 관리자 계정으로 먼저 로그인해 주세요.')
+        return
+      }
       const account = DEMO_ACCOUNTS.find((item) => item.label === role)
       if (account) await signInAsDemo(account)
     },

@@ -9,7 +9,7 @@ type SwitchDemoRoleProps = {
   onSwitched?: () => void
 }
 
-/** 시연용: 개발용 토큰(local 전용)으로 보호자 · 판매자 · 관리자를 바로 바꾼다 */
+/** 시연용: 개발용 토큰(local 전용)으로 보호자 · 판매자를 바로 바꾼다 (관리자는 관리자 계정 로그인) */
 export function SwitchDemoRole({ onSwitched }: SwitchDemoRoleProps = {}) {
   const switchRole = useSwitchDemoRole()
   const demoRoleSwitch = useDemoRoleSwitch()

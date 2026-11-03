@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ordersSeenInLogs, paymentsSeenInLogs } from '@/app/mocks/admin-handlers'
 import {
-  canGrantAdmin,
-  canRevokeAdmin,
   canSuspendMember,
   canSuspendSeller,
   toAdminMember,
@@ -52,16 +50,6 @@ describe('관리자 회원 목록', () => {
     expect(canSuspendMember(member())).toBe(true)
     expect(canSuspendMember(member({ status: 'SUSPENDED' }))).toBe(false)
     expect(canSuspendMember(member({ isAdmin: true }))).toBe(false)
-  })
-  it('관리자 지정은 활동 중인 일반 회원만', () => {
-    expect(canGrantAdmin(member())).toBe(true)
-    expect(canGrantAdmin(member({ status: 'SUSPENDED' }))).toBe(false)
-    expect(canGrantAdmin(member({ isAdmin: true }))).toBe(false)
-  })
-  it('권한 해제는 관리자만, 본인은 안 됨', () => {
-    expect(canRevokeAdmin(member({ isAdmin: true }), '3')).toBe(true)
-    expect(canRevokeAdmin(member({ isAdmin: true }), '2')).toBe(false)
-    expect(canRevokeAdmin(member(), '3')).toBe(false)
   })
   it('판매자 자격 정지는 판매 가능한 판매자만 (판매자가 아니면 불가)', () => {
     expect(canSuspendSeller(member())).toBe(true)

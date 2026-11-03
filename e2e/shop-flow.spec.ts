@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { signInAdmin } from './support/admin'
 import { acceptConfirms } from './support/confirm'
 import { pickOption } from './support/option'
 
@@ -8,7 +9,6 @@ import { pickOption } from './support/option'
 const NICKNAME = {
   보호자: '보호자 · 회원 1',
   판매자: '테스트상점 · 회원 2',
-  관리자: '관리자 · 회원 3',
 } as const
 
 /** 가짜 백엔드가 발급하는 저장 주소. 확장자는 발급 때 보낸 형식(줄인 결과 JPG)에서 정해진다 */
@@ -79,10 +79,11 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('heading', { name: '장바구니' })).toBeVisible()
   })
 
-  await test.step('관리자 영역: 관리자가 아니면 안내', async () => {
+  await test.step('관리자 영역: 관리자 계정으로 로그인하기 전에는 로그인 폼 (회원 역할과 따로)', async () => {
     await page.goto('/admin')
     await switchRole(page, '보호자')
-    await expect(page.getByText('관리자 계정으로 볼 수 있는 화면이에요.')).toBeVisible()
+    await expect(page.getByRole('heading', { name: '관리자 로그인' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '대시보드' })).toHaveCount(0)
   })
 
   await test.step('판매자 센터: 사진 업로드(목) → 상품 등록 → 판매 시작 (실제 API)', async () => {
@@ -546,14 +547,13 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
   })
 
   await test.step('관리자: 회원 관리 · 판매자 자격 정지 · 전체 주문 · 결제 · 정산 실행', async () => {
-    await switchRole(page, '관리자')
-    await page.goto('/admin')
+    await signInAdmin(page)
     // 대시보드: 오늘 숫자 · 처리할 일
     await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible()
     await expect(page.getByText('오늘 주문', { exact: true })).toBeVisible()
     await page.getByRole('link', { name: '회원 관리' }).click()
     await expect(page.getByRole('heading', { name: '회원 관리' })).toBeVisible()
-    // 목록은 찾기만, 정지 · 권한은 회원 상세에서 (닉네임 링크는 표 안에서 찾는다: 탭 · 메뉴에 같은 이름이 있다)
+    // 목록은 찾기만, 정지는 회원 상세에서 (닉네임 링크는 표 안에서 찾는다: 탭 · 메뉴에 같은 이름이 있다)
     const memberTable = page.getByRole('table', { name: '회원' })
     await page.getByRole('tab', { name: '판매자', exact: true }).click()
     await page.getByRole('textbox', { name: '회원 검색' }).fill('테스트')
@@ -566,29 +566,6 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     const memberStatus = page.getByRole('region', { name: '상태 · 권한' })
     await expect(memberStatus.getByText('자격 정지', { exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: '판매자 자격 정지' })).toHaveCount(0)
-
-    // 관리자 지정 · 해제 (BE #356): 관리자는 관리자 탭에서만 보이고, 본인은 해제할 수 없다
-    await page.getByRole('main').getByRole('link', { name: '회원 관리' }).click()
-    await page.getByRole('textbox', { name: '회원 검색' }).fill('')
-    await page.getByRole('button', { name: '검색' }).click()
-    await page.getByRole('tab', { name: '보호자', exact: true }).click()
-    const guardian = memberTable.getByRole('link', { name: '보호자' })
-    await guardian.click()
-    await expect(page.getByRole('heading', { name: '회원 #1' })).toBeVisible()
-    await page.getByRole('button', { name: '관리자 지정' }).click()
-    await expect(page.getByRole('button', { name: '권한 해제' })).toBeVisible()
-    await page.getByRole('main').getByRole('link', { name: '회원 관리' }).click()
-    await expect(guardian).toHaveCount(0)
-    await page.getByRole('tab', { name: '관리자', exact: true }).click()
-    await memberTable.getByRole('link', { name: '관리자' }).click()
-    await expect(page.getByRole('heading', { name: '회원 #3' })).toBeVisible()
-    await expect(page.getByRole('button', { name: '권한 해제' })).toHaveCount(0)
-    await page.getByRole('main').getByRole('link', { name: '회원 관리' }).click()
-    await guardian.click()
-    await page.getByRole('button', { name: '권한 해제' }).click()
-    await expect(page.getByRole('button', { name: '관리자 지정' })).toBeVisible()
-    await page.getByRole('main').getByRole('link', { name: '회원 관리' }).click()
-    await expect(guardian).toHaveCount(0)
 
     await page.getByRole('link', { name: '상품 관리' }).click()
     // 목록은 실제 GET /products(BE #288), 관리자 판매 중지는 아직 목 → 버튼 옆 준비 중(목) 배지.

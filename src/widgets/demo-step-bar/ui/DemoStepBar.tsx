@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router'
-import { hasRole, ROLE_LABEL, useSessionStore } from '@/entities/session'
+import { ROLE_LABEL, useAdminSessionStore, useSessionStore, viewerRoles } from '@/entities/session'
 import { paths } from '@/shared/config'
 import { cn } from '@/shared/lib'
 import { DEMO_STEPS } from '../config/steps'
@@ -7,6 +7,8 @@ import { DEMO_STEPS } from '../config/steps'
 /** 시연 단계 ①~⑦ = 메뉴. 지금 역할로 쓸 수 없는 화면은 흐리게 표시한다 */
 export function DemoStepBar() {
   const user = useSessionStore((state) => state.user)
+  const isAdminSignedIn = useAdminSessionStore((state) => state.accessToken !== null)
+  const roles = viewerRoles(user, isAdminSignedIn)
 
   return (
     <nav className="flex flex-wrap gap-1 border-b bg-white px-4 py-2">
@@ -37,7 +39,7 @@ export function DemoStepBar() {
                 cn(
                   'rounded px-1.5 py-0.5 text-xs',
                   isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
-                  !isActive && !hasRole(user, link.role) && 'text-muted-foreground opacity-60',
+                  !isActive && !roles.includes(link.role) && 'text-muted-foreground opacity-60',
                 )
               }
             >

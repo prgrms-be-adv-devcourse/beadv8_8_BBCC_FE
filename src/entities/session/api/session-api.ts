@@ -1,5 +1,6 @@
 import { apiClient, expectShape } from '@/shared/api'
 import type {
+  AdminLoginRequestDto,
   DevTokenRequestDto,
   MemberDto,
   MemberUpdateRequestDto,
@@ -19,6 +20,13 @@ export const sessionApi = {
       .then(expectShape(tokenShape)),
   /** 쿠키가 없어도 204 */
   logout: () => apiClient.post<void>('/auth/logout', undefined, { skipAuth: true }),
+  /** 관리자 계정 로그인. 실패(없는 이메일 · 틀린 비밀번호 · 비활성)는 모두 같은 401. Refresh Token은 admin_refresh_token 쿠키로 온다 */
+  loginAsAdmin: (request: AdminLoginRequestDto) =>
+    apiClient
+      .post<TokenResponseDto>('/auth/admin/login', request, { skipAuth: true })
+      .then(expectShape(tokenShape)),
+  /** 쿠키가 없어도 204 */
+  logoutAdmin: () => apiClient.post<void>('/auth/admin/logout', undefined, { skipAuth: true }),
   /** 개발용 토큰은 회원 행이 없을 수 있어 404가 올 수 있다 (흐름 패널에 "예상됨") */
   getMe: () =>
     apiClient

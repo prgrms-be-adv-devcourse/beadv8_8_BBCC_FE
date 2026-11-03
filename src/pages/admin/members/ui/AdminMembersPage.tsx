@@ -49,8 +49,8 @@ export function AdminMembersPage() {
     <div className="shop-look space-y-5">
       <PageHeader
         title="회원 관리"
-        description="회원을 찾아 상세에서 이용 정지 · 판매자 자격 정지 · 관리자 지정을 해요. 관리자는 관리자 탭에서만 보이고 탈퇴 회원은 보이지 않아요."
-        note="이용 정지 → 로그인 · 재발급 막힘. 판매자 자격 정지 → seller.changed (정지 후 상품 처리는 보류, 기획서 2.1). 관리자 지정 · 해제 → 다음 토큰 재발급부터 ADMIN 역할 반영 (BE #356)"
+        description="회원을 찾아 상세에서 이용 정지 · 판매자 자격 정지를 해요. 관리자는 관리자 탭에서만 보이고 탈퇴 회원은 보이지 않아요."
+        note="이용 정지 → 로그인 · 재발급 막힘. 판매자 자격 정지 → seller.changed (정지 후 상품 처리는 보류, 기획서 2.1)"
       />
       <div
         role="tablist"

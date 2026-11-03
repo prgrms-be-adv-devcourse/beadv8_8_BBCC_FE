@@ -1,4 +1,4 @@
-/** 로그인 · 재발급 · 개발용 토큰 응답 */
+/** 로그인 · 재발급 · 개발용 토큰 응답 (관리자 로그인 · 재발급도 같다) */
 export type TokenResponseDto = { accessToken: string }
 
 /** GET /members/me (백엔드 MemberResponse) */
@@ -17,3 +17,6 @@ export type DevTokenRequestDto = { memberId: number; nickname?: string; roles: s
 
 /** PATCH /members/me (지금은 닉네임만, 앞뒤 공백은 서버도 뺀다) */
 export type MemberUpdateRequestDto = { nickname: string }
+
+/** POST /auth/admin/login (백엔드 AdminLoginRequest) */
+export type AdminLoginRequestDto = { email: string; password: string }

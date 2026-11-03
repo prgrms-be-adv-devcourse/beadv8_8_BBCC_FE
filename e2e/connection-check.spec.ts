@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { signInAdmin } from './support/admin'
 
 // 시연 콘솔 "백엔드 연결 점검": 실제 API 조회를 차례로 불러 결과 표를 채운다 (가짜 백엔드).
 // 역할이 없는 API는 건너뛰고, 목 조회 API는 목을 거치지 않고 실제 서버에 물어본다
@@ -21,9 +22,10 @@ test('연결 점검: 조회 API 결과 표 · 역할 건너뜀 · 목 API 백엔
   await expect(page.getByRole('row', { name: '점검 상품 상세' })).toContainText('통과')
   await expect(page.getByRole('row', { name: '점검 회원 관리' })).toContainText('ADMIN 역할 필요')
 
-  // 관리자로 바꾸면 관리자 API도 부른다
-  await page.getByRole('button', { name: '관리자', exact: true }).first().click()
-  await expect(page.getByText('관리자 · 회원 3')).toBeVisible()
+  // 관리자 계정으로 로그인하면(회원 역할과 따로) 관리자 API도 부른다
+  await signInAdmin(page)
+  await page.goto('/console')
+  await page.getByRole('link', { name: '백엔드 연결 점검' }).click()
   await page.getByRole('button', { name: '전체 점검 실행' }).click()
   await expect(page.getByRole('row', { name: '점검 회원 관리' })).toContainText('통과')
   await expect(summary).toContainText('실패 0')

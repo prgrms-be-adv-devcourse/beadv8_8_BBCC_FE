@@ -5,6 +5,15 @@ export function hasRole(user: SessionUser | null, role: Role): boolean {
   return user?.roles.includes(role) ?? false
 }
 
+/**
+ * 화면 노출용 역할: 회원 토큰의 역할 + 관리자 로그인.
+ * BE #755부터 관리자 API는 관리자 토큰만 받으므로 회원 토큰의 ADMIN은 세지 않는다
+ */
+export function viewerRoles(user: SessionUser | null, isAdminSignedIn: boolean): Role[] {
+  const memberRoles = (user?.roles ?? []).filter((role) => role !== 'ADMIN')
+  return isAdminSignedIn ? [...memberRoles, 'ADMIN'] : memberRoles
+}
+
 export function describeUser(user: SessionUser): string {
   return `${user.nickname} · 회원 ${user.memberId} (${user.roles.join(' · ')})`
 }

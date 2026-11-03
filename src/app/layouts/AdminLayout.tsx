@@ -1,7 +1,9 @@
 import { Link, NavLink, Outlet } from 'react-router'
-import { hasRole, ROLE_LABEL, useSessionStore } from '@/entities/session'
-import { paths, useDemoRoleSwitch } from '@/shared/config'
+import { useAdminSessionStore } from '@/entities/session'
+import { AdminLogoutButton } from '@/features/logout'
+import { paths } from '@/shared/config'
 import { cn } from '@/shared/lib'
+import { AdminGate } from './AdminGate'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { TopProgressBar } from './TopProgressBar'
 import { SessionGate } from './SessionGate'
@@ -81,9 +83,7 @@ function AdminMenu({ className }: { className?: string }) {
 
 /** 관리자: 쇼핑 · 판매자 센터와 같은 흰 바탕 · 머리말, 왼쪽 묶음 메뉴(휴대폰은 위) + 업무 화면 */
 export function AdminLayout() {
-  const user = useSessionStore((state) => state.user)
-  const blocked = !hasRole(user, 'ADMIN')
-  const demoRoleSwitch = useDemoRoleSwitch()
+  const isAdminSignedIn = useAdminSessionStore((state) => state.accessToken !== null)
 
   return (
     <div className="bg-paper flex min-h-svh flex-col">
@@ -109,34 +109,16 @@ export function AdminLayout() {
             >
               쇼핑 홈
             </Link>
+            {isAdminSignedIn && <AdminLogoutButton />}
           </div>
         </header>
         <div className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 content-start items-start gap-6 px-4 py-6 md:px-6 md:py-8 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-14">
           <AdminMenu className="border-rule max-lg:-mx-4 max-lg:border-b max-lg:px-4 lg:sticky lg:top-28" />
           <main className="min-w-0">
             <SessionGate>
-              {blocked ? (
-                <section className="border-rule max-w-xl space-y-2 rounded-lg border p-6">
-                  <h1 className="text-section">
-                    {ROLE_LABEL.ADMIN} 계정으로 볼 수 있는 화면이에요.
-                  </h1>
-                  {demoRoleSwitch ? (
-                    <p className="text-ink-2 text-[15px]">
-                      위의 시연 역할에서 {ROLE_LABEL.ADMIN}를 고르세요.
-                    </p>
-                  ) : (
-                    <p className="text-ink-2 text-[15px]">
-                      {ROLE_LABEL.ADMIN} 계정으로{' '}
-                      <Link to={paths.login} className="shop-link">
-                        로그인
-                      </Link>
-                      하세요.
-                    </p>
-                  )}
-                </section>
-              ) : (
+              <AdminGate>
                 <Outlet />
-              )}
+              </AdminGate>
             </SessionGate>
           </main>
         </div>
