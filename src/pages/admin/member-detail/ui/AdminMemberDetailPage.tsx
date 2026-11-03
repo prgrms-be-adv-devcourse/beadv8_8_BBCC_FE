@@ -22,7 +22,7 @@ const ROW_ACTION_CLASS =
   'border-rule text-ink-2 hover:border-field-edge inline-flex h-9 shrink-0 items-center rounded-md border px-3 text-[13px] font-semibold transition-colors max-lg:h-11'
 
 /**
- * 회원 상세: 회원 정보 → 상태 · 권한 (「라벨 · 값 · 동작」 한 줄씩).
+ * 회원 상세: 회원 정보 → 상태 (「라벨 · 값 · 동작」 한 줄씩).
  * 정지 사유 입력은 그 줄 아래에서 펼친다
  */
 export function AdminMemberDetailPage() {
@@ -54,8 +54,8 @@ export function AdminMemberDetailPage() {
       </Link>
       <PageHeader
         title={`회원 #${memberId}`}
-        description="이용을 정지하거나 판매자 자격을 정지하고, 관리자를 지정 · 해제해요. 권한을 바꾼 회원은 새로고침해야 메뉴가 바뀌어요."
-        note="회원 하나 API가 없어 목록 API(filter=ALL · ADMIN, keyword=회원 번호)에서 찾아요. 이용 정지 → 로그인 · 재발급 막힘. 판매자 자격 정지 → seller.changed."
+        description="이용을 정지하거나 판매자 자격을 정지해요. 권한을 바꾼 회원은 새로고침해야 메뉴가 바뀌어요."
+        note="회원 하나 API가 없어 목록 API(filter=ALL, keyword=회원 번호)에서 찾아요. 이용 정지 → 로그인 · 재발급 막힘. 판매자 자격 정지 → seller.changed."
       />
       {isPending && <ListSkeleton rows={2} />}
       {error && <StateMessage tone="error">{getErrorMessage(error)}</StateMessage>}
@@ -82,8 +82,8 @@ export function AdminMemberDetailPage() {
             </dl>
           </section>
 
-          <section aria-label="상태 · 권한" className="space-y-3">
-            <h2 className="text-section">상태 · 권한</h2>
+          <section aria-label="상태" className="space-y-3">
+            <h2 className="text-section">상태</h2>
             <dl className="border-rule divide-rule divide-y overflow-hidden rounded-lg border">
               <div>
                 <InfoRow
@@ -151,7 +151,6 @@ export function AdminMemberDetailPage() {
                   </div>
                 )}
               </div>
-              <InfoRow label="권한">{member.isAdmin ? '관리자' : '일반 회원'}</InfoRow>
             </dl>
           </section>
         </>

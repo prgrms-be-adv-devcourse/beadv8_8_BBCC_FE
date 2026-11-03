@@ -563,7 +563,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByRole('button', { name: '판매자 자격 정지' }).click()
     await page.getByRole('textbox', { name: '판매자 정지 사유' }).fill('정책 위반 상품 반복 등록')
     await page.getByRole('button', { name: '자격 정지하기' }).click()
-    const memberStatus = page.getByRole('region', { name: '상태 · 권한' })
+    const memberStatus = page.getByRole('region', { name: '상태' })
     await expect(memberStatus.getByText('자격 정지', { exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: '판매자 자격 정지' })).toHaveCount(0)
 

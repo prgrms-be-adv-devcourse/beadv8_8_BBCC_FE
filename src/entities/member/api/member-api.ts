@@ -3,7 +3,7 @@ import type { AdminMemberDto, SuspendRequestDto } from './member.dto'
 import { adminMemberPageShape } from './member.shape'
 
 export const adminMemberApi = {
-  /** filter ALL이면 일반 회원 전체, ADMIN이면 관리자만. keyword는 회원 번호 · 닉네임 · 이메일 */
+  /** filter ALL · BUYER · SELLER · SUSPENDED. keyword는 회원 번호 · 닉네임 · 이메일 */
   list: (filter: string, keyword: string) =>
     apiClient
       .get<Page<AdminMemberDto>>('/admin/members', {

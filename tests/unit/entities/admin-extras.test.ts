@@ -34,7 +34,7 @@ const MEMBER_DTO = {
 }
 
 const member = (patch: Partial<AdminMember> = {}): AdminMember => ({
-  ...toAdminMember(MEMBER_DTO, false),
+  ...toAdminMember(MEMBER_DTO),
   ...patch,
 })
 
@@ -42,14 +42,9 @@ describe('관리자 회원 목록', () => {
   it('toAdminMember: 숫자 ID → 문자열', () => {
     expect(member().id).toBe('2')
   })
-  it('toAdminMember: 관리자 탭(filter=ADMIN)에서 읽은 행만 관리자', () => {
-    expect(toAdminMember(MEMBER_DTO, true).isAdmin).toBe(true)
-    expect(toAdminMember(MEMBER_DTO, false).isAdmin).toBe(false)
-  })
-  it('이용 정지는 활동 중인 일반 회원만 (관리자는 서버가 409)', () => {
+  it('이용 정지는 활동 중인 회원만', () => {
     expect(canSuspendMember(member())).toBe(true)
     expect(canSuspendMember(member({ status: 'SUSPENDED' }))).toBe(false)
-    expect(canSuspendMember(member({ isAdmin: true }))).toBe(false)
   })
   it('판매자 자격 정지는 판매 가능한 판매자만 (판매자가 아니면 불가)', () => {
     expect(canSuspendSeller(member())).toBe(true)

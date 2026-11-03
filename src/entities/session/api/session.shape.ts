@@ -6,7 +6,7 @@ export const memberShape = obj({
   id: num,
   nickname: str,
   email: nullable(str),
-  roles: arr(oneOf(['BUYER', 'SELLER', 'ADMIN'])),
+  roles: arr(oneOf(['BUYER', 'SELLER'])),
   sellerStatus: nullable(oneOf(['ACTIVE', 'SUSPENDED'])),
   providers: arr(str),
 })
