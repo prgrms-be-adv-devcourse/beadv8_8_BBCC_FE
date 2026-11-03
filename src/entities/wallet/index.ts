@@ -22,6 +22,7 @@ export {
 export {
   cancelChargeNoticeOf,
   canCancelCharge,
+  hasBalanceToRefund,
   isAwaitingPayment,
   isChargeAlreadyEnded,
   isChargeCancelling,
