@@ -30,7 +30,7 @@ type AuthHandlers = {
 /** 로그인 주체. 회원과 관리자는 토큰 · 재발급 쿠키가 따로다 (BE #736) */
 export type Principal = 'member' | 'admin'
 
-/** 관리자 API(/admin/…)는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 ADMIN 역할이 있어도 403) */
+/** 관리자 API(/admin/…)는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 403) */
 export function principalOf(url: string | undefined): Principal {
   return url?.startsWith('/admin/') ? 'admin' : 'member'
 }

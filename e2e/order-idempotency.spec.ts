@@ -7,7 +7,7 @@ test('주문 멱등키: 같은 키 · 같은 내용은 주문 하나, 다른 내
   request,
 }) => {
   const token = await request
-    .post(`${API}/dev/tokens`, { data: { memberId: 3, nickname: '멱등 확인', roles: ['USER'] } })
+    .post(`${API}/dev/tokens`, { data: { memberId: 3, nickname: '멱등 확인', roles: ['BUYER'] } })
     .then((res) => res.json())
   const auth = { authorization: `Bearer ${token.accessToken}` }
   const product = await request.get(`${API}/products/1`).then((res) => res.json())

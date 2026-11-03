@@ -49,11 +49,10 @@ const ledger = (memberId, type, amount, refId) =>
     refId,
     createdAt: now(),
   })
-// 관리자 회원 목록용 (기획서 7.1: 회원 1 보호자 · 2 판매자 · 3 관리자). 관리자는 filter=ADMIN에서만 나온다 (BE #356)
+// 관리자 회원 목록용 (기획서 7.1: 회원 1 보호자 · 2 판매자 · 3). 관리자는 회원이 아니라 관리자 계정이다 (BE #762)
 const members = {
   1: {
     nickname: '보호자',
-    role: 'USER',
     status: 'ACTIVE',
     sellerStatus: null,
     suspendReason: null,
@@ -61,7 +60,6 @@ const members = {
   },
   2: {
     nickname: '테스트상점',
-    role: 'USER',
     status: 'ACTIVE',
     sellerStatus: 'ACTIVE',
     suspendReason: null,
@@ -69,7 +67,6 @@ const members = {
   },
   3: {
     nickname: '관리자',
-    role: 'ADMIN',
     status: 'ACTIVE',
     sellerStatus: null,
     suspendReason: null,
@@ -221,10 +218,14 @@ http
       }
       return send(res, 204)
     }
-    if (r('POST', /^\/dev\/tokens$/))
+    if (r('POST', /^\/dev\/tokens$/)) {
+      // BE Role은 BUYER · SELLER뿐 (BE #762). 그 밖의 값은 읽지 못해 400
+      if (!body.roles.every((role) => ['BUYER', 'SELLER'].includes(role)))
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
       return send(res, 200, {
         accessToken: `${b64({ alg: 'none' })}.${b64({ sub: String(body.memberId), nickname: body.nickname || '회원' + body.memberId, roles: body.roles })}.sig`,
       })
+    }
     if (r('POST', /^\/auth\/reissue$/))
       return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
     if (r('POST', /^\/auth\/logout$/)) return send(res, 204)
@@ -1036,11 +1037,12 @@ http
     }
     if (r('GET', /^\/admin\/members$/)) {
       const filter = url.searchParams.get('filter') || 'ALL'
+      // BE AdminMemberFilter. ADMIN은 BE #762에서 빠져 400
+      if (!['ALL', 'BUYER', 'SELLER', 'SUSPENDED'].includes(filter))
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
       const keyword = (url.searchParams.get('keyword') || '').trim()
       const rows = Object.entries(members)
-        .filter(([, m]) => (filter === 'ADMIN') === (m.role === 'ADMIN'))
-        // 응답에는 역할이 없다 (BE AdminMemberSummaryResponse)
-        .map(([id, { role: _role, ...m }]) => ({ id: +id, ...m, createdAt: '2026-10-01T10:00:00' }))
+        .map(([id, m]) => ({ id: +id, ...m, createdAt: '2026-10-01T10:00:00' }))
         .filter((m) =>
           filter === 'SUSPENDED'
             ? m.status === 'SUSPENDED'
@@ -1055,12 +1057,12 @@ http
     }
     if ((x = r('POST', /^\/admin\/members\/(\d+)\/suspend$/))) {
       const m = members[x[1]]
-      if (!m || m.status !== 'ACTIVE' || m.role === 'ADMIN')
+      if (!m || m.status !== 'ACTIVE')
         return problem(
           res,
           409,
           '정지할 수 없는 회원입니다',
-          '이미 정지 · 탈퇴했거나 관리자인 회원입니다.',
+          '이미 정지 · 탈퇴한 회원입니다.',
           req.url,
         )
       Object.assign(m, { status: 'SUSPENDED', suspendReason: body.reason, suspendedAt: now() })

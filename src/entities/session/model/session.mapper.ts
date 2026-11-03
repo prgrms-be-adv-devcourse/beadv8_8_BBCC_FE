@@ -1,12 +1,24 @@
 import type { DevTokenRequestDto, MemberDto } from '../api/session.dto'
-import type { DemoAccount, Member, Role, SellerStatus, SessionUser } from './session'
+import {
+  MEMBER_ROLES,
+  type DemoAccount,
+  type Member,
+  type MemberRole,
+  type SellerStatus,
+  type SessionUser,
+} from './session'
+
+/** BE #762 배포 전에는 ADMIN이 올 수 있다. 모르는 역할은 버린다 */
+function toMemberRoles(roles: string[]): MemberRole[] {
+  return roles.filter((role): role is MemberRole => MEMBER_ROLES.includes(role as MemberRole))
+}
 
 export function toMember(dto: MemberDto): Member {
   return {
     id: String(dto.id),
     nickname: dto.nickname,
     email: dto.email ?? null,
-    roles: dto.roles as Role[],
+    roles: toMemberRoles(dto.roles),
     sellerStatus: dto.sellerStatus as SellerStatus | null,
     providers: dto.providers,
   }
@@ -20,11 +32,11 @@ export function toSessionUser(accessToken: string): SessionUser {
       char.charCodeAt(0),
     ),
   )
-  const claims = JSON.parse(json) as { sub: string; nickname?: string; roles?: Role[] }
+  const claims = JSON.parse(json) as { sub: string; nickname?: string; roles?: string[] }
   return {
     memberId: claims.sub,
     nickname: claims.nickname ?? `회원${claims.sub}`,
-    roles: claims.roles ?? [],
+    roles: toMemberRoles(claims.roles ?? []),
   }
 }
 

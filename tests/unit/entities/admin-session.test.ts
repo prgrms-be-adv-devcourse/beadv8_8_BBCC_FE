@@ -21,7 +21,7 @@ const tokenResponse = (accessToken: string) => ({
 })
 
 describe('viewerRoles: 화면 노출용 역할 (BE #755부터 관리자는 회원 역할이 아니라 관리자 로그인)', () => {
-  const user = (roles: ('BUYER' | 'SELLER' | 'ADMIN')[]) => ({
+  const user = (roles: ('BUYER' | 'SELLER')[]) => ({
     memberId: '3',
     nickname: '회원3',
     roles,
@@ -32,8 +32,7 @@ describe('viewerRoles: 화면 노출용 역할 (BE #755부터 관리자는 회�
     expect(viewerRoles(null, true)).toEqual(['ADMIN'])
   })
 
-  it('회원 토큰의 ADMIN 역할은 관리자 API에서 403이므로 세지 않는다', () => {
-    expect(viewerRoles(user(['ADMIN']), false)).toEqual([])
+  it('관리자로 로그인하지 않았으면 회원 역할만 (회원 토큰의 ADMIN은 매퍼가 버린다)', () => {
     expect(viewerRoles(user(['BUYER', 'SELLER']), false)).toEqual(['BUYER', 'SELLER'])
     expect(viewerRoles(null, false)).toEqual([])
   })

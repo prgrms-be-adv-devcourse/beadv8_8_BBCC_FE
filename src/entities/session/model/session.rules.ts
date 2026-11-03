@@ -1,16 +1,13 @@
-import type { Role, SessionUser } from './session'
+import type { MemberRole, Role, SessionUser } from './session'
 
 /** 메뉴 노출용. 권한 검증은 서버가 한다 */
-export function hasRole(user: SessionUser | null, role: Role): boolean {
+export function hasRole(user: SessionUser | null, role: MemberRole): boolean {
   return user?.roles.includes(role) ?? false
 }
 
-/**
- * 화면 노출용 역할: 회원 토큰의 역할 + 관리자 로그인.
- * BE #755부터 관리자 API는 관리자 토큰만 받으므로 회원 토큰의 ADMIN은 세지 않는다
- */
+/** 화면 노출용 역할: 회원 토큰의 역할 + 관리자 계정 로그인 (BE #755) */
 export function viewerRoles(user: SessionUser | null, isAdminSignedIn: boolean): Role[] {
-  const memberRoles = (user?.roles ?? []).filter((role) => role !== 'ADMIN')
+  const memberRoles = user?.roles ?? []
   return isAdminSignedIn ? [...memberRoles, 'ADMIN'] : memberRoles
 }
 

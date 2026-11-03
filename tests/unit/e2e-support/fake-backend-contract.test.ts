@@ -276,11 +276,14 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     })
   })
 
-  it('관리자 탭 (BE #356)', async () => {
-    const admins = await call('GET', '/admin/members?filter=ADMIN', 3)
-    expectContract(admins.data, adminMemberPageShape)
-    expect(admins.data.content.map((m: { id: number }) => m.id)).toEqual([3])
-    expect(admins.data.content[0]).not.toHaveProperty('role')
+  it('회원에는 관리자 역할이 없다 (BE #762)', async () => {
+    expect((await call('GET', '/admin/members?filter=ADMIN', 3)).status).toBe(400)
+    const all = await call('GET', '/admin/members?filter=ALL', 3)
+    expectContract(all.data, adminMemberPageShape)
+    expect(all.data.content.map((m: { id: number }) => m.id)).toContain(3)
+    expect(all.data.content[0]).not.toHaveProperty('role')
+    const devAdmin = await call('POST', '/dev/tokens', null, { memberId: 3, roles: ['ADMIN'] })
+    expect(devAdmin.status).toBe(400)
   })
 
   it('관리자 로그인 · 재발급 · 로그아웃 (BE #736)', async () => {
@@ -310,12 +313,8 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('POST', '/auth/admin/logout', null)).status).toBe(204)
   })
 
-  it('관리자 API는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 ADMIN 역할이 있어도 403)', async () => {
-    const memberAdmin = await call('POST', '/dev/tokens', null, { memberId: 3, roles: ['ADMIN'] })
-    const response = await fetch(`${BASE}/admin/members`, {
-      headers: { authorization: `Bearer ${memberAdmin.data.accessToken}` },
-    })
-    expect(response.status).toBe(403)
+  it('관리자 API는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 403)', async () => {
+    expect((await call('GET', '/admin/members', 1)).status).toBe(403)
     expect((await call('GET', '/admin/members', null)).status).toBe(401)
     expect((await call('GET', '/admin/members', 3)).status).toBe(200)
   })

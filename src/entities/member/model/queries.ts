@@ -15,21 +15,13 @@ export function useAdminMembersQuery(filter: MemberFilter, keyword: string) {
     queryFn: () => adminMemberApi.list(filter, keyword),
     select: (page) => ({
       ...page,
-      content: page.content.map((dto) => toAdminMember(dto, filter === 'ADMIN')),
+      content: page.content.map(toAdminMember),
     }),
   })
 }
 
-/**
- * 회원 한 명 (상세 화면). 회원 하나 API가 없어 회원 번호로 일반 · 관리자 목록을 함께 찾는다
- * (관리자는 filter=ADMIN에서만 나오고, 관리자로 지정하면 일반 목록에서 빠진다)
- */
+/** 회원 한 명 (상세 화면). 회원 하나 API가 없어 전체 목록을 회원 번호로 찾는다 */
 export function useAdminMemberQuery(memberId: string) {
-  const general = useAdminMembersQuery('ALL', memberId)
-  const admins = useAdminMembersQuery('ADMIN', memberId)
-  return {
-    member: findAdminMember(general.data?.content, admins.data?.content, memberId),
-    isPending: general.isPending || admins.isPending,
-    error: general.error ?? admins.error,
-  }
+  const { data, isPending, error } = useAdminMembersQuery('ALL', memberId)
+  return { member: findAdminMember(data?.content, memberId), isPending, error }
 }

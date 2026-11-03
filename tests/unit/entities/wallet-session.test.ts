@@ -94,7 +94,6 @@ describe('세션 역할', () => {
   it('메뉴 노출용 역할 확인', () => {
     const user = { memberId: '2', nickname: '테스트상점', roles: ['BUYER', 'SELLER'] as const }
     expect(hasRole({ ...user, roles: [...user.roles] }, 'SELLER')).toBe(true)
-    expect(hasRole({ ...user, roles: [...user.roles] }, 'ADMIN')).toBe(false)
     expect(hasRole(null, 'BUYER')).toBe(false)
   })
 })
@@ -115,5 +114,24 @@ describe('토큰 → 로그인 사용자', () => {
     const { toSessionUser } = await import('@/entities/session/model/session.mapper')
     const payload = Buffer.from(JSON.stringify({ sub: '7' })).toString('base64url')
     expect(toSessionUser(`h.${payload}.s`)).toEqual({ memberId: '7', nickname: '회원7', roles: [] })
+  })
+  it('회원 역할은 BUYER · SELLER만. BE #762 배포 전 토큰의 ADMIN 등 모르는 역할은 버린다', async () => {
+    const { toSessionUser } = await import('@/entities/session/model/session.mapper')
+    const payload = Buffer.from(
+      JSON.stringify({ sub: '3', nickname: '관리자', roles: ['BUYER', 'ADMIN'] }),
+    ).toString('base64url')
+    expect(toSessionUser(`h.${payload}.s`).roles).toEqual(['BUYER'])
+  })
+  it('내 정보 roles도 BUYER · SELLER만 남긴다', async () => {
+    const { toMember } = await import('@/entities/session/model/session.mapper')
+    const member = toMember({
+      id: 3,
+      nickname: '관리자',
+      email: null,
+      roles: ['ADMIN', 'SELLER'],
+      sellerStatus: 'ACTIVE',
+      providers: [],
+    })
+    expect(member.roles).toEqual(['SELLER'])
   })
 })
