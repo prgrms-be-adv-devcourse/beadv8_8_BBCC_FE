@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { signInAdmin } from './support/admin'
 
 // 관리자 상품 기준 데이터: 항목(팔레트) 만들기 → 목록 값 더하기, 실측 항목 만들기 (BE #405),
 // 상품 유형 만들기 (BE #424), 카테고리 만들기 (BE #425).
@@ -11,10 +12,7 @@ const RUN = String(Date.now())
 test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 · 상품 유형 · 카테고리 만들기', async ({
   page,
 }) => {
-  await page.goto('/')
-  await page.getByRole('button', { name: '관리자', exact: true }).first().click()
-  await expect(page.getByText('관리자 · 회원 3')).toBeVisible()
-  await page.goto('/admin')
+  await signInAdmin(page)
   // 기준 데이터는 종류마다 메뉴 · 목록 · 만들기 화면이 따로 있다 (목록 · 뒤로 링크와 이름이 겹쳐 메뉴 안에서 찾는다)
   const menu = page.getByRole('navigation', { name: '관리자 메뉴' })
   await menu.getByRole('link', { name: '항목 · 목록 값' }).click()

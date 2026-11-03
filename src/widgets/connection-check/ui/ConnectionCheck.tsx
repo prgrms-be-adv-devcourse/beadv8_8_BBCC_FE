@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { useSessionStore } from '@/entities/session'
+import {
+  restoreAdminSession,
+  useAdminSessionStore,
+  useSessionStore,
+  viewerRoles,
+} from '@/entities/session'
 import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { Card, CardTitle } from '@/shared/ui/card'
@@ -51,9 +56,12 @@ export function ConnectionCheck() {
   const run = async () => {
     setRunning(true)
     setResults({})
+    // 관리자 로그인은 관리자 화면에 들어갈 때 복원하므로, 아직이면 여기서 재발급 쿠키로 확인한다
+    if (useAdminSessionStore.getState().status === 'idle') await restoreAdminSession()
+    const isAdminSignedIn = useAdminSessionStore.getState().accessToken !== null
     await runConnectionChecks(
       CONNECTION_CHECKS,
-      { loggedIn: user !== null, roles: user?.roles ?? [] },
+      { loggedIn: user !== null, roles: viewerRoles(user, isAdminSignedIn) },
       (result) => setResults((previous) => ({ ...previous, [result.id]: result })),
     )
     setRunning(false)
@@ -83,7 +91,8 @@ export function ConnectionCheck() {
         </div>
         <p className="text-muted-foreground text-sm">
           조회(GET)만 차례로 불러요. 앞 결과의 ID로 상세를 이어서 부르고, 지금 역할로 못 부르는
-          API는 건너뛰어요. 역할을 바꿔 다시 실행하면 판매자 · 관리자 API도 볼 수 있어요.
+          API는 건너뛰어요. 역할을 바꾸거나 관리자 화면에서 관리자로 로그인한 뒤 다시 실행하면
+          판매자 · 관리자 API도 볼 수 있어요.
         </p>
         {done > 0 && (
           <p role="status" aria-label="점검 결과" className="text-sm font-medium">

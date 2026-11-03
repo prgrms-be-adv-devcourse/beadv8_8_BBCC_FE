@@ -1,4 +1,4 @@
-export { apiClient, configureAuth, reissueAccessToken } from './client'
+export { apiClient, configureAuth, principalOf, reissueAccessToken, type Principal } from './client'
 export { runWithAction, useApiFlowLog, type ApiCallLog } from './api-flow-log'
 export { expectedReasonOf, isFailedCall, type ExpectedResponse } from './call-outcome'
 export {

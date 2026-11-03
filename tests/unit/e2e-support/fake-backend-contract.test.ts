@@ -72,6 +72,7 @@ const PORT = 18093
 const BASE = `http://127.0.0.1:${PORT}/api/v1`
 let server: ChildProcess
 const tokens: Record<number, string> = {}
+const ADMIN_LOGIN = { email: 'admin@kidly.local', password: 'local-admin-password' }
 
 async function call(method: string, url: string, as: number | null, body?: unknown) {
   const response = await fetch(`${BASE}${url}`, {
@@ -100,12 +101,15 @@ beforeAll(async () => {
   for (const [memberId, roles] of [
     [1, ['BUYER']],
     [2, ['BUYER', 'SELLER']],
-    [3, ['ADMIN']],
   ] as const) {
     const token = await call('POST', '/dev/tokens', null, { memberId, roles })
     expectContract(token.data, tokenShape)
     tokens[memberId] = token.data.accessToken
   }
+  // 3 = 관리자 계정 토큰 (BE #736, 관리자 API는 관리자 토큰만)
+  const admin = await call('POST', '/auth/admin/login', null, ADMIN_LOGIN)
+  expectContract(admin.data, tokenShape)
+  tokens[3] = admin.data.accessToken
 })
 
 afterAll(() => {
@@ -277,6 +281,43 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expectContract(admins.data, adminMemberPageShape)
     expect(admins.data.content.map((m: { id: number }) => m.id)).toEqual([3])
     expect(admins.data.content[0]).not.toHaveProperty('role')
+  })
+
+  it('관리자 로그인 · 재발급 · 로그아웃 (BE #736)', async () => {
+    const wrong = await call('POST', '/auth/admin/login', null, {
+      ...ADMIN_LOGIN,
+      password: 'wrong-password',
+    })
+    expect(wrong.status).toBe(401)
+    expect(wrong.data).toMatchObject({ status: 401, detail: '다시 확인해 주세요.' })
+
+    const login = await fetch(`${BASE}/auth/admin/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(ADMIN_LOGIN),
+    })
+    const cookie = login.headers.get('set-cookie') ?? ''
+    expect(cookie).toContain('admin_refresh_token=')
+    expect(cookie).toContain('Path=/api/v1/auth/admin')
+
+    const reissue = await fetch(`${BASE}/auth/admin/reissue`, {
+      method: 'POST',
+      headers: { cookie: cookie.split(';')[0] },
+    })
+    expect(reissue.status).toBe(200)
+    expectContract(await reissue.json(), tokenShape)
+    expect((await call('POST', '/auth/admin/reissue', null)).status).toBe(401)
+    expect((await call('POST', '/auth/admin/logout', null)).status).toBe(204)
+  })
+
+  it('관리자 API는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 ADMIN 역할이 있어도 403)', async () => {
+    const memberAdmin = await call('POST', '/dev/tokens', null, { memberId: 3, roles: ['ADMIN'] })
+    const response = await fetch(`${BASE}/admin/members`, {
+      headers: { authorization: `Bearer ${memberAdmin.data.accessToken}` },
+    })
+    expect(response.status).toBe(403)
+    expect((await call('GET', '/admin/members', null)).status).toBe(401)
+    expect((await call('GET', '/admin/members', 3)).status).toBe(200)
   })
 
   it('설정 조회(로그인 없이) · 관리자 변경 (BE #378)', async () => {

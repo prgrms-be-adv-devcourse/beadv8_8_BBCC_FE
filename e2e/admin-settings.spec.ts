@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { ADMIN_LOGIN, signInAdmin } from './support/admin'
 
 // 관리자 설정: 목 데이터 · 시연 기능(역할 전환 · 시연 콘솔 · API 흐름)을 끄고 켠다. 바꾼 값은 새로고침하면 화면에 적용된다.
 // 다른 E2E가 목 · 시연을 켠 상태를 전제하므로, 끝나면(실패해도) 가짜 백엔드 설정을 되돌린다
@@ -6,10 +7,10 @@ import { expect, test, type Page } from '@playwright/test'
 const FAKE_BACKEND = 'http://localhost:18080/api/v1'
 
 async function restoreSettings() {
-  const token = await fetch(`${FAKE_BACKEND}/dev/tokens`, {
+  const token = await fetch(`${FAKE_BACKEND}/auth/admin/login`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ memberId: 3, roles: ['ADMIN'] }),
+    body: JSON.stringify(ADMIN_LOGIN),
   }).then((response) => response.json() as Promise<{ accessToken: string }>)
   await fetch(`${FAKE_BACKEND}/admin/settings`, {
     method: 'PUT',
@@ -28,10 +29,11 @@ test('관리자 설정: 목 데이터 · 시연 기능 끄고 켜기 (새로고�
   const pageErrors: string[] = []
   page.on('pageerror', (error) => pageErrors.push(error.message))
 
-  await test.step('관리자로 설정 화면에 들어간다', async () => {
+  await test.step('시연 계정(보호자) + 관리자 계정으로 설정 화면에 들어간다', async () => {
     await page.goto('/console')
-    await page.getByRole('button', { name: '관리자', exact: true }).first().click()
-    await expect(page.getByText('관리자 · 회원 3')).toBeVisible()
+    await page.getByRole('button', { name: '보호자', exact: true }).first().click()
+    await expect(page.getByText('보호자 · 회원 1')).toBeVisible()
+    await signInAdmin(page)
     await page.goto('/admin/settings')
     await expect(page.getByRole('heading', { name: '설정' })).toBeVisible()
     await expect(settingCard(page, '목 데이터').getByText('켜짐')).toBeVisible()
@@ -52,9 +54,9 @@ test('관리자 설정: 목 데이터 · 시연 기능 끄고 켜기 (새로고�
   await test.step('시연 기능 끄기는 확인 창에서 취소하면 그대로다', async () => {
     await settingCard(page, '시연 기능').getByRole('button', { name: '끄기' }).click()
     const dialog = page.getByRole('alertdialog')
-    // 시연 계정으로 로그인해 있으므로 다시 켜지 못할 수 있다고 경고한다
+    // 시연 계정으로 로그인해 있으므로 로그아웃된다고 경고한다 (관리자 계정 로그인은 따로라 남는다)
     await expect(
-      dialog.getByText('카카오로 로그인한 관리자만 다시 켤 수 있어요.', { exact: false }),
+      dialog.getByText('관리자 계정 로그인은 그대로라 다시 켤 수 있어요.', { exact: false }),
     ).toBeVisible()
     await dialog.getByRole('button', { name: '취소' }).click()
     await expect(settingCard(page, '시연 기능').getByText('켜짐')).toBeVisible()

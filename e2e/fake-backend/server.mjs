@@ -126,6 +126,16 @@ const pageFrom = (content, query) => {
     hasNext: (number + 1) * size < content.length,
   }
 }
+// 관리자 토큰 클레임은 sub("admin:7") · iat · exp뿐 (BE #736)
+const ADMIN = {
+  email: 'admin@kidly.local',
+  password: 'local-admin-password',
+  token: `${b64({ alg: 'none' })}.${b64({ sub: 'admin:1' })}.sig`,
+  refresh: 'fake-admin-refresh',
+}
+const adminCookie = (value, maxAge = 1209600) =>
+  `admin_refresh_token=${value}; Path=/api/v1/auth/admin; Max-Age=${maxAge}; HttpOnly; SameSite=Lax`
+const isAdmin = (u) => String(u.sub).startsWith('admin:')
 function who(req) {
   const t = (req.headers.authorization || '').split(' ')[1]
   if (!t) return null
@@ -218,6 +228,35 @@ http
     if (r('POST', /^\/auth\/reissue$/))
       return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
     if (r('POST', /^\/auth\/logout$/)) return send(res, 204)
+    // 관리자 계정 (BE #736 AdminAuthController). 계정은 BE local 기본 부트스트랩 값 하나
+    if (r('POST', /^\/auth\/admin\/login$/)) {
+      if (body?.email?.trim().toLowerCase() !== ADMIN.email || body?.password !== ADMIN.password)
+        return problem(
+          res,
+          401,
+          '이메일 또는 비밀번호가 올바르지 않습니다',
+          '다시 확인해 주세요.',
+          req.url,
+        )
+      return send(
+        res,
+        200,
+        { accessToken: ADMIN.token },
+        { 'set-cookie': adminCookie(ADMIN.refresh) },
+      )
+    }
+    if (r('POST', /^\/auth\/admin\/reissue$/)) {
+      if (!(req.headers.cookie || '').includes(`admin_refresh_token=${ADMIN.refresh}`))
+        return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
+      return send(
+        res,
+        200,
+        { accessToken: ADMIN.token },
+        { 'set-cookie': adminCookie(ADMIN.refresh) },
+      )
+    }
+    if (r('POST', /^\/auth\/admin\/logout$/))
+      return send(res, 204, undefined, { 'set-cookie': adminCookie('', 0) })
     // 공개 API: 카테고리 · 입력 항목 · 상품 상세
     if (r('GET', /^\/categories$/)) return send(res, 200, categoryTree)
     if ((x = r('GET', /^\/categories\/(\d+)\/attributes$/))) {
@@ -236,9 +275,12 @@ http
     }
     if (r('GET', /^\/settings$/)) return send(res, 200, appSetting)
     if (!u) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
+    // BE #755 Gateway: 관리자 API는 관리자 토큰만, 회원 토큰은 ADMIN 역할이 있어도 403
+    if (p.startsWith('/admin/') && !isAdmin(u))
+      return problem(res, 403, '권한이 없습니다', '관리자만 할 수 있습니다.', req.url)
     const me = Number(u.sub)
     if (r('PUT', /^\/admin\/settings$/)) {
-      if (!(u.roles || []).includes('ADMIN'))
+      if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 바꿀 수 있습니다.', req.url)
       if (typeof body?.useMock !== 'boolean' || typeof body?.demoRoleSwitch !== 'boolean')
         return problem(res, 400, '잘못된 요청입니다', '두 값을 모두 넣어 주세요.', req.url)
@@ -289,7 +331,7 @@ http
       return send(res, 200, detail)
     }
     if (r('POST', /^\/admin\/settlements\/run$/)) {
-      if (!(u.roles || []).includes('ADMIN'))
+      if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 실행할 수 있습니다.', req.url)
       const cutoffOn = body?.cutoffOn
       if (!/^\d{4}-\d{2}-\d{2}$/.test(cutoffOn ?? ''))
@@ -382,7 +424,7 @@ http
     }
     // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
     if (r('GET', /^\/admin\/orders$/)) {
-      if (!(u.roles || []).includes('ADMIN'))
+      if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
       return send(
         res,
@@ -404,7 +446,7 @@ http
       )
     }
     if (r('GET', /^\/admin\/payments$/)) {
-      if (!(u.roles || []).includes('ADMIN'))
+      if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
       return send(
         res,
@@ -471,7 +513,7 @@ http
         : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
     }
     if ((x = r('PUT', /^\/admin\/products\/(\d+)\/sale-status$/))) {
-      if (!(u.roles || []).includes('ADMIN'))
+      if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 할 수 있습니다.', req.url)
       const result = adminChangeSaleStatus(x[1], body)
       return result.status === 200
@@ -481,7 +523,7 @@ http
     // 관리자 상품 기준 데이터 (catalog.mjs)
     const catalog = catalogRoute(m, p, body)
     if (catalog) {
-      if (!(u.roles || []).includes('ADMIN'))
+      if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 할 수 있습니다.', req.url)
       const result = catalog()
       return result.body

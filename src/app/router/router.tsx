@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { createBrowserRouter, type RouteObject } from 'react-router'
+import { createBrowserRouter, Outlet, type RouteObject } from 'react-router'
 import { NotFoundPage } from '@/pages/common/not-found'
 import { paths } from '@/shared/config'
 import { ConsoleLayout } from '../layouts/ConsoleLayout'
@@ -9,6 +9,7 @@ import { RouteFallback } from '../layouts/RouteFallback'
 import { ShopLayout } from '../layouts/ShopLayout'
 import { ShopMyLayout } from '../layouts/ShopMyLayout'
 import { CenterLayout } from '../layouts/CenterLayout'
+import { AdminGate } from '../layouts/AdminGate'
 import { AdminLayout } from '../layouts/AdminLayout'
 
 // 영역: 쇼핑(/) · 판매자 센터(/center) · 관리자(/admin) · 시연 콘솔(/console). 주소는 shared/config/routes.ts
@@ -410,17 +411,27 @@ export const router = createBrowserRouter(
         { path: rel(paths.console.home, paths.console.sellerSettlements), ...centerSettlements },
         { path: 'seller/settlements/:settlementId', ...centerSettlementDetail },
         {
-          path: rel(paths.console.home, paths.console.adminSellerApplications),
-          ...adminSellerApplications,
+          // 관리자 화면은 관리자 계정 로그인이 따로 있어야 연다 (시연 역할 전환과 별개)
+          element: (
+            <AdminGate>
+              <Outlet />
+            </AdminGate>
+          ),
+          children: [
+            {
+              path: rel(paths.console.home, paths.console.adminSellerApplications),
+              ...adminSellerApplications,
+            },
+            { path: rel(paths.console.home, paths.console.adminSettlements), ...adminSettlements },
+            { path: rel(paths.console.home, paths.console.adminMembers), ...adminMembers },
+            { path: 'admin/members/:memberId', ...adminMemberDetail },
+            { path: rel(paths.console.home, paths.console.adminOrders), ...adminOrders },
+            { path: 'admin/orders/:orderId', ...adminOrderDetail },
+            { path: rel(paths.console.home, paths.console.adminProducts), ...adminProducts },
+            { path: rel(paths.console.home, paths.console.adminPayments), ...adminPayments },
+            { path: 'admin/payments/:paymentId', ...adminPaymentDetail },
+          ],
         },
-        { path: rel(paths.console.home, paths.console.adminSettlements), ...adminSettlements },
-        { path: rel(paths.console.home, paths.console.adminMembers), ...adminMembers },
-        { path: 'admin/members/:memberId', ...adminMemberDetail },
-        { path: rel(paths.console.home, paths.console.adminOrders), ...adminOrders },
-        { path: 'admin/orders/:orderId', ...adminOrderDetail },
-        { path: rel(paths.console.home, paths.console.adminProducts), ...adminProducts },
-        { path: rel(paths.console.home, paths.console.adminPayments), ...adminPayments },
-        { path: 'admin/payments/:paymentId', ...adminPaymentDetail },
         { path: '*', element: <NotFoundPage /> },
       ],
     },

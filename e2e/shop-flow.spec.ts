@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { signInAdmin } from './support/admin'
 import { acceptConfirms } from './support/confirm'
 import { pickOption } from './support/option'
 
@@ -8,7 +9,6 @@ import { pickOption } from './support/option'
 const NICKNAME = {
   보호자: '보호자 · 회원 1',
   판매자: '테스트상점 · 회원 2',
-  관리자: '관리자 · 회원 3',
 } as const
 
 /** 가짜 백엔드가 발급하는 저장 주소. 확장자는 발급 때 보낸 형식(줄인 결과 JPG)에서 정해진다 */
@@ -79,10 +79,11 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('heading', { name: '장바구니' })).toBeVisible()
   })
 
-  await test.step('관리자 영역: 관리자가 아니면 안내', async () => {
+  await test.step('관리자 영역: 관리자 계정으로 로그인하기 전에는 로그인 폼 (회원 역할과 따로)', async () => {
     await page.goto('/admin')
     await switchRole(page, '보호자')
-    await expect(page.getByText('관리자 계정으로 볼 수 있는 화면이에요.')).toBeVisible()
+    await expect(page.getByRole('heading', { name: '관리자 로그인' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '대시보드' })).toHaveCount(0)
   })
 
   await test.step('판매자 센터: 사진 업로드(목) → 상품 등록 → 판매 시작 (실제 API)', async () => {
@@ -546,8 +547,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
   })
 
   await test.step('관리자: 회원 관리 · 판매자 자격 정지 · 전체 주문 · 결제 · 정산 실행', async () => {
-    await switchRole(page, '관리자')
-    await page.goto('/admin')
+    await signInAdmin(page)
     // 대시보드: 오늘 숫자 · 처리할 일
     await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible()
     await expect(page.getByText('오늘 주문', { exact: true })).toBeVisible()
