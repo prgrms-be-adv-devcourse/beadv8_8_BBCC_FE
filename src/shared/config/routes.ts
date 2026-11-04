@@ -78,7 +78,6 @@ export const paths = {
     payments: '/admin/payments',
     payment: (id: string) => `/admin/payments/${id}`,
     settlements: '/admin/settlements',
-    settings: '/admin/settings',
     /** 상품 기준 데이터: 종류마다 목록 · 만들기(목록과 따로) */
     attributes: '/admin/catalog/attributes',
     attributeNew: '/admin/catalog/attributes/new',

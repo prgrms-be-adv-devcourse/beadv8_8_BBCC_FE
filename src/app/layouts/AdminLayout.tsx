@@ -42,10 +42,6 @@ const MENU: MenuGroup[] = [
       { to: paths.admin.categories, label: '카테고리' },
     ],
   },
-  {
-    title: '시스템',
-    links: [{ to: paths.admin.settings, label: '설정' }],
-  },
 ]
 
 function AdminMenu({ className }: { className?: string }) {
