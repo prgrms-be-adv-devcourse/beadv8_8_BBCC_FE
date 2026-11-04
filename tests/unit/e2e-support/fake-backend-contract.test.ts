@@ -21,6 +21,7 @@ import { toAddCartItemRequest } from '@/entities/cart'
 import { cartShape } from '@/entities/cart/api/cart.shape'
 import { toChildRequest } from '@/entities/child'
 import { childAccountShape } from '@/entities/child-account/api/child-account.shape'
+import { childOnboardingShape } from '@/entities/child-onboarding'
 import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
@@ -138,6 +139,36 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     })
     expectContract(login.data, tokenShape)
     tokens[4] = login.data.accessToken
+    expectContract((await call('GET', '/child/onboarding', 4)).data, childOnboardingShape)
+    expect((await call('POST', '/child/onboarding/notice', 4)).status).toBe(204)
+    // 프로필이 지워진 자녀도 첫 로그인 상태를 받는다 (프로필 없음)
+    const orphan = await call('POST', '/children', 1, toChildRequest(DEMO_CHILD))
+    await call('POST', '/auth/child-accounts', 1, {
+      childProfileId: orphan.data.id,
+      loginId: 'orphanchild',
+      password: 'password1',
+    })
+    const orphanLogin = await call('POST', '/auth/child/login', null, {
+      loginId: 'orphanchild',
+      password: 'password1',
+    })
+    tokens[5] = orphanLogin.data.accessToken
+    expect((await call('DELETE', `/children/${orphan.data.id}`, 1)).status).toBe(204)
+    const orphanStatus = await call('GET', '/child/onboarding', 5)
+    expect(orphanStatus.status).toBe(200)
+    expect(orphanStatus.data.hasProfile).toBe(false)
+    expect(
+      (
+        await call('POST', '/child/consents', 4, {
+          optionalAgreed: false,
+          sellerProvisionAgreed: false,
+          heightCm: null,
+          weightKg: null,
+          bodyType: null,
+          preferredFit: null,
+        })
+      ).status,
+    ).toBe(204)
     expectContract((await call('GET', '/child/profile', 4)).data, childShape)
     expect((await call('GET', '/child/profile', 1)).status).toBe(403)
     expect((await call('GET', '/members/me', 4)).status).toBe(401)
