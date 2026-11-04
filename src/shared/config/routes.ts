@@ -26,6 +26,7 @@ const RECOMMENDED = '/recommended'
 
 export const paths = {
   login: '/login',
+  child: { home: '/child' },
   kakaoCallback: '/oauth/kakao/callback',
   shop: {
     home: '/',

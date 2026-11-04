@@ -1,0 +1,39 @@
+import { Link, Outlet } from 'react-router'
+import { useChildSessionStore } from '@/entities/session'
+import { useChildLogout } from '@/features/logout'
+import { paths } from '@/shared/config'
+import { Button } from '@/shared/ui/button'
+import { ChildGate } from './ChildGate'
+import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
+import { Overlays } from './Overlays'
+
+export function ChildLayout() {
+  const accessToken = useChildSessionStore((state) => state.accessToken)
+  const logout = useChildLogout()
+  return (
+    <div className="bg-paper min-h-svh">
+      <DemoBarWithFlowDrawer />
+      <div data-area="shop" className="shop-look">
+        <header className="border-rule flex items-center gap-4 border-b p-4">
+          <Link to={paths.child.home} className="text-section">
+            Kidly
+          </Link>
+          <Link to={paths.shop.home} className="ml-auto">
+            상품 둘러보기
+          </Link>
+          {accessToken && (
+            <Button variant="ghost" disabled={logout.isPending} onClick={() => logout.mutate()}>
+              로그아웃
+            </Button>
+          )}
+        </header>
+        <main className="mx-auto max-w-6xl p-6">
+          <ChildGate>
+            <Outlet />
+          </ChildGate>
+        </main>
+      </div>
+      <Overlays />
+    </div>
+  )
+}

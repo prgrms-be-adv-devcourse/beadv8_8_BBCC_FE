@@ -24,7 +24,13 @@ export {
   summarizeGrowth,
   validateChildForm,
 } from './model/child.rules'
-export { childKeys, useChildQuery, useChildrenQuery, useGrowthRecordsQuery } from './model/queries'
+export {
+  childKeys,
+  useChildQuery,
+  useChildrenQuery,
+  useGrowthRecordsQuery,
+  useOwnChildProfileQuery,
+} from './model/queries'
 export { ChildCard } from './ui/ChildCard'
 export { ChildFormFields } from './ui/ChildFormFields'
 export { ChildPicker } from './ui/ChildPicker'

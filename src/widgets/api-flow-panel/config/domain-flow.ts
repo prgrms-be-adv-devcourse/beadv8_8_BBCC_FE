@@ -26,7 +26,7 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/(cart|orders|seller\/orders)/, 'order'],
   [/^\/(wallets|payments)/, 'payment'],
   [/^\/(seller\/settlement|admin\/settlements)/, 'settlement'],
-  [/^\/(auth|members|children|dev|admin\/(members|seller|sellers)|seller\/me)/, 'member'],
+  [/^\/(auth|members|children|child\/|dev|admin\/(members|seller|sellers)|seller\/me)/, 'member'],
 ]
 
 export function domainOf(path: string): DomainId | null {
