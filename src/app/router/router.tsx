@@ -110,9 +110,6 @@ const adminPaymentDetail = page(() =>
 const adminSettlements = page(() =>
   import('@/pages/admin/settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
 )
-const adminSettings = page(() =>
-  import('@/pages/admin/settings').then((m) => ({ Component: m.AdminSettingsPage })),
-)
 
 /** 주소에서 앞의 영역 접두어를 뗀 상대 경로 */
 const rel = (prefix: string, path: string) => path.slice(prefix.length + 1)
@@ -253,7 +250,6 @@ export const router = createBrowserRouter(
         { path: 'payments/:paymentId', ...adminPaymentDetail },
         { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
         { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
-        { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
         // 상품 기준 데이터: 종류마다 목록 · 만들기 (관리자에만 있다)
         {
           path: rel(paths.admin.home, paths.admin.attributes),
