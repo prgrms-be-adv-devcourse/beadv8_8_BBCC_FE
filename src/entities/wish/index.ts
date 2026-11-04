@@ -19,6 +19,7 @@ export type {
   WishTimelineStep,
 } from './model/wish'
 export { toWishRequest, toWishTimeline, toWish } from './model/wish.mapper'
+export { wishRequestShape } from './api/wish.shape'
 export {
   wishKeys,
   useWishRequestsQuery,

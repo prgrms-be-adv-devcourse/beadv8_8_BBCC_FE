@@ -61,6 +61,8 @@ describe('회원 · 자녀 보완 화면 주소', () => {
     expect(memberPathsOf('console').child('3')).toBe('/console/children/3')
     expect(memberPathsOf('shop').profile).toBe('/my/profile')
     expect(memberPathsOf('console').profile).toBe('/console/profile')
+    expect(memberPathsOf('shop').order('9')).toBe('/orders/9')
+    expect(memberPathsOf('console').order('9')).toBe('/console/orders/9')
   })
   it('예치금 이용 내역은 예치금과 따로인 주소 (쇼핑 · 콘솔)', () => {
     expect(walletPathsOf('shop').history).toBe('/my/wallet/history')

@@ -192,6 +192,7 @@ export function memberPathsOf(area: Area) {
     childWish: base.childWish,
     addresses: base.addresses,
     profile: base.profile,
+    order: base.order,
   }
 }
 

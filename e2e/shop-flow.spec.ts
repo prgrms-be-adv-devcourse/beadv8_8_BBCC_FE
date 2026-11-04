@@ -400,11 +400,11 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       .uncheck()
     await expect(bulk).toHaveCount(0)
     await page.getByRole('tab', { name: /전체/ }).click()
-    // 발송은 판매 주문 상세에서: 첫 발송할 주문을 연다
+    // 이번 주문의 판매 주문을 연다
     await page
       .getByRole('row')
       .filter({ hasText: '발송 준비' })
-      .first()
+      .filter({ has: page.getByText(`주문번호 ${orderUrl.split('/').at(-1)}`, { exact: true }) })
       .getByRole('link', { name: /판매 주문 #\d+/ })
       .click()
     await expect(page).toHaveURL(/\/center\/orders\/\d+$/)

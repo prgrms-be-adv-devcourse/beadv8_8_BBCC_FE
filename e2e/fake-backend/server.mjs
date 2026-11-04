@@ -137,6 +137,41 @@ const WISH_ERROR = {
   INVALID_REJECT_REASON: [400, '잘못된 거절 사유입니다', '거절 사유를 목록에서 골라 주세요.'],
 }
 const wishProblem = (res, code, instance) => problem(res, ...WISH_ERROR[code], instance)
+const WISH_REJECT_REASONS = ['TOO_EXPENSIVE', 'ALREADY_HAVE', 'NEXT_TIME', 'OTHER']
+// 주문이 취소된 시각 (주문 상세 응답에는 없는 값이라 따로 둔다)
+const cancelledAt = new WeakMap()
+// BE OrderTimeline.from 줄임판 (판매자 한 명): 조르기로 바로 결제한 주문의 단계
+function orderStepsOf(o) {
+  const step = (name, at, otherwise = 'WAITING') => ({
+    step: name,
+    status: at ? 'DONE' : otherwise,
+    at: at ?? null,
+  })
+  const payment = payments.find((p) => p.orderId === o.orderId)
+  const paidAt = payment?.paidAt
+  if (o.status === 'CANCELLED')
+    return [
+      step('CREATED', o.orderedAt),
+      step('PAYMENT_REQUESTED', payment?.createdAt, 'NOT_APPLICABLE'),
+      ...(paidAt ? [step('PAID', paidAt)] : []),
+      step('CANCELLED', cancelledAt.get(o)),
+      ...['SHIPPED', 'DELIVERED', 'CONFIRMED'].map((name) => step(name, null, 'NOT_APPLICABLE')),
+    ]
+  const confirmed = o.items.map((item) => item.confirmedAt).filter(Boolean)
+  const allConfirmed = confirmed.length === o.items.length
+  return [
+    step('CREATED', o.orderedAt),
+    step('PAYMENT_REQUESTED', payment?.createdAt),
+    step('PAID', paidAt),
+    step('SHIPPED', o.deliveries[0]?.shippedAt),
+    step('DELIVERED', o.deliveries[0]?.deliveredAt),
+    step(
+      'CONFIRMED',
+      allConfirmed ? confirmed.sort().at(-1) : null,
+      confirmed.length ? 'PARTIAL' : 'WAITING',
+    ),
+  ]
+}
 // 주문 BE #253: 수량 1~99, 범위 밖이면 400 INVALID_QUANTITY
 const badQuantity = (q) => !Number.isInteger(q) || q < 1 || q > 99
 const invalidQuantity = (res) =>
@@ -190,6 +225,86 @@ function who(req) {
   const t = (req.headers.authorization || '').split(' ')[1]
   if (!t) return null
   return JSON.parse(Buffer.from(t.split('.')[1], 'base64url'))
+}
+function scheduleOrder(o, me, stall, clearCart = true) {
+  // 결제 마감: 그때까지 결제 처리 중이면 PAYMENT_EXPIRED로 취소 (BE 마감 스케줄러)
+  setTimeout(() => {
+    if (o.status !== 'PENDING_PAYMENT') return
+    o.status = 'CANCELLED'
+    o.cancelReason = 'PAYMENT_EXPIRED'
+    cancelledAt.set(o, now())
+  }, stall?.timeoutMs ?? PAYMENT_TIMEOUT_MS).unref()
+  if (!stall)
+    setTimeout(() => {
+      // 상품: 하나라도 부족하면 아무것도 차감하지 않고 주문 취소 (기획서 4장).
+      // 장바구니는 그대로 남는다 (BE: 결제 완료 뒤 주문한 줄만 빠진다)
+      const short = o.items.filter((it) => (stock[it.optionId] ?? 0) < it.quantity)
+      if (short.length > 0) {
+        o.status = 'CANCELLED'
+        o.cancelReason = 'OUT_OF_STOCK'
+        cancelledAt.set(o, now())
+        short.forEach((it) => (it.unavailableReason = 'OUT_OF_STOCK'))
+        return
+      }
+      o.items.forEach((it) => (stock[it.optionId] -= it.quantity))
+      if ((wallets[me] ?? 0) < o.totalAmount) {
+        // 결제 실패 → 주문 취소 · 재고 복구
+        o.items.forEach((it) => (stock[it.optionId] += it.quantity))
+        o.status = 'CANCELLED'
+        o.cancelReason = 'PAYMENT_FAILED'
+        cancelledAt.set(o, now())
+        // 백엔드: 잔액 부족만 실패 결제를 저장한다
+        payments.push({
+          paymentId: nid(),
+          memberId: me,
+          orderId: o.orderId,
+          amount: o.totalAmount,
+          refundedAmount: 0,
+          status: 'FAILED',
+          failureCode: 'INSUFFICIENT_BALANCE',
+          paidAt: null,
+          createdAt: now(),
+          items: [],
+        })
+        return
+      }
+      wallets[me] -= o.totalAmount
+      const paymentId = nid()
+      ledger(me, 'PAYMENT', -o.totalAmount, paymentId)
+      payments.push({
+        paymentId,
+        memberId: me,
+        orderId: o.orderId,
+        amount: o.totalAmount,
+        refundedAmount: 0,
+        status: 'COMPLETED',
+        failureCode: null,
+        paidAt: now(),
+        createdAt: now(),
+        items: o.items.map((i) => ({
+          orderItemId: Number(i.orderItemId),
+          amount: i.amount,
+          refundedAmount: 0,
+        })),
+      })
+      o.status = 'PAID'
+      // 결제 완료 → 주문한 옵션의 장바구니 줄만 뺀다
+      const ordered = new Set(o.items.map((it) => String(it.optionId)))
+      if (clearCart)
+        for (let i = cart.length - 1; i >= 0; i--)
+          if (cart[i].memberId === me && ordered.has(String(cart[i].optionId))) cart.splice(i, 1)
+      o.deliveries = [
+        {
+          sellerOrderId: String(nid()),
+          sellerId: '2',
+          status: 'READY',
+          carrier: null,
+          trackingNumber: null,
+          shippedAt: null,
+          deliveredAt: null,
+        },
+      ]
+    }, 2000)
 }
 const detailOf = ({ memberId: _m, ...o }) => ({ ...o, orderId: String(o.orderId) })
 function sizeRecommendationOf(detail, c) {
@@ -383,7 +498,16 @@ http
       const childId = String(body?.childId ?? url.searchParams.get('childId') ?? '')
       const owned = (id) =>
         children.some((c) => String(c.id) === id && c.memberId === me && !c.deleted)
-      const request = (id) => wishRequests.find((w) => w.requestId === id && owned(w.childId))
+      const refreshResult = (wish) => {
+        const order = orders.find((item) => String(item.orderId) === wish.orderId)
+        if (order?.status === 'PAID' || order?.status === 'CANCELLED')
+          wish.orderResult = order.status
+        return wish
+      }
+      const request = (id) => {
+        const wish = wishRequests.find((w) => w.requestId === id && owned(w.childId))
+        return wish && refreshResult(wish)
+      }
       if (r('POST', /^\/wish\/items$/)) {
         if (!owned(childId)) return wishProblem(res, 'CHILD_NOT_FOUND', req.url)
         if (badQuantity(body.quantity)) return wishProblem(res, 'INVALID_QUANTITY', req.url)
@@ -480,7 +604,118 @@ http
       }
       if (r('GET', /^\/wish\/requests$/)) {
         if (!owned(childId)) return wishProblem(res, 'CHILD_NOT_FOUND', req.url)
-        return send(res, 200, wishRequests.filter((wish) => wish.childId === childId).reverse())
+        return send(
+          res,
+          200,
+          wishRequests
+            .filter((wish) => wish.childId === childId)
+            .map(refreshResult)
+            .reverse(),
+        )
+      }
+      if ((x = r('POST', /^\/wish\/requests\/(\d+)\/(approval|rejection)$/))) {
+        const wish = request(x[1])
+        if (!wish) return wishProblem(res, 'WISH_REQUEST_NOT_FOUND', req.url)
+        // BE WishItem.unlockFrom: 이 조르기가 잠근 줄을 푼다 (keep에 든 줄은 그대로)
+        const unlock = (keep = new Set()) =>
+          wishItems
+            .filter((item) => item.requestId === wish.requestId && !keep.has(item.wishItemId))
+            .forEach((item) => {
+              item.requestId = null
+            })
+        // 확인 순서는 BE WishRequestService: 값(400) → 처리 전(409) → 고른 줄(400)
+        if (x[2] === 'rejection') {
+          if (!WISH_REJECT_REASONS.includes(body.reason))
+            return wishProblem(res, 'INVALID_REJECT_REASON', req.url)
+          if (wish.status !== 'REQUESTED')
+            return wishProblem(res, 'WISH_REQUEST_ALREADY_DECIDED', req.url)
+          wish.status = 'REJECTED'
+          wish.rejectReason = body.reason
+          unlock()
+        } else {
+          if (
+            body.checkout !== 'ORDER' ||
+            !body.shippingAddress ||
+            !body.items?.length ||
+            body.items.some((item) => item?.wishItemId == null || item.unitPrice == null)
+          )
+            return wishProblem(res, 'INVALID_APPROVAL', req.url)
+          if (wish.status !== 'REQUESTED')
+            return wishProblem(res, 'WISH_REQUEST_ALREADY_DECIDED', req.url)
+          const selected = body.items.map((item) => ({
+            input: item,
+            line: wish.items.find((line) => line.wishItemId === String(item.wishItemId)),
+          }))
+          if (
+            new Set(body.items.map((item) => item.wishItemId)).size !== body.items.length ||
+            selected.some(({ input, line }) => !line || badQuantity(input.quantity))
+          )
+            return wishProblem(res, 'INVALID_APPROVAL', req.url)
+          // 주문은 주문하기와 같은 검사 (재고는 주문 뒤 서버 이벤트에서)
+          if (selected.some(({ line }) => !line.purchasable))
+            return wishProblem(res, 'PRODUCT_NOT_PURCHASABLE', req.url)
+          if (selected.some(({ input, line }) => input.unitPrice !== replica[line.optionId]?.price))
+            return problem(
+              res,
+              409,
+              '가격이 바뀌었습니다',
+              '상품 가격이 바뀌었습니다. 다시 확인해 주세요.',
+              req.url,
+            )
+          const child = children.find((item) => String(item.id) === wish.childId)
+          const items = selected.map(({ input, line }) => ({
+            orderItemId: String(nid()),
+            productId: line.productId,
+            optionId: line.optionId,
+            sellerId: line.sellerId,
+            sellerName: line.sellerName,
+            productName: line.productName,
+            optionName: line.optionName,
+            size: line.size,
+            unavailableReason: null,
+            unitPrice: input.unitPrice,
+            quantity: input.quantity,
+            amount: input.unitPrice * input.quantity,
+            status: 'ORDERED',
+            deliveredAt: null,
+            confirmedAt: null,
+            confirmType: null,
+            child: child
+              ? {
+                  childId: String(child.id),
+                  name: child.name,
+                  heightCm: child.heightCm,
+                  weightKg: child.weightKg,
+                  bodyType: child.bodyType,
+                }
+              : null,
+          }))
+          const stall = stallNext
+          stallNext = null
+          const order = {
+            orderId: nid(),
+            memberId: me,
+            status: 'PENDING_PAYMENT',
+            cancelReason: null,
+            totalAmount: items.reduce((sum, item) => sum + item.amount, 0),
+            orderedAt: now(),
+            paymentDueAt: later(stall?.timeoutMs ?? PAYMENT_TIMEOUT_MS),
+            shippingAddress: body.shippingAddress,
+            items,
+            deliveries: [],
+          }
+          orders.push(order)
+          scheduleOrder(order, me, stall, false)
+          wish.status = 'APPROVED'
+          wish.checkout = 'ORDER'
+          wish.orderId = String(order.orderId)
+          selected.forEach(({ input, line }) => {
+            line.approvedQuantity = input.quantity
+          })
+          unlock(new Set(selected.map(({ line }) => line.wishItemId)))
+        }
+        wish.decidedAt = now()
+        return send(res, 200, wish)
       }
       if ((x = r('GET', /^\/wish\/requests\/(\d+)(\/timeline)?$/))) {
         const wish = request(x[1])
@@ -491,13 +726,19 @@ http
           wish.status === 'REQUESTED'
             ? { step: 'APPROVED', status: 'WAITING', at: null }
             : { step: wish.status, status: 'DONE', at: wish.decidedAt }
+        // 바로 결제한 주문이 있으면 주문 단계를 이어 붙인다
+        const order = orders.find((item) => String(item.orderId) === wish.orderId)
         return send(res, 200, {
           requestId: wish.requestId,
           status: wish.status,
           checkout: wish.checkout,
           rejectReason: wish.rejectReason,
           orderId: wish.orderId,
-          steps: [{ step: 'SENT', status: 'DONE', at: wish.requestedAt }, decision],
+          steps: [
+            { step: 'SENT', status: 'DONE', at: wish.requestedAt },
+            decision,
+            ...(order ? orderStepsOf(order) : []),
+          ],
         })
       }
     }
@@ -1100,80 +1341,7 @@ http
       if (idemSlot) idempotency[idemSlot] = { hash: idemHash, orderId: o.orderId }
       const stall = stallNext
       stallNext = null
-      // 결제 마감: 그때까지 결제 처리 중이면 PAYMENT_EXPIRED로 취소 (BE 마감 스케줄러)
-      setTimeout(() => {
-        if (o.status !== 'PENDING_PAYMENT') return
-        o.status = 'CANCELLED'
-        o.cancelReason = 'PAYMENT_EXPIRED'
-      }, stall?.timeoutMs ?? PAYMENT_TIMEOUT_MS).unref()
-      if (!stall)
-        setTimeout(() => {
-          // 상품: 하나라도 부족하면 아무것도 차감하지 않고 주문 취소 (기획서 4장).
-          // 장바구니는 그대로 남는다 (BE: 결제 완료 뒤 주문한 줄만 빠진다)
-          const short = o.items.filter((it) => (stock[it.optionId] ?? 0) < it.quantity)
-          if (short.length > 0) {
-            o.status = 'CANCELLED'
-            o.cancelReason = 'OUT_OF_STOCK'
-            short.forEach((it) => (it.unavailableReason = 'OUT_OF_STOCK'))
-            return
-          }
-          o.items.forEach((it) => (stock[it.optionId] -= it.quantity))
-          if ((wallets[me] ?? 0) < o.totalAmount) {
-            // 결제 실패 → 주문 취소 · 재고 복구
-            o.items.forEach((it) => (stock[it.optionId] += it.quantity))
-            o.status = 'CANCELLED'
-            o.cancelReason = 'PAYMENT_FAILED'
-            // 백엔드: 잔액 부족만 실패 결제를 저장한다
-            payments.push({
-              paymentId: nid(),
-              memberId: me,
-              orderId: o.orderId,
-              amount: o.totalAmount,
-              refundedAmount: 0,
-              status: 'FAILED',
-              failureCode: 'INSUFFICIENT_BALANCE',
-              paidAt: null,
-              createdAt: now(),
-              items: [],
-            })
-            return
-          }
-          wallets[me] -= o.totalAmount
-          const paymentId = nid()
-          ledger(me, 'PAYMENT', -o.totalAmount, paymentId)
-          payments.push({
-            paymentId,
-            memberId: me,
-            orderId: o.orderId,
-            amount: o.totalAmount,
-            refundedAmount: 0,
-            status: 'COMPLETED',
-            failureCode: null,
-            paidAt: now(),
-            createdAt: now(),
-            items: o.items.map((i) => ({
-              orderItemId: Number(i.orderItemId),
-              amount: i.amount,
-              refundedAmount: 0,
-            })),
-          })
-          o.status = 'PAID'
-          // 결제 완료 → 주문한 옵션의 장바구니 줄만 뺀다
-          const ordered = new Set(o.items.map((it) => String(it.optionId)))
-          for (let i = cart.length - 1; i >= 0; i--)
-            if (cart[i].memberId === me && ordered.has(String(cart[i].optionId))) cart.splice(i, 1)
-          o.deliveries = [
-            {
-              sellerOrderId: String(nid()),
-              sellerId: '2',
-              status: 'READY',
-              carrier: null,
-              trackingNumber: null,
-              shippedAt: null,
-              deliveredAt: null,
-            },
-          ]
-        }, 2000)
+      scheduleOrder(o, me, stall)
       return send(res, 201, detailOf(o))
     }
     if (r('GET', /^\/orders$/))
