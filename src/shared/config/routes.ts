@@ -44,6 +44,8 @@ export const paths = {
     /** 자녀 등록 (목록과 따로) */
     childNew: '/my/children/new',
     child: (id: string) => `/my/children/${id}`,
+    childWishes: (id: string) => `/my/children/${id}/wishes`,
+    childWish: (id: string, requestId: string) => `/my/children/${id}/wishes/${requestId}`,
     profile: '/my/profile',
     addresses: '/my/addresses',
     wallet: '/my/wallet',
@@ -97,6 +99,8 @@ export const paths = {
     children: `${C}/children`,
     childNew: `${C}/children/new`,
     child: (id: string) => `${C}/children/${id}`,
+    childWishes: (id: string) => `${C}/children/${id}/wishes`,
+    childWish: (id: string, requestId: string) => `${C}/children/${id}/wishes/${requestId}`,
     profile: `${C}/profile`,
     addresses: `${C}/addresses`,
     products: `${C}/products`,
@@ -184,6 +188,8 @@ export function memberPathsOf(area: Area) {
     children: base.children,
     childNew: base.childNew,
     child: base.child,
+    childWishes: base.childWishes,
+    childWish: base.childWish,
     addresses: base.addresses,
     profile: base.profile,
   }

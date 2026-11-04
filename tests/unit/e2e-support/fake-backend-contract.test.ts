@@ -24,6 +24,12 @@ import { childAccountShape } from '@/entities/child-account/api/child-account.sh
 import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
+import {
+  wishShape,
+  wishRequestShape,
+  wishRequestsShape,
+  wishTimelineShape,
+} from '@/entities/wish/api/wish.shape'
 import { paymentDetailShape, paymentPageShape } from '@/entities/payment/api/payment.shape'
 import { deliveryShape, sellerOrderPageShape } from '@/entities/seller-order/api/seller-order.shape'
 import { toSellerApplicationRequest } from '@/entities/seller'
@@ -72,6 +78,43 @@ const BASE = `http://127.0.0.1:${PORT}/api/v1`
 let server: ChildProcess
 const tokens: Record<number, string> = {}
 const ADMIN_LOGIN = { email: 'admin@kidly.local', password: 'local-admin-password' }
+
+it('부모 조르기 조회 응답이 계약에 맞는다', async () => {
+  const child = (await call('POST', '/children', 1, toChildRequest(DEMO_CHILD))).data
+  const item = await call('POST', '/wish/items', 1, { childId: child.id, optionId: 1, quantity: 2 })
+  expect(item.status).toBe(201)
+  expectContract((await call('GET', `/wish?childId=${child.id}`, 1)).data, wishShape)
+  const request = await call('POST', '/wish/requests', 1, {
+    childId: child.id,
+    wishItemIds: [Number(item.data.wishItemId)],
+    message: '부탁해요',
+  })
+  expect(request.status).toBe(201)
+  expectContract(request.data, wishRequestShape)
+  const waiting = await call('GET', `/wish/requests/${request.data.requestId}/timeline`, 1)
+  expect(waiting.data.steps.map((step: { step: string }) => step.step)).toEqual([
+    'SENT',
+    'APPROVED',
+  ])
+  const locked = await call('POST', '/wish/items', 1, {
+    childId: child.id,
+    optionId: 1,
+    quantity: 1,
+  })
+  expect(locked.data).toMatchObject({ status: 409, title: '조르는 중인 상품입니다' })
+  expectContract(
+    (await call('GET', `/wish/requests?childId=${child.id}`, 1)).data,
+    wishRequestsShape,
+  )
+  expectContract(
+    (await call('GET', `/wish/requests/${request.data.requestId}`, 1)).data,
+    wishRequestShape,
+  )
+  expectContract(
+    (await call('GET', `/wish/requests/${request.data.requestId}/timeline`, 1)).data,
+    wishTimelineShape,
+  )
+})
 
 async function call(method: string, url: string, as: number | null, body?: unknown) {
   const response = await fetch(`${BASE}${url}`, {
