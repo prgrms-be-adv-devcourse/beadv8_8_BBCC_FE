@@ -20,6 +20,7 @@ import { addressShape } from '@/entities/address/api/address.shape'
 import { toAddCartItemRequest } from '@/entities/cart'
 import { cartShape } from '@/entities/cart/api/cart.shape'
 import { toChildRequest } from '@/entities/child'
+import { childAccountShape } from '@/entities/child-account/api/child-account.shape'
 import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
@@ -115,6 +116,35 @@ afterAll(() => {
 })
 
 describe('가짜 백엔드 응답 = FE 계약', () => {
+  it('자녀 계정 계약과 권한', async () => {
+    const child = await call('POST', '/children', 1, toChildRequest(DEMO_CHILD))
+    const account = await call('POST', '/auth/child-accounts', 1, {
+      childProfileId: child.data.id,
+      loginId: 'contractchild',
+      password: 'password1',
+    })
+    expect(account.status).toBe(201)
+    expectContract(account.data, childAccountShape)
+    expectContract((await call('GET', '/auth/child-accounts', 1)).data, arr(childAccountShape))
+    const login = await call('POST', '/auth/child/login', null, {
+      loginId: 'contractchild',
+      password: 'password1',
+    })
+    expectContract(login.data, tokenShape)
+    tokens[4] = login.data.accessToken
+    expectContract((await call('GET', '/child/profile', 4)).data, childShape)
+    expect((await call('GET', '/child/profile', 1)).status).toBe(403)
+    expect((await call('GET', '/members/me', 4)).status).toBe(401)
+    expect(
+      (
+        await call('PATCH', `/auth/child-accounts/${account.data.id}/password`, 1, {
+          password: 'password2',
+        })
+      ).status,
+    ).toBe(204)
+    expect((await call('GET', '/child/profile', 4)).status).toBe(401)
+    expect((await call('DELETE', `/auth/child-accounts/${account.data.id}`, 1)).status).toBe(204)
+  })
   it('자녀 · 배송지 · 예치금', async () => {
     expectContract(
       (await call('POST', '/children', 1, toChildRequest(DEMO_CHILD))).data,

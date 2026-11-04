@@ -24,6 +24,7 @@ const PORT = Number(process.env.PORT ?? 18080)
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
 let id = 1
 const nid = () => id++
+const childAccounts = []
 const children = [],
   addresses = [],
   cart = [],
@@ -256,6 +257,37 @@ http
     }
     if (r('POST', /^\/auth\/admin\/logout$/))
       return send(res, 204, undefined, { 'set-cookie': adminCookie('', 0) })
+    const childCookie = (value, age = 1209600) =>
+      `child_refresh_token=${value}; Path=/api/v1/auth/child; Max-Age=${age}; HttpOnly; SameSite=Lax`
+    const childToken = (account) =>
+      `${b64({ alg: 'none' })}.${b64({ sub: `child:${account.id}`, guardianId: account.guardianId, version: account.version })}.sig`
+    const cookieValue = (req.headers.cookie || '').match(/(?:^|; )child_refresh_token=([^;]*)/)?.[1]
+    if (r('POST', /^\/auth\/child\/login$/)) {
+      const account = childAccounts.find(
+        (a) => a.loginId === body?.loginId && a.password === body?.password,
+      )
+      if (!account)
+        return problem(res, 401, '로그인 실패', '아이디 또는 비밀번호를 확인해 주세요.', req.url)
+      return send(
+        res,
+        200,
+        { accessToken: childToken(account) },
+        { 'set-cookie': childCookie(`${account.id}.${account.version}`) },
+      )
+    }
+    if (r('POST', /^\/auth\/child\/reissue$/)) {
+      const account = childAccounts.find((a) => `${a.id}.${a.version}` === cookieValue)
+      if (!account)
+        return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
+      return send(
+        res,
+        200,
+        { accessToken: childToken(account) },
+        { 'set-cookie': childCookie(cookieValue) },
+      )
+    }
+    if (r('POST', /^\/auth\/child\/logout$/))
+      return send(res, 204, undefined, { 'set-cookie': childCookie('', 0) })
     // 공개 API: 카테고리 · 입력 항목 · 상품 상세
     if (r('GET', /^\/categories$/)) return send(res, 200, categoryTree)
     if ((x = r('GET', /^\/categories\/(\d+)\/attributes$/))) {
@@ -276,7 +308,65 @@ http
     // BE #755 Gateway: 관리자 API는 관리자 토큰만, 회원 토큰은 ADMIN 역할이 있어도 403
     if (p.startsWith('/admin/') && !isAdmin(u))
       return problem(res, 403, '권한이 없습니다', '관리자만 할 수 있습니다.', req.url)
+    const isChild = String(u.sub).startsWith('child:')
+    if (p.startsWith('/child/')) {
+      if (!isChild) return problem(res, 403, '권한이 없습니다', '자녀만 볼 수 있습니다.', req.url)
+      const account = childAccounts.find(
+        (a) => `child:${a.id}` === u.sub && a.version === u.version,
+      )
+      if (!account)
+        return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
+      if (r('GET', /^\/child\/profile$/)) {
+        const child = children.find((c) => c.id === account.childProfileId && !c.deleted)
+        return child
+          ? send(res, 200, childOf(child))
+          : problem(res, 404, '찾을 수 없습니다', '프로필을 찾을 수 없습니다.', req.url)
+      }
+    }
+    if (isChild) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
     const me = Number(u.sub)
+    const accountDto = (a) => ({ id: a.id, childProfileId: a.childProfileId, loginId: a.loginId })
+    if (r('GET', /^\/auth\/child-accounts$/))
+      return send(res, 200, childAccounts.filter((a) => a.guardianId === me).map(accountDto))
+    if (r('POST', /^\/auth\/child-accounts$/)) {
+      if (!children.some((c) => c.id === body.childProfileId && c.memberId === me && !c.deleted))
+        return problem(res, 404, '찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
+      if (!/^[a-z0-9]{4,20}$/.test(body.loginId) || body.password.length < 8)
+        return problem(res, 400, '잘못된 요청', '아이디 또는 비밀번호를 확인해 주세요.', req.url)
+      if (
+        childAccounts.some(
+          (a) => a.childProfileId === body.childProfileId || a.loginId === body.loginId,
+        )
+      )
+        return problem(res, 409, '이미 존재합니다', '이미 등록된 계정입니다.', req.url)
+      const account = {
+        id: nid(),
+        childProfileId: body.childProfileId,
+        loginId: body.loginId,
+        password: body.password,
+        guardianId: me,
+        version: 1,
+      }
+      childAccounts.push(account)
+      return send(res, 201, accountDto(account))
+    }
+    if ((x = r('PATCH', /^\/auth\/child-accounts\/(\d+)\/password$/))) {
+      const account = childAccounts.find((a) => a.id === +x[1] && a.guardianId === me)
+      if (!account)
+        return problem(res, 404, '찾을 수 없습니다', '계정을 찾을 수 없습니다.', req.url)
+      if (body.password.length < 8)
+        return problem(res, 400, '잘못된 요청', '비밀번호를 확인해 주세요.', req.url)
+      account.password = body.password
+      account.version++
+      return send(res, 204)
+    }
+    if ((x = r('DELETE', /^\/auth\/child-accounts\/(\d+)$/))) {
+      const index = childAccounts.findIndex((a) => a.id === +x[1] && a.guardianId === me)
+      if (index < 0)
+        return problem(res, 404, '찾을 수 없습니다', '계정을 찾을 수 없습니다.', req.url)
+      childAccounts.splice(index, 1)
+      return send(res, 204)
+    }
     // 정산: 구매확정된 주문상품이 대상, 실행하면 판매자별 정산서 → 바로 예치금 입금(PAID)
     const confirmedItems = () =>
       orders.flatMap((o) =>

@@ -7,6 +7,9 @@ import {
   useChildQuery,
   useGrowthRecordsQuery,
 } from '@/entities/child'
+import { accountOfChild, useChildAccountsQuery } from '@/entities/child-account'
+import { hasRole, useSessionStore } from '@/entities/session'
+import { ManageChildAccount } from '@/features/manage-child-account'
 import { DeleteChildButton, EditChildForm, EditGrowthRecord } from '@/features/edit-child'
 import { getErrorMessage } from '@/shared/api'
 import { memberPathsOf } from '@/shared/config'
@@ -21,6 +24,9 @@ export function ShopChildDetailPage() {
   const memberPaths = memberPathsOf(useArea())
   const child = useChildQuery(childId)
   const growth = useGrowthRecordsQuery(childId)
+  const user = useSessionStore((state) => state.user)
+  const isBuyer = hasRole(user, 'BUYER')
+  const accounts = useChildAccountsQuery(isBuyer)
 
   if (child.isPending) return <StateMessage>불러오는 중…</StateMessage>
   if (child.isError)
@@ -68,6 +74,15 @@ export function ShopChildDetailPage() {
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
         <div className="space-y-6">
           <ChildCard child={child.data} />
+          {accounts.data && (
+            <ManageChildAccount
+              childId={childId}
+              account={accountOfChild(accounts.data, childId)}
+            />
+          )}
+          {accounts.isError && (
+            <StateMessage tone="error">{getErrorMessage(accounts.error)}</StateMessage>
+          )}
           <section
             aria-label="성장 이력"
             className="border-rule space-y-4 rounded-lg border p-4 md:p-5"
