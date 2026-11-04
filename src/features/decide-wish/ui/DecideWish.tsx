@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import type { WishRequest } from '@/entities/wish'
+import { WISH_REJECT_REASONS, wishRejectReasonLabel, type WishRequest } from '@/entities/wish'
 import { getErrorMessage } from '@/shared/api'
 import { confirmAction } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
@@ -88,10 +88,11 @@ export function DecideWish({ wish, addressesPath, onApproved }: DecideWishProps)
       <label>
         거절 사유{' '}
         <select value={reason} onChange={(event) => setReason(event.target.value)}>
-          <option value="TOO_EXPENSIVE">너무 비싸요</option>
-          <option value="ALREADY_HAVE">이미 있어요</option>
-          <option value="NEXT_TIME">다음에 사자</option>
-          <option value="OTHER">기타</option>
+          {WISH_REJECT_REASONS.map((value) => (
+            <option key={value} value={value}>
+              {wishRejectReasonLabel(value)}
+            </option>
+          ))}
         </select>
       </label>
       <div>

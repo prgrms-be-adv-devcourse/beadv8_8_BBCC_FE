@@ -19,7 +19,13 @@ export type MockEndpoint = {
 
 export const MOCK_ENDPOINTS: MockEndpoint[] = [
   ...(
-    ['GET /child/wish', 'POST /child/wish/items', 'DELETE /child/wish/items/:wishItemId'] as const
+    [
+      'GET /child/wish',
+      'POST /child/wish/items',
+      'DELETE /child/wish/items/:wishItemId',
+      'GET /child/wish/requests',
+      'POST /child/wish/requests',
+    ] as const
   ).map((endpoint) => {
     const [method, path] = endpoint.split(' ') as ['GET' | 'POST' | 'DELETE', string]
     return {

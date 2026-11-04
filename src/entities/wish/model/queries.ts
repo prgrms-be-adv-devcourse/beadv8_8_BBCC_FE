@@ -4,6 +4,7 @@ import { toWish, toWishRequest, toWishTimeline } from './wish.mapper'
 
 export const wishKeys = {
   child: ['child-wish'] as const,
+  childRequests: ['child-wish-requests'] as const,
   requests: (childId: string) => ['wish', 'requests', childId] as const,
   request: (id: string) => ['wish', 'request', id] as const,
   timeline: (id: string) => ['wish', 'timeline', id] as const,
@@ -39,5 +40,15 @@ export function useWishTimelineQuery(id: string) {
     queryFn: () => wishApi.timeline(id),
     select: toWishTimeline,
     enabled: !!id,
+  })
+}
+
+export function useChildWishRequestsQuery() {
+  return useQuery({
+    queryKey: wishKeys.childRequests,
+    queryFn: childWishApi.requests,
+    select: (items) => items.map(toWishRequest),
+    gcTime: 0,
+    staleTime: 0,
   })
 }

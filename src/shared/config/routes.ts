@@ -33,6 +33,7 @@ export const paths = {
     products: '/child/products',
     product: (id: string) => `/child/products/${id}`,
     cart: '/child/cart',
+    wishes: '/child/wishes',
   },
   kakaoCallback: '/oauth/kakao/callback',
   shop: {

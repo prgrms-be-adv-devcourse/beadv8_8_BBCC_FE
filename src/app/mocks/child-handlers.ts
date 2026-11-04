@@ -1,4 +1,5 @@
 import { childApi, ageOf } from '@/entities/child'
+import type { MockWishRequestDto } from '@/entities/wish'
 import type { MockHandler, MockRequest } from '@/shared/api'
 import { fetchReal, loadMockState, memberIdOf, now, problem, saveMockState } from './mock-utils'
 
@@ -24,7 +25,9 @@ type Line = {
 const keyOf = (request: MockRequest) => memberIdOf(request) ?? ''
 const CARTS_KEY = 'child-wish-carts'
 const NEXT_ID_KEY = 'child-wish-next-id'
+const REQUESTS_KEY = 'child-wish-requests'
 const ITEMS_PATH = '/api/v1/child/wish/items'
+const REQUESTS_PATH = '/api/v1/child/wish/requests'
 function cartOf(request: MockRequest): Line[] {
   return loadMockState<Record<string, Line[]>>(CARTS_KEY, {})[keyOf(request)] ?? []
 }
@@ -37,6 +40,14 @@ function nextId(): string {
   const id = loadMockState(NEXT_ID_KEY, 1)
   saveMockState(NEXT_ID_KEY, id + 1)
   return String(id)
+}
+function requestsOf(request: MockRequest): MockWishRequestDto[] {
+  return loadMockState<Record<string, MockWishRequestDto[]>>(REQUESTS_KEY, {})[keyOf(request)] ?? []
+}
+function saveRequests(request: MockRequest, list: MockWishRequestDto[]) {
+  const all = loadMockState<Record<string, MockWishRequestDto[]>>(REQUESTS_KEY, {})
+  all[keyOf(request)] = list
+  saveMockState(REQUESTS_KEY, all)
 }
 type Product = {
   productId: string
@@ -98,8 +109,94 @@ async function updateStatus(request: MockRequest, change: Partial<Status>) {
   states[keyOf(request)] = { ...(await statusOf(request)), ...change }
   saveMockState(ONBOARDING_KEY, states)
 }
-// 가정 계약 (childprofile 확정 전)
+// 가정 계약 (order · childprofile 확정 전)
 export const childWishHandlers: MockHandler[] = [
+  {
+    method: 'GET',
+    path: '/child/wish/requests',
+    handle: (request) => ({
+      status: 200,
+      data: [...requestsOf(request)].reverse(),
+    }),
+  },
+  {
+    method: 'POST',
+    path: '/child/wish/requests',
+    handle: async (request) => {
+      const body = request.body as { wishItemIds: number[]; message: string | null }
+      if (
+        !Array.isArray(body.wishItemIds) ||
+        !body.wishItemIds.length ||
+        new Set(body.wishItemIds).size !== body.wishItemIds.length ||
+        (body.message?.length ?? 0) > 100
+      )
+        return problem(
+          400,
+          '잘못된 조르기입니다',
+          '조를 상품을 하나 이상 겹치지 않게 고르고, 메시지는 정해진 길이 안으로 적어 주세요.',
+          REQUESTS_PATH,
+        )
+      const cart = cartOf(request)
+      const items = cart.filter((item) => body.wishItemIds.includes(Number(item.wishItemId)))
+      if (items.length !== body.wishItemIds.length)
+        return problem(
+          404,
+          '조르기 상품을 찾을 수 없습니다',
+          '이미 조르기에서 빠진 상품입니다. 목록을 새로고침해 주세요.',
+          REQUESTS_PATH,
+        )
+      if (items.some((item) => item.requestId))
+        return problem(
+          409,
+          '조르는 중인 상품입니다',
+          '진행 중인 조르기에 든 상품은 다른 조르기에 넣거나 수량을 바꾸거나 뺄 수 없습니다.',
+          REQUESTS_PATH,
+        )
+      if (items.some((item) => !item.purchasable))
+        return problem(
+          409,
+          '구매할 수 없는 상품입니다',
+          '판매가 중지됐거나 품절된 상품이 있습니다. 장바구니에서 빼고 다시 주문해 주세요.',
+          REQUESTS_PATH,
+        )
+      const profile = await childApi.own()
+      const requestId = nextId()
+      const wish: MockWishRequestDto = {
+        requestId,
+        childId: String(profile.id),
+        status: 'REQUESTED',
+        requestedBy: 'CHILD',
+        message: body.message,
+        requestedAt: now(),
+        checkout: null,
+        orderId: null,
+        orderResult: null,
+        rejectReason: null,
+        decidedAt: null,
+        items: items.map((item) => ({
+          wishItemId: item.wishItemId,
+          optionId: item.optionId,
+          productId: item.productId,
+          sellerId: item.sellerId,
+          productName: item.productName,
+          optionName: item.optionName,
+          size: item.size,
+          sellerName: item.sellerName,
+          requestedQuantity: item.quantity,
+          approvedQuantity: null,
+          unitPrice: item.unitPrice,
+          purchasable: item.purchasable,
+          saleStatus: item.saleStatus,
+        })),
+      }
+      items.forEach((item) => {
+        item.requestId = requestId
+      })
+      saveCart(request, cart)
+      saveRequests(request, [...requestsOf(request), wish])
+      return { status: 201, data: wish }
+    },
+  },
   {
     method: 'GET',
     path: '/child/wish',

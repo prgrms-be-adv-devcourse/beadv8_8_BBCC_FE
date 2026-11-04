@@ -268,6 +268,12 @@ export const router = createBrowserRouter(
           ),
         },
         {
+          path: rel(paths.child.home, paths.child.wishes),
+          ...page(() =>
+            import('@/pages/child/wishes').then((m) => ({ Component: m.ChildWishesPage })),
+          ),
+        },
+        {
           path: rel(paths.child.home, paths.child.cart),
           ...page(() => import('@/pages/child/cart').then((m) => ({ Component: m.ChildCartPage }))),
         },

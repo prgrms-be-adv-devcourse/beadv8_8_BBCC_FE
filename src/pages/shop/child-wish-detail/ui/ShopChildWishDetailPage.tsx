@@ -4,6 +4,7 @@ import {
   useWishTimelineQuery,
   canDecideWish,
   wishLineDecisionLabel,
+  wishRejectReasonLabel,
   wishStatusLabel,
   wishTimelineLabel,
   wishTimelineStatusLabel,
@@ -46,6 +47,9 @@ export function ShopChildWishDetailPage() {
             </p>
           )
         })}
+        {wish.data.rejectReason && (
+          <p>거절 사유: {wishRejectReasonLabel(wish.data.rejectReason)}</p>
+        )}
         {wish.data.decidedAt && <p>답한 시각 {formatDateTime(wish.data.decidedAt)}</p>}
       </section>
       {canDecideWish(wish.data) && (

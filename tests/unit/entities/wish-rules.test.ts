@@ -5,6 +5,7 @@ import {
   canRemoveChildWishLine,
   countPendingWishes,
   wishLineDecisionLabel,
+  wishRejectReasonLabel,
   wishStatusLabel,
   wishTitle,
   wishTimelineLabel,
@@ -12,6 +13,12 @@ import {
 } from '@/entities/wish'
 
 describe('조르기 규칙', () => {
+  it('거절 사유를 쉬운 말로 보여 준다', () => {
+    expect(wishRejectReasonLabel('TOO_EXPENSIVE')).toBe('너무 비싸요')
+    expect(wishRejectReasonLabel('ALREADY_HAVE')).toBe('이미 있어요')
+    expect(wishRejectReasonLabel('NEXT_TIME')).toBe('다음에 사자')
+    expect(wishRejectReasonLabel('OTHER')).toBe('기타')
+  })
   it('자녀가 담고 진행 중인 조르기에 없는 줄만 뺀다', () => {
     expect(canRemoveChildWishLine({ addedBy: 'CHILD', requestId: null })).toBe(true)
     expect(canRemoveChildWishLine({ addedBy: 'PARENT', requestId: null })).toBe(false)

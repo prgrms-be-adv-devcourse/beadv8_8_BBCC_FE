@@ -19,4 +19,6 @@ export const wishApi = {
 
 export const childWishApi = {
   get: () => apiClient.get<WishDto>('/child/wish').then(expectShape(wishShape)),
+  requests: () =>
+    apiClient.get<WishRequestDto[]>('/child/wish/requests').then(expectShape(wishRequestsShape)),
 }

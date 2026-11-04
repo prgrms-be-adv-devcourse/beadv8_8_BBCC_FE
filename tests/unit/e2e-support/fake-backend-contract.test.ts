@@ -191,11 +191,40 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect(denied.status).toBe(403)
     expect(denied.data.detail).toBe('다른 사람이 담은 상품은 뺄 수 없습니다.')
     const pending = await call('POST', '/child/wish/items', 4, { optionId: 1, quantity: 1 })
-    await call('POST', '/wish/requests', 1, {
-      childId: child.data.id,
+    const childRequest = await call('POST', '/child/wish/requests', 4, {
       wishItemIds: [Number(pending.data.wishItemId)],
-      message: null,
+      message: '부탁해요',
     })
+    expect(childRequest.status).toBe(201)
+    expectContract(childRequest.data, wishRequestShape)
+    expect(childRequest.data.requestedBy).toBe('CHILD')
+    expectContract((await call('GET', '/child/wish/requests', 4)).data, wishRequestsShape)
+    expect((await call('GET', `/wish/requests?childId=${child.data.id}`, 1)).data).toContainEqual(
+      childRequest.data,
+    )
+    expect(
+      (await call('POST', '/child/wish/requests', 4, { wishItemIds: [], message: null })).status,
+    ).toBe(400)
+    expect(
+      (await call('POST', '/child/wish/requests', 4, { wishItemIds: [1, 1], message: null }))
+        .status,
+    ).toBe(400)
+    expect(
+      (
+        await call('POST', '/child/wish/requests', 4, {
+          wishItemIds: [1],
+          message: 'a'.repeat(101),
+        })
+      ).status,
+    ).toBe(400)
+    expect(
+      (
+        await call('POST', '/child/wish/requests', 4, {
+          wishItemIds: [Number(pending.data.wishItemId)],
+          message: null,
+        })
+      ).status,
+    ).toBe(409)
     expect((await call('DELETE', `/child/wish/items/${pending.data.wishItemId}`, 4)).status).toBe(
       409,
     )

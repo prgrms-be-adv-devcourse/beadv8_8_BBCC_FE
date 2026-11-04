@@ -10,7 +10,7 @@ import { orderHandlers } from './order-handlers'
  */
 export function setupMocks() {
   registerMockHandlers('자녀 (첫 로그인)', childHandlers)
-  registerMockHandlers('자녀 장바구니 (가정 계약)', childWishHandlers)
+  registerMockHandlers('자녀 장바구니 · 조르기 (가정 계약)', childWishHandlers)
   registerMockHandlers('주문 타임라인', orderHandlers)
   registerMockHandlers('회원 보완 (탈퇴 · 이력 · 판매자 정보)', memberHandlers)
   registerMockHandlers('관리자 전체 조회', adminHandlers)

@@ -1,4 +1,4 @@
-import type { WishOrderResult, WishStatus } from './wish'
+import type { WishOrderResult, WishRequest, WishStatus } from './wish'
 
 const TIMELINE_LABEL: Record<string, string> = {
   SENT: '조르기 보냄',
@@ -69,4 +69,18 @@ export function wishLineDecisionLabel(
 ): string | null {
   if (wish.status !== 'APPROVED') return null
   return line.approvedQuantity === null ? '제외' : `${line.approvedQuantity}개 승인`
+}
+
+type WishRejectReason = NonNullable<WishRequest['rejectReason']>
+
+const REJECT_REASON_LABEL: Record<WishRejectReason, string> = {
+  TOO_EXPENSIVE: '너무 비싸요',
+  ALREADY_HAVE: '이미 있어요',
+  NEXT_TIME: '다음에 사자',
+  OTHER: '기타',
+}
+export const WISH_REJECT_REASONS = Object.keys(REJECT_REASON_LABEL) as WishRejectReason[]
+
+export function wishRejectReasonLabel(reason: WishRejectReason): string {
+  return REJECT_REASON_LABEL[reason]
 }

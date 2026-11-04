@@ -487,6 +487,70 @@ http
         return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
       // 가정 계약 (childprofile 확정 전)
       const profile = children.find((c) => c.id === account.childProfileId && !c.deleted)
+      if (r('GET', /^\/child\/wish\/requests$/)) {
+        return send(
+          res,
+          200,
+          wishRequests
+            .filter((wish) => wish.childId === String(account.childProfileId))
+            .map((wish) => {
+              const order = orders.find((item) => String(item.orderId) === wish.orderId)
+              if (order?.status === 'PAID' || order?.status === 'CANCELLED')
+                wish.orderResult = order.status
+              return wish
+            })
+            .reverse(),
+        )
+      }
+      if (r('POST', /^\/child\/wish\/requests$/)) {
+        if (
+          !Array.isArray(body.wishItemIds) ||
+          !body.wishItemIds.length ||
+          new Set(body.wishItemIds).size !== body.wishItemIds.length ||
+          (body.message?.length ?? 0) > 100
+        )
+          return wishProblem(res, 'INVALID_WISH_REQUEST', req.url)
+        const childId = String(account.childProfileId)
+        const items = wishItems.filter(
+          (item) => item.childId === childId && body.wishItemIds.includes(Number(item.wishItemId)),
+        )
+        if (items.length !== body.wishItemIds.length)
+          return wishProblem(res, 'WISH_ITEM_NOT_FOUND', req.url)
+        if (items.some((item) => item.requestId))
+          return wishProblem(res, 'WISH_ITEM_IN_REQUEST', req.url)
+        if (items.some((item) => !item.purchasable))
+          return wishProblem(res, 'PRODUCT_NOT_PURCHASABLE', req.url)
+        const requestId = String(nid())
+        const wish = {
+          requestId,
+          childId,
+          status: 'REQUESTED',
+          requestedBy: 'CHILD',
+          message: body.message,
+          requestedAt: now(),
+          checkout: null,
+          orderId: null,
+          orderResult: null,
+          rejectReason: null,
+          decidedAt: null,
+          items: items.map(
+            ({
+              childId: _c,
+              quantity,
+              lineAmount: _l,
+              addedBy: _b,
+              addedAt: _a,
+              requestId: _r,
+              ...item
+            }) => ({ ...item, requestedQuantity: quantity, approvedQuantity: null }),
+          ),
+        }
+        items.forEach((item) => {
+          item.requestId = requestId
+        })
+        wishRequests.push(wish)
+        return send(res, 201, wish)
+      }
       if (r('GET', /^\/child\/wish$/)) {
         const childId = String(account.childProfileId)
         const items = wishItems.filter((item) => item.childId === childId).reverse()
