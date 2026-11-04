@@ -487,6 +487,65 @@ http
         return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
       // 가정 계약 (childprofile 확정 전)
       const profile = children.find((c) => c.id === account.childProfileId && !c.deleted)
+      if (r('GET', /^\/child\/wish$/)) {
+        const childId = String(account.childProfileId)
+        const items = wishItems.filter((item) => item.childId === childId).reverse()
+        return send(res, 200, {
+          childId,
+          items,
+          totalAmount: items.reduce((sum, item) => sum + item.lineAmount, 0),
+        })
+      }
+      if (r('POST', /^\/child\/wish\/items$/)) {
+        if (!profile) return wishProblem(res, 'CHILD_NOT_FOUND', req.url)
+        if (badQuantity(body.quantity)) return wishProblem(res, 'INVALID_QUANTITY', req.url)
+        const rp = replica[body.optionId]
+        if (!rp) return wishProblem(res, 'PRODUCT_OPTION_NOT_FOUND', req.url)
+        const childId = String(profile.id)
+        const existing = wishItems.find(
+          (item) => item.childId === childId && item.optionId === String(body.optionId),
+        )
+        if (existing) {
+          if (existing.requestId) return wishProblem(res, 'WISH_ITEM_IN_REQUEST', req.url)
+          if (badQuantity(existing.quantity + body.quantity))
+            return wishProblem(res, 'INVALID_QUANTITY', req.url)
+          existing.quantity += body.quantity
+          existing.lineAmount = existing.quantity * existing.unitPrice
+          return send(res, 200, existing)
+        }
+        const item = {
+          wishItemId: String(nid()),
+          childId,
+          optionId: String(body.optionId),
+          productId: String(rp.productId),
+          sellerId: String(rp.sellerId),
+          productName: rp.name,
+          optionName: rp.optionName,
+          size: rp.size,
+          sellerName: '테스트상점',
+          quantity: body.quantity,
+          unitPrice: rp.price,
+          purchasable: true,
+          lineAmount: body.quantity * rp.price,
+          addedBy: 'CHILD',
+          addedAt: now(),
+          saleStatus: 'ON_SALE',
+          requestId: null,
+        }
+        wishItems.push(item)
+        return send(res, 201, item)
+      }
+      if ((x = r('DELETE', /^\/child\/wish\/items\/(\d+)$/))) {
+        const index = wishItems.findIndex(
+          (item) => item.childId === String(account.childProfileId) && item.wishItemId === x[1],
+        )
+        if (index < 0) return wishProblem(res, 'WISH_ITEM_NOT_FOUND', req.url)
+        if (wishItems[index].addedBy !== 'CHILD')
+          return wishProblem(res, 'WISH_ITEM_REMOVE_FORBIDDEN', req.url)
+        if (wishItems[index].requestId) return wishProblem(res, 'WISH_ITEM_IN_REQUEST', req.url)
+        wishItems.splice(index, 1)
+        return send(res, 204)
+      }
       if (r('GET', /^\/child\/onboarding$/)) {
         // 프로필이 없으면 나이를 알 수 없으므로 보호자 동의가 필요한 쪽(14세 미만)으로 본다
         const birth = profile?.birthDate ?? new Date().toISOString().slice(0, 10)

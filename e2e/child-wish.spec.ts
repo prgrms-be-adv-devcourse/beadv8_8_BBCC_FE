@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { pickOption } from './support/option'
 
 test('부모가 보낸 조르기를 목록과 상세에서 확인한다', async ({ page, request }) => {
   await page.goto('/login')
@@ -141,4 +142,94 @@ test('이미 처리된 조르기를 승인하면 조르기를 다시 불러온�
   await expect(page.getByRole('heading', { name: '조르기 답하기' })).toHaveCount(0)
   await expect(page.getByText(/^거절 · 완료/)).toBeVisible()
   await expect(page).toHaveURL(new RegExp(`/wishes/${requestId}$`))
+})
+
+test('자녀가 상품을 담고 합친 뒤 뺀다', async ({ page, context }) => {
+  await page.goto('/login')
+  await page.getByRole('main').getByRole('button', { name: '보호자', exact: true }).click()
+  await expect(page).toHaveURL('/')
+  await page.goto('/my/children/new')
+  const name = `아이${Date.now()}`
+  await page.getByLabel('이름').fill(name)
+  await page.getByRole('button', { name: '등록하기' }).click()
+  await page.getByRole('link', { name: `${name} 상세` }).click()
+  const loginId = `c${Date.now()}`
+  await page.getByLabel('아이디').fill(loginId)
+  await page.getByLabel('비밀번호', { exact: true }).fill('password1')
+  await page.getByRole('button', { name: '계정 발급' }).click()
+  const child = await context.newPage()
+  await child.addInitScript(() =>
+    localStorage.setItem(
+      'kidly.mock-settings',
+      JSON.stringify({ '자녀 (첫 로그인)': false, '자녀 장바구니 (가정 계약)': false }),
+    ),
+  )
+  await child.goto('/child')
+  await child.getByLabel('아이디').fill(loginId)
+  await child.getByLabel('비밀번호').fill('password1')
+  await child.getByRole('button', { name: '로그인', exact: true }).click()
+  await child.getByRole('button', { name: '확인', exact: true }).click()
+  await child.getByRole('link', { name: '상품', exact: true }).click()
+  await child.locator('a[href="/child/products/1"]').first().click()
+  await pickOption(child, '네이비', '110')
+  await child.getByRole('button', { name: '내 장바구니에 담기' }).click()
+  await expect(child.getByRole('link', { name: '내 장바구니 보기' })).toBeVisible()
+  await child.getByRole('button', { name: '내 장바구니에 담기' }).click()
+  await child.getByRole('link', { name: '내 장바구니 보기' }).click()
+  await expect(child.getByRole('main')).toContainText('2개')
+  await child.getByRole('button', { name: '빼기' }).click()
+  await expect(child.getByText('담은 상품이 없어요.')).toBeVisible()
+})
+
+test('일반 쇼핑 방문에서 자녀 API를 호출하지 않는다', async ({ page }) => {
+  const calls: string[] = []
+  page.on('request', (request) => {
+    if (/\/api\/v1\/(child|auth\/child)\//.test(request.url())) calls.push(request.url())
+  })
+  await page.goto('/')
+  await page.locator('a[href="/products/1"]').first().click()
+  await expect(page.getByRole('spinbutton')).toBeVisible()
+  expect(calls).toEqual([])
+})
+
+test('자녀 영역에서는 보호자 회원 API를 부르지 않는다', async ({ page, context }) => {
+  await page.goto('/login')
+  await page.getByRole('main').getByRole('button', { name: '보호자', exact: true }).click()
+  await expect(page).toHaveURL('/')
+  await page.goto('/my/children/new')
+  const name = `아이${Date.now()}`
+  await page.getByLabel('이름').fill(name)
+  await page.getByRole('button', { name: '등록하기' }).click()
+  await page.getByRole('link', { name: `${name} 상세` }).click()
+  const loginId = `c${Date.now()}`
+  await page.getByLabel('아이디').fill(loginId)
+  await page.getByLabel('비밀번호', { exact: true }).fill('password1')
+  await page.getByRole('button', { name: '계정 발급' }).click()
+  await expect(page.getByText(`아이디: ${loginId}`)).toBeVisible()
+  const child = await context.newPage()
+  await child.addInitScript(() =>
+    localStorage.setItem(
+      'kidly.mock-settings',
+      JSON.stringify({ '자녀 (첫 로그인)': false, '자녀 장바구니 (가정 계약)': false }),
+    ),
+  )
+  // 자녀 영역이 부르면 안 되는 보호자 회원 API (보호자 로그인 표시용 /members/me는 제외)
+  const memberCalls: string[] = []
+  child.on('request', (request) => {
+    const { pathname } = new URL(request.url())
+    if (/^\/api\/v1\/(children|cart|recommendations|members\/me\/.+)(\/|$)/.test(pathname))
+      memberCalls.push(`${request.method()} ${pathname}`)
+  })
+  await child.goto('/child')
+  await child.getByLabel('아이디').fill(loginId)
+  await child.getByLabel('비밀번호').fill('password1')
+  await child.getByRole('button', { name: '로그인', exact: true }).click()
+  await child.getByRole('button', { name: '확인', exact: true }).click()
+  await child.getByRole('link', { name: '상품', exact: true }).click()
+  await child.locator('a[href="/child/products/1"]').first().click()
+  await pickOption(child, '네이비', '110')
+  await child.getByRole('button', { name: '내 장바구니에 담기' }).click()
+  await child.getByRole('link', { name: '내 장바구니 보기' }).click()
+  await expect(child.getByRole('button', { name: '빼기' })).toBeVisible()
+  expect(memberCalls).toEqual([])
 })

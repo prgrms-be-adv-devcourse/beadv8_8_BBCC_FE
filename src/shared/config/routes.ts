@@ -2,19 +2,21 @@
 import { safeReturnPath } from '../lib/return-path'
 
 /** 화면 영역: 쇼핑(보호자) · 판매자 센터 · 관리자 · 시연 콘솔 */
-export type Area = 'shop' | 'center' | 'admin' | 'console'
+export type Area = 'shop' | 'center' | 'admin' | 'console' | 'child'
 
 export const AREA_LABEL: Record<Area, string> = {
   shop: '쇼핑',
   center: '판매자 센터',
   admin: '관리자',
   console: '시연 콘솔',
+  child: '자녀',
 }
 
 const under = (prefix: string, pathname: string) =>
   pathname === prefix || pathname.startsWith(`${prefix}/`)
 
 export function areaOf(pathname: string): Area {
+  if (under('/child', pathname)) return 'child'
   if (under('/console', pathname)) return 'console'
   if (under('/center', pathname)) return 'center'
   if (under('/admin', pathname)) return 'admin'
@@ -26,7 +28,12 @@ const RECOMMENDED = '/recommended'
 
 export const paths = {
   login: '/login',
-  child: { home: '/child' },
+  child: {
+    home: '/child',
+    products: '/child/products',
+    product: (id: string) => `/child/products/${id}`,
+    cart: '/child/cart',
+  },
   kakaoCallback: '/oauth/kakao/callback',
   shop: {
     home: '/',

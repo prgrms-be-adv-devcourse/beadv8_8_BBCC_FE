@@ -16,3 +16,7 @@ export const wishApi = {
       .get<WishTimelineDto>(`/wish/requests/${id}/timeline`)
       .then(expectShape(wishTimelineShape)),
 }
+
+export const childWishApi = {
+  get: () => apiClient.get<WishDto>('/child/wish').then(expectShape(wishShape)),
+}

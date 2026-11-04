@@ -27,6 +27,7 @@ import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
 import {
   wishShape,
+  wishLineShape,
   wishRequestShape,
   wishRequestsShape,
   wishTimelineShape,
@@ -170,6 +171,34 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       ).status,
     ).toBe(204)
     expectContract((await call('GET', '/child/profile', 4)).data, childShape)
+    const added = await call('POST', '/child/wish/items', 4, { optionId: 1, quantity: 1 })
+    expect(added.status).toBe(201)
+    expectContract(added.data, wishLineShape)
+    const merged = await call('POST', '/child/wish/items', 4, { optionId: 1, quantity: 2 })
+    expect(merged.status).toBe(200)
+    expect(merged.data.quantity).toBe(3)
+    const childCart = await call('GET', '/child/wish', 4)
+    expectContract(childCart.data, wishShape)
+    const parentCart = await call('GET', `/wish?childId=${child.data.id}`, 1)
+    expect(parentCart.data.items).toContainEqual(merged.data)
+    expect((await call('DELETE', `/child/wish/items/${added.data.wishItemId}`, 4)).status).toBe(204)
+    const parentAdded = await call('POST', '/wish/items', 1, {
+      childId: child.data.id,
+      optionId: 2,
+      quantity: 1,
+    })
+    const denied = await call('DELETE', `/child/wish/items/${parentAdded.data.wishItemId}`, 4)
+    expect(denied.status).toBe(403)
+    expect(denied.data.detail).toBe('다른 사람이 담은 상품은 뺄 수 없습니다.')
+    const pending = await call('POST', '/child/wish/items', 4, { optionId: 1, quantity: 1 })
+    await call('POST', '/wish/requests', 1, {
+      childId: child.data.id,
+      wishItemIds: [Number(pending.data.wishItemId)],
+      message: null,
+    })
+    expect((await call('DELETE', `/child/wish/items/${pending.data.wishItemId}`, 4)).status).toBe(
+      409,
+    )
     expect((await call('GET', '/child/profile', 1)).status).toBe(403)
     expect((await call('GET', '/members/me', 4)).status).toBe(401)
     expect(

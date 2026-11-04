@@ -13,19 +13,18 @@ const item = {
   purchasable: bool,
   saleStatus: nullable(str),
 }
+export const wishLineShape = obj({
+  ...item,
+  childId: str,
+  quantity: num,
+  lineAmount: num,
+  addedBy: oneOf(['PARENT', 'CHILD']),
+  addedAt: str,
+  requestId: nullable(str),
+})
 export const wishShape = obj({
   childId: str,
-  items: arr(
-    obj({
-      ...item,
-      childId: str,
-      quantity: num,
-      lineAmount: num,
-      addedBy: oneOf(['PARENT', 'CHILD']),
-      addedAt: str,
-      requestId: nullable(str),
-    }),
-  ),
+  items: arr(wishLineShape),
   totalAmount: num,
 })
 export const wishRequestShape = obj({

@@ -255,6 +255,22 @@ export const router = createBrowserRouter(
             import('@/pages/child/profile').then((m) => ({ Component: m.ChildProfilePage })),
           ),
         },
+        {
+          path: rel(paths.child.home, paths.child.products),
+          ...page(() => import('@/pages/shop/home').then((m) => ({ Component: m.ShopHomePage }))),
+        },
+        {
+          path: rel(paths.child.home, paths.child.product(':productId')),
+          ...page(() =>
+            import('@/pages/shop/product-detail').then((m) => ({
+              Component: m.ShopProductDetailPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.child.home, paths.child.cart),
+          ...page(() => import('@/pages/child/cart').then((m) => ({ Component: m.ChildCartPage }))),
+        },
       ],
     },
     {

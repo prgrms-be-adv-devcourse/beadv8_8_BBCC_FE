@@ -28,6 +28,13 @@ export function canSendWishLine(line: { purchasable: boolean; requestId: string 
   return line.purchasable && line.requestId === null
 }
 
+export function canRemoveChildWishLine(line: {
+  addedBy: 'CHILD' | 'PARENT'
+  requestId: string | null
+}): boolean {
+  return line.addedBy === 'CHILD' && line.requestId === null
+}
+
 export function canDecideWish(wish: { status: WishStatus }): boolean {
   return wish.status === 'REQUESTED'
 }

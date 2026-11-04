@@ -1,6 +1,7 @@
 export {
   canDecideWish,
   canSendWishLine,
+  canRemoveChildWishLine,
   countPendingWishes,
   wishLineDecisionLabel,
   wishStatusLabel,
@@ -19,9 +20,10 @@ export type {
   WishTimelineStep,
 } from './model/wish'
 export { toWishRequest, toWishTimeline, toWish } from './model/wish.mapper'
-export { wishRequestShape } from './api/wish.shape'
+export { wishRequestShape, wishLineShape, wishShape } from './api/wish.shape'
 export {
   wishKeys,
+  useChildWishQuery,
   useWishRequestsQuery,
   useWishRequestQuery,
   useWishTimelineQuery,

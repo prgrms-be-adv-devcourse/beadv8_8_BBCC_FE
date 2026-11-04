@@ -23,6 +23,7 @@ describe('areaOf: 주소로 화면 영역을 나눈다', () => {
     ['/admin/settlements', 'admin'],
     ['/console', 'console'],
     ['/console/seller/products', 'console'],
+    ['/child/products', 'child'],
   ] as const)('%s → %s', (pathname, area) => {
     expect(areaOf(pathname)).toBe(area)
   })
@@ -31,6 +32,7 @@ describe('areaOf: 주소로 화면 영역을 나눈다', () => {
     expect(areaOf('/consoles')).toBe('shop')
     expect(areaOf('/centerfold')).toBe('shop')
     expect(areaOf('/administrator')).toBe('shop')
+    expect(areaOf('/childish')).toBe('shop')
   })
 })
 

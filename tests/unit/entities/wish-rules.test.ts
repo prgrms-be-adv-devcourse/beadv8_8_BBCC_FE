@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   canDecideWish,
   canSendWishLine,
+  canRemoveChildWishLine,
   countPendingWishes,
   wishLineDecisionLabel,
   wishStatusLabel,
@@ -11,6 +12,11 @@ import {
 } from '@/entities/wish'
 
 describe('조르기 규칙', () => {
+  it('자녀가 담고 진행 중인 조르기에 없는 줄만 뺀다', () => {
+    expect(canRemoveChildWishLine({ addedBy: 'CHILD', requestId: null })).toBe(true)
+    expect(canRemoveChildWishLine({ addedBy: 'PARENT', requestId: null })).toBe(false)
+    expect(canRemoveChildWishLine({ addedBy: 'CHILD', requestId: '1' })).toBe(false)
+  })
   it('진행 단계는 사용자에게 이해할 수 있는 문구로 보여 준다', () => {
     expect(wishTimelineLabel('SENT')).toBe('조르기 보냄')
     expect(wishTimelineLabel('PAYMENT_REQUESTED')).toBe('결제 대기')
