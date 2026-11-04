@@ -4,6 +4,7 @@ import { toChild, toGrowthRecord } from './child.mapper'
 
 export const childKeys = {
   all: ['children'] as const,
+  own: ['child', 'profile'] as const,
   detail: (childId: string) => ['children', 'detail', childId] as const,
   growth: (childId: string) => ['children', 'growth', childId] as const,
 }
@@ -31,5 +32,15 @@ export function useGrowthRecordsQuery(childId: string) {
     queryKey: childKeys.growth(childId),
     queryFn: () => childApi.growthRecords(childId),
     select: (list) => list.map(toGrowthRecord),
+  })
+}
+
+export function useOwnChildProfileQuery() {
+  return useQuery({
+    queryKey: childKeys.own,
+    queryFn: childApi.own,
+    select: toChild,
+    retry: false,
+    staleTime: 0,
   })
 }

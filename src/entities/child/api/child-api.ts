@@ -8,6 +8,7 @@ import type {
 import { childShape, growthRecordShape } from './child.shape'
 
 export const childApi = {
+  own: () => apiClient.get<ChildProfileDto>('/child/profile').then(expectShape(childShape)),
   list: () => apiClient.get<ChildProfileDto[]>('/children').then(expectShape(arr(childShape))),
   get: (childId: string) =>
     apiClient.get<ChildProfileDto>(`/children/${childId}`).then(expectShape(childShape)),

@@ -1,13 +1,19 @@
 import { Link } from 'react-router'
 import { ChildCard, useChildrenQuery } from '@/entities/child'
+import { accountOfChild, useChildAccountsQuery } from '@/entities/child-account'
+import { hasRole, useSessionStore } from '@/entities/session'
 import { getErrorMessage } from '@/shared/api'
 import { memberPathsOf } from '@/shared/config'
 import { useArea } from '@/shared/lib'
+import { Badge } from '@/shared/ui/badge'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 export function ShopChildrenPage() {
   const children = useChildrenQuery()
+  const user = useSessionStore((state) => state.user)
+  const isBuyer = hasRole(user, 'BUYER')
+  const accounts = useChildAccountsQuery(isBuyer)
   const memberPaths = memberPathsOf(useArea())
 
   return (
@@ -52,6 +58,9 @@ export function ShopChildrenPage() {
             </Link>
           </div>
         )}
+        {accounts.isError && (
+          <StateMessage tone="error">{getErrorMessage(accounts.error)}</StateMessage>
+        )}
         <div className="grid gap-4 md:grid-cols-2">
           {children.data?.map((child) => (
             <Link
@@ -61,6 +70,11 @@ export function ShopChildrenPage() {
               aria-label={`${child.name} 상세`}
             >
               <ChildCard child={child} />
+              {accounts.data && (
+                <Badge variant="muted">
+                  {accountOfChild(accounts.data, child.id) ? '발급됨' : '계정 없음'}
+                </Badge>
+              )}
             </Link>
           ))}
         </div>

@@ -1,4 +1,4 @@
-import { useAdminSessionStore, useSessionStore } from '@/entities/session'
+import { useAdminSessionStore, useChildSessionStore, useSessionStore } from '@/entities/session'
 import { configureAuth } from '@/shared/api'
 import { queryClient } from './query-client'
 
@@ -9,6 +9,14 @@ export function setupAuth() {
     onTokenReissued: (accessToken) => useSessionStore.getState().setAccessToken(accessToken),
     onAuthFailed: () => {
       useSessionStore.getState().clear()
+      queryClient.clear()
+    },
+  })
+  configureAuth('child', {
+    getAccessToken: () => useChildSessionStore.getState().accessToken,
+    onTokenReissued: (accessToken) => useChildSessionStore.getState().setAccessToken(accessToken),
+    onAuthFailed: () => {
+      useChildSessionStore.getState().clear()
       queryClient.clear()
     },
   })

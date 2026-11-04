@@ -11,6 +11,7 @@ import { ShopMyLayout } from '../layouts/ShopMyLayout'
 import { CenterLayout } from '../layouts/CenterLayout'
 import { AdminGate } from '../layouts/AdminGate'
 import { AdminLayout } from '../layouts/AdminLayout'
+import { ChildLayout } from '../layouts/ChildLayout'
 
 // 영역: 쇼핑(/) · 판매자 센터(/center) · 관리자(/admin) · 시연 콘솔(/console). 주소는 shared/config/routes.ts
 // 레이아웃만 바로 불러오고, 화면은 들어갈 때 불러온다 (번들 크기 경고 해소)
@@ -233,6 +234,19 @@ export const router = createBrowserRouter(
         { path: rel(paths.center.home, paths.center.settlements), ...centerSettlements },
         { path: 'settlements/:settlementId', ...centerSettlementDetail },
         { path: '*', element: <NotFoundPage /> },
+      ],
+    },
+    {
+      path: paths.child.home,
+      element: <ChildLayout />,
+      HydrateFallback: RouteFallback,
+      children: [
+        {
+          index: true,
+          ...page(() =>
+            import('@/pages/child/profile').then((m) => ({ Component: m.ChildProfilePage })),
+          ),
+        },
       ],
     },
     {

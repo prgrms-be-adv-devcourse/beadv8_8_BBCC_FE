@@ -1,6 +1,7 @@
 import { apiClient, expectShape } from '@/shared/api'
 import type {
   AdminLoginRequestDto,
+  ChildLoginRequestDto,
   DevTokenRequestDto,
   MemberDto,
   MemberUpdateRequestDto,
@@ -27,6 +28,11 @@ export const sessionApi = {
       .then(expectShape(tokenShape)),
   /** 쿠키가 없어도 204 */
   logoutAdmin: () => apiClient.post<void>('/auth/admin/logout', undefined, { skipAuth: true }),
+  loginAsChild: (request: ChildLoginRequestDto) =>
+    apiClient
+      .post<TokenResponseDto>('/auth/child/login', request, { skipAuth: true })
+      .then(expectShape(tokenShape)),
+  logoutChild: () => apiClient.post<void>('/auth/child/logout', undefined, { skipAuth: true }),
   /** 개발용 토큰은 회원 행이 없을 수 있어 404가 올 수 있다 (흐름 패널에 "예상됨") */
   getMe: () =>
     apiClient

@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { KakaoLoginButton } from '@/features/auth-kakao-login'
 import { SwitchDemoRole } from '@/features/switch-demo-role'
 import { paths, useDemoRoleSwitch } from '@/shared/config'
@@ -23,6 +23,9 @@ export function LoginPage() {
       <Card className="space-y-3">
         <KakaoLoginButton next={next} />
       </Card>
+      <Link to={paths.child.home} className="text-primary underline">
+        자녀 로그인
+      </Link>
       {demoRoleSwitch && (
         <Card className="space-y-2">
           <p className="text-sm font-medium">시연용 로그인 (local 전용 개발용 토큰)</p>
