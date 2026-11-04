@@ -7,6 +7,14 @@ describe('principalOf: 요청에 어느 로그인의 토큰을 붙일지', () =>
     expect(principalOf('/admin/settlements/run')).toBe('admin')
   })
 
+  it('자녀 API는 자녀 토큰', () => {
+    expect(principalOf('/child/profile')).toBe('child')
+    expect(principalOf('/auth/child/login')).toBe('child')
+    expect(principalOf('/auth/child/reissue')).toBe('child')
+    expect(principalOf('/auth/child-accounts')).toBe('member')
+    expect(principalOf('/children/1')).toBe('member')
+  })
+
   it('그 밖의 API는 회원 토큰', () => {
     expect(principalOf('/members/me')).toBe('member')
     expect(principalOf('/seller/orders')).toBe('member')

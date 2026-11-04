@@ -20,3 +20,5 @@ export type MemberUpdateRequestDto = { nickname: string }
 
 /** POST /auth/admin/login (백엔드 AdminLoginRequest) */
 export type AdminLoginRequestDto = { email: string; password: string }
+
+export type ChildLoginRequestDto = { loginId: string; password: string }

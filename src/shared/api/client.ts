@@ -28,16 +28,18 @@ type AuthHandlers = {
 }
 
 /** 로그인 주체. 회원과 관리자는 토큰 · 재발급 쿠키가 따로다 (BE #736) */
-export type Principal = 'member' | 'admin'
+export type Principal = 'member' | 'admin' | 'child'
 
 /** 관리자 API(/admin/…)는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 403) */
 export function principalOf(url: string | undefined): Principal {
+  if (url?.startsWith('/child/') || url?.startsWith('/auth/child/')) return 'child'
   return url?.startsWith('/admin/') ? 'admin' : 'member'
 }
 
 const REISSUE_PATH: Record<Principal, string> = {
   member: '/auth/reissue',
   admin: '/auth/admin/reissue',
+  child: '/auth/child/reissue',
 }
 
 const noAuth: AuthHandlers = {
@@ -46,7 +48,11 @@ const noAuth: AuthHandlers = {
   onAuthFailed: () => {},
 }
 
-const authHandlers: Record<Principal, AuthHandlers> = { member: noAuth, admin: noAuth }
+const authHandlers: Record<Principal, AuthHandlers> = {
+  member: noAuth,
+  admin: noAuth,
+  child: noAuth,
+}
 
 export function configureAuth(principal: Principal, handlers: AuthHandlers) {
   authHandlers[principal] = handlers
@@ -60,7 +66,11 @@ export const apiClient = axios.create({
   adapter: createMockAdapter(defaultAdapter),
 })
 
-const reissuing: Record<Principal, Promise<string> | null> = { member: null, admin: null }
+const reissuing: Record<Principal, Promise<string> | null> = {
+  member: null,
+  admin: null,
+  child: null,
+}
 
 /** 동시에 여러 요청이 401을 받아도 재발급은 주체마다 한 번만 보낸다 (Refresh Token이 매번 교체되므로) */
 export function reissueAccessToken(principal: Principal = 'member'): Promise<string> {
