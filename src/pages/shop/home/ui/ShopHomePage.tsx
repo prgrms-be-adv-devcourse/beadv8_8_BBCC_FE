@@ -16,6 +16,7 @@ import { hasRole, useSessionStore } from '@/entities/session'
 import { QuickHeightForm } from '@/features/edit-child'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
+import { useArea } from '@/shared/lib'
 import { MockBadge } from '@/shared/ui/MockBadge'
 import { Pagination } from '@/shared/ui/Pagination'
 import { CardGridSkeleton } from '@/shared/ui/Skeleton'
@@ -31,8 +32,9 @@ import { RecommendedPreview } from './RecommendedPreview'
  * 검색어는 머리말 검색창이 주소(?q=)에 싣는다. 검색 중에는 전체 상품 검색 결과만 보인다
  */
 export function ShopHomePage() {
+  const isChild = useArea() === 'child'
   const user = useSessionStore((state) => state.user)
-  const isBuyer = hasRole(user, 'BUYER')
+  const isBuyer = !isChild && hasRole(user, 'BUYER')
   const children = useChildrenQuery({ enabled: isBuyer })
   // 검색어(q) · 거르기(cat · sort · attr) · 페이지(page) · 맞춤 자녀(child)는 주소에 둔다 → 상세에서 뒤로 와도 그대로
   const [params, setParams] = useSearchParams()
@@ -99,7 +101,7 @@ export function ShopHomePage() {
             )}
             {keyword && (
               <Link
-                to={paths.shop.home}
+                to={isChild ? paths.child.products : paths.shop.home}
                 className="text-ink-3 hover:text-ink ml-1 text-[13px] underline underline-offset-4"
               >
                 검색 지우기
@@ -122,7 +124,7 @@ export function ShopHomePage() {
           {all.data?.content.map((product) => (
             <ProductTile
               key={product.id}
-              to={paths.shop.product(product.id)}
+              to={isChild ? paths.child.product(product.id) : paths.shop.product(product.id)}
               name={product.name}
               seller={product.businessName}
               price={product.minPrice}

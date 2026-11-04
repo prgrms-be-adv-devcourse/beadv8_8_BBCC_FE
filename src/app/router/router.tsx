@@ -38,6 +38,12 @@ const childNew = page(() =>
 const childDetail = page(() =>
   import('@/pages/shop/child-detail').then((m) => ({ Component: m.ShopChildDetailPage })),
 )
+const childWishes = page(() =>
+  import('@/pages/shop/child-wishes').then((m) => ({ Component: m.ShopChildWishesPage })),
+)
+const childWishDetail = page(() =>
+  import('@/pages/shop/child-wish-detail').then((m) => ({ Component: m.ShopChildWishDetailPage })),
+)
 const profile = page(() =>
   import('@/pages/shop/profile').then((m) => ({ Component: m.ShopProfilePage })),
 )
@@ -201,6 +207,8 @@ export const router = createBrowserRouter(
         { path: rel('', paths.shop.children), ...children },
         { path: rel('', paths.shop.childNew), ...childNew },
         { path: 'my/children/:childId', ...childDetail },
+        { path: rel('', paths.shop.childWishes(':childId')), ...childWishes },
+        { path: rel('', paths.shop.childWish(':childId', ':requestId')), ...childWishDetail },
         // 충전은 메뉴 없이 한 가지 일만 (마이페이지 묶음 밖)
         { path: rel('', paths.shop.walletCharge), ...walletCharge },
         { path: rel('', paths.shop.chargeSuccess), ...chargeSuccess },
@@ -246,6 +254,28 @@ export const router = createBrowserRouter(
           ...page(() =>
             import('@/pages/child/profile').then((m) => ({ Component: m.ChildProfilePage })),
           ),
+        },
+        {
+          path: rel(paths.child.home, paths.child.products),
+          ...page(() => import('@/pages/shop/home').then((m) => ({ Component: m.ShopHomePage }))),
+        },
+        {
+          path: rel(paths.child.home, paths.child.product(':productId')),
+          ...page(() =>
+            import('@/pages/shop/product-detail').then((m) => ({
+              Component: m.ShopProductDetailPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.child.home, paths.child.wishes),
+          ...page(() =>
+            import('@/pages/child/wishes').then((m) => ({ Component: m.ChildWishesPage })),
+          ),
+        },
+        {
+          path: rel(paths.child.home, paths.child.cart),
+          ...page(() => import('@/pages/child/cart').then((m) => ({ Component: m.ChildCartPage }))),
         },
       ],
     },
@@ -371,6 +401,11 @@ export const router = createBrowserRouter(
         { path: rel(paths.console.home, paths.console.children), ...children },
         { path: rel(paths.console.home, paths.console.childNew), ...childNew },
         { path: 'children/:childId', ...childDetail },
+        { path: rel(paths.console.home, paths.console.childWishes(':childId')), ...childWishes },
+        {
+          path: rel(paths.console.home, paths.console.childWish(':childId', ':requestId')),
+          ...childWishDetail,
+        },
         { path: rel(paths.console.home, paths.console.profile), ...profile },
         { path: rel(paths.console.home, paths.console.addresses), ...addresses },
         {

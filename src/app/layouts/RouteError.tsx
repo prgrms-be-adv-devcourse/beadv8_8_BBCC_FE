@@ -5,6 +5,7 @@ import { Card } from '@/shared/ui/card'
 import { describeRouteError } from './route-error'
 
 const AREA_HOME: Record<Area, string> = {
+  child: paths.child.home,
   shop: paths.shop.home,
   center: paths.center.home,
   admin: paths.admin.home,

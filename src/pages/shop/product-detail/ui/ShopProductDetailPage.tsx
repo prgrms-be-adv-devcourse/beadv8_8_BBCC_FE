@@ -22,24 +22,26 @@ import {
 import { sizeRangesOf, useSizeRecommendationQuery } from '@/entities/recommendation'
 import { useSessionStore } from '@/entities/session'
 import { AddToCartButton } from '@/features/add-to-cart'
+import { ChildWishAddButton } from '@/features/child-wish-cart'
 import { getErrorMessage } from '@/shared/api'
 import { loginPath, paths } from '@/shared/config'
-import { formatWon } from '@/shared/lib'
+import { formatWon, useArea } from '@/shared/lib'
 import { Input } from '@/shared/ui/input'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { SizeAdvice } from './SizeAdvice'
 
 export function ShopProductDetailPage() {
+  const isChild = useArea() === 'child'
   const { productId = '' } = useParams()
   const [search] = useSearchParams()
   const location = useLocation()
   const user = useSessionStore((state) => state.user)
   const product = useProductQuery(productId)
   // 로그인 전에는 자녀를 부르지 않는다 (상품은 누구나 본다)
-  const children = useChildrenQuery({ enabled: Boolean(user) })
+  const children = useChildrenQuery({ enabled: Boolean(user) && !isChild })
   const [childId, setChildId] = useState<string | null>(search.get('childId'))
-  const recommendation = useSizeRecommendationQuery(productId, childId)
+  const recommendation = useSizeRecommendationQuery(productId, isChild ? null : childId)
   const [picks, setPicks] = useState<OptionPicks>({})
   const [quantity, setQuantity] = useState(1)
 
@@ -94,7 +96,7 @@ export function ShopProductDetailPage() {
     <div className="shop-look space-y-14 md:space-y-24">
       <section aria-label={detail.name} className="space-y-4">
         <Link
-          to={paths.shop.home}
+          to={isChild ? paths.child.products : paths.shop.home}
           className="text-ink-3 hover:text-ink inline-flex items-center gap-1 rounded-md text-[13px] font-semibold transition-colors"
         >
           <svg
@@ -133,28 +135,30 @@ export function ShopProductDetailPage() {
 
             {/* 옵션: 누가 입나요(주문에 같이 실린다) → 색상 → 추천 한 줄 → 사이즈 칩 */}
             <div className="space-y-3">
-              <div className="space-y-1.5">
-                <p className="text-sm font-semibold">누가 입나요?</p>
-                {!user ? (
-                  <Link
-                    to={loginPath(location.pathname + location.search)}
-                    className="shop-link text-sm"
-                  >
-                    로그인하고 맞는 사이즈 보기
-                  </Link>
-                ) : children.data?.length === 0 ? (
-                  <Link to={paths.shop.childNew} className="shop-link text-sm">
-                    자녀 등록하고 맞는 사이즈 보기
-                  </Link>
-                ) : (
-                  <ChildPicker
-                    children={children.data ?? []}
-                    selectedId={childId}
-                    onSelect={setChildId}
-                    noneLabel={childId !== null ? '선택 안 함' : undefined}
-                  />
-                )}
-              </div>
+              {!isChild && (
+                <div className="space-y-1.5">
+                  <p className="text-sm font-semibold">누가 입나요?</p>
+                  {!user ? (
+                    <Link
+                      to={loginPath(location.pathname + location.search)}
+                      className="shop-link text-sm"
+                    >
+                      로그인하고 맞는 사이즈 보기
+                    </Link>
+                  ) : children.data?.length === 0 ? (
+                    <Link to={paths.shop.childNew} className="shop-link text-sm">
+                      자녀 등록하고 맞는 사이즈 보기
+                    </Link>
+                  ) : (
+                    <ChildPicker
+                      children={children.data ?? []}
+                      selectedId={childId}
+                      onSelect={setChildId}
+                      noneLabel={childId !== null ? '선택 안 함' : undefined}
+                    />
+                  )}
+                </div>
+              )}
               {!sizeAttributeId && sizeAdvice}
               <OptionChipPicker
                 rows={optionChipRows(detail, picks, recommendation.data?.recommendedSize)}
@@ -193,7 +197,9 @@ export function ShopProductDetailPage() {
                 </span>
               </div>
               {!isSelling && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}
-              {user ? (
+              {isChild ? (
+                <ChildWishAddButton optionId={optionId} quantity={quantity} disabled={!isSelling} />
+              ) : user ? (
                 <AddToCartButton
                   optionId={optionId}
                   childId={childId}

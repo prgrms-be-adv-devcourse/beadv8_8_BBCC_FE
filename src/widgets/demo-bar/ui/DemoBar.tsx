@@ -11,6 +11,7 @@ const AREA_HOME: Record<Area, string> = {
   center: paths.center.home,
   admin: paths.admin.home,
   console: paths.console.home,
+  child: paths.child.home,
 }
 
 const ALL_AREAS = Object.keys(AREA_HOME) as Area[]

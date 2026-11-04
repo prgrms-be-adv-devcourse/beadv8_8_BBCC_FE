@@ -18,9 +18,12 @@ export function ChildLayout() {
           <Link to={paths.child.home} className="text-section">
             Kidly
           </Link>
-          <Link to={paths.shop.home} className="ml-auto">
-            상품 둘러보기
+          <Link to={paths.child.home} className="ml-auto">
+            내 프로필
           </Link>
+          <Link to={paths.child.products}>상품</Link>
+          <Link to={paths.child.cart}>내 장바구니</Link>
+          <Link to={paths.child.wishes}>내 조르기</Link>
           {accessToken && (
             <Button variant="ghost" disabled={logout.isPending} onClick={() => logout.mutate()}>
               로그아웃
