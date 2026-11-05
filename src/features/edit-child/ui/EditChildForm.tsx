@@ -36,6 +36,7 @@ export function EditChildForm({ child }: EditChildFormProps) {
         <ChildFormFields
           form={form}
           onChange={setForm}
+          isOptionalDisabled={!child.hasOptionalConsent}
           footer={
             <>
               <Button type="submit" className="h-11 px-6 text-[15px]" disabled={update.isPending}>

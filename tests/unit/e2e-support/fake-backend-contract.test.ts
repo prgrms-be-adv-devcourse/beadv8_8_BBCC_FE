@@ -125,7 +125,11 @@ afterAll(() => {
 
 describe('가짜 백엔드 응답 = FE 계약', () => {
   it('자녀 계정 계약과 권한', async () => {
-    const child = await call('POST', '/children', 1, toChildRequest(DEMO_CHILD))
+    const child = await call('POST', '/children', 1, {
+      ...toChildRequest(DEMO_CHILD),
+      requiredConsent: true,
+      optionalConsent: true,
+    })
     const account = await call('POST', '/auth/child-accounts', 1, {
       childProfileId: child.data.id,
       loginId: 'contractchild',
@@ -143,7 +147,11 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expectContract((await call('GET', '/child/onboarding', 4)).data, childOnboardingShape)
     expect((await call('POST', '/child/onboarding/notice', 4)).status).toBe(204)
     // 프로필이 지워진 자녀도 첫 로그인 상태를 받는다 (프로필 없음)
-    const orphan = await call('POST', '/children', 1, toChildRequest(DEMO_CHILD))
+    const orphan = await call('POST', '/children', 1, {
+      ...toChildRequest(DEMO_CHILD),
+      requiredConsent: true,
+      optionalConsent: true,
+    })
     await call('POST', '/auth/child-accounts', 1, {
       childProfileId: orphan.data.id,
       loginId: 'orphanchild',
@@ -242,7 +250,13 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
   })
   it('자녀 · 배송지 · 예치금', async () => {
     expectContract(
-      (await call('POST', '/children', 1, toChildRequest(DEMO_CHILD))).data,
+      (
+        await call('POST', '/children', 1, {
+          ...toChildRequest(DEMO_CHILD),
+          requiredConsent: true,
+          optionalConsent: true,
+        })
+      ).data,
       childShape,
     )
     expectContract((await call('GET', '/children', 1)).data, arr(childShape))
@@ -279,9 +293,55 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       (await call('PATCH', '/members/me', 1, { nickname: '새닉네임' })).data,
       memberShape,
     )
-    const extra = await call('POST', '/children', 1, toChildRequest(DEMO_CHILD))
+    const extra = await call('POST', '/children', 1, {
+      ...toChildRequest(DEMO_CHILD),
+      requiredConsent: true,
+      optionalConsent: true,
+    })
     expect((await call('DELETE', `/children/${extra.data.id}`, 1)).status).toBe(204)
     expect((await call('GET', `/children/${extra.data.id}`, 1)).status).toBe(404)
+  })
+  it('자녀 등록과 수정에서 동의와 나이를 검사한다', async () => {
+    const form = toChildRequest(DEMO_CHILD)
+    expect((await call('POST', '/children', 1, form)).status).toBe(400)
+    expect(
+      (
+        await call('POST', '/children', 1, {
+          ...form,
+          requiredConsent: false,
+          optionalConsent: true,
+        })
+      ).status,
+    ).toBe(400)
+    expect(
+      (
+        await call('POST', '/children', 1, {
+          ...form,
+          requiredConsent: true,
+          optionalConsent: false,
+        })
+      ).status,
+    ).toBe(400)
+    expect(
+      (
+        await call('POST', '/children', 1, {
+          ...form,
+          birthDate: '2000-01-01',
+          requiredConsent: true,
+          optionalConsent: true,
+        })
+      ).status,
+    ).toBe(400)
+    const child = await call('POST', '/children', 1, {
+      ...form,
+      bodyType: null,
+      preferredFit: null,
+      requiredConsent: true,
+      optionalConsent: false,
+    })
+    expect(child.status).toBe(201)
+    expect(child.data.hasOptionalConsent).toBe(false)
+    expect((await call('PATCH', `/children/${child.data.id}`, 1, form)).status).toBe(400)
   })
 
   it('판매자 신청 · 승인', async () => {
@@ -758,7 +818,13 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
 })
 
 it('부모 조르기 조회 응답이 계약에 맞는다', async () => {
-  const child = (await call('POST', '/children', 1, toChildRequest(DEMO_CHILD))).data
+  const child = (
+    await call('POST', '/children', 1, {
+      ...toChildRequest(DEMO_CHILD),
+      requiredConsent: true,
+      optionalConsent: true,
+    })
+  ).data
   const item = await call('POST', '/wish/items', 1, { childId: child.id, optionId: 1, quantity: 2 })
   expect(item.status).toBe(201)
   expectContract((await call('GET', `/wish?childId=${child.id}`, 1)).data, wishShape)

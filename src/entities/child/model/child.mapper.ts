@@ -11,6 +11,7 @@ export function toChild(dto: ChildProfileDto): Child {
     weightKg: dto.weightKg,
     bodyType: dto.bodyType as BodyType | null,
     preferredFit: dto.preferredFit as PreferredFit | null,
+    hasOptionalConsent: dto.hasOptionalConsent,
     growthRecordCount: dto.growthRecordCount,
   }
 }
@@ -27,8 +28,8 @@ export function toChildForm(child: Child): ChildForm {
     gender: child.gender,
     heightCm: child.heightCm,
     weightKg: child.weightKg,
-    bodyType: child.bodyType,
-    preferredFit: child.preferredFit,
+    bodyType: child.hasOptionalConsent ? child.bodyType : null,
+    preferredFit: child.hasOptionalConsent ? child.preferredFit : null,
   }
 }
 

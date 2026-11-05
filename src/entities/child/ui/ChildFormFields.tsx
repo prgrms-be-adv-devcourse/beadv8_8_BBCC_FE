@@ -17,6 +17,7 @@ import { SizeRulerBar } from './SizeRulerBar'
 type ChildFormFieldsProps = {
   form: ChildForm
   onChange: (form: ChildForm) => void
+  isOptionalDisabled?: boolean
   /** 폼 아래 버튼 · 안내 */
   footer?: ReactNode
 }
@@ -30,7 +31,12 @@ const isPreviewHeight = (cm: number) => cm >= 40 && cm <= 200
  * 자녀 입력 칸 (등록 · 수정이 같이 쓴다). 값과 검증은 부르는 쪽이 갖는다.
  * 기본 정보 · 몸 크기(입력하는 대로 키 눈금자) · 맞춤 정보(선택) 세 묶음
  */
-export function ChildFormFields({ form, onChange, footer }: ChildFormFieldsProps) {
+export function ChildFormFields({
+  form,
+  onChange,
+  footer,
+  isOptionalDisabled,
+}: ChildFormFieldsProps) {
   const set = <K extends keyof ChildForm>(key: K, value: ChildForm[K]) =>
     onChange({ ...form, [key]: value })
 
@@ -101,7 +107,10 @@ export function ChildFormFields({ form, onChange, footer }: ChildFormFieldsProps
         )}
       </fieldset>
 
-      <fieldset className="border-rule space-y-3 border-t pt-5">
+      <fieldset
+        disabled={isOptionalDisabled}
+        className="border-rule space-y-3 border-t pt-5 disabled:opacity-50"
+      >
         <legend className="text-ink float-left mb-3 w-full text-sm font-bold">
           맞춤 정보 <span className="text-ink-3 font-medium">(선택)</span>
         </legend>

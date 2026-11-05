@@ -1189,6 +1189,8 @@ http
     if ((x = r('PATCH', /^\/children\/(\d+)$/))) {
       const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
       if (!c) return problem(res, 404, '찾을 수 없습니다', '자녀 없음', req.url)
+      if (!c.hasOptionalConsent && (body.bodyType != null || body.preferredFit != null))
+        return problem(res, 400, '선택 동의가 필요합니다', '선택 동의가 필요합니다', req.url)
       // 키 · 체형이 바뀌면 성장 이력 1건 (기획서 2.1)
       if (c.heightCm !== body.heightCm || c.bodyType !== body.bodyType)
         c.growth.push({
@@ -1230,6 +1232,21 @@ http
       return send(res, 200, a)
     }
     if (r('POST', /^\/children$/)) {
+      if (body.requiredConsent !== true || typeof body.optionalConsent !== 'boolean')
+        return problem(res, 400, '잘못된 요청', '동의가 필요합니다', req.url)
+      if (!body.optionalConsent && (body.bodyType != null || body.preferredFit != null))
+        return problem(res, 400, '선택 동의가 필요합니다', '선택 동의가 필요합니다', req.url)
+      const today = new Date()
+      const [year, month, day] = body.birthDate.split('-').map(Number)
+      const age =
+        today.getFullYear() -
+        year -
+        (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)
+          ? 1
+          : 0)
+      if (age >= 14)
+        return problem(res, 400, '등록할 수 없는 나이입니다', '등록할 수 없는 나이입니다', req.url)
+      const { requiredConsent, optionalConsent, ...profile } = body
       const t = now()
       const growth = [
         { id: nid(), heightCm: body.heightCm, bodyType: body.bodyType, recordedAt: t },
@@ -1237,7 +1254,8 @@ http
       const c = {
         id: nid(),
         memberId: me,
-        ...body,
+        ...profile,
+        hasOptionalConsent: optionalConsent,
         growth,
         growthRecordCount: 1,
         lastRecordedAt: t,

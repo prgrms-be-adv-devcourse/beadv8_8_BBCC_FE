@@ -11,6 +11,7 @@ export type Child = {
   weightKg: number
   bodyType: BodyType | null
   preferredFit: PreferredFit | null
+  hasOptionalConsent: boolean
   growthRecordCount: number
 }
 

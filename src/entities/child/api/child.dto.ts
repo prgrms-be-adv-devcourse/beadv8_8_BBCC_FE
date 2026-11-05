@@ -8,11 +8,12 @@ export type ChildProfileDto = {
   weightKg: number
   bodyType: string | null
   preferredFit: string | null
+  hasOptionalConsent: boolean
   growthRecordCount: number
   lastRecordedAt: string | null
 }
 
-/** 자녀 등록 · 수정 요청 (수정은 전체 교체) */
+/** 자녀 수정 요청 (전체 교체) */
 export type ChildProfileRequestDto = {
   name: string
   birthDate: string
@@ -21,6 +22,11 @@ export type ChildProfileRequestDto = {
   weightKg: number
   bodyType: string | null
   preferredFit: string | null
+}
+
+export type ChildRegistrationRequestDto = ChildProfileRequestDto & {
+  requiredConsent: boolean
+  optionalConsent: boolean
 }
 
 /** GET /children/{childId}/growth-records 한 줄 (백엔드 GrowthRecordResponse) */

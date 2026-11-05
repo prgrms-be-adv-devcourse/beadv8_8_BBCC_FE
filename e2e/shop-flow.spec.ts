@@ -230,6 +230,8 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await switchRole(page, '보호자')
     // 자녀 등록은 목록과 따로인 화면. 등록하면 목록으로 돌아온다
     await page.goto('/my/children/new')
+    await page.getByRole('checkbox', { name: /필수 동의/ }).check()
+    await page.getByRole('checkbox', { name: /선택 동의/ }).check()
     await page.getByRole('button', { name: '등록하기' }).click()
     await expect(page).toHaveURL(/\/my\/children$/)
     await expect(page.getByText('#').first()).toBeVisible()

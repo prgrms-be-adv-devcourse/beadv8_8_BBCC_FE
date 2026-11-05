@@ -6,8 +6,10 @@ import { runWithAction } from '@/shared/api'
 export function useRegisterChild() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (form: ChildForm) =>
-      runWithAction('자녀 등록', () => childApi.register(toChildRequest(form))),
+    mutationFn: ({ form, optionalConsent }: { form: ChildForm; optionalConsent: boolean }) =>
+      runWithAction('자녀 등록', () =>
+        childApi.register({ ...toChildRequest(form), requiredConsent: true, optionalConsent }),
+      ),
     onSuccess: () => {
       toast('자녀를 등록했어요')
       return queryClient.invalidateQueries({ queryKey: childKeys.all })

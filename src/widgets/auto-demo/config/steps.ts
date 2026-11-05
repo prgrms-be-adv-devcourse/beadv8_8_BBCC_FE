@@ -72,6 +72,8 @@ export const AUTO_DEMO_STEPS: AutoDemoStep[] = [
           weightKg: 21,
           bodyType: 'NORMAL',
           preferredFit: null,
+          requiredConsent: true,
+          optionalConsent: true,
         }),
       )
       ctx.data.childId = String(child.id)

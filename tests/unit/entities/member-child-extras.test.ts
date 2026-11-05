@@ -18,6 +18,7 @@ const child: Child = {
   weightKg: 20,
   bodyType: 'NORMAL',
   preferredFit: 'LOOSE',
+  hasOptionalConsent: true,
   growthRecordCount: 1,
 }
 
@@ -35,6 +36,12 @@ describe('toChildForm: 수정 폼 초기값 (수정은 전체 교체라 모든 �
   })
   it('선택 항목이 비어 있으면 null 그대로', () => {
     expect(toChildForm({ ...child, bodyType: null, preferredFit: null })).toMatchObject({
+      bodyType: null,
+      preferredFit: null,
+    })
+  })
+  it('선택 동의가 없으면 기존 선택 정보를 수정 요청에서 뺀다', () => {
+    expect(toChildForm({ ...child, hasOptionalConsent: false })).toMatchObject({
       bodyType: null,
       preferredFit: null,
     })
