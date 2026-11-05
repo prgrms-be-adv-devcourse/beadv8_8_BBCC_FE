@@ -1,6 +1,28 @@
 import { expect, test } from '@playwright/test'
 import { acceptConfirms } from './support/confirm'
 
+test('자녀 등록은 동의와 나이를 확인한다', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByRole('main').getByRole('button', { name: '보호자', exact: true }).click()
+  await expect(page).toHaveURL('/')
+  await page.goto('/my/children/new')
+  const required = page.getByRole('checkbox', { name: /필수 동의/ })
+  const optional = page.getByRole('checkbox', { name: /선택 동의/ })
+  const submit = page.getByRole('button', { name: '등록하기' })
+  await expect(required).not.toBeChecked()
+  await expect(optional).not.toBeChecked()
+  await expect(submit).toBeDisabled()
+  await expect(page.getByRole('group', { name: '체형' }).getByRole('button').first()).toBeDisabled()
+  await required.check()
+  await page.getByLabel('생년월일', { exact: true }).fill('2000-01-01')
+  await expect(page.getByText('만 14세 이상 자녀는 아직 등록할 수 없어요.')).toBeVisible()
+  await expect(submit).toBeDisabled()
+  await page.getByLabel('생년월일', { exact: true }).fill('2019-01-01')
+  await page.getByLabel('이름', { exact: true }).fill(`동의${Date.now()}`)
+  await submit.click()
+  await expect(page).toHaveURL(/\/my\/children$/)
+})
+
 test('보호자가 계정을 관리하고 자녀가 프로필을 본다', async ({ page, context }) => {
   await acceptConfirms(page)
   await page.goto('/login')
@@ -8,7 +30,9 @@ test('보호자가 계정을 관리하고 자녀가 프로필을 본다', async 
   await expect(page).toHaveURL('/')
   await page.goto('/my/children/new')
   const name = `아이${Date.now()}`
-  await page.getByLabel('이름').fill(name)
+  await page.getByLabel('이름', { exact: true }).fill(name)
+  await page.getByRole('checkbox', { name: /필수 동의/ }).check()
+  await page.getByRole('checkbox', { name: /선택 동의/ }).check()
   await page.getByRole('button', { name: '등록하기' }).click()
   await expect(page).toHaveURL(/\/my\/children$/)
   const card = page.getByRole('link', { name: `${name} 상세` })
@@ -54,10 +78,13 @@ test('14세 이상 자녀가 동의한 뒤 프로필을 본다', async ({ page, 
   await expect(page).toHaveURL('/')
   await page.goto('/my/children/new')
   const name = `아이${Date.now()}`
-  await page.getByLabel('이름').fill(name)
-  await page.getByLabel('생년월일').fill('2008-01-01')
+  await page.getByLabel('이름', { exact: true }).fill(name)
+  await page.getByRole('checkbox', { name: /필수 동의/ }).check()
+  await page.getByRole('checkbox', { name: /선택 동의/ }).check()
   await page.getByRole('button', { name: '등록하기' }).click()
   await page.getByRole('link', { name: `${name} 상세` }).click()
+  await page.getByLabel('생년월일', { exact: true }).fill('2008-01-01')
+  await page.getByRole('button', { name: '저장하기' }).click()
   const loginId = `c${Date.now()}`
   await page.getByLabel('아이디').fill(loginId)
   await page.getByLabel('비밀번호', { exact: true }).fill('password1')
@@ -88,7 +115,9 @@ test('동의 전에는 자녀 장바구니로 바로 들어가도 첫 로그인 
   await expect(page).toHaveURL('/')
   await page.goto('/my/children/new')
   const name = `아이${Date.now()}`
-  await page.getByLabel('이름').fill(name)
+  await page.getByLabel('이름', { exact: true }).fill(name)
+  await page.getByRole('checkbox', { name: /필수 동의/ }).check()
+  await page.getByRole('checkbox', { name: /선택 동의/ }).check()
   await page.getByRole('button', { name: '등록하기' }).click()
   await page.getByRole('link', { name: `${name} 상세` }).click()
   const loginId = `c${Date.now()}`

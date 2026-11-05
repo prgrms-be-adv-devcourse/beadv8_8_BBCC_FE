@@ -16,6 +16,7 @@ export {
 export { toChildForm, toChildRequest, toGrowthRecord } from './model/child.mapper'
 export {
   ageOf,
+  canRegisterChild,
   childProfileLine,
   findChild,
   growthMonths,

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { ageOf, growthMonths } from '@/entities/child'
+import { ageOf, canRegisterChild, growthMonths } from '@/entities/child'
+
+it('14세 생일 전날까지 등록할 수 있다', () => {
+  expect(canRegisterChild('2012-10-17', new Date(2026, 9, 16))).toBe(true)
+  expect(canRegisterChild('2012-10-16', new Date(2026, 9, 16))).toBe(false)
+})
 
 describe('ageOf: 만 나이 (생일 경계)', () => {
   const today = new Date(2026, 9, 16)

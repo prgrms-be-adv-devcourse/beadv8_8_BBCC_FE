@@ -7,7 +7,9 @@ test('부모가 보낸 조르기를 목록과 상세에서 확인한다', async 
   await expect(page).toHaveURL('/')
   await page.goto('/my/children/new')
   const name = `아이${Date.now()}`
-  await page.getByLabel('이름').fill(name)
+  await page.getByLabel('이름', { exact: true }).fill(name)
+  await page.getByRole('checkbox', { name: /필수 동의/ }).check()
+  await page.getByRole('checkbox', { name: /선택 동의/ }).check()
   await page.getByRole('button', { name: '등록하기' }).click()
   await page.getByRole('link', { name: `${name} 상세` }).click()
   await expect(page).toHaveURL(/\/my\/children\/\d+$/)
@@ -98,7 +100,9 @@ test('이미 처리된 조르기를 승인하면 조르기를 다시 불러온�
   await expect(page).toHaveURL('/')
   await page.goto('/my/children/new')
   const name = `아이${Date.now()}`
-  await page.getByLabel('이름').fill(name)
+  await page.getByLabel('이름', { exact: true }).fill(name)
+  await page.getByRole('checkbox', { name: /필수 동의/ }).check()
+  await page.getByRole('checkbox', { name: /선택 동의/ }).check()
   await page.getByRole('button', { name: '등록하기' }).click()
   await page.getByRole('link', { name: `${name} 상세` }).click()
   await expect(page).toHaveURL(/\/my\/children\/\d+$/)
@@ -150,7 +154,9 @@ test('자녀가 상품을 담고 합친 뒤 뺀다', async ({ page, context }) =
   await expect(page).toHaveURL('/')
   await page.goto('/my/children/new')
   const name = `아이${Date.now()}`
-  await page.getByLabel('이름').fill(name)
+  await page.getByLabel('이름', { exact: true }).fill(name)
+  await page.getByRole('checkbox', { name: /필수 동의/ }).check()
+  await page.getByRole('checkbox', { name: /선택 동의/ }).check()
   await page.getByRole('button', { name: '등록하기' }).click()
   await page.getByRole('link', { name: `${name} 상세` }).click()
   const loginId = `c${Date.now()}`
@@ -198,7 +204,9 @@ test('자녀 영역에서는 보호자 회원 API를 부르지 않는다', async
   await expect(page).toHaveURL('/')
   await page.goto('/my/children/new')
   const name = `아이${Date.now()}`
-  await page.getByLabel('이름').fill(name)
+  await page.getByLabel('이름', { exact: true }).fill(name)
+  await page.getByRole('checkbox', { name: /필수 동의/ }).check()
+  await page.getByRole('checkbox', { name: /선택 동의/ }).check()
   await page.getByRole('button', { name: '등록하기' }).click()
   await page.getByRole('link', { name: `${name} 상세` }).click()
   const loginId = `c${Date.now()}`
@@ -240,7 +248,9 @@ test('자녀가 조르고 보호자가 일부 승인하거나 거절한다', asy
   await expect(page).toHaveURL('/')
   await page.goto('/my/children/new')
   const name = `아이${Date.now()}`
-  await page.getByLabel('이름').fill(name)
+  await page.getByLabel('이름', { exact: true }).fill(name)
+  await page.getByRole('checkbox', { name: /필수 동의/ }).check()
+  await page.getByRole('checkbox', { name: /선택 동의/ }).check()
   await page.getByRole('button', { name: '등록하기' }).click()
   await page.getByRole('link', { name: `${name} 상세` }).click()
   await expect(page).toHaveURL(/\/my\/children\/\d+$/)

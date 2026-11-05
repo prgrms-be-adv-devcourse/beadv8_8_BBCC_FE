@@ -63,6 +63,10 @@ export function ageOf(birthDate: string, today: Date = new Date()): number {
   return Math.max(0, age)
 }
 
+export function canRegisterChild(birthDate: string, today: Date = new Date()): boolean {
+  return ageOf(birthDate, today) < 14
+}
+
 /** 첫 기록 → 마지막 기록 사이 개월 수 (반올림, 최소 1). 기록이 2건 미만이면 null */
 export function growthMonths(records: { recordedAt: string }[]): number | null {
   if (records.length < 2) return null

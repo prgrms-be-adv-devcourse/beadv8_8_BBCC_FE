@@ -2,6 +2,7 @@ import { arr, apiClient, expectShape } from '@/shared/api'
 import type {
   ChildProfileDto,
   ChildProfileRequestDto,
+  ChildRegistrationRequestDto,
   GrowthRecordDto,
   GrowthRecordUpdateRequestDto,
 } from './child.dto'
@@ -12,7 +13,7 @@ export const childApi = {
   list: () => apiClient.get<ChildProfileDto[]>('/children').then(expectShape(arr(childShape))),
   get: (childId: string) =>
     apiClient.get<ChildProfileDto>(`/children/${childId}`).then(expectShape(childShape)),
-  register: (request: ChildProfileRequestDto) =>
+  register: (request: ChildRegistrationRequestDto) =>
     apiClient.post<ChildProfileDto>('/children', request).then(expectShape(childShape)),
   /** 전체 교체. 키 · 체형이 바뀌면 서버가 성장 이력을 1건 쌓는다 */
   update: (childId: string, request: ChildProfileRequestDto) =>

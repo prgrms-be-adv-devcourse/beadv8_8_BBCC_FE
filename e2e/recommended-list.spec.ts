@@ -14,6 +14,7 @@ const CHILD = {
   bodyType: 'NORMAL',
   preferredFit: 'LOOSE',
   growthRecordCount: 1,
+  hasOptionalConsent: true,
   lastRecordedAt: null,
 }
 

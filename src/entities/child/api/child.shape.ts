@@ -1,4 +1,4 @@
-import { nullable, num, obj, oneOf, str } from '@/shared/api'
+import { bool, nullable, num, obj, oneOf, str } from '@/shared/api'
 
 export const childShape = obj({
   id: num,
@@ -9,6 +9,7 @@ export const childShape = obj({
   weightKg: num,
   bodyType: nullable(oneOf(['SLIM', 'NORMAL', 'CHUNKY'])),
   preferredFit: nullable(oneOf(['SLIM', 'REGULAR', 'LOOSE'])),
+  hasOptionalConsent: bool,
   growthRecordCount: num,
   lastRecordedAt: nullable(str),
 })

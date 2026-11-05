@@ -32,6 +32,8 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
   await test.step('① 자녀 · 배송지 등록', async () => {
     // 자녀 등록은 목록과 따로인 화면. 등록하면 목록으로 돌아온다
     await page.goto('/console/children/new')
+    await page.getByRole('checkbox', { name: /필수 동의/ }).check()
+    await page.getByRole('checkbox', { name: /선택 동의/ }).check()
     await page.getByRole('button', { name: '등록하기' }).click()
     await expect(page).toHaveURL(/\/console\/children$/)
     await expect(page.getByText('#').first()).toBeVisible()
