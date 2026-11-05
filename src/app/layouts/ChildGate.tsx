@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { restoreChildSession, useChildSessionStore } from '@/entities/session'
-import { onboardingStepOf, useChildOnboardingQuery } from '@/entities/child-onboarding'
+import { useChildOnboardingQuery } from '@/entities/child-onboarding'
 import { ChildOnboarding } from '@/features/complete-child-onboarding'
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
@@ -35,10 +35,5 @@ function OnboardingGate({ children }: ChildGateProps) {
         </Button>
       </div>
     )
-  const step = onboardingStepOf(query.data)
-  return step === 'DONE' ? (
-    children
-  ) : (
-    <ChildOnboarding step={step} hasProfile={query.data.hasProfile} />
-  )
+  return query.data.noticeConfirmed ? children : <ChildOnboarding />
 }

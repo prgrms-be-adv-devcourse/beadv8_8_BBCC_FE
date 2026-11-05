@@ -167,7 +167,7 @@ test('자녀가 상품을 담고 합친 뒤 뺀다', async ({ page, context }) =
   await child.addInitScript(() =>
     localStorage.setItem(
       'kidly.mock-settings',
-      JSON.stringify({ '자녀 (첫 로그인)': false, '자녀 장바구니 · 조르기 (가정 계약)': false }),
+      JSON.stringify({ '자녀 장바구니 · 조르기 (가정 계약)': false }),
     ),
   )
   await child.goto('/child')
@@ -218,7 +218,7 @@ test('자녀 영역에서는 보호자 회원 API를 부르지 않는다', async
   await child.addInitScript(() =>
     localStorage.setItem(
       'kidly.mock-settings',
-      JSON.stringify({ '자녀 (첫 로그인)': false, '자녀 장바구니 · 조르기 (가정 계약)': false }),
+      JSON.stringify({ '자녀 장바구니 · 조르기 (가정 계약)': false }),
     ),
   )
   // 자녀 영역이 부르면 안 되는 보호자 회원 API (보호자 로그인 표시용 /members/me는 제외)
@@ -280,7 +280,7 @@ test('자녀가 조르고 보호자가 일부 승인하거나 거절한다', asy
   await child.addInitScript(() =>
     localStorage.setItem(
       'kidly.mock-settings',
-      JSON.stringify({ '자녀 (첫 로그인)': false, '자녀 장바구니 · 조르기 (가정 계약)': false }),
+      JSON.stringify({ '자녀 장바구니 · 조르기 (가정 계약)': false }),
     ),
   )
   await child.goto('/child')

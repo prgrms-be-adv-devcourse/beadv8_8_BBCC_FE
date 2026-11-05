@@ -620,28 +620,14 @@ http
         return send(res, 204)
       }
       if (r('GET', /^\/child\/onboarding$/)) {
-        // 프로필이 없으면 나이를 알 수 없으므로 보호자 동의가 필요한 쪽(14세 미만)으로 본다
-        const birth = profile?.birthDate ?? new Date().toISOString().slice(0, 10)
-        const today = new Date().toISOString().slice(0, 10)
-        const age =
-          Number(today.slice(0, 4)) -
-          Number(birth.slice(0, 4)) -
-          (today.slice(5) < birth.slice(5) ? 1 : 0)
-        return send(res, 200, {
-          ageGroup: age < 14 ? 'UNDER_14' : 'OVER_14',
-          noticeConfirmed: !!account.noticeConfirmed,
-          consented: !!account.consented,
-          hasProfile: !!profile,
-        })
+        if (!profile)
+          return problem(res, 404, '찾을 수 없습니다', '프로필을 찾을 수 없습니다.', req.url)
+        return send(res, 200, { noticeConfirmed: !!account.noticeConfirmed })
       }
       if (r('POST', /^\/child\/onboarding\/notice$/)) {
+        if (!profile)
+          return problem(res, 404, '찾을 수 없습니다', '프로필을 찾을 수 없습니다.', req.url)
         account.noticeConfirmed = true
-        return send(res, 204)
-      }
-      if (r('POST', /^\/child\/consents$/)) {
-        if (!profile && (!body.heightCm || !body.weightKg))
-          return problem(res, 400, '잘못된 요청', '키와 몸무게를 입력해 주세요.', req.url)
-        account.consented = true
         return send(res, 204)
       }
       if (r('GET', /^\/child\/profile$/)) {

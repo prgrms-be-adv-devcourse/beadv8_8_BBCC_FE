@@ -47,9 +47,6 @@ test('보호자가 계정을 관리하고 자녀가 프로필을 본다', async 
   await expect(page.getByRole('link', { name: `${name} 상세` })).toContainText('발급됨')
   await page.getByRole('link', { name: `${name} 상세` }).click()
   const child = await context.newPage()
-  await child.addInitScript(() =>
-    localStorage.setItem('kidly.mock-settings', JSON.stringify({ '자녀 (첫 로그인)': false })),
-  )
   await child.goto('/child')
   await child.getByLabel('아이디').fill(loginId)
   await child.getByLabel('비밀번호').fill('password1')
@@ -66,47 +63,18 @@ test('보호자가 계정을 관리하고 자녀가 프로필을 본다', async 
   await child.goBack()
   await expect(child).toHaveURL('/child')
   await expect(child.getByRole('heading', { name: '자녀 로그인' })).toBeVisible()
+  await child.getByLabel('아이디').fill(loginId)
+  await child.getByLabel('비밀번호').fill('password2')
+  await child.getByRole('button', { name: '로그인', exact: true }).click()
+  await expect(child.getByRole('heading', { name: '내 프로필' })).toBeVisible()
+  await expect(child.getByRole('heading', { name: '처음 만나요' })).toHaveCount(0)
   await page.getByRole('button', { name: '계정 삭제' }).click()
   await expect(page.getByRole('button', { name: '계정 발급' })).toBeVisible()
   await page.goto('/my/children')
   await expect(page.getByRole('link', { name: `${name} 상세` })).toContainText('계정 없음')
 })
 
-test('14세 이상 자녀가 동의한 뒤 프로필을 본다', async ({ page, context }) => {
-  await page.goto('/login')
-  await page.getByRole('main').getByRole('button', { name: '보호자', exact: true }).click()
-  await expect(page).toHaveURL('/')
-  await page.goto('/my/children/new')
-  const name = `아이${Date.now()}`
-  await page.getByLabel('이름', { exact: true }).fill(name)
-  await page.getByRole('checkbox', { name: /필수 동의/ }).check()
-  await page.getByRole('checkbox', { name: /선택 동의/ }).check()
-  await page.getByRole('button', { name: '등록하기' }).click()
-  await page.getByRole('link', { name: `${name} 상세` }).click()
-  await page.getByLabel('생년월일', { exact: true }).fill('2008-01-01')
-  await page.getByRole('button', { name: '저장하기' }).click()
-  const loginId = `c${Date.now()}`
-  await page.getByLabel('아이디').fill(loginId)
-  await page.getByLabel('비밀번호', { exact: true }).fill('password1')
-  await page.getByRole('button', { name: '계정 발급' }).click()
-  const child = await context.newPage()
-  await child.addInitScript(() =>
-    localStorage.setItem('kidly.mock-settings', JSON.stringify({ '자녀 (첫 로그인)': false })),
-  )
-  await child.goto('/child')
-  await child.getByLabel('아이디').fill(loginId)
-  await child.getByLabel('비밀번호').fill('password1')
-  await child.getByRole('button', { name: '로그인', exact: true }).click()
-  const submit = child.getByRole('button', { name: '동의하고 계속' })
-  await expect(submit).toBeDisabled()
-  await child.getByLabel('필수 동의:', { exact: false }).check()
-  await child.getByLabel('보호자 관리 고지 확인:', { exact: false }).check()
-  await submit.click()
-  await expect(child.getByRole('heading', { name: '내 프로필' })).toBeVisible()
-  await expect(child.getByRole('main')).toContainText(name)
-})
-
-test('동의 전에는 자녀 장바구니로 바로 들어가도 첫 로그인 안내가 먼저 나온다', async ({
+test('안내 확인 전에는 자녀 장바구니로 바로 들어가도 첫 로그인 안내가 먼저 나온다', async ({
   page,
   context,
 }) => {
@@ -126,9 +94,6 @@ test('동의 전에는 자녀 장바구니로 바로 들어가도 첫 로그인 
   await page.getByRole('button', { name: '계정 발급' }).click()
   await expect(page.getByText(`아이디: ${loginId}`)).toBeVisible()
   const child = await context.newPage()
-  await child.addInitScript(() =>
-    localStorage.setItem('kidly.mock-settings', JSON.stringify({ '자녀 (첫 로그인)': false })),
-  )
   await child.goto('/child')
   await child.getByLabel('아이디').fill(loginId)
   await child.getByLabel('비밀번호').fill('password1')

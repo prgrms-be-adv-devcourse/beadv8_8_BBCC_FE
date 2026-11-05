@@ -145,9 +145,12 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     })
     expectContract(login.data, tokenShape)
     tokens[4] = login.data.accessToken
-    expectContract((await call('GET', '/child/onboarding', 4)).data, childOnboardingShape)
+    const onboarding = await call('GET', '/child/onboarding', 4)
+    expect(onboarding.data).toEqual({ noticeConfirmed: false })
+    expectContract(onboarding.data, childOnboardingShape)
     expect((await call('POST', '/child/onboarding/notice', 4)).status).toBe(204)
-    // 프로필이 지워진 자녀도 첫 로그인 상태를 받는다 (프로필 없음)
+    expect((await call('POST', '/child/onboarding/notice', 4)).status).toBe(204)
+    expect((await call('GET', '/child/onboarding', 4)).data).toEqual({ noticeConfirmed: true })
     const orphan = await call('POST', '/children', 1, {
       ...toChildRequest(DEMO_CHILD),
       requiredConsent: true,
@@ -164,21 +167,8 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     })
     tokens[5] = orphanLogin.data.accessToken
     expect((await call('DELETE', `/children/${orphan.data.id}`, 1)).status).toBe(204)
-    const orphanStatus = await call('GET', '/child/onboarding', 5)
-    expect(orphanStatus.status).toBe(200)
-    expect(orphanStatus.data.hasProfile).toBe(false)
-    expect(
-      (
-        await call('POST', '/child/consents', 4, {
-          optionalAgreed: false,
-          sellerProvisionAgreed: false,
-          heightCm: null,
-          weightKg: null,
-          bodyType: null,
-          preferredFit: null,
-        })
-      ).status,
-    ).toBe(204)
+    expect((await call('GET', '/child/onboarding', 5)).status).toBe(404)
+    expect((await call('POST', '/child/onboarding/notice', 5)).status).toBe(404)
     expectContract((await call('GET', '/child/profile', 4)).data, childShape)
     const added = await call('POST', '/child/wish/items', 4, { optionId: 1, quantity: 1 })
     expect(added.status).toBe(201)
