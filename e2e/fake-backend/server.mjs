@@ -37,6 +37,11 @@ const children = [],
   // 정산 (BE SellerSettlementController · AdminSettlementController)
   settlements = [],
   settlementRuns = []
+const verifications = {
+  1: '2026-01-01T00:00:00',
+  2: '2026-01-01T00:00:00',
+  3: '2026-01-01T00:00:00',
+}
 const wallets = { 1: 100000, 2: 0, 3: 0 }
 // 주문 멱등키 (BE #351): '회원:키' → { hash, orderId }
 const idempotency = {}
@@ -370,6 +375,10 @@ http
     const u = who(req)
     const r = (method, re) => m === method && p.match(re)
     let x
+    if (r('POST', /^\/__fake\/unverify-guardian$/)) {
+      delete verifications[body.memberId]
+      return send(res, 204)
+    }
     if (r('POST', /^\/__fake\/payment-stall$/)) {
       stallNext = { timeoutMs: body?.timeoutMs ?? PAYMENT_TIMEOUT_MS }
       return send(res, 204)
@@ -644,6 +653,16 @@ http
     }
     if (isChild) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
     const me = Number(u.sub)
+    if (r('GET', /^\/guardian-verification$/)) {
+      const verifiedAt = verifications[me] ?? null
+      return send(res, 200, { verified: verifiedAt !== null, verifiedAt })
+    }
+    if (r('POST', /^\/guardian-verification$/)) {
+      if (verifications[me])
+        return problem(res, 409, '이미 본인인증했습니다', '이미 본인인증했습니다', req.url)
+      verifications[me] = now()
+      return send(res, 201, { verified: true, verifiedAt: verifications[me] })
+    }
     if (p === '/wish' || p.startsWith('/wish/')) {
       const childId = String(body?.childId ?? url.searchParams.get('childId') ?? '')
       const owned = (id) =>
@@ -1232,6 +1251,8 @@ http
       return send(res, 200, a)
     }
     if (r('POST', /^\/children$/)) {
+      if (!verifications[me])
+        return problem(res, 403, '본인인증이 필요합니다', '본인인증이 필요합니다', req.url)
       if (body.requiredConsent !== true || typeof body.optionalConsent !== 'boolean')
         return problem(res, 400, '잘못된 요청', '동의가 필요합니다', req.url)
       if (!body.optionalConsent && (body.bodyType != null || body.preferredFit != null))

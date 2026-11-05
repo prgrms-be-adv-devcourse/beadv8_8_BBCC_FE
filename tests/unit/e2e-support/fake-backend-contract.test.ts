@@ -22,6 +22,7 @@ import { cartShape } from '@/entities/cart/api/cart.shape'
 import { toChildRequest } from '@/entities/child'
 import { childAccountShape } from '@/entities/child-account/api/child-account.shape'
 import { childOnboardingShape } from '@/entities/child-onboarding'
+import { guardianVerificationShape } from '@/entities/guardian-verification/api/guardian-verification.shape'
 import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
@@ -950,4 +951,19 @@ it('부모 조르기 조회 응답이 계약에 맞는다', async () => {
   expect(lines.find((line) => line.wishItemId === another.data.wishItemId)?.requestId).toBe(
     resent.data.requestId,
   )
+})
+
+it('부모 본인인증 계약과 등록 차단을 따른다', async () => {
+  const token = await call('POST', '/dev/tokens', null, { memberId: 42, roles: ['BUYER'] })
+  tokens[42] = token.data.accessToken
+  const before = await call('GET', '/guardian-verification', 42)
+  expect(before.data).toEqual({ verified: false, verifiedAt: null })
+  expectContract(before.data, guardianVerificationShape)
+  expect((await call('POST', '/children', 42, {})).status).toBe(403)
+  const verified = await call('POST', '/guardian-verification', 42, {
+    identityVerificationId: 'test',
+  })
+  expect(verified.status).toBe(201)
+  expectContract(verified.data, guardianVerificationShape)
+  expect(verified.data.verified).toBe(true)
 })

@@ -11,6 +11,8 @@ export const env = {
   get demoRoleSwitch() {
     return appSettings.current().isDemoRoleSwitchEnabled
   },
+  portoneStoreId: import.meta.env.VITE_PORTONE_STORE_ID ?? '',
+  portoneChannelKey: import.meta.env.VITE_PORTONE_CHANNEL_KEY ?? '',
   tossClientKey: import.meta.env.VITE_TOSS_CLIENT_KEY ?? '',
   kakaoClientId: import.meta.env.VITE_KAKAO_CLIENT_ID ?? '',
   kakaoRedirectUri:

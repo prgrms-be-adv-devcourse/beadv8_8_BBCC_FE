@@ -1,8 +1,12 @@
 import { Link, useNavigate } from 'react-router'
+import { useGuardianVerificationQuery } from '@/entities/guardian-verification'
 import { RegisterChildForm } from '@/features/register-child'
+import { VerifyGuardian } from '@/features/verify-guardian'
+import { getErrorMessage } from '@/shared/api'
 import { memberPathsOf } from '@/shared/config'
 import { useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { StateMessage } from '@/shared/ui/StateMessage'
 
 /** 등록하면 Kidly가 하는 일 */
 const REGISTER_STEPS = [
@@ -14,10 +18,11 @@ const REGISTER_STEPS = [
   { title: '상품마다 표시', body: '맞는 사이즈가 있는 옷에 「잘 맞아요」 꼬리표가 붙어요.' },
 ]
 
-/** 자녀 등록 (목록과 따로): 왼쪽 등록하면 하는 일 세 단계, 오른쪽 폼. 등록하면 목록으로 */
+/** 자녀 등록 (목록과 따로): 왼쪽 등록하면 하는 일 세 단계, 오른쪽 폼. 보호자 본인인증 전이면 폼 대신 본인인증. 등록하면 목록으로 */
 export function ShopChildNewPage() {
   const navigate = useNavigate()
   const memberPaths = memberPathsOf(useArea())
+  const verification = useGuardianVerificationQuery()
 
   return (
     <div className="shop-look space-y-6">
@@ -63,9 +68,18 @@ export function ShopChildNewPage() {
           </ol>
         </div>
         <div className="border-rule rounded-xl border p-5 md:p-8">
-          <RegisterChildForm
-            onRegistered={() => navigate(memberPaths.children, { replace: true })}
-          />
+          {verification.isPending && <StateMessage>불러오는 중…</StateMessage>}
+          {verification.isError && (
+            <StateMessage tone="error">{getErrorMessage(verification.error)}</StateMessage>
+          )}
+          {verification.data &&
+            (verification.data.verified ? (
+              <RegisterChildForm
+                onRegistered={() => navigate(memberPaths.children, { replace: true })}
+              />
+            ) : (
+              <VerifyGuardian />
+            ))}
         </div>
       </div>
     </div>
