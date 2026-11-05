@@ -36,19 +36,6 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
       screens: '자녀 장바구니',
     }
   }),
-  // 가정 계약 (childprofile 확정 전)
-  ...(
-    ['GET /child/onboarding', 'POST /child/onboarding/notice', 'POST /child/consents'] as const
-  ).map((endpoint) => {
-    const [method, path] = endpoint.split(' ') as ['GET' | 'POST', string]
-    return {
-      method,
-      path,
-      source: 'mock' as const,
-      backend: '가정 계약',
-      screens: '자녀 첫 로그인',
-    }
-  }),
   // 상품
   {
     method: 'GET',
