@@ -49,7 +49,17 @@ export function getErrorMessage(error: unknown): string {
     return '응답이 늦어 요청을 끝내지 못했어요. 다시 시도해 주세요.'
   }
   if (!error.response) {
-    return '서버에 연결할 수 없어요. 서버가 켜져 있는지 확인해 주세요.'
+    return '잠시 연결이 원활하지 않아요. 잠시 뒤 다시 시도해 주세요.'
   }
   return `요청을 처리하지 못했어요. (${error.response.status})`
+}
+
+/**
+ * 재발급이 실패했을 때 로그인 상태를 정리해야 하는지. 서버가 토큰을 거절한 401 · 403, 쿠키가 없는 등 axios 밖 오류만 true.
+ * 배포 중 502 · 503, 연결 실패, 시간 초과는 서버가 돌아오면 같은 쿠키로 이어지므로 로그인을 지우지 않는다
+ */
+export function isSessionRejected(error: unknown): boolean {
+  if (!isAxiosError(error)) return true
+  const status = error.response?.status
+  return status === 401 || status === 403
 }

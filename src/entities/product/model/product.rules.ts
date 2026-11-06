@@ -1,3 +1,4 @@
+import { withObjectParticle } from '@/shared/lib'
 import type {
   Category,
   CategoryInputs,
@@ -191,7 +192,7 @@ function validateBasics(inputs: CategoryInputs, form: RegisterProductForm): stri
   for (const attribute of inputs.infoAttributes) {
     const input = form.info[attribute.id]
     const filled = attribute.values.length > 0 ? !!input?.valueId : !!input?.text.trim()
-    if (attribute.required && !filled) return `${attribute.name}을(를) 입력해 주세요.`
+    if (attribute.required && !filled) return `${withObjectParticle(attribute.name)} 입력해 주세요.`
   }
   return null
 }
@@ -199,7 +200,7 @@ function validateBasics(inputs: CategoryInputs, form: RegisterProductForm): stri
 function validateSaleInputs(inputs: CategoryInputs, form: RegisterProductForm): string | null {
   for (const attribute of inputs.optionAttributes) {
     if ((form.optionValues[attribute.id] ?? []).length === 0)
-      return `${attribute.name}을(를) 하나 이상 골라 주세요.`
+      return `${withObjectParticle(attribute.name)} 하나 이상 골라 주세요.`
   }
   if (optionCombos(inputs, form).length === 0) return '옵션을 하나 이상 남겨 주세요.'
   const sizes = sizeValues(inputs, form)
@@ -222,7 +223,7 @@ function validateSaleInputs(inputs: CategoryInputs, form: RegisterProductForm): 
       return `${value.name}: 권장 키 범위를 확인해 주세요.`
     for (const item of inputs.measurementItems) {
       if (!((spec?.measurements[item.code] ?? 0) > 0))
-        return `${value.name}: ${item.name}을(를) 입력해 주세요.`
+        return `${value.name}: ${withObjectParticle(item.name)} 입력해 주세요.`
     }
   }
   return null

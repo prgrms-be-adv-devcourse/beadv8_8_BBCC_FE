@@ -43,3 +43,15 @@ export function writeProductPage(params: URLSearchParams, page: number): URLSear
   if (page > 0) next.set('page', String(page + 1))
   return next
 }
+
+/** 목록 제목: 검색어가 있으면 검색 결과, 카테고리만이면 카테고리 이름 (필터를 더했으면 개수), 아니면 전체 상품 */
+export function productListTitle(
+  keyword: string,
+  categoryName: string | null,
+  attributeCount: number,
+): string {
+  if (keyword) return `"${keyword}" 검색 결과`
+  if (categoryName)
+    return attributeCount > 0 ? `${categoryName} · 필터 ${attributeCount}개` : categoryName
+  return '전체 상품'
+}

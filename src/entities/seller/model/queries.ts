@@ -11,9 +11,10 @@ export const sellerKeys = {
     ['seller', 'applications', status] as const,
 }
 
-export function useMySellerApplicationQuery() {
+export function useMySellerApplicationQuery({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: sellerKeys.myApplication,
+    enabled,
     queryFn: sellerApi.getMyApplication,
     select: (dto) => (dto ? toSellerApplication(dto) : null),
   })
