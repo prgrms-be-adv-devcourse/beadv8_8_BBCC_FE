@@ -1,3 +1,4 @@
+import { DEAD_LETTER_MODULES, deadLetterModuleOf } from '@/entities/dead-letter'
 import type { ApiCallLog } from '@/shared/api'
 
 /**
@@ -84,6 +85,16 @@ function observe(log: ApiCallLog): Observation[] {
   if (path === '/payments' && Array.isArray(body.content)) {
     return (body.content as Json[]).map((item) => ({
       resource: `결제 (주문 #${item.orderId})`,
+      value: String(item.status),
+    }))
+  }
+  const deadLetters =
+    /^\/admin\/(auth|member|seller|child-profile)-dead-letters(\/[^/]+(\/reprocess)?)?$/.exec(path)
+  if (deadLetters) {
+    const name = `${DEAD_LETTER_MODULES[deadLetterModuleOf(deadLetters[1])].label} 처리 실패 메시지`
+    const rows = Array.isArray(body.content) ? (body.content as Json[]) : [body]
+    return rows.map((item) => ({
+      resource: `${name} #${item.deadLetterId}`,
       value: String(item.status),
     }))
   }

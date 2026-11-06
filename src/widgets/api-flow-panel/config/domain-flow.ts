@@ -27,6 +27,8 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/(wallets|payments)/, 'payment'],
   [/^\/(seller\/settlement|admin\/settlements)/, 'settlement'],
   [/^\/(auth|members|children|child\/|dev|admin\/(members|seller|sellers)|seller\/me)/, 'member'],
+  // 회원 서비스의 처리 실패 메시지 (인증 · 회원 · 판매자 · 자녀 프로필 모듈)
+  [/^\/admin\/(auth|member|seller|child-profile)-dead-letters/, 'member'],
 ]
 
 export function domainOf(path: string): DomainId | null {

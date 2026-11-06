@@ -359,6 +359,59 @@ const appSummaryOf = (a) => ({
   status: a.status,
   createdAt: a.createdAt,
 })
+// 회원 서비스 처리 실패 메시지 (BE #962 {모듈}DeadLetterResponse). failOnReplay = 재처리해도 처리기가 다시 실패하는 메시지
+const deadLetters = []
+let deadLetterSeq = 1
+function addDeadLetter(module, patch = {}) {
+  const deadLetterId = String(deadLetterSeq++)
+  const d = {
+    module,
+    failOnReplay: false,
+    deadLetterId,
+    status: 'OPEN',
+    sourceTopic: 'kidly.payment.events',
+    sourcePartition: 0,
+    sourceOffset: Number(deadLetterId) * 10,
+    dltTopic: `kidly.payment.events.${module}.dlt`,
+    dltPartition: 0,
+    dltOffset: Number(deadLetterId),
+    eventType: 'wallet.created',
+    eventId: `00000000-0000-4000-8000-${deadLetterId.padStart(12, '0')}`,
+    messageKey: '1',
+    failureType: 'java.lang.IllegalStateException',
+    replayCount: 0,
+    lastReplayedBy: null,
+    lastReplayedAt: null,
+    lastReplayFailureType: null,
+    createdAt: now(),
+    ...patch,
+  }
+  deadLetters.push(d)
+  return d
+}
+const deadLetterOf = ({ module: _m, failOnReplay: _f, ...d }) => d
+// 시연 · 화면 확인용: 회원 모듈에 처리 대기 2건(1건은 재처리도 실패) · 재처리 완료 1건, 판매자 모듈에 헤더 없던 1건, 인증 모듈은 두 페이지
+addDeadLetter('member')
+addDeadLetter('member', {
+  failOnReplay: true,
+  eventType: 'order.paid',
+  failureType: 'org.springframework.kafka.support.serializer.DeserializationException',
+})
+addDeadLetter('member', {
+  status: 'REPROCESSED',
+  replayCount: 1,
+  lastReplayedBy: '1',
+  lastReplayedAt: now(),
+})
+addDeadLetter('seller', {
+  sourcePartition: null,
+  sourceOffset: null,
+  eventType: null,
+  eventId: null,
+  messageKey: null,
+  failureType: null,
+})
+for (let i = 0; i < 21; i++) addDeadLetter('auth')
 http
   .createServer(async (req, res) => {
     res.setHeader('access-control-allow-origin', req.headers.origin || '*')
@@ -378,6 +431,12 @@ http
     if (r('POST', /^\/__fake\/unverify-guardian$/)) {
       delete verifications[body.memberId]
       return send(res, 204)
+    }
+    // POST /__fake/dead-letters { module, failOnReplay } — 처리 실패 메시지 하나 만들기 (가짜 백엔드 전용).
+    // 재처리하면 상태가 바뀌므로 E2E는 실행마다 새 메시지를 만든다
+    if (r('POST', /^\/__fake\/dead-letters$/)) {
+      const d = addDeadLetter(body.module, { failOnReplay: Boolean(body.failOnReplay) })
+      return send(res, 201, deadLetterOf(d))
     }
     if (r('POST', /^\/__fake\/payment-stall$/)) {
       stallNext = { timeoutMs: body?.timeoutMs ?? PAYMENT_TIMEOUT_MS }
@@ -1631,6 +1690,50 @@ http
       }
       apps.push(a)
       return send(res, 201, myAppOf(a))
+    }
+    if ((x = r('GET', /^\/admin\/(auth|member|seller|child-profile)-dead-letters$/))) {
+      const status = url.searchParams.get('status') ?? 'OPEN'
+      // BE @Pattern(OPEN|REPROCESSED)
+      if (!['OPEN', 'REPROCESSED'].includes(status))
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      const rows = deadLetters
+        .filter((d) => d.module === x[1] && d.status === status)
+        .sort((a, b) => Number(b.deadLetterId) - Number(a.deadLetterId))
+        .map(deadLetterOf)
+      return send(res, 200, pageFrom(rows, url.searchParams))
+    }
+    if ((x = r('GET', /^\/admin\/(auth|member|seller|child-profile)-dead-letters\/(\d+)$/))) {
+      const d = deadLetters.find((d) => d.module === x[1] && d.deadLetterId === x[2])
+      return d
+        ? send(res, 200, deadLetterOf(d))
+        : problem(res, 404, '찾을 수 없습니다', '처리 실패 메시지를 찾을 수 없습니다.', req.url)
+    }
+    // BE {모듈}DeadLetterService.reprocess: 처리기가 다시 실패해도 200(OPEN, 횟수 · 실패 예외 기록), 이미 재처리 완료면 그대로 200
+    if (
+      (x = r(
+        'POST',
+        /^\/admin\/(auth|member|seller|child-profile)-dead-letters\/(\d+)\/reprocess$/,
+      ))
+    ) {
+      const d = deadLetters.find((d) => d.module === x[1] && d.deadLetterId === x[2])
+      if (!d)
+        return problem(
+          res,
+          404,
+          '찾을 수 없습니다',
+          '처리 실패 메시지를 찾을 수 없습니다.',
+          req.url,
+        )
+      if (d.status === 'OPEN') {
+        Object.assign(d, {
+          replayCount: d.replayCount + 1,
+          lastReplayedBy: String(u.sub).slice('admin:'.length),
+          lastReplayedAt: now(),
+          lastReplayFailureType: d.failOnReplay ? 'java.lang.IllegalStateException' : null,
+          status: d.failOnReplay ? 'OPEN' : 'REPROCESSED',
+        })
+      }
+      return send(res, 200, deadLetterOf(d))
     }
     if (r('GET', /^\/admin\/members$/)) {
       const filter = url.searchParams.get('filter') || 'ALL'

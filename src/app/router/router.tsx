@@ -117,6 +117,14 @@ const adminPaymentDetail = page(() =>
 const adminSettlements = page(() =>
   import('@/pages/admin/settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
 )
+const adminDeadLetters = page(() =>
+  import('@/pages/admin/dead-letters').then((m) => ({ Component: m.AdminDeadLettersPage })),
+)
+const adminDeadLetterDetail = page(() =>
+  import('@/pages/admin/dead-letter-detail').then((m) => ({
+    Component: m.AdminDeadLetterDetailPage,
+  })),
+)
 
 /** 주소에서 앞의 영역 접두어를 뗀 상대 경로 */
 const rel = (prefix: string, path: string) => path.slice(prefix.length + 1)
@@ -294,6 +302,8 @@ export const router = createBrowserRouter(
         { path: 'payments/:paymentId', ...adminPaymentDetail },
         { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
         { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
+        { path: rel(paths.admin.home, paths.admin.deadLetters), ...adminDeadLetters },
+        { path: 'dead-letters/:module/:deadLetterId', ...adminDeadLetterDetail },
         // 상품 기준 데이터: 종류마다 목록 · 만들기 (관리자에만 있다)
         {
           path: rel(paths.admin.home, paths.admin.attributes),

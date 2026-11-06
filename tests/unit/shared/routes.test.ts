@@ -98,6 +98,11 @@ describe('관리자 보완 화면 주소', () => {
     ]).toEqual(['/console/admin/members', '/console/admin/orders', '/console/admin/payments'])
     expect(areaOf(paths.admin.members)).toBe('admin')
   })
+
+  it('처리 실패 메시지 상세는 모듈과 번호로 찾는다', () => {
+    expect(paths.admin.deadLetter('child-profile', '7')).toBe('/admin/dead-letters/child-profile/7')
+    expect(areaOf(paths.admin.deadLetters)).toBe('admin')
+  })
 })
 
 describe('상품 보완 화면 주소', () => {

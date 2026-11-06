@@ -89,6 +89,9 @@ export const paths = {
     payments: '/admin/payments',
     payment: (id: string) => `/admin/payments/${id}`,
     settlements: '/admin/settlements',
+    /** 처리 실패 메시지 (회원 서비스 Kafka DLT): 모듈 · 상태 · 페이지는 목록 주소의 검색 값으로 */
+    deadLetters: '/admin/dead-letters',
+    deadLetter: (module: string, id: string) => `/admin/dead-letters/${module}/${id}`,
     /** 상품 기준 데이터: 종류마다 목록 · 만들기(목록과 따로) */
     attributes: '/admin/catalog/attributes',
     attributeNew: '/admin/catalog/attributes/new',

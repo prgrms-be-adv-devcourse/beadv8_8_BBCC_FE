@@ -24,6 +24,7 @@ import { childAccountShape } from '@/entities/child-account/api/child-account.sh
 import { childOnboardingShape } from '@/entities/child-onboarding'
 import { guardianVerificationShape } from '@/entities/guardian-verification/api/guardian-verification.shape'
 import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
+import { deadLetterPageShape, deadLetterShape } from '@/entities/dead-letter/api/dead-letter.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
 import {
@@ -485,6 +486,58 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expectContract(await reissue.json(), tokenShape)
     expect((await call('POST', '/auth/admin/reissue', null)).status).toBe(401)
     expect((await call('POST', '/auth/admin/logout', null)).status).toBe(204)
+  })
+
+  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962, 네 모듈 같은 칸)', async () => {
+    for (const module of ['auth', 'member', 'seller', 'child-profile']) {
+      for (const status of ['OPEN', 'REPROCESSED']) {
+        const list = await call('GET', `/admin/${module}-dead-letters?status=${status}`, 3)
+        expect(list.status).toBe(200)
+        expectContract(list.data, deadLetterPageShape)
+      }
+    }
+    expect((await call('GET', '/admin/member-dead-letters?status=DONE', 3)).status).toBe(400)
+    expect((await call('GET', '/admin/member-dead-letters', 1)).status).toBe(403)
+
+    const bare = (await call('GET', '/admin/seller-dead-letters?status=OPEN', 3)).data.content[0]
+    expectContract(bare, deadLetterShape)
+    expect(bare).toMatchObject({ eventType: null, failureType: null, sourceOffset: null })
+
+    const ok = await call('POST', '/__fake/dead-letters', null, { module: 'member' })
+    const path = `/admin/member-dead-letters/${ok.data.deadLetterId}`
+    expectContract((await call('GET', path, 3)).data, deadLetterShape)
+    const done = await call('POST', `${path}/reprocess`, 3)
+    expect(done.status).toBe(200)
+    expectContract(done.data, deadLetterShape)
+    expect(done.data).toMatchObject({ status: 'REPROCESSED', replayCount: 1, lastReplayedBy: '1' })
+    // 이미 재처리 완료면 다시 실행하지 않고 그대로 200
+    expect((await call('POST', `${path}/reprocess`, 3)).data).toMatchObject({
+      status: 'REPROCESSED',
+      replayCount: 1,
+    })
+
+    const bad = await call('POST', '/__fake/dead-letters', null, {
+      module: 'member',
+      failOnReplay: true,
+    })
+    const failed = await call(
+      'POST',
+      `/admin/member-dead-letters/${bad.data.deadLetterId}/reprocess`,
+      3,
+    )
+    expect(failed.status).toBe(200)
+    expectContract(failed.data, deadLetterShape)
+    expect(failed.data).toMatchObject({
+      status: 'OPEN',
+      replayCount: 1,
+      lastReplayFailureType: 'java.lang.IllegalStateException',
+    })
+
+    // 다른 모듈의 번호로는 찾지 못한다
+    expect((await call('GET', `/admin/auth-dead-letters/${ok.data.deadLetterId}`, 3)).status).toBe(
+      404,
+    )
+    expect((await call('POST', '/admin/auth-dead-letters/99999/reprocess', 3)).status).toBe(404)
   })
 
   it('관리자 API는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 403)', async () => {
