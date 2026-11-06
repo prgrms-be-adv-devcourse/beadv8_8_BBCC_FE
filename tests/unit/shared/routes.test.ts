@@ -6,6 +6,7 @@ import {
   memberPathsOf,
   paths,
   sellerPathsOf,
+  shopMasksWholePage,
   shopNeedsLogin,
   walletPathsOf,
 } from '@/shared/config'
@@ -130,6 +131,37 @@ describe('shopNeedsLogin: 로그인해야 볼 수 있는 쇼핑 화면', () => {
   it('끝의 /도 같은 화면으로 본다', () => {
     expect(shopNeedsLogin('/cart/')).toBe(true)
     expect(shopNeedsLogin('/my/')).toBe(true)
+  })
+})
+
+describe('shopMasksWholePage: 행동 분석 녹화에서 통째로 가리는 쇼핑 화면', () => {
+  it.each([
+    [paths.shop.my, true],
+    [paths.shop.profile, true],
+    [paths.shop.addresses, true],
+    [paths.shop.children, true],
+    [paths.shop.childNew, true],
+    [paths.shop.child('1'), true],
+    [paths.shop.childWish('1', '2'), true],
+    [paths.shop.wallet, true],
+    [paths.shop.walletHistory, true],
+    [paths.shop.walletCharge, true],
+    [paths.shop.chargeSuccess, true],
+    [paths.shop.chargeFail, true],
+    [paths.shop.recommended('1'), true],
+    [paths.shop.home, false],
+    [paths.shop.product('1'), false],
+    [paths.shop.cart, false],
+    [paths.shop.orders, false],
+    [paths.shop.order('3'), false],
+    [paths.login, false],
+    ['/mypage', false],
+  ] as const)('%s → %s', (pathname, expected) => {
+    expect(shopMasksWholePage(pathname)).toBe(expected)
+  })
+
+  it('끝의 /도 같은 화면으로 본다', () => {
+    expect(shopMasksWholePage('/my/')).toBe(true)
   })
 })
 

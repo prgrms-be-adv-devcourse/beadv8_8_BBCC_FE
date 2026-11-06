@@ -1,16 +1,18 @@
-import { Link, Outlet } from 'react-router'
+import { Link, Outlet, useLocation } from 'react-router'
 import { ThemeLab } from '@/features/theme-lab'
-import { paths, useDemoRoleSwitch } from '@/shared/config'
+import { paths, shopMasksWholePage, useDemoRoleSwitch } from '@/shared/config'
 import { ShopHeader } from '@/widgets/shop-header'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { TopProgressBar } from './TopProgressBar'
 import { SessionGate } from './SessionGate'
 import { ShopLoginRedirect } from './ShopLoginRedirect'
+import { BehaviorRecording } from './BehaviorRecording'
 import { Overlays } from './Overlays'
 
 /** 쇼핑(보호자): 일반 쇼핑몰 화면. API 흐름은 시연 막대의 버튼으로 연다 */
 export function ShopLayout() {
   const demoRoleSwitch = useDemoRoleSwitch()
+  const { pathname } = useLocation()
   return (
     <div className="bg-paper flex min-h-svh flex-col">
       <DemoBarWithFlowDrawer />
@@ -18,7 +20,11 @@ export function ShopLayout() {
       {/* 쇼핑 영역 색 · 글자 (shop.css의 data-area): 시연 막대는 빼고 머리말 · 본문 · 바닥글에만 */}
       <div data-area="shop" className="flex flex-1 flex-col">
         <ShopHeader />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6 md:py-8">
+        {/* 회원 정보 · 배송지 · 자녀 · 예치금 화면은 행동 분석 녹화에서 통째로 가린다 */}
+        <main
+          data-clarity-mask={shopMasksWholePage(pathname) || undefined}
+          className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6 md:py-8"
+        >
           <SessionGate>
             <ShopLoginRedirect>
               <Outlet />
@@ -42,6 +48,7 @@ export function ShopLayout() {
       </div>
       <ThemeLab />
       <Overlays />
+      <BehaviorRecording />
     </div>
   )
 }

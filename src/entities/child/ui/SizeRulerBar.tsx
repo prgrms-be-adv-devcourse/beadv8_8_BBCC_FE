@@ -16,6 +16,7 @@ export function SizeRulerBar({ ruler, name }: SizeRulerBarProps) {
   const at = (cm: number) => `${((cm - ruler.fromCm) / (ruler.toCm - ruler.fromCm)) * 100}%`
   return (
     <div
+      data-clarity-mask="true"
       role="img"
       aria-label={`${name} 키 ${ruler.heightCm}cm, ${ruler.band.size} 사이즈 구간 ${ruler.band.minCm}~${ruler.band.maxCm}cm`}
       className="relative h-14 w-full select-none"

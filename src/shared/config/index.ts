@@ -14,6 +14,7 @@ export {
   memberPathsOf,
   paths,
   sellerPathsOf,
+  shopMasksWholePage,
   shopNeedsLogin,
   walletPathsOf,
   type Area,

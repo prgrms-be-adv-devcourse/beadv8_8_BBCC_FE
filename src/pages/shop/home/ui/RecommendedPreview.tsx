@@ -30,7 +30,7 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
   return (
     <section aria-label="맞춤 상품" className="border-rule space-y-5 rounded-lg border p-4 md:p-6">
       <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
+        <div data-clarity-mask="true" className="space-y-1">
           <h2 className="text-section">
             {child.name}에게 맞는 옷
             <MockBadge endpoints={['GET /recommendations/products']} />

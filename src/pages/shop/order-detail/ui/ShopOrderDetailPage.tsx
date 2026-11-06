@@ -157,6 +157,7 @@ export function ShopOrderDetailPage() {
           />
           <section
             aria-label="배송지"
+            data-clarity-mask="true"
             className="border-rule space-y-2 rounded-lg border p-5 text-sm"
           >
             <h2 className="text-[15px] font-bold">배송지</h2>

@@ -29,6 +29,7 @@ export function SizeFitChart({
 
   return (
     <figure
+      data-clarity-mask="true"
       role="img"
       aria-label={`${child.name} 키 ${child.heightCm}cm와 사이즈별 권장 키: ${sorted
         .map((item) => `${item.size} ${item.minHeightCm}~${item.maxHeightCm}cm`)
