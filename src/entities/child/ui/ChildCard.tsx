@@ -18,7 +18,10 @@ export function ChildCard({ child }: ChildCardProps) {
   ].filter((tag): tag is string => Boolean(tag))
 
   return (
-    <article className="border-rule bg-paper space-y-4 rounded-lg border p-4 md:p-5">
+    <article
+      data-clarity-mask="true"
+      className="border-rule bg-paper space-y-4 rounded-lg border p-4 md:p-5"
+    >
       <div className="flex items-center gap-3">
         <span
           aria-hidden

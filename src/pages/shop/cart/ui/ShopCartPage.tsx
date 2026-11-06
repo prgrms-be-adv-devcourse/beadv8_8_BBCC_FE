@@ -130,7 +130,11 @@ export function ShopCartPage() {
             ))}
           </div>
 
-          <aside className="bg-paper-2 rounded-card space-y-5 p-5 lg:sticky lg:top-32">
+          {/* 배송지 · 예치금 잔액은 행동 분석 녹화에서 가린다 */}
+          <aside
+            data-clarity-mask="true"
+            className="bg-paper-2 rounded-card space-y-5 p-5 lg:sticky lg:top-32"
+          >
             <h2 className="text-lg font-bold">주문서</h2>
             <div className="space-y-2">
               <p className="text-ink-2 text-sm">배송지</p>

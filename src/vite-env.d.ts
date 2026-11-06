@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly VITE_DEMO_ROLE_SWITCH?: string
   readonly VITE_KAKAO_CLIENT_ID?: string
   readonly VITE_KAKAO_REDIRECT_URI?: string
+  /** Microsoft Clarity 프로젝트 ID. 운영(Vercel Production)에만 넣는다. 없으면 히트맵 · 녹화를 끈다 */
+  readonly VITE_CLARITY_PROJECT_ID?: string
 }
 
 interface ImportMeta {

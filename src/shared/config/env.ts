@@ -14,6 +14,8 @@ export const env = {
   portoneStoreId: import.meta.env.VITE_PORTONE_STORE_ID ?? '',
   portoneChannelKey: import.meta.env.VITE_PORTONE_CHANNEL_KEY ?? '',
   tossClientKey: import.meta.env.VITE_TOSS_CLIENT_KEY ?? '',
+  /** Clarity 프로젝트 ID. 비어 있으면 행동 분석 스크립트를 넣지 않는다 (운영 배포에만 넣는다) */
+  clarityProjectId: import.meta.env.VITE_CLARITY_PROJECT_ID ?? '',
   kakaoClientId: import.meta.env.VITE_KAKAO_CLIENT_ID ?? '',
   kakaoRedirectUri:
     import.meta.env.VITE_KAKAO_REDIRECT_URI || `${window.location.origin}/oauth/kakao/callback`,

@@ -5,6 +5,7 @@ import { cn } from '@/shared/lib'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { TopProgressBar } from './TopProgressBar'
 import { SessionGate } from './SessionGate'
+import { BehaviorRecording } from './BehaviorRecording'
 import { Overlays } from './Overlays'
 
 /** 판매자 역할이 없어도 열 수 있는 화면 */
@@ -134,6 +135,7 @@ export function CenterLayout() {
         </div>
       </div>
       <Overlays />
+      <BehaviorRecording />
     </div>
   )
 }

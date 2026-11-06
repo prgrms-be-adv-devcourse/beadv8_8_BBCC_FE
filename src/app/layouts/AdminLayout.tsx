@@ -7,6 +7,7 @@ import { AdminGate } from './AdminGate'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { TopProgressBar } from './TopProgressBar'
 import { SessionGate } from './SessionGate'
+import { BehaviorRecording } from './BehaviorRecording'
 import { Overlays } from './Overlays'
 
 type MenuGroup = { title: string; links: { to: string; label: string; end?: boolean }[] }
@@ -123,6 +124,7 @@ export function AdminLayout() {
         </div>
       </div>
       <Overlays />
+      <BehaviorRecording />
     </div>
   )
 }

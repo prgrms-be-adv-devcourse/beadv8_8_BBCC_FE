@@ -14,6 +14,7 @@ import { DemoBar } from '@/widgets/demo-bar'
 import { TopProgressBar } from './TopProgressBar'
 import { DemoGuide, DemoStepBar, findDemoGuide } from '@/widgets/demo-step-bar'
 import { SessionGate } from './SessionGate'
+import { BehaviorRecording } from './BehaviorRecording'
 import { Overlays } from './Overlays'
 
 /** 시연 콘솔: 왼쪽은 단계별 화면, 오른쪽은 API 호출 흐름 (항상 펼침) */
@@ -64,6 +65,7 @@ export function ConsoleLayout() {
       {/* 자동 시연 막대는 패널 폭(전체 포함)과 상관없이 맨 아래에 */}
       <AutoDemoBar />
       <Overlays />
+      <BehaviorRecording />
     </div>
   )
 }

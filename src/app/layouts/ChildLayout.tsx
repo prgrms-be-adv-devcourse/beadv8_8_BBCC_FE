@@ -5,6 +5,7 @@ import { paths } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
 import { ChildGate } from './ChildGate'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
+import { BehaviorRecording } from './BehaviorRecording'
 import { Overlays } from './Overlays'
 
 export function ChildLayout() {
@@ -37,6 +38,7 @@ export function ChildLayout() {
         </main>
       </div>
       <Overlays />
+      <BehaviorRecording />
     </div>
   )
 }

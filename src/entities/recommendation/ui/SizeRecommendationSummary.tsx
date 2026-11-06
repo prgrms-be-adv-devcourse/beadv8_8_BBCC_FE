@@ -18,7 +18,7 @@ export function SizeRecommendationSummary({
 }: SizeRecommendationSummaryProps) {
   const { recommendedSize, fit, notices, candidateSizes } = recommendation
   return (
-    <div className="space-y-1">
+    <div data-clarity-mask="true" className="space-y-1">
       {recommendedSize ? (
         <p>
           추천 사이즈 <Badge variant="highlight">{recommendedSize}</Badge>{' '}

@@ -219,6 +219,15 @@ export function shopNeedsLogin(pathname: string): boolean {
   ].some((prefix) => under(prefix, path))
 }
 
+/**
+ * 행동 분석(Clarity) 녹화에서 통째로 가리는 쇼핑 화면.
+ * 마이페이지(회원 정보 · 배송지 · 자녀 · 예치금 · 충전)와 자녀 맞춤 목록(자녀 이름 · 키)
+ */
+export function shopMasksWholePage(pathname: string): boolean {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  return [paths.shop.my, RECOMMENDED].some((prefix) => under(prefix, path))
+}
+
 /** 로그인 화면 주소. next = 로그인 뒤 돌아올 화면 (앱 안 주소만) */
 export function loginPath(next: string | null): string {
   const target = safeReturnPath(next)

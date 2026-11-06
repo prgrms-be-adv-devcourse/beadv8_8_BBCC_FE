@@ -19,7 +19,7 @@ export function ChildPicker({
   label,
 }: ChildPickerProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div data-clarity-mask="true" className="flex flex-wrap items-center gap-2">
       {noneLabel && (
         <Button
           size="sm"
