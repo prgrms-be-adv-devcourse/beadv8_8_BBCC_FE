@@ -3,6 +3,7 @@ import { env } from '@/shared/config'
 import { useApiFlowLog } from './api-flow-log'
 import { expectedReasonOf, type ExpectedResponse } from './call-outcome'
 import { createMockAdapter, defaultAdapter } from './mock-adapter'
+import { isSessionRejected } from './problem-detail'
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -73,6 +74,24 @@ const reissuing: Record<Principal, Promise<string> | null> = {
 }
 
 /** 동시에 여러 요청이 401을 받아도 재발급은 주체마다 한 번만 보낸다 (Refresh Token이 매번 교체되므로) */
+/**
+ * 새로고침 뒤 로그인 되살리기용 재발급. 서버가 잠깐 멈춘 것(배포 중 503 · 연결 실패)이면 몇 번 기다렸다 다시 시도한다.
+ * 토큰 거절(401 · 403)은 바로 실패한다
+ */
+export async function reissueForRestore(
+  principal: Principal = 'member',
+  { tries = 4, delayMs = 2000 }: { tries?: number; delayMs?: number } = {},
+): Promise<string> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await reissueAccessToken(principal)
+    } catch (error) {
+      if (isSessionRejected(error) || attempt >= tries) throw error
+      await new Promise((resolve) => setTimeout(resolve, delayMs * attempt))
+    }
+  }
+}
+
 export function reissueAccessToken(principal: Principal = 'member'): Promise<string> {
   reissuing[principal] ??= apiClient
     .post<{ accessToken: string }>(REISSUE_PATH[principal], undefined, {
@@ -167,8 +186,10 @@ apiClient.interceptors.response.use(
     try {
       const accessToken = await reissueAccessToken(principal)
       config.headers.Authorization = `Bearer ${accessToken}`
-    } catch {
-      // 재발급 실패: 로그인 상태를 정리하고 토큰 없이 한 번 더 보낸다 (공개 API는 이것으로 성공)
+    } catch (reissueError) {
+      // 서버가 잠깐 멈춘 것(배포 중 503 · 연결 실패)이면 로그인을 지우지 않고 원래 오류를 그대로 낸다
+      if (!isSessionRejected(reissueError)) throw error
+      // 재발급 거절: 로그인 상태를 정리하고 토큰 없이 한 번 더 보낸다 (공개 API는 이것으로 성공)
       authHandlers[principal].onAuthFailed()
       config.headers.delete('Authorization')
       config.skipAuth = true

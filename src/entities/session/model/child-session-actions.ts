@@ -1,4 +1,4 @@
-import { reissueAccessToken } from '@/shared/api'
+import { reissueForRestore } from '@/shared/api'
 import { sessionApi } from '../api/session-api'
 import { useChildSessionStore } from './child-session-store'
 
@@ -19,7 +19,7 @@ export async function restoreChildSession() {
   const store = useChildSessionStore.getState()
   store.setStatus('restoring')
   try {
-    store.setAccessToken(await reissueAccessToken('child'))
+    store.setAccessToken(await reissueForRestore('child'))
   } catch {
     store.clear()
   } finally {

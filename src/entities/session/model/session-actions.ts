@@ -1,4 +1,4 @@
-import { reissueAccessToken } from '@/shared/api'
+import { reissueAccessToken, reissueForRestore } from '@/shared/api'
 import { env } from '@/shared/config'
 import { sessionApi } from '../api/session-api'
 import { clearDemoAccount, loadDemoAccount, saveDemoAccount } from './demo-storage'
@@ -62,7 +62,7 @@ export async function restoreSession() {
   store.setStatus('restoring')
   try {
     if (!(await restoreDemoAccount())) {
-      await signIn(await reissueAccessToken())
+      await signIn(await reissueForRestore())
     }
   } catch {
     store.clear()
