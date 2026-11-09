@@ -1,7 +1,7 @@
 export {
   canDecideWish,
+  canRemoveChildCartLine,
   canSendWishLine,
-  canRemoveChildWishLine,
   countPendingWishes,
   wishLineDecisionLabel,
   WISH_REJECT_REASONS,
@@ -12,20 +12,16 @@ export {
   wishTimelineStatusLabel,
 } from './model/wish.rules'
 export type {
-  WishOrderResult,
   WishStatus,
-  Wish,
-  WishLine,
   WishRequest,
   WishRequestLine,
   WishTimeline,
   WishTimelineStep,
 } from './model/wish'
-export { toWishRequest, toWishTimeline, toWish } from './model/wish.mapper'
-export { wishRequestShape, wishLineShape, wishShape } from './api/wish.shape'
+export { toWishRequest, toWishTimeline } from './model/wish.mapper'
+export { wishRequestShape } from './api/wish.shape'
 export {
   wishKeys,
-  useChildWishQuery,
   useChildWishRequestsQuery,
   useWishRequestsQuery,
   useWishRequestQuery,

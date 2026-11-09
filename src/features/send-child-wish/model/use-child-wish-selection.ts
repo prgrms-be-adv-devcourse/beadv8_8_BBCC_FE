@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import type { WishLine } from '@/entities/wish'
+import type { CartLine } from '@/entities/cart'
 import { sendableWishIds } from './child-wish.rules'
 
 /** 보낼 줄 고르기. 잠기거나 판매가 끝난 줄은 골라 둔 것이어도 빠진다 */
-export function useChildWishSelection(items: WishLine[]) {
+export function useChildWishSelection(items: CartLine[]) {
   const [selected, setSelected] = useState<string[]>([])
   const ids = sendableWishIds(items, selected)
   const toggle = (id: string) =>

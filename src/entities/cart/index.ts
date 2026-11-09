@@ -1,6 +1,6 @@
-export { cartApi } from './api/cart-api'
+export { cartApi, childCartApi } from './api/cart-api'
 export type { Cart, CartLine } from './model/cart'
-export { toAddCartItemRequest } from './model/cart.mapper'
+export { toAddCartItemRequest, toCart } from './model/cart.mapper'
 export {
   canDecrease,
   canIncrease,
@@ -14,4 +14,4 @@ export {
   sellerGroupLabel,
   sumLineAmount,
 } from './model/cart.rules'
-export { cartKeys, useCartCount, useCartQuery } from './model/queries'
+export { cartKeys, useCartCount, useCartQuery, useChildCartQuery } from './model/queries'

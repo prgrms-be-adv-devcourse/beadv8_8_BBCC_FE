@@ -28,8 +28,6 @@ import { deadLetterPageShape, deadLetterShape } from '@/entities/dead-letter/api
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
 import {
-  wishShape,
-  wishLineShape,
   wishRequestShape,
   wishRequestsShape,
   wishTimelineShape,
@@ -171,63 +169,73 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('GET', '/child/onboarding', 5)).status).toBe(404)
     expect((await call('POST', '/child/onboarding/notice', 5)).status).toBe(404)
     expectContract((await call('GET', '/child/profile', 4)).data, childShape)
-    const added = await call('POST', '/child/wish/items', 4, { optionId: 1, quantity: 1 })
+    // 자녀 장바구니 = /cart (자녀 토큰, BE #998). 입을 아이는 자기로 고정
+    const added = await call('POST', '/cart/items', 4, { optionId: 1, childId: null, quantity: 1 })
     expect(added.status).toBe(201)
-    expectContract(added.data, wishLineShape)
-    const merged = await call('POST', '/child/wish/items', 4, { optionId: 1, quantity: 2 })
+    expect(added.data.childId).toBe(String(child.data.id))
+    const merged = await call('POST', '/cart/items', 4, { optionId: 1, childId: null, quantity: 2 })
     expect(merged.status).toBe(200)
     expect(merged.data.quantity).toBe(3)
-    const childCart = await call('GET', '/child/wish', 4)
-    expectContract(childCart.data, wishShape)
-    const parentCart = await call('GET', `/wish?childId=${child.data.id}`, 1)
-    expect(parentCart.data.items).toContainEqual(merged.data)
-    expect((await call('DELETE', `/child/wish/items/${added.data.wishItemId}`, 4)).status).toBe(204)
-    const parentAdded = await call('POST', '/wish/items', 1, {
-      childId: child.data.id,
-      optionId: 2,
+    expectContract((await call('GET', '/cart', 4)).data, cartShape)
+    expect((await call('GET', '/cart', 1)).data.items).not.toContainEqual(merged.data)
+    expect(
+      (await call('POST', '/cart/items', 4, { optionId: 1, childId: 999, quantity: 1 })).status,
+    ).toBe(400)
+    const denied = await call('DELETE', `/cart/items/${added.data.cartItemId}`, 1)
+    expect(denied.data).toMatchObject({ status: 403, title: '다른 사람의 장바구니입니다' })
+    expect((await call('DELETE', `/cart/items/${added.data.cartItemId}`, 4)).status).toBe(204)
+    // 조르기 보내기 = POST /wish/requests (자녀만, BE #999)
+    const pending = await call('POST', '/cart/items', 4, {
+      optionId: 1,
+      childId: null,
       quantity: 1,
     })
-    const denied = await call('DELETE', `/child/wish/items/${parentAdded.data.wishItemId}`, 4)
-    expect(denied.status).toBe(403)
-    expect(denied.data.detail).toBe('다른 사람이 담은 상품은 뺄 수 없습니다.')
-    const pending = await call('POST', '/child/wish/items', 4, { optionId: 1, quantity: 1 })
-    const childRequest = await call('POST', '/child/wish/requests', 4, {
-      wishItemIds: [Number(pending.data.wishItemId)],
+    const childRequest = await call('POST', '/wish/requests', 4, {
+      cartItemIds: [Number(pending.data.cartItemId)],
       message: '부탁해요',
     })
     expect(childRequest.status).toBe(201)
     expectContract(childRequest.data, wishRequestShape)
-    expect(childRequest.data.requestedBy).toBe('CHILD')
-    expectContract((await call('GET', '/child/wish/requests', 4)).data, wishRequestsShape)
+    expect(childRequest.data).toMatchObject({
+      requestedByType: 'CHILD',
+      status: 'REQUESTED',
+      childId: String(child.data.id),
+    })
+    expectContract((await call('GET', '/wish/requests', 4)).data, wishRequestsShape)
     expect((await call('GET', `/wish/requests?childId=${child.data.id}`, 1)).data).toContainEqual(
       childRequest.data,
     )
     expect(
-      (await call('POST', '/child/wish/requests', 4, { wishItemIds: [], message: null })).status,
+      (await call('POST', '/wish/requests', 1, { cartItemIds: [1], message: null })).status,
+    ).toBe(403)
+    expect(
+      (await call('POST', '/wish/requests', 4, { cartItemIds: [], message: null })).status,
     ).toBe(400)
     expect(
-      (await call('POST', '/child/wish/requests', 4, { wishItemIds: [1, 1], message: null }))
-        .status,
+      (await call('POST', '/wish/requests', 4, { cartItemIds: [1, 1], message: null })).status,
     ).toBe(400)
     expect(
       (
-        await call('POST', '/child/wish/requests', 4, {
-          wishItemIds: [1],
+        await call('POST', '/wish/requests', 4, {
+          cartItemIds: [Number(pending.data.cartItemId)],
           message: 'a'.repeat(101),
         })
       ).status,
     ).toBe(400)
     expect(
       (
-        await call('POST', '/child/wish/requests', 4, {
-          wishItemIds: [Number(pending.data.wishItemId)],
+        await call('POST', '/wish/requests', 4, {
+          cartItemIds: [Number(pending.data.cartItemId)],
           message: null,
         })
       ).status,
     ).toBe(409)
-    expect((await call('DELETE', `/child/wish/items/${pending.data.wishItemId}`, 4)).status).toBe(
-      409,
+    const reserved = (await call('GET', '/cart', 4)).data.items.find(
+      (line: { cartItemId: string }) => line.cartItemId === pending.data.cartItemId,
     )
+    expect(reserved.reserved).toBe(true)
+    const locked = await call('DELETE', `/cart/items/${pending.data.cartItemId}`, 4)
+    expect(locked.data).toMatchObject({ status: 409, title: '예약된 장바구니 상품입니다' })
     expect((await call('GET', '/child/profile', 1)).status).toBe(403)
     expect((await call('GET', '/members/me', 4)).status).toBe(401)
     expect(
@@ -861,7 +869,7 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
   })
 })
 
-it('부모 조르기 조회 응답이 계약에 맞는다', async () => {
+it('조르기 승인(예약 칸으로 주문하기) · 거절이 계약에 맞는다', async () => {
   const child = (
     await call('POST', '/children', 1, {
       ...toChildRequest(DEMO_CHILD),
@@ -869,131 +877,105 @@ it('부모 조르기 조회 응답이 계약에 맞는다', async () => {
       optionalConsent: true,
     })
   ).data
-  const item = await call('POST', '/wish/items', 1, { childId: child.id, optionId: 1, quantity: 2 })
-  expect(item.status).toBe(201)
-  expectContract((await call('GET', `/wish?childId=${child.id}`, 1)).data, wishShape)
-  const request = await call('POST', '/wish/requests', 1, {
-    childId: child.id,
-    wishItemIds: [Number(item.data.wishItemId)],
+  await call('POST', '/auth/child-accounts', 1, {
+    childProfileId: child.id,
+    loginId: 'wishchild',
+    password: 'password1',
+  })
+  const login = await call('POST', '/auth/child/login', null, {
+    loginId: 'wishchild',
+    password: 'password1',
+  })
+  tokens[6] = login.data.accessToken
+  const first = await call('POST', '/cart/items', 6, { optionId: 1, childId: null, quantity: 2 })
+  const second = await call('POST', '/cart/items', 6, { optionId: 2, childId: null, quantity: 1 })
+  const request = await call('POST', '/wish/requests', 6, {
+    cartItemIds: [Number(first.data.cartItemId), Number(second.data.cartItemId)],
     message: '부탁해요',
   })
   expect(request.status).toBe(201)
-  expectContract(request.data, wishRequestShape)
-  const waiting = await call('GET', `/wish/requests/${request.data.requestId}/timeline`, 1)
-  expect(waiting.data.steps.map((step: { step: string }) => step.step)).toEqual([
-    'SENT',
-    'APPROVED',
+  const id = request.data.requestId
+  const waiting = await call('GET', `/wish/requests/${id}/timeline`, 1)
+  expectContract(waiting.data, wishTimelineShape)
+  expect(waiting.data.steps).toEqual([
+    { step: 'SENT', status: 'DONE', at: request.data.requestedAt },
+    { step: 'PAID', status: 'WAITING', at: null },
   ])
-  const locked = await call('POST', '/wish/items', 1, {
-    childId: child.id,
-    optionId: 1,
-    quantity: 1,
-  })
-  expect(locked.data).toMatchObject({ status: 409, title: '조르는 중인 상품입니다' })
   expectContract(
     (await call('GET', `/wish/requests?childId=${child.id}`, 1)).data,
     wishRequestsShape,
   )
-  expectContract(
-    (await call('GET', `/wish/requests/${request.data.requestId}`, 1)).data,
-    wishRequestShape,
-  )
-  expectContract(
-    (await call('GET', `/wish/requests/${request.data.requestId}/timeline`, 1)).data,
-    wishTimelineShape,
-  )
-  const approved = await call('POST', `/wish/requests/${request.data.requestId}/approval`, 1, {
-    checkout: 'ORDER',
-    items: [
-      { wishItemId: Number(item.data.wishItemId), quantity: 1, unitPrice: item.data.unitPrice },
-    ],
-    shippingAddress: { recipientName: '부모', phone: '010', zipCode: '12345', address: '서울' },
+  expectContract((await call('GET', `/wish/requests/${id}`, 1)).data, wishRequestShape)
+  // 승인 API는 없다 (#999)
+  expect((await call('POST', `/wish/requests/${id}/approval`, 1, {})).status).toBe(404)
+  const shippingAddress = { recipientName: '부모', phone: '010', zipCode: '12345', address: '서울' }
+  const lineOf = (quantity: number) => ({
+    optionId: 1,
+    childId: child.id,
+    quantity,
+    unitPrice: first.data.unitPrice,
+    cartItemId: Number(first.data.cartItemId),
   })
-  expect(approved.status).toBe(200)
-  expectContract(approved.data, wishRequestShape)
-  expectContract((await call('GET', `/orders/${approved.data.orderId}`, 1)).data, orderDetailShape)
-  const ordered = await call('GET', `/wish/requests/${request.data.requestId}/timeline`, 1)
-  expectContract(ordered.data, wishTimelineShape)
-  expect(ordered.data.steps.map((step: { step: string }) => step.step)).toEqual([
-    'SENT',
-    'APPROVED',
-    'CREATED',
-    'PAYMENT_REQUESTED',
-    'PAID',
-    'SHIPPED',
-    'DELIVERED',
-    'CONFIRMED',
+  const over = await call('POST', '/orders', 1, { items: [lineOf(3)], shippingAddress })
+  expect(over.data).toMatchObject({ status: 409, title: '예약된 수량보다 많이 주문할 수 없습니다' })
+  const placed = await call('POST', '/orders', 1, { items: [lineOf(1)], shippingAddress })
+  expect(placed.status).toBe(201)
+  expectContract(placed.data, orderDetailShape)
+  let order = placed
+  for (let i = 0; i < 20 && order.data.status === 'PENDING_PAYMENT'; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 250))
+    order = await call('GET', `/orders/${placed.data.orderId}`, 1)
+  }
+  expect(order.data.status).toBe('PAID')
+  const paid = await call('GET', `/wish/requests/${id}`, 6)
+  expectContract(paid.data, wishRequestShape)
+  expect(paid.data).toMatchObject({ status: 'PAID', payerType: 'MEMBER', payerId: '1' })
+  expect(paid.data.purchases).toMatchObject([
+    { orderId: placed.data.orderId, cartItemId: first.data.cartItemId, quantity: 1 },
   ])
-  const decided = await call('POST', `/wish/requests/${request.data.requestId}/rejection`, 1, {
-    reason: 'OTHER',
-  })
-  expect(decided.data).toMatchObject({ status: 409, title: '이미 처리한 조르기입니다' })
-  const another = await call('POST', '/wish/items', 1, {
-    childId: child.id,
-    optionId: 2,
+  const paidTimeline = await call('GET', `/wish/requests/${id}/timeline`, 1)
+  expect(paidTimeline.data.orderIds).toEqual([placed.data.orderId])
+  // 일부 수량만 사도 결제 완료이고, 칸은 남은 수량으로 예약 없이 남는다
+  const childCart = (await call('GET', '/cart', 6)).data.items as {
+    cartItemId: string
+    quantity: number
+    reserved: boolean
+  }[]
+  expect(childCart.find((line) => line.cartItemId === first.data.cartItemId)).toMatchObject({
     quantity: 1,
+    reserved: false,
   })
-  const otherRequest = await call('POST', '/wish/requests', 1, {
-    childId: child.id,
-    wishItemIds: [Number(another.data.wishItemId)],
+  expect(childCart.find((line) => line.cartItemId === second.data.cartItemId)?.reserved).toBe(false)
+  const decided = await call('POST', `/wish/requests/${id}/rejection`, 1, { reason: 'OTHER' })
+  expect(decided.data).toMatchObject({ status: 409, title: '이미 처리한 조르기입니다' })
+  const other = await call('POST', '/wish/requests', 6, {
+    cartItemIds: [Number(second.data.cartItemId)],
     message: null,
   })
-  const badReason = await call(
-    'POST',
-    `/wish/requests/${otherRequest.data.requestId}/rejection`,
-    1,
-    { reason: 'NOPE' },
-  )
+  const badReason = await call('POST', `/wish/requests/${other.data.requestId}/rejection`, 1, {
+    reason: 'NOPE',
+  })
   expect(badReason.data).toMatchObject({ status: 400, title: '잘못된 거절 사유입니다' })
-  const rejected = await call(
-    'POST',
-    `/wish/requests/${otherRequest.data.requestId}/rejection`,
-    1,
-    { reason: 'OTHER' },
-  )
+  expect(
+    (await call('POST', `/wish/requests/${other.data.requestId}/rejection`, 6, { reason: 'OTHER' }))
+      .status,
+  ).toBe(403)
+  const rejected = await call('POST', `/wish/requests/${other.data.requestId}/rejection`, 1, {
+    reason: 'OTHER',
+  })
   expect(rejected.status).toBe(200)
   expectContract(rejected.data, wishRequestShape)
   expect(rejected.data).toMatchObject({ status: 'REJECTED', rejectReason: 'OTHER' })
-  const rejectedTimeline = await call(
-    'GET',
-    `/wish/requests/${otherRequest.data.requestId}/timeline`,
-    1,
-  )
+  const rejectedTimeline = await call('GET', `/wish/requests/${other.data.requestId}/timeline`, 1)
   expect(rejectedTimeline.data.steps.map((step: { step: string }) => step.step)).toEqual([
     'SENT',
     'REJECTED',
   ])
-  // 거절하면 모든 줄, 승인하면 고르지 않은 줄의 잠금이 풀린다
-  const third = await call('POST', '/wish/items', 1, {
-    childId: child.id,
-    optionId: 3,
-    quantity: 1,
-  })
-  const resent = await call('POST', '/wish/requests', 1, {
-    childId: child.id,
-    wishItemIds: [Number(another.data.wishItemId), Number(third.data.wishItemId)],
-    message: null,
-  })
-  expect(resent.status).toBe(201)
-  await call('POST', `/wish/requests/${resent.data.requestId}/approval`, 1, {
-    checkout: 'ORDER',
-    items: [
-      {
-        wishItemId: Number(another.data.wishItemId),
-        quantity: 1,
-        unitPrice: another.data.unitPrice,
-      },
-    ],
-    shippingAddress: { recipientName: '부모', phone: '010', zipCode: '12345', address: '서울' },
-  })
-  const lines = (await call('GET', `/wish?childId=${child.id}`, 1)).data.items as {
-    wishItemId: string
-    requestId: string | null
-  }[]
-  expect(lines.find((line) => line.wishItemId === third.data.wishItemId)?.requestId).toBeNull()
-  expect(lines.find((line) => line.wishItemId === another.data.wishItemId)?.requestId).toBe(
-    resent.data.requestId,
+  // 거절하면 예약이 풀린다
+  const released = (await call('GET', '/cart', 6)).data.items.find(
+    (line: { cartItemId: string }) => line.cartItemId === second.data.cartItemId,
   )
+  expect(released.reserved).toBe(false)
 })
 
 it('부모 본인인증 계약과 등록 차단을 따른다', async () => {

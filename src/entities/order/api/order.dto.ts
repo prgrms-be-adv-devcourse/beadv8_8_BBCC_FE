@@ -71,7 +71,14 @@ export type OrderSummaryDto = {
 
 /** POST /orders */
 export type PlaceOrderRequestDto = {
-  items: { optionId: number; childId: number | null; quantity: number; unitPrice: number }[]
+  items: {
+    optionId: number
+    childId: number | null
+    quantity: number
+    unitPrice: number
+    /** 이 줄을 산 장바구니 칸 (BE #998, 선택). 조르기 승인은 예약된 칸 ID를 넣는다 */
+    cartItemId?: number
+  }[]
   shippingAddress: { recipientName: string; phone: string; zipCode: string; address: string }
 }
 

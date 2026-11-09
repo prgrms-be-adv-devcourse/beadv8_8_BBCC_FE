@@ -41,8 +41,8 @@ export function ShopChildWishDetailPage() {
         {wish.data.items.map((item) => {
           const decision = wishLineDecisionLabel(wish.data, item)
           return (
-            <p key={item.wishItemId}>
-              {item.productName} · {item.optionName} · {item.requestedQuantity}개
+            <p key={item.optionId}>
+              {item.productName} · {item.optionName} · {item.quantity}개
               {decision && ` · ${decision}`}
             </p>
           )
@@ -51,6 +51,11 @@ export function ShopChildWishDetailPage() {
           <p>거절 사유: {wishRejectReasonLabel(wish.data.rejectReason)}</p>
         )}
         {wish.data.decidedAt && <p>답한 시각 {formatDateTime(wish.data.decidedAt)}</p>}
+        {wish.data.orderIds.map((orderId) => (
+          <Link key={orderId} className="text-primary underline" to={paths.order(orderId)}>
+            주문 #{orderId} 보기
+          </Link>
+        ))}
       </section>
       {canDecideWish(wish.data) && (
         <DecideWish

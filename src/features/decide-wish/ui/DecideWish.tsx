@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { WISH_REJECT_REASONS, wishRejectReasonLabel, type WishRequest } from '@/entities/wish'
 import { getErrorMessage } from '@/shared/api'
-import { confirmAction } from '@/shared/lib'
+import { confirmAction, formatWon } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
-import { canApproveWish, isApprovableLine, toWishApproval } from '../model/approval'
+import { canApproveWish, isApprovableLine, toWishOrder } from '../model/approval'
 import { useDecideWish } from '../model/use-decide-wish'
 import { useWishSelection } from '../model/use-wish-selection'
 
@@ -23,13 +23,14 @@ export function DecideWish({ wish, addressesPath, onApproved }: DecideWishProps)
   const error = approve.error || reject.error || addresses.error
   async function handleApprove() {
     if (!address || !canApproveWish(lines, address)) return
-    if (await confirmAction({ title: '선택한 상품을 주문할까요?', confirmLabel: '승인' })) {
-      approve.mutate(toWishApproval(lines, address), {
-        onSuccess: (orderId) => {
-          if (orderId) onApproved(orderId)
-        },
-      })
-    }
+    const total = lines.reduce((sum, line) => sum + (line.unitPrice ?? 0) * line.quantity, 0)
+    const isConfirmed = await confirmAction({
+      title: '선택한 상품을 주문하고 결제할까요?',
+      description: `예치금에서 ${formatWon(total)}이 결제돼요. 잔액이 부족하면 주문이 취소돼요.`,
+      confirmLabel: '승인',
+    })
+    if (isConfirmed)
+      approve.mutate(toWishOrder(wish.childId, lines, address), { onSuccess: onApproved })
   }
   async function handleReject() {
     if (await confirmAction({ title: '조르기를 거절할까요?', confirmLabel: '거절' }))
@@ -39,15 +40,15 @@ export function DecideWish({ wish, addressesPath, onApproved }: DecideWishProps)
     <section className="border-rule space-y-4 rounded-lg border p-4 md:p-5">
       <h2 className="text-section">조르기 답하기</h2>
       {wish.items.map((item) => (
-        <div key={item.wishItemId}>
+        <div key={item.optionId}>
           <label>
             <input
               type="checkbox"
               disabled={!isApprovableLine(item) || pending}
-              checked={isSelected(item.wishItemId)}
-              onChange={() => toggle(item.wishItemId)}
+              checked={isSelected(item.optionId)}
+              onChange={() => toggle(item.optionId)}
             />{' '}
-            {item.productName}
+            {item.productName} · {item.optionName} · 조른 수량 {item.quantity}개
           </label>
           <label>
             {' '}
@@ -55,10 +56,10 @@ export function DecideWish({ wish, addressesPath, onApproved }: DecideWishProps)
             <input
               type="number"
               min="1"
-              max="99"
+              max={item.quantity}
               value={quantityOf(item)}
-              disabled={!isSelected(item.wishItemId) || pending}
-              onChange={(event) => setQuantity(item.wishItemId, Number(event.target.value))}
+              disabled={!isSelected(item.optionId) || pending}
+              onChange={(event) => setQuantity(item.optionId, Number(event.target.value))}
             />
           </label>
         </div>
@@ -82,7 +83,7 @@ export function DecideWish({ wish, addressesPath, onApproved }: DecideWishProps)
       )}
       <div>
         <Button disabled={pending || !canApproveWish(lines, address)} onClick={handleApprove}>
-          승인하고 주문
+          {approve.isPending ? '주문하는 중…' : '승인하고 결제'}
         </Button>
       </div>
       <label>
