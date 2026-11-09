@@ -67,10 +67,20 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
   await test.step('로그인 전: 상품은 보고, 장바구니는 로그인 뒤 원래 화면으로 (기획서 F01 · F03)', async () => {
     await page.goto('/products/1')
     await expect(page.getByText('데일리 맨투맨 (상품 A)').first()).toBeVisible()
+    // 사이즈를 고르기 전에는 로그인으로 보내지 않고 사이즈부터 고르게 한다
+    await page.getByRole('button', { name: '로그인하고 담기' }).click()
+    await expect(page).toHaveURL(/\/products\/1$/)
+    await expect(page.getByRole('alert')).toHaveText('사이즈를 골라 주세요.')
+    // 고른 옵션은 로그인 뒤 돌아올 주소에 실리고, 돌아오면 고른 사이즈 · 수량이 그대로다
+    const sizes = page.getByRole('group', { name: '사이즈', exact: true })
+    await sizes.getByRole('button').first().click()
     await expect(page.getByRole('link', { name: '로그인하고 담기' })).toHaveAttribute(
       'href',
-      '/login?next=%2Fproducts%2F1',
+      '/login?next=%2Fproducts%2F1%3Foption%3D1',
     )
+    await page.goto('/products/1?option=1&qty=2')
+    await expect(sizes.getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByRole('spinbutton')).toHaveValue('2')
     await page.goto('/cart')
     await expect(page).toHaveURL(/\/login\?next=%2Fcart$/)
     await expect(page.getByText('로그인하면 보던 화면으로 돌아가요.')).toBeVisible()

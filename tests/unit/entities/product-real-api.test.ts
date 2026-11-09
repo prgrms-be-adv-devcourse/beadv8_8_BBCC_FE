@@ -230,11 +230,11 @@ describe('validateRegisterProductForm: 판매 시작 조건과 같은 기준', (
   })
   it('필수 정보 항목 · 옵션 값 · 판매가', () => {
     expect(validateRegisterProductForm(inputs, { ...form, info: {} })).toBe(
-      '주요소재을(를) 입력해 주세요.',
+      '주요소재를 입력해 주세요.',
     )
     expect(
       validateRegisterProductForm(inputs, { ...form, optionValues: { '1': [], '2': ['202'] } }),
-    ).toBe('색상을(를) 하나 이상 골라 주세요.')
+    ).toBe('색상을 하나 이상 골라 주세요.')
     expect(validateRegisterProductForm(inputs, { ...form, prices: { '': 0 } })).toBe(
       '전체 옵션: 판매가를 입력해 주세요.',
     )
@@ -261,7 +261,7 @@ describe('validateRegisterProductForm: 판매 시작 조건과 같은 기준', (
         ...form,
         sizeSpecs: { ...form.sizeSpecs, '203': missingMeasure },
       }),
-    ).toBe('120: 가슴단면을(를) 입력해 주세요.')
+    ).toBe('120: 가슴단면을 입력해 주세요.')
   })
 })
 

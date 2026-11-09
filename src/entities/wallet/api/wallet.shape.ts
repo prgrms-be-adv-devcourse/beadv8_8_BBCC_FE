@@ -38,6 +38,8 @@ export const walletLedgerPageShape = pageOf(
       'PAYMENT',
       'REFUND',
       'SETTLEMENT',
+      'BALANCE_RETURN',
+      'DEV_CHARGE',
     ]),
     amount: num,
     balanceAfter: num,

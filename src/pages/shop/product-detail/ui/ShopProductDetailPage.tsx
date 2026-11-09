@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router'
 import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY } from '@/entities/cart'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
@@ -14,6 +14,7 @@ import {
   optionChipRows,
   pickedOption,
   pickOptionValue,
+  picksOfOption,
   type OptionPicks,
   ProductSpecs,
   useProductQuery,
@@ -42,8 +43,11 @@ export function ShopProductDetailPage() {
   const children = useChildrenQuery({ enabled: Boolean(user) && !isChild })
   const [childId, setChildId] = useState<string | null>(search.get('childId'))
   const recommendation = useSizeRecommendationQuery(productId, isChild ? null : childId)
-  const [picks, setPicks] = useState<OptionPicks>({})
-  const [quantity, setQuantity] = useState(1)
+  // 로그인하고 돌아오면 주소(?option=&qty=)에 실어 둔 옵션 · 수량으로 시작한다. 고르기 전까지는 null
+  const [pickedByUser, setPicks] = useState<OptionPicks | null>(null)
+  const [quantityByUser, setQuantity] = useState<number | null>(null)
+  const [showsPickHint, setShowsPickHint] = useState(false)
+  const optionsRef = useRef<HTMLDivElement>(null)
 
   if (product.isPending)
     return (
@@ -61,6 +65,8 @@ export function ShopProductDetailPage() {
     return <StateMessage tone="error">{getErrorMessage(product.error)}</StateMessage>
 
   const detail = product.data
+  const picks = pickedByUser ?? picksOfOption(detail, search.get('option'))
+  const quantity = quantityByUser ?? clampQuantity(Number(search.get('qty')) || MIN_QUANTITY)
   const pickedChild = children.data?.find((item) => item.id === childId) ?? null
   const selected = pickedOption(detail, picks)
   const optionId = selected?.id ?? null
@@ -92,6 +98,22 @@ export function ShopProductDetailPage() {
     </>
   )
 
+  /** 로그인 뒤 돌아올 주소: 고른 옵션 · 수량을 실어 되살린다 */
+  const returnPath = () => {
+    const params = new URLSearchParams(location.search)
+    params.delete('option')
+    params.delete('qty')
+    if (optionId) params.set('option', optionId)
+    if (optionId && quantity !== MIN_QUANTITY) params.set('qty', String(quantity))
+    const query = params.toString()
+    return location.pathname + (query ? `?${query}` : '')
+  }
+  /** 옵션을 다 고르지 않았으면 담기 대신 옵션으로 데려간다 */
+  const askToPick = () => {
+    setShowsPickHint(true)
+    optionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
   return (
     <div className="shop-look space-y-14 md:space-y-24">
       <section aria-label={detail.name} className="space-y-4">
@@ -115,10 +137,11 @@ export function ShopProductDetailPage() {
           <ProductGallery
             images={detail.imageUrls}
             alt={detail.name}
-            className="rounded-card max-lg:aspect-[4/3]"
+            className="rounded-card min-w-0 max-lg:aspect-[4/3]"
           />
 
-          <div className="shop-offer space-y-5">
+          {/* min-w-0: 실측표처럼 넓은 표가 열을 넓혀 가격 · 담기 버튼을 화면 밖으로 밀지 않게 (표만 가로로 민다) */}
+          <div className="shop-offer min-w-0 space-y-5">
             {/* 셀러 마켓 상세: 상점 줄을 맨 위에 두고, 카테고리 · 이름 · 가격 순서 */}
             <div className="space-y-2">
               {detail.businessName && (
@@ -134,15 +157,12 @@ export function ShopProductDetailPage() {
             </div>
 
             {/* 옵션: 누가 입나요(주문에 같이 실린다) → 색상 → 추천 한 줄 → 사이즈 칩 */}
-            <div className="space-y-3">
+            <div ref={optionsRef} className="scroll-mt-24 space-y-3">
               {!isChild && (
                 <div className="space-y-1.5">
                   <p className="text-sm font-semibold">누가 입나요?</p>
                   {!user ? (
-                    <Link
-                      to={loginPath(location.pathname + location.search)}
-                      className="shop-link text-sm"
-                    >
+                    <Link to={loginPath(returnPath())} className="shop-link text-sm">
                       로그인하고 맞는 사이즈 보기
                     </Link>
                   ) : children.data?.length === 0 ? (
@@ -163,13 +183,18 @@ export function ShopProductDetailPage() {
               <OptionChipPicker
                 rows={optionChipRows(detail, picks, recommendation.data?.recommendedSize)}
                 onPick={(attributeId, valueId) =>
-                  setPicks((prev) => pickOptionValue(detail, prev, attributeId, valueId))
+                  setPicks(pickOptionValue(detail, picks, attributeId, valueId))
                 }
                 aboveRow={sizeAttributeId ? { [sizeAttributeId]: sizeAdvice } : undefined}
               />
               {selected && (
                 <p className="text-ink-2 text-sm">
                   {selected.name} · {quantity}개
+                </p>
+              )}
+              {showsPickHint && missingPick && (
+                <p role="alert" className="text-destructive text-sm font-semibold">
+                  {missingPick}
                 </p>
               )}
             </div>
@@ -208,13 +233,14 @@ export function ShopProductDetailPage() {
                   cartHref={paths.shop.cart}
                   continueHref={paths.shop.home}
                 />
-              ) : (
-                <Link
-                  to={loginPath(location.pathname + location.search)}
-                  className="shop-btn w-full"
-                >
+              ) : selected ? (
+                <Link to={loginPath(returnPath())} className="shop-btn w-full">
                   로그인하고 담기
                 </Link>
+              ) : (
+                <button type="button" className="shop-btn w-full" onClick={askToPick}>
+                  로그인하고 담기
+                </button>
               )}
             </div>
 

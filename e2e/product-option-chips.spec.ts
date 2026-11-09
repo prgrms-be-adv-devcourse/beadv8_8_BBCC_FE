@@ -66,7 +66,7 @@ test('상품 상세: 색상 · 사이즈 칩 고르기 (없음 · 품절 · 적�
 
   const colors = page.getByRole('group', { name: '색상', exact: true })
   const sizes = page.getByRole('group', { name: '사이즈', exact: true })
-  await expect(page.getByText('색상을(를) 골라 주세요.')).toBeVisible()
+  await expect(page.getByText('색상을 골라 주세요.')).toBeVisible()
   // 색상 칩은 색 점과 이름을 함께 보인다
   await expect(colors.getByRole('button', { name: /^오트밀/ }).locator('[data-swatch]')).toHaveCSS(
     'background-color',

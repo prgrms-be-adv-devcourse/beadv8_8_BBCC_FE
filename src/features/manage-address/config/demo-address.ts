@@ -9,3 +9,13 @@ export const DEMO_ADDRESS: AddressForm = {
   detailAddress: '',
   isDefault: true,
 }
+
+/** 빈 배송지 폼 (시연 기능이 꺼진 운영) */
+export const EMPTY_ADDRESS: AddressForm = {
+  recipientName: '',
+  phone: '',
+  zipCode: '',
+  roadAddress: '',
+  detailAddress: '',
+  isDefault: false,
+}

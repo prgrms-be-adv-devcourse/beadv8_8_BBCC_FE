@@ -98,6 +98,7 @@ export { ProductTile } from './ui/ProductTile'
 export { garmentKindOf, wearFitOf, type WearFit } from './model/wear-preview'
 export { WearPreview } from './ui/WearPreview'
 export {
+  productListTitle,
   readProductFilters,
   readProductPage,
   writeProductFilters,
@@ -116,6 +117,7 @@ export {
   optionChipRows,
   pickedOption,
   pickOptionValue,
+  picksOfOption,
 } from './model/option-picker.rules'
 export { ALL_CATEGORIES_ICON } from './config/category-icons'
 export { categoryIconOf } from './model/category-icon.rules'

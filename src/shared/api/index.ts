@@ -1,4 +1,11 @@
-export { apiClient, configureAuth, principalOf, reissueAccessToken, type Principal } from './client'
+export {
+  apiClient,
+  configureAuth,
+  principalOf,
+  reissueAccessToken,
+  reissueForRestore,
+  type Principal,
+} from './client'
 export { runWithAction, useApiFlowLog, type ApiCallLog } from './api-flow-log'
 export { expectedReasonOf, isFailedCall, type ExpectedResponse } from './call-outcome'
 export {
@@ -20,6 +27,7 @@ export {
   getErrorMessage,
   getErrorStatus,
   getErrorTitle,
+  isSessionRejected,
   isTimeoutError,
   type ProblemDetail,
 } from './problem-detail'

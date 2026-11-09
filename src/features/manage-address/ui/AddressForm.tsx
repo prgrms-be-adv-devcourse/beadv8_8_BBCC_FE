@@ -10,7 +10,8 @@ import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/StateMessage'
-import { DEMO_ADDRESS } from '../config/demo-address'
+import { useDemoRoleSwitch } from '@/shared/config'
+import { DEMO_ADDRESS, EMPTY_ADDRESS } from '../config/demo-address'
 import { embedPostcodeSearch, type PostcodeResult } from '../lib/postcode'
 import { useRegisterAddress, useUpdateAddress } from '../model/use-manage-address'
 
@@ -26,8 +27,10 @@ export function AddressForm({ address, onDone }: AddressFormProps) {
   const create = useRegisterAddress({ onDone })
   const update = useUpdateAddress(address?.id ?? '', { onDone })
   const register = address ? update : create
+  // 새 배송지는 시연 기능이 켜졌을 때만 예시로 채운다 (확인 없이 등록하면 가짜 주소로 배송되던 문제)
+  const demoRoleSwitch = useDemoRoleSwitch()
   const [form, setForm] = useState<AddressFormValue>(() =>
-    address ? toAddressForm(address) : DEMO_ADDRESS,
+    address ? toAddressForm(address) : demoRoleSwitch ? DEMO_ADDRESS : EMPTY_ADDRESS,
   )
   const [invalid, setInvalid] = useState<string | null>(null)
   const [isSearching, setIsSearching] = useState(false)

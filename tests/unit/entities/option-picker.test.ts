@@ -5,6 +5,7 @@ import {
   optionChipRows,
   pickedOption,
   pickOptionValue,
+  picksOfOption,
   toProductDetail,
   type ProductDetailDto,
 } from '@/entities/product'
@@ -219,10 +220,21 @@ describe('pickOptionValue: 고르면 막힌 뒤 항목 선택은 푼다', () => 
 describe('pickedOption · missingPickMessage: 모두 고르면 그 조합의 옵션', () => {
   it.each([
     [{ '1': '2', '2': '12' }, '2-12', null],
-    [{ '1': '2' }, null, '사이즈을(를) 골라 주세요.'],
-    [{}, null, '색상을(를) 골라 주세요.'],
+    [{ '1': '2' }, null, '사이즈를 골라 주세요.'],
+    [{}, null, '색상을 골라 주세요.'],
   ])('고른 값 %j → 옵션 %s, 안내 %s', (picks, optionId, message) => {
     expect(pickedOption(product, picks)?.id ?? null).toBe(optionId)
     expect(missingPickMessage(product, picks)).toBe(message)
+  })
+})
+
+describe('picksOfOption: 옵션 ID로 고른 값을 되살린다 (로그인하고 돌아왔을 때)', () => {
+  it('옵션의 색상 · 사이즈 값을 항목별로 채운다', () => {
+    expect(picksOfOption(product, '2-12')).toEqual({ '1': '2', '2': '12' })
+  })
+
+  it('없는 옵션 · 빈 값이면 아무것도 고르지 않는다', () => {
+    expect(picksOfOption(product, '9-99')).toEqual({})
+    expect(picksOfOption(product, null)).toEqual({})
   })
 })

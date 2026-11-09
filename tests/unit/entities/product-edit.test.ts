@@ -262,7 +262,7 @@ describe('validateProductUpdateForm: 보낼 값만 검사한다', () => {
           { ...form, info: { ...form.info, '3': { valueId: '', text: '' } } },
           { status },
         ),
-      ).toBe('주요소재을(를) 입력해 주세요.')
+      ).toBe('주요소재를 입력해 주세요.')
     },
   )
 })
