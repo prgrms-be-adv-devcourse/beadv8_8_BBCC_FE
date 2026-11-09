@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { type ProductSearch, useCategoryInputsQuery } from '@/entities/product'
 import { cn } from '@/shared/lib'
 
@@ -7,10 +8,14 @@ type ProductFilterBarProps = {
   onChange: (patch: Pick<ProductSearch, 'attributes'>) => void
 }
 
-/** (카테고리를 골랐을 때) 옵션 값 거르기 칩. BE GET /products의 attributes. 거를 것이 없으면 그리지 않는다 */
+/**
+ * (카테고리를 골랐을 때) 옵션 값 거르기 칩. BE GET /products의 attributes. 거를 것이 없으면 그리지 않는다.
+ * 휴대폰에서는 칩이 첫 화면을 덮지 않게 「필터」 버튼으로 접는다. 고른 개수는 버튼에 보인다
+ */
 export function ProductFilterBar({ search, onChange }: ProductFilterBarProps) {
   const inputs = useCategoryInputsQuery(search.categoryId ?? '')
   const selected = new Set(search.attributes ?? [])
+  const [isOpen, setIsOpen] = useState(false)
   const toggle = (key: string) => {
     const next = new Set(selected)
     if (next.has(key)) next.delete(key)
@@ -21,43 +26,58 @@ export function ProductFilterBar({ search, onChange }: ProductFilterBarProps) {
   if (!search.categoryId || !inputs.data?.optionAttributes.length) return null
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 text-sm">
-      {inputs.data.optionAttributes.map((attribute) => (
-        <div
-          key={attribute.id}
-          role="group"
-          aria-label={`${attribute.name} 거르기`}
-          className="flex flex-wrap items-center gap-2"
-        >
-          <span className="text-ink-3 mr-1 text-[13px]">{attribute.name}</span>
-          {attribute.values.map((value) => {
-            const key = `${attribute.code}:${value.id}`
-            const on = selected.has(key)
-            return (
-              <button
-                key={value.id}
-                type="button"
-                aria-pressed={on}
-                onClick={() => toggle(key)}
-                className={cn(
-                  'flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold transition-colors',
-                  on
-                    ? 'border-ink bg-ink text-paper'
-                    : 'border-rule bg-paper text-ink-2 hover:border-field-edge',
-                )}
-              >
-                {value.colorCode && (
-                  <span
-                    aria-hidden
-                    className="border-rule size-3.5 rounded-full border"
-                    style={{ backgroundColor: value.colorCode }}
-                  />
-                )}
-                {value.name}
-              </button>
-            )
-          })}
-        </div>
-      ))}
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls="product-filter-chips"
+        onClick={() => setIsOpen((open) => !open)}
+        className="border-rule bg-paper text-ink flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold md:hidden"
+      >
+        필터{selected.size > 0 && <span className="text-signal figure">{selected.size}</span>}
+        <span aria-hidden>{isOpen ? '▴' : '▾'}</span>
+      </button>
+      <div
+        id="product-filter-chips"
+        className={cn('flex flex-wrap items-center gap-x-5 gap-y-2.5', !isOpen && 'max-md:hidden')}
+      >
+        {inputs.data.optionAttributes.map((attribute) => (
+          <div
+            key={attribute.id}
+            role="group"
+            aria-label={`${attribute.name} 거르기`}
+            className="flex flex-wrap items-center gap-2"
+          >
+            <span className="text-ink-3 mr-1 text-[13px]">{attribute.name}</span>
+            {attribute.values.map((value) => {
+              const key = `${attribute.code}:${value.id}`
+              const on = selected.has(key)
+              return (
+                <button
+                  key={value.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggle(key)}
+                  className={cn(
+                    'flex h-11 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-colors md:h-8 md:px-3',
+                    on
+                      ? 'border-ink bg-ink text-paper'
+                      : 'border-rule bg-paper text-ink-2 hover:border-field-edge',
+                  )}
+                >
+                  {value.colorCode && (
+                    <span
+                      aria-hidden
+                      className="border-rule size-3.5 rounded-full border"
+                      style={{ backgroundColor: value.colorCode }}
+                    />
+                  )}
+                  {value.name}
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </div>
       {(search.attributes?.length ?? 0) > 0 && (
         <button
           type="button"

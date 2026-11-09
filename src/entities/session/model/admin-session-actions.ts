@@ -1,4 +1,4 @@
-import { reissueAccessToken } from '@/shared/api'
+import { reissueForRestore } from '@/shared/api'
 import { sessionApi } from '../api/session-api'
 import { useAdminSessionStore } from './admin-session-store'
 
@@ -22,7 +22,7 @@ export async function restoreAdminSession() {
   const store = useAdminSessionStore.getState()
   store.setStatus('restoring')
   try {
-    store.setAccessToken(await reissueAccessToken('admin'))
+    store.setAccessToken(await reissueForRestore('admin'))
   } catch {
     store.clear()
   } finally {

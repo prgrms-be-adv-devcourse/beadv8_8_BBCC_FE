@@ -9,8 +9,13 @@ const FIELDS: { key: keyof Theme; label: string; hint: string }[] = [
   { key: 'growth', label: '성장', hint: '자녀 · 성장 기록만' },
 ]
 
-/** 화면 오른쪽 아래: 메인 색을 바꿔 보며 비교 (주소에 ?theme=off면 숨김) */
-export function ThemeLab() {
+type ThemeLabProps = {
+  /** 휴대폰 화면 아래에 고정 바(상품 상세의 수량 · 담기)가 있으면 그 위로 올린다 */
+  raised?: boolean
+}
+
+/** 화면 오른쪽 아래: 메인 색을 바꿔 보며 비교 (주소에 ?theme=off면 숨김). 시연 기능이라 시연 기능이 꺼지면 그리지 않는다 */
+export function ThemeLab({ raised = false }: ThemeLabProps) {
   const { theme, hidden, set, reset } = useThemeStore()
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -29,7 +34,12 @@ export function ThemeLab() {
   }
 
   return (
-    <div className="fixed right-4 bottom-4 z-40 flex flex-col items-end gap-2">
+    <div
+      className={cn(
+        'fixed right-4 bottom-4 z-40 flex flex-col items-end gap-2',
+        raised && 'max-md:bottom-40',
+      )}
+    >
       {open && (
         <section
           aria-label="테마 바꿔 보기"

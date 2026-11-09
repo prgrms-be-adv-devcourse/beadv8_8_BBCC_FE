@@ -5,8 +5,11 @@ import {
   useMySellerApplicationQuery,
   type SellerApplicationStatus,
 } from '@/entities/seller'
+import { useSessionStore } from '@/entities/session'
 import { ApplySellerForm, RefreshSellerRoleButton } from '@/features/apply-seller'
+import { Link } from 'react-router'
 import { getErrorMessage } from '@/shared/api'
+import { loginPath, paths } from '@/shared/config'
 import { formatDateTime } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -23,7 +26,9 @@ const STATUS_TONE: Record<SellerApplicationStatus, string> = {
 }
 
 export function CenterApplyPage() {
-  const application = useMySellerApplicationQuery()
+  const user = useSessionStore((state) => state.user)
+  // 로그인 전에는 내 신청을 묻지 않는다 (401에서 「불러오는 중」이 멈추지 않게, 로그인부터 안내)
+  const application = useMySellerApplicationQuery({ enabled: Boolean(user) })
 
   return (
     <div className="shop-look max-w-2xl space-y-8">
@@ -33,7 +38,18 @@ export function CenterApplyPage() {
         description="관리자가 승인하면 판매자 센터를 쓸 수 있어요."
         note="신청 → 관리자 승인 → 토큰 재발급으로 판매자 역할이 반영돼요."
       />
-      {application.isPending && <StateMessage>불러오는 중…</StateMessage>}
+      {!user && (
+        <section className="border-rule space-y-2 rounded-lg border p-6">
+          <h2 className="text-section">로그인하고 입점을 신청해 주세요</h2>
+          <p className="text-ink-2 text-[15px]">
+            신청서는 로그인한 회원만 낼 수 있어요. 로그인하면 이 화면으로 돌아와요.
+          </p>
+          <Link to={loginPath(paths.center.apply)} className="shop-btn inline-flex">
+            로그인하고 신청하기
+          </Link>
+        </section>
+      )}
+      {user && application.isPending && <StateMessage>불러오는 중…</StateMessage>}
       {application.isError && (
         <StateMessage tone="error">{getErrorMessage(application.error)}</StateMessage>
       )}

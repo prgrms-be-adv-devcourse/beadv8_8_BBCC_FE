@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router'
 import { useChildrenQuery } from '@/entities/child'
 import {
   ProductTile,
+  productListTitle,
   readProductFilters,
   readProductPage,
   writeProductFilters,
@@ -16,9 +17,10 @@ import { hasRole, useSessionStore } from '@/entities/session'
 import { QuickHeightForm } from '@/features/edit-child'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { useArea } from '@/shared/lib'
+import { cn, useArea } from '@/shared/lib'
 import { MockBadge } from '@/shared/ui/MockBadge'
 import { Pagination } from '@/shared/ui/Pagination'
+import { Button } from '@/shared/ui/button'
 import { CardGridSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { CategoryCircles } from './CategoryCircles'
@@ -65,7 +67,11 @@ export function ShopHomePage() {
   const listRef = useRef<HTMLElement>(null)
   // 맞춤 영역: 자녀가 있는 보호자에게만. 검색 중에는 숨긴다
   const showsRecommended = isBuyer && child !== null && !keyword
-  const isFiltered = Boolean(keyword || filters.categoryId || filters.attributes?.length)
+  const categoryName =
+    categories.data?.find((category) => category.id === filters.categoryId)?.name ?? null
+  const title = productListTitle(keyword, categoryName, filters.attributes?.length ?? 0)
+  // 조건을 바꾼 직후에는 이전 목록이 남아 있다(keepPreviousData). 그동안은 흐리게 두고 개수를 숨긴다
+  const isStale = all.isPlaceholderData
 
   const changePage = (next: number) => {
     writeParams((latest) => writeProductPage(latest, next))
@@ -79,6 +85,14 @@ export function ShopHomePage() {
         selectedId={filters.categoryId}
         onSelect={(categoryId) => update({ categoryId, attributes: [] })}
       />
+      {categories.isError && (
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <StateMessage tone="error">카테고리를 불러오지 못했어요.</StateMessage>
+          <Button variant="outline" size="sm" onClick={() => void categories.refetch()}>
+            다시 시도
+          </Button>
+        </div>
+      )}
 
       {showsRecommended && (
         <RecommendedPreview kids={kids} child={child} onSelectChild={setChildId} />
@@ -93,10 +107,10 @@ export function ShopHomePage() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
             <h2 className="text-section">
-              {keyword ? `"${keyword}" 검색 결과` : isFiltered ? '검색 결과' : '전체 상품'}
+              {title}
               <MockBadge endpoints={['GET /products']} />
             </h2>
-            {all.data && (
+            {all.data && !isStale && (
               <span className="text-ink-3 figure text-sm">{all.data.totalElements}</span>
             )}
             {keyword && (
@@ -112,27 +126,43 @@ export function ShopHomePage() {
         </div>
         <ProductFilterBar search={search} onChange={(patch) => update(patch)} />
         {all.isPending && <CardGridSkeleton />}
-        {all.isError && <StateMessage tone="error">{getErrorMessage(all.error)}</StateMessage>}
-        {all.data?.content.length === 0 && (
+        {all.isError && (
+          <div className="bg-paper-2 rounded-card flex flex-wrap items-center gap-3 p-5">
+            <StateMessage tone="error">
+              {keyword ? '검색 결과를' : '상품을'} 불러오지 못했어요. {getErrorMessage(all.error)}
+            </StateMessage>
+            <Button variant="outline" size="sm" onClick={() => void all.refetch()}>
+              다시 시도
+            </Button>
+          </div>
+        )}
+        {all.data?.content.length === 0 && !isStale && (
           <StateMessage>
             {keyword || filters.categoryId
               ? '조건에 맞는 상품이 없어요.'
               : '아직 판매 중인 상품이 없어요.'}
           </StateMessage>
         )}
-        <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 md:gap-x-4 lg:grid-cols-4">
-          {all.data?.content.map((product) => (
-            <ProductTile
-              key={product.id}
-              to={isChild ? paths.child.product(product.id) : paths.shop.product(product.id)}
-              name={product.name}
-              seller={product.businessName}
-              price={product.minPrice}
-              imageUrl={product.imageUrl}
-              isSoldOut={product.soldOut}
-              tag={product.sizeFree ? { text: '사이즈 무관' } : undefined}
-            />
-          ))}
+        <div
+          aria-busy={isStale}
+          className={cn(
+            'grid grid-cols-2 gap-x-3 gap-y-8 transition-opacity sm:grid-cols-3 md:gap-x-4 lg:grid-cols-4',
+            isStale && 'pointer-events-none opacity-40',
+          )}
+        >
+          {!all.isError &&
+            all.data?.content.map((product) => (
+              <ProductTile
+                key={product.id}
+                to={isChild ? paths.child.product(product.id) : paths.shop.product(product.id)}
+                name={product.name}
+                seller={product.businessName}
+                price={product.minPrice}
+                imageUrl={product.imageUrl}
+                isSoldOut={product.soldOut}
+                tag={product.sizeFree ? { text: '사이즈 무관' } : undefined}
+              />
+            ))}
         </div>
         {all.data && (
           <Pagination page={all.data.page} totalPages={all.data.totalPages} onChange={changePage} />

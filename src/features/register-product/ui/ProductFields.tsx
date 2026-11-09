@@ -14,7 +14,8 @@ import {
 import { useLeaveGuard } from '@/shared/lib'
 import { getErrorMessage } from '@/shared/api'
 import { StateMessage } from '@/shared/ui/StateMessage'
-import { demoRegisterForm } from '../config/demo-product'
+import { useDemoRoleSwitch } from '@/shared/config'
+import { demoRegisterForm, emptyRegisterForm } from '../config/demo-product'
 import { useRegisterAndStartSale } from '../model/use-register-product'
 import { ProductPreview } from './ProductPreview'
 import { StartSaleButton } from './StartSaleButton'
@@ -35,7 +36,11 @@ export function ProductFields({
   previewSlot,
 }: ProductFieldsProps) {
   const register = useRegisterAndStartSale(inputs)
-  const [form, setForm] = useState<RegisterProductFormValue>(() => demoRegisterForm(inputs))
+  // 시연 기능이 켜졌을 때만 예시 상품으로 채운다 (운영에서 그대로 누르면 예시 상품이 공개되던 문제)
+  const demoRoleSwitch = useDemoRoleSwitch()
+  const [form, setForm] = useState<RegisterProductFormValue>(() =>
+    demoRoleSwitch ? demoRegisterForm(inputs) : emptyRegisterForm(inputs),
+  )
   const [invalid, setInvalid] = useState<string | null>(null)
   const { isUploading, onUploadingChange } = useImageUploading()
   // 판매 시작만 실패해 다시 시작한 상품

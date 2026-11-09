@@ -1,3 +1,4 @@
+import { withObjectParticle } from '@/shared/lib'
 import type {
   OptionChip,
   OptionChipRow,
@@ -131,5 +132,17 @@ export function pickedOption(product: Picker, picks: OptionPicks): ProductOption
 export function missingPickMessage(product: Picker, picks: OptionPicks): string | null {
   const effective = withSinglePicks(product, picks)
   const missing = product.optionAttributes.find((attribute) => !effective[attribute.id])
-  return missing ? `${missing.name}을(를) 골라 주세요.` : null
+  return missing ? `${withObjectParticle(missing.name)} 골라 주세요.` : null
+}
+
+/** 옵션 ID → 고른 값 (항목 ID → 값 ID). 로그인하고 돌아왔을 때 고른 상태를 되살린다. 없는 옵션이면 빈 값 */
+export function picksOfOption(product: Picker, optionId: string | null): OptionPicks {
+  const option = product.options.find((item) => item.id === optionId)
+  if (!option) return {}
+  const picks: OptionPicks = {}
+  for (const attribute of product.optionAttributes) {
+    const value = attribute.values.find((item) => option.valueIds.includes(item.id))
+    if (value) picks[attribute.id] = value.id
+  }
+  return picks
 }
