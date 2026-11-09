@@ -19,6 +19,7 @@ import {
   updateProduct,
 } from './products.mjs'
 import { catalogRoute } from './catalog.mjs'
+import { memberReviewRoute, publicReviewRoute } from './reviews.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
@@ -219,6 +220,11 @@ const invalidQuantity = (res) =>
     '/cart/items',
   )
 
+/** reviews.mjs 결과 { status, body } · { status, title, detail }를 응답으로 */
+const reviewResult = (res, result, instance) =>
+  result.title
+    ? problem(res, result.status, result.title, result.detail, instance)
+    : send(res, result.status, result.body)
 function send(res, status, body, headers = {}) {
   res.writeHead(status, {
     'content-type': status >= 400 ? 'application/problem+json' : 'application/json',
@@ -604,6 +610,9 @@ http
         ? send(res, 200, detail)
         : problem(res, 404, '찾을 수 없습니다', '상품을 찾을 수 없습니다.', req.url)
     }
+    // 공개 리뷰 API: 상품 리뷰 · 요약 (reviews.mjs)
+    const publicReview = publicReviewRoute(m, p, url.searchParams)
+    if (publicReview) return reviewResult(res, publicReview, req.url)
     if (!u) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
     // BE #755 Gateway: 관리자 API는 관리자 토큰만, 회원 토큰은 ADMIN 역할이 있어도 403
     if (p.startsWith('/admin/') && !isAdmin(u))
@@ -833,6 +842,13 @@ http
     }
     if (isChild) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
     const me = Number(u.sub)
+    // 회원 리뷰 API: 내 리뷰 · 작성 가능 목록 · 쓰기 · 고치기 · 지우기 · 사진 업로드 주소 (reviews.mjs)
+    const memberReview = memberReviewRoute(m, p, url.searchParams, body, {
+      memberId: me,
+      nickname: u.nickname ?? null,
+      orders,
+    })
+    if (memberReview) return reviewResult(res, memberReview, req.url)
     if (r('GET', /^\/guardian-verification$/)) {
       const verifiedAt = verifications[me] ?? null
       return send(res, 200, { verified: verifiedAt !== null, verifiedAt })

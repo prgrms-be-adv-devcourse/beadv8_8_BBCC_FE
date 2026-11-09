@@ -17,6 +17,7 @@ export function MyPageMenu({ className }: MyPageMenuProps) {
       links: [
         { to: paths.shop.orders, label: '주문 내역' },
         { to: paths.shop.cart, label: '장바구니' },
+        { to: paths.shop.reviews, label: '내 리뷰' },
       ],
     },
     {

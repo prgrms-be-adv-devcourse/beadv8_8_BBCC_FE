@@ -319,3 +319,21 @@ describe('S3: 브라우저가 직접 올리는 외부 저장소', () => {
     ])
   })
 })
+
+describe('domainOf · flowOf: 리뷰 (커뮤니티)', () => {
+  it.each(['/reviews', '/reviews/me', '/reviews/summary', '/reviews/eligible', '/reviews/7'])(
+    '%s는 커뮤니티 도메인',
+    (path) => {
+      expect(domainOf(path)).toBe('community')
+    },
+  )
+  it('리뷰 사진 업로드 주소 발급도 커뮤니티, 서버는 서명만 하고 브라우저가 S3에 올린다 (설계 기준)', () => {
+    expect(domainOf('/reviews/images/upload-urls')).toBe('community')
+    expect(flowOf('POST', '/reviews/images/upload-urls')).toMatchObject([
+      { from: 'community', to: ['s3'], kind: 'external' },
+    ])
+  })
+  it('구매확정하면 커뮤니티도 받아 리뷰 작성 자격을 만든다 (기획서 ⑧)', () => {
+    expect(flowOf('POST', '/orders/1/items/2/confirm')[0].to).toContain('community')
+  })
+})

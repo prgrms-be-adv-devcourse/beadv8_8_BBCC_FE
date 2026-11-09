@@ -440,6 +440,63 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(timeline.getByRole('listitem', { name: '구매확정 완료' })).toContainText('직접')
   })
 
+  await test.step('쇼핑: 리뷰 쓰기 → 상품 상세 · 내 리뷰 (기획서 ⑧, 실제 API)', async () => {
+    // 구매확정한 주문상품 줄에 「리뷰 쓰기」 (GET /reviews/eligible)
+    await page.getByRole('link', { name: '리뷰 쓰기' }).click()
+    await expect(page.getByRole('heading', { name: '리뷰 쓰기' })).toBeVisible()
+    // 빈 채로 보내면 화면에서 막는다
+    const submit = page.getByRole('button', { name: '리뷰 남기기' })
+    await submit.click()
+    await expect(page.getByText('별점을 골라 주세요.')).toBeVisible()
+    await expect(page.getByText('내용을 적어 주세요.')).toBeVisible()
+    await page.getByRole('radio', { name: '4점' }).click()
+    await page.getByRole('radio', { name: '잘 맞아요' }).click()
+    await page.getByLabel('내용').fill('  두 번 빨아도 늘어나지 않아요  ')
+    // 사진은 발급받은 주소로 S3에 PUT (가로챔)
+    const uploaded = page.waitForRequest(
+      (request) => request.method() === 'PUT' && request.url().includes('/reviews/'),
+    )
+    await page.getByLabel(/^사진 \(선택/).setInputFiles({
+      name: 'review.png',
+      mimeType: 'image/png',
+      buffer: await pngOf(page, 800, 600),
+    })
+    expect((await uploaded).headers()['content-type']).toBe('image/jpeg')
+    await expect(page.getByRole('img', { name: '올린 사진 1' })).toBeVisible()
+    // 두 번 눌러도 한 번만 보낸다
+    const posts: string[] = []
+    page.on('request', (request) => {
+      if (request.method() === 'POST' && /\/api\/v1\/reviews$/.test(request.url()))
+        posts.push(request.url())
+    })
+    await submit.dblclick()
+    const written = page.getByRole('region', { name: '남긴 리뷰' })
+    await expect(written.getByText('두 번 빨아도 늘어나지 않아요')).toBeVisible()
+    await expect(written.getByText('사이즈 핏 잘 맞아요')).toBeVisible()
+    expect(posts).toHaveLength(1)
+
+    // 상품 상세: 요약(평균 · 수 · 핏 분포)과 목록에 보인다
+    await page.getByRole('link', { name: '상품 상세에서 보기' }).click()
+    const reviews = page.getByRole('region', { name: '리뷰', exact: true })
+    await expect(reviews.getByText('두 번 빨아도 늘어나지 않아요').first()).toBeVisible()
+    const summary = reviews.getByRole('region', { name: '리뷰 요약' })
+    await expect(summary.getByText(/리뷰 \d+개/)).toBeVisible()
+    await expect(summary.getByRole('listitem', { name: /^잘 맞아요 \d+%$/ })).toBeVisible()
+
+    // 내 리뷰: 고치기 → 저장하면 목록에 바뀐 내용
+    await page.goto('/my/reviews')
+    const mine = page.getByRole('region', { name: '내가 쓴 리뷰' })
+    const card = mine.getByRole('listitem').filter({ hasText: '두 번 빨아도 늘어나지 않아요' })
+    await card.getByRole('button', { name: '고치기' }).click()
+    await page.getByLabel('내용').fill('두 번 빨아도 그대로예요')
+    await page.getByRole('button', { name: '고친 내용 저장' }).click()
+    await expect(mine.getByText('두 번 빨아도 그대로예요')).toBeVisible()
+
+    // 주문 상세: 이제 「리뷰 작성 완료」
+    await page.goto(orderUrl)
+    await expect(page.getByRole('link', { name: '리뷰 작성 완료' })).toBeVisible()
+  })
+
   await test.step('취소 · 실패: 재고 부족 → 결제 마감 → 잔액 부족 (기획서 2.1)', async () => {
     const order = async (productId: string, option: [string, string], quantity: string) => {
       await page.goto(`/products/${productId}`)

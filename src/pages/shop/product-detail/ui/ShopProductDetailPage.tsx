@@ -30,6 +30,7 @@ import { formatWon, useArea } from '@/shared/lib'
 import { Input } from '@/shared/ui/input'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { ProductReviews } from './ProductReviews'
 import { SizeAdvice } from './SizeAdvice'
 
 export function ShopProductDetailPage() {
@@ -254,6 +255,7 @@ export function ShopProductDetailPage() {
         images={detailImagesOf(detail)}
         alt={detail.name}
       />
+      <ProductReviews productId={detail.id} />
     </div>
   )
 }

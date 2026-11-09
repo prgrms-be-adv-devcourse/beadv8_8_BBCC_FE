@@ -70,6 +70,16 @@ import { demoRegisterForm } from '@/features/register-product/config/demo-produc
 import { DEMO_APPLICATION } from '@/features/apply-seller/config/demo-application'
 import { DEMO_CHILD } from '@/features/register-child/config/demo-child'
 import { productImageUploadUrlsShape } from '@/features/upload-product-image'
+import {
+  reviewableItemsShape,
+  reviewListShape,
+  reviewShape,
+  reviewSummaryShape,
+} from '@/entities/review/api/review.shape'
+import { toUpdateReviewRequest } from '@/features/edit-review'
+import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
+import { toWriteReviewRequest } from '@/features/write-review'
+import { toReview } from '@/entities/review'
 import { arr, validate, type Shape } from '@/shared/api'
 
 // E2E가 쓰는 가짜 백엔드의 응답이 FE 계약(응답 모양)과 같은지 확인한다.
@@ -438,6 +448,61 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const itemId = order.data.items[0].orderItemId
     expect((await call('POST', `/orders/${orderId}/items/${itemId}/confirm`, 1)).status).toBe(200)
     expectContract((await call('GET', `/orders/${orderId}`, 1)).data, orderDetailShape)
+
+    // 리뷰 (BE community): 구매확정한 주문상품이 작성 가능 목록에 나오고, 쓰면 빠지고 상품 리뷰 · 요약에 반영된다
+    const eligible = await call('GET', '/reviews/eligible', 1)
+    expectContract(eligible.data, reviewableItemsShape)
+    const target = eligible.data.items.find(
+      (item: { orderItemId: string }) => item.orderItemId === itemId,
+    )
+    expect(target).toMatchObject({ orderId: String(orderId) })
+    const uploads = await call(
+      'POST',
+      '/reviews/images/upload-urls',
+      1,
+      toReviewUploadRequest([new Blob(['x'], { type: 'image/jpeg' })]),
+    )
+    expectContract(uploads.data, reviewImageUploadShape)
+    const draft = {
+      rating: 5,
+      fit: target.size === null ? null : ('TRUE_TO_SIZE' as const),
+      content: ' 잘 맞아요 ',
+      imageUrls: [uploads.data.files[0].imageUrl],
+    }
+    const written = await call('POST', '/reviews', 1, toWriteReviewRequest(itemId, draft))
+    expect(written.status).toBe(201)
+    expectContract(written.data, reviewShape)
+    expect(written.data).toMatchObject({ rating: 5, content: '잘 맞아요', nickname: '회원1' })
+    expect((await call('POST', '/reviews', 1, toWriteReviewRequest(itemId, draft))).status).toBe(
+      409,
+    )
+    expect(
+      (await call('POST', '/reviews', 2, toWriteReviewRequest(itemId, draft))).status,
+    ).toBeOneOf([403, 409])
+    const productId = written.data.productId
+    const listed = await call('GET', `/reviews?productId=${productId}&size=1`, null)
+    expectContract(listed.data, reviewListShape)
+    expect(listed.data.items[0].reviewId).toBe(written.data.reviewId)
+    const summary = await call('GET', `/reviews/summary?productId=${productId}`, null)
+    expectContract(summary.data, reviewSummaryShape)
+    expect(summary.data.reviewCount).toBeGreaterThanOrEqual(1)
+    expectContract((await call('GET', '/reviews/me', 1)).data, reviewListShape)
+    const after = await call('GET', '/reviews/eligible', 1)
+    expect(after.data.items.map((item: { orderItemId: string }) => item.orderItemId)).not.toContain(
+      itemId,
+    )
+    const review = toReview(written.data)
+    const patched = await call(
+      'PATCH',
+      `/reviews/${review.id}`,
+      1,
+      toUpdateReviewRequest(review, { ...draft, rating: 3, imageUrls: [] }),
+    )
+    expectContract(patched.data, reviewShape)
+    expect(patched.data).toMatchObject({ rating: 3, imageUrls: [] })
+    expect((await call('PATCH', `/reviews/${review.id}`, 1, {})).status).toBe(400)
+    expect((await call('DELETE', `/reviews/${review.id}`, 2)).status).toBe(403)
+    expect((await call('DELETE', `/reviews/${review.id}`, 1)).status).toBe(204)
   }, 15_000)
 
   it('관리자 회원 목록 · 이용 정지 · 판매자 자격 정지', async () => {

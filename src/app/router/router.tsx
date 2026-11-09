@@ -210,6 +210,12 @@ export const router = createBrowserRouter(
             { path: rel('', paths.shop.addresses), ...addresses },
             { path: rel('', paths.shop.wallet), ...wallet },
             { path: rel('', paths.shop.walletHistory), ...walletHistory },
+            {
+              path: rel('', paths.shop.reviews),
+              ...page(() =>
+                import('@/pages/shop/my-reviews').then((m) => ({ Component: m.ShopMyReviewsPage })),
+              ),
+            },
           ],
         },
         { path: rel('', paths.shop.children), ...children },
@@ -217,7 +223,13 @@ export const router = createBrowserRouter(
         { path: 'my/children/:childId', ...childDetail },
         { path: rel('', paths.shop.childWishes(':childId')), ...childWishes },
         { path: rel('', paths.shop.childWish(':childId', ':requestId')), ...childWishDetail },
-        // 충전은 메뉴 없이 한 가지 일만 (마이페이지 묶음 밖)
+        // 리뷰 쓰기 · 충전은 메뉴 없이 한 가지 일만 (마이페이지 묶음 밖)
+        {
+          path: 'my/reviews/new',
+          ...page(() =>
+            import('@/pages/shop/review-write').then((m) => ({ Component: m.ShopReviewWritePage })),
+          ),
+        },
         { path: rel('', paths.shop.walletCharge), ...walletCharge },
         { path: rel('', paths.shop.chargeSuccess), ...chargeSuccess },
         { path: rel('', paths.shop.chargeFail), ...chargeFail },
