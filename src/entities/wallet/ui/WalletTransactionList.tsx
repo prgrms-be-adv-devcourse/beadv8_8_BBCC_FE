@@ -1,5 +1,5 @@
 import { cn, formatDateTime, formatWon } from '@/shared/lib'
-import { WALLET_TX_LABEL, type WalletTransaction } from '../model/wallet'
+import { walletTxLabel, type WalletTransaction } from '../model/wallet'
 import { transactionsByDay } from '../model/wallet.rules'
 
 type WalletTransactionListProps = {
@@ -44,7 +44,7 @@ function TransactionItem({ tx, timeLabel }: TransactionItemProps) {
   return (
     <li
       className="flex items-center justify-between gap-4 py-3.5 text-sm"
-      aria-label={`거래 ${WALLET_TX_LABEL[tx.type]}`}
+      aria-label={`거래 ${walletTxLabel(tx.type)}`}
     >
       <span className="flex min-w-0 items-center gap-3">
         {/* 종류 첫 글자 동그라미: 들어온 돈은 자두, 나간 돈은 회색 */}
@@ -55,10 +55,10 @@ function TransactionItem({ tx, timeLabel }: TransactionItemProps) {
             tx.deposit ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
           )}
         >
-          {WALLET_TX_LABEL[tx.type].slice(0, 1)}
+          {walletTxLabel(tx.type).slice(0, 1)}
         </span>
         <span className="min-w-0 space-y-0.5">
-          <span className="block font-semibold">{WALLET_TX_LABEL[tx.type]}</span>
+          <span className="block font-semibold">{walletTxLabel(tx.type)}</span>
           <span className="text-muted-foreground figure block text-xs">{timeLabel}</span>
         </span>
       </span>
