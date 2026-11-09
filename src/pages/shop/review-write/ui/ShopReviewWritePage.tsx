@@ -36,13 +36,20 @@ export function ShopReviewWritePage() {
     return <StateMessage tone="error">{getErrorMessage(reviewable.error)}</StateMessage>
 
   const item = reviewable.item
-  if (!item)
+  // 409(이미 씀)면 목록을 다시 불러 item이 사라지므로, 서버 안내를 이 화면에서 보여 준다
+  if (!item || write.isAlreadyWritten)
     return (
       <div className="shop-look space-y-3">
         <PageHeader title="리뷰 쓰기" />
-        <StateMessage>
-          리뷰를 쓸 수 있는 상품이 아니에요. 이미 리뷰를 썼거나, 아직 구매확정 전이에요.
-        </StateMessage>
+        {write.isAlreadyWritten ? (
+          <p role="alert" className="text-destructive text-sm">
+            {getErrorMessage(write.error)}
+          </p>
+        ) : (
+          <StateMessage>
+            리뷰를 쓸 수 있는 상품이 아니에요. 이미 리뷰를 썼거나, 아직 구매확정 전이에요.
+          </StateMessage>
+        )}
         <p className="flex gap-6 text-sm">
           <Link to={paths.shop.reviews} className="shop-link">
             내 리뷰 보기
@@ -93,12 +100,7 @@ export function ShopReviewWritePage() {
       />
       {write.isError && (
         <p role="alert" className="text-destructive text-sm">
-          {getErrorMessage(write.error)}{' '}
-          {write.isAlreadyWritten && (
-            <Link to={paths.shop.reviews} className="shop-link">
-              내 리뷰 보기
-            </Link>
-          )}
+          {getErrorMessage(write.error)}
         </p>
       )}
     </div>
