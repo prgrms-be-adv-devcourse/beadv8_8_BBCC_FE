@@ -1,55 +1,42 @@
-import type { WishOrderResult, WishRequest, WishStatus } from './wish'
+import type { WishRequest, WishStatus } from './wish'
 
 const TIMELINE_LABEL: Record<string, string> = {
   SENT: '조르기 보냄',
-  APPROVED: '승인',
-  REJECTED: '거절',
-  CREATED: '주문 접수',
-  PAYMENT_REQUESTED: '결제 대기',
   PAID: '결제 완료',
-  CANCELLED: '주문 취소',
-  SHIPPED: '발송',
-  DELIVERED: '배송 완료',
-  CONFIRMED: '구매 확정',
+  REJECTED: '거절',
+  CANCELLED: '철회',
 }
 export function wishTimelineLabel(step: string): string {
   return TIMELINE_LABEL[step] ?? '진행 중'
 }
 
-export function wishTimelineStatusLabel(
-  status: 'DONE' | 'PARTIAL' | 'WAITING' | 'NOT_APPLICABLE',
-): string {
-  return { DONE: '완료', PARTIAL: '일부 완료', WAITING: '대기', NOT_APPLICABLE: '해당 없음' }[
-    status
-  ]
+export function wishTimelineStatusLabel(status: 'DONE' | 'WAITING'): string {
+  return { DONE: '완료', WAITING: '대기' }[status]
 }
 
-export function canSendWishLine(line: { purchasable: boolean; requestId: string | null }): boolean {
-  return line.purchasable && line.requestId === null
+/** 자녀 장바구니 칸을 조르기에 넣을 수 있는지: 판매 중이고 다른 조르기에 예약되지 않음 */
+export function canSendWishLine(line: { purchasable: boolean; reserved: boolean }): boolean {
+  return line.purchasable && !line.reserved
 }
 
-export function canRemoveChildWishLine(line: {
-  addedBy: 'CHILD' | 'PARENT'
-  requestId: string | null
-}): boolean {
-  return line.addedBy === 'CHILD' && line.requestId === null
+/** 자녀 장바구니 칸을 뺄 수 있는지: 예약된 칸은 빼면 409 (BE CART_ITEM_RESERVED) */
+export function canRemoveChildCartLine(line: { reserved: boolean }): boolean {
+  return !line.reserved
 }
 
+/** 승인(= 결제) · 거절은 대기 중인 조르기에만 */
 export function canDecideWish(wish: { status: WishStatus }): boolean {
   return wish.status === 'REQUESTED'
 }
 
-export function wishStatusLabel(wish: {
-  status: WishStatus
-  orderResult: WishOrderResult
-  checkout?: 'ORDER' | 'CART' | null
-}): string {
-  if (wish.status === 'REQUESTED') return '대기'
-  if (wish.status === 'REJECTED') return '거절'
-  if (wish.checkout === 'CART') return '승인'
-  if (wish.orderResult === 'PAID') return '결제 완료'
-  if (wish.orderResult === 'CANCELLED') return '취소됨'
-  return '결제 대기'
+const STATUS_LABEL: Record<WishStatus, string> = {
+  REQUESTED: '대기',
+  PAID: '결제 완료',
+  REJECTED: '거절',
+  CANCELLED: '철회됨',
+}
+export function wishStatusLabel(wish: { status: WishStatus }): string {
+  return STATUS_LABEL[wish.status]
 }
 
 /** 목록에서 조르기를 구분하는 제목: 첫 상품 이름, 여러 개면 'OO 외 N개' */
@@ -62,13 +49,13 @@ export function countPendingWishes(wishes: { status: WishStatus }[]): number {
   return wishes.filter(canDecideWish).length
 }
 
-/** 승인한 조르기의 줄 결과. 승인 전 · 거절이면 null */
+/** 결제 완료된 조르기의 줄 결과: 산 수량 또는 제외. 결제 완료 전 · 거절 · 철회면 null */
 export function wishLineDecisionLabel(
   wish: { status: WishStatus },
-  line: { approvedQuantity: number | null },
+  line: { purchasedQuantity: number },
 ): string | null {
-  if (wish.status !== 'APPROVED') return null
-  return line.approvedQuantity === null ? '제외' : `${line.approvedQuantity}개 승인`
+  if (wish.status !== 'PAID') return null
+  return line.purchasedQuantity > 0 ? `${line.purchasedQuantity}개 결제` : '제외'
 }
 
 type WishRejectReason = NonNullable<WishRequest['rejectReason']>

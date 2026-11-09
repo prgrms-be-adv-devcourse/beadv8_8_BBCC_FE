@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  productListTitle,
   readProductFilters,
   readProductPage,
   writeProductFilters,
@@ -65,5 +66,17 @@ describe('orderTabOf: 주문 탭 (?tab=)', () => {
     expect(orderTabOf('CANCELLED')).toBe('CANCELLED')
     expect(orderTabOf(null)).toBe('ALL')
     expect(orderTabOf('SHIPPING')).toBe('ALL')
+  })
+})
+
+describe('productListTitle: 목록 제목은 지금 보는 목록을 그대로 말한다', () => {
+  it.each([
+    ['맨투맨', null, 0, '"맨투맨" 검색 결과'],
+    ['맨투맨', '상의', 2, '"맨투맨" 검색 결과'],
+    ['', '원피스', 0, '원피스'],
+    ['', '원피스', 2, '원피스 · 필터 2개'],
+    ['', null, 0, '전체 상품'],
+  ] as const)('검색어 %j · 카테고리 %j · 필터 %i개 → %s', (keyword, category, count, title) => {
+    expect(productListTitle(keyword, category, count)).toBe(title)
   })
 })

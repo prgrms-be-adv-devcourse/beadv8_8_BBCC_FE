@@ -5,6 +5,7 @@ import {
   toChargeConfirmation,
   toWalletTransaction,
   WALLET_TX_LABEL,
+  walletTxLabel,
 } from '@/entities/wallet'
 
 describe('충전 승인 결과', () => {
@@ -35,7 +36,13 @@ describe('예치금 거래 내역', () => {
       PAYMENT: '주문 결제',
       REFUND: '환불',
       SETTLEMENT: '정산 적립',
+      BALANCE_RETURN: '잔액 환급',
+      DEV_CHARGE: '개발용 충전',
     })
+  })
+  it('walletTxLabel: 모르는 종류(BE가 먼저 더한 값)도 화면이 깨지지 않게 이름을 돌려준다', () => {
+    expect(walletTxLabel('DEV_CHARGE')).toBe('개발용 충전')
+    expect(walletTxLabel('SOMETHING_NEW')).toBe('예치금 변동')
   })
   it('toWalletTransaction: 숫자 ID → 문자열, 입금 여부', () => {
     expect(

@@ -33,7 +33,7 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/((seller|admin)\/)?(products|product-images)|^\/categories/, 'product'],
   // 관리자 상품 기준 데이터 (항목 · 목록 값 · 실측 항목 · 상품 유형 · 카테고리)
   [/^\/admin\/(attributes|measurement-items|product-types|categories)/, 'product'],
-  [/^\/(cart|orders|seller\/orders|wish|child\/wish)/, 'order'],
+  [/^\/(cart|orders|seller\/orders|wish)/, 'order'],
   [/^\/(wallets|payments)/, 'payment'],
   // 리뷰 · 찜 (리뷰 사진 업로드 주소 발급 포함)
   [/^\/(reviews|favorites)(\/|$)/, 'community'],

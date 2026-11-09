@@ -1,16 +1,13 @@
 import { useChildWishRequestsQuery, wishRejectReasonLabel, wishStatusLabel } from '@/entities/wish'
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime } from '@/shared/lib'
-import { MockBadge } from '@/shared/ui/MockBadge'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 export function ChildWishesPage() {
   const wishes = useChildWishRequestsQuery()
   return (
     <section className="space-y-4">
-      <h1>
-        내 조르기 <MockBadge endpoints={['GET /child/wish/requests']} />
-      </h1>
+      <h1>내 조르기</h1>
       {wishes.isPending && <StateMessage>불러오는 중</StateMessage>}
       {wishes.isError && <StateMessage tone="error">{getErrorMessage(wishes.error)}</StateMessage>}
       {wishes.data?.length === 0 && <StateMessage>보낸 조르기가 없어요.</StateMessage>}
@@ -20,8 +17,8 @@ export function ChildWishesPage() {
             {formatDateTime(wish.requestedAt)} · {wishStatusLabel(wish)}
           </p>
           {wish.items.map((item) => (
-            <p key={item.wishItemId}>
-              {item.productName} · {item.optionName} · {item.requestedQuantity}개
+            <p key={item.optionId}>
+              {item.productName} · {item.optionName} · {item.quantity}개
             </p>
           ))}
           {wish.message && <p>{wish.message}</p>}

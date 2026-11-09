@@ -18,6 +18,8 @@ export type CartLine = {
   /** 판매 중 · 품절 아님 */
   purchasable: boolean
   lineAmount: number
+  /** 조르기 등에 예약된 칸 (빼거나 수량을 바꿀 수 없음) */
+  reserved: boolean
 }
 
 export type Cart = {

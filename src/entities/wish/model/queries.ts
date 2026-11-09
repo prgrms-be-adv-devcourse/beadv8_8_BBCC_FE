@@ -1,22 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { childWishApi, wishApi } from '../api/wish-api'
-import { toWish, toWishRequest, toWishTimeline } from './wish.mapper'
+import { toWishRequest, toWishTimeline } from './wish.mapper'
 
 export const wishKeys = {
-  child: ['child-wish'] as const,
   childRequests: ['child-wish-requests'] as const,
   requests: (childId: string) => ['wish', 'requests', childId] as const,
   request: (id: string) => ['wish', 'request', id] as const,
   timeline: (id: string) => ['wish', 'timeline', id] as const,
-}
-export function useChildWishQuery() {
-  return useQuery({
-    queryKey: wishKeys.child,
-    queryFn: childWishApi.get,
-    select: toWish,
-    gcTime: 0,
-    staleTime: 0,
-  })
 }
 export function useWishRequestsQuery(childId: string) {
   return useQuery({
@@ -43,6 +33,7 @@ export function useWishTimelineQuery(id: string) {
   })
 }
 
+/** 자녀 토큰으로 내가 보낸 조르기 */
 export function useChildWishRequestsQuery() {
   return useQuery({
     queryKey: wishKeys.childRequests,

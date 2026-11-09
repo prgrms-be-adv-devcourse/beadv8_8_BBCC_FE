@@ -78,6 +78,16 @@ describe('주문 매퍼', () => {
       { optionId: 3, childId: null, quantity: 2, unitPrice: 30000 },
     ])
   })
+
+  it('장바구니 칸으로 사는 줄(조르기 승인)은 칸 ID를 숫자로 보낸다', () => {
+    const request = toPlaceOrderRequest({
+      items: [{ optionId: '2', childId: '1', quantity: 1, unitPrice: 25000, cartItemId: '30' }],
+      shippingAddress: dto.shippingAddress,
+    })
+    expect(request.items).toEqual([
+      { optionId: 2, childId: 1, quantity: 1, unitPrice: 25000, cartItemId: 30 },
+    ])
+  })
 })
 
 describe('구매확정 가능 여부', () => {

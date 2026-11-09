@@ -26,4 +26,11 @@ describe('principalOf: 요청에 어느 로그인의 토큰을 붙일지', () =>
     expect(principalOf('/auth/admin/login')).toBe('member')
     expect(principalOf('/administrators')).toBe('member')
   })
+
+  it('회원 · 자녀가 같이 쓰는 경로(장바구니 · 조르기, BE #998 · #999)는 요청이 정한 주체를 따른다', () => {
+    expect(principalOf('/cart', 'child')).toBe('child')
+    expect(principalOf('/wish/requests', 'child')).toBe('child')
+    expect(principalOf('/cart')).toBe('member')
+    expect(principalOf('/wish/requests')).toBe('member')
+  })
 })

@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from 'react-router'
+import { Link, matchPath, Outlet, useLocation } from 'react-router'
 import { ThemeLab } from '@/features/theme-lab'
 import { paths, shopMasksWholePage, useDemoRoleSwitch } from '@/shared/config'
 import { ShopHeader } from '@/widgets/shop-header'
@@ -46,7 +46,8 @@ export function ShopLayout() {
           </div>
         </footer>
       </div>
-      <ThemeLab />
+      {/* 테마 바꿔 보기는 시연 기능. 상품 상세에서는 휴대폰 하단 담기 바를 가리지 않게 올린다 */}
+      {demoRoleSwitch && <ThemeLab raised={matchPath('/products/:productId', pathname) !== null} />}
       <Overlays />
       <BehaviorRecording />
     </div>

@@ -9,6 +9,7 @@ export {
   type WalletTransaction,
   type WalletTxType,
   WALLET_TX_LABEL,
+  walletTxLabel,
 } from './model/wallet'
 export {
   toCharge,

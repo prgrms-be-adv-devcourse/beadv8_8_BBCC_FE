@@ -36,6 +36,14 @@ export function isTimeoutError(error: unknown): boolean {
   )
 }
 
+/**
+ * 서버에 없는 경로(스프링 기본 404, NoResourceFoundException). detail이 영어 원문("No static resource …")이라
+ * 사용자에게 그대로 보이지 않게 한다. 업무 404는 BE가 정한 detail을 그대로 쓴다
+ */
+function isMissingRoute(data: ProblemDetail): boolean {
+  return data.status === 404 && (data.detail ?? '').startsWith('No static resource')
+}
+
 /** 화면에 보여 줄 오류 문구. ProblemDetail의 detail을 그대로 쓴다 */
 export function getErrorMessage(error: unknown): string {
   if (!isAxiosError(error)) {
@@ -43,13 +51,24 @@ export function getErrorMessage(error: unknown): string {
   }
   const data: unknown = error.response?.data
   if (isProblemDetail(data)) {
+    if (isMissingRoute(data)) return `요청한 기능을 서버에서 찾을 수 없어요. (${data.status})`
     return data.detail ?? data.title
   }
   if (isTimeoutError(error)) {
     return '응답이 늦어 요청을 끝내지 못했어요. 다시 시도해 주세요.'
   }
   if (!error.response) {
-    return '서버에 연결할 수 없어요. 서버가 켜져 있는지 확인해 주세요.'
+    return '잠시 연결이 원활하지 않아요. 잠시 뒤 다시 시도해 주세요.'
   }
   return `요청을 처리하지 못했어요. (${error.response.status})`
+}
+
+/**
+ * 재발급이 실패했을 때 로그인 상태를 정리해야 하는지. 서버가 토큰을 거절한 401 · 403, 쿠키가 없는 등 axios 밖 오류만 true.
+ * 배포 중 502 · 503, 연결 실패, 시간 초과는 서버가 돌아오면 같은 쿠키로 이어지므로 로그인을 지우지 않는다
+ */
+export function isSessionRejected(error: unknown): boolean {
+  if (!isAxiosError(error)) return true
+  const status = error.response?.status
+  return status === 401 || status === 403
 }

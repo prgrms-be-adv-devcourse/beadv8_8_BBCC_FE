@@ -289,8 +289,8 @@ describe('domainOf: 상품 도메인 경로', () => {
 
 describe('domainOf: 조르기 경로', () => {
   it('부모 · 자녀 조르기는 주문 도메인, 자녀 프로필은 회원 도메인', () => {
-    expect(domainOf('/wish/requests/3/approval')).toBe('order')
-    expect(domainOf('/child/wish/items')).toBe('order')
+    expect(domainOf('/wish/requests/3/rejection')).toBe('order')
+    expect(domainOf('/cart/items/3')).toBe('order')
     expect(domainOf('/child/profile')).toBe('member')
   })
   it('상품 이미지 업로드 주소 발급도 상품 도메인', () => {

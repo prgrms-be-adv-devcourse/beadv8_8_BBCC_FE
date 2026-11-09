@@ -3,6 +3,7 @@ import { env } from '@/shared/config'
 import { useApiFlowLog } from './api-flow-log'
 import { expectedReasonOf, type ExpectedResponse } from './call-outcome'
 import { createMockAdapter, defaultAdapter } from './mock-adapter'
+import { isSessionRejected } from './problem-detail'
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -17,6 +18,8 @@ declare module 'axios' {
     expected?: ExpectedResponse
     /** true면 목 핸들러를 건너뛰고 실제 서버로 보낸다 (연결 점검) */
     skipMock?: boolean
+    /** 붙일 토큰의 주체. 회원 · 자녀가 같이 쓰는 경로(/cart · /wish/requests)에서 자녀 화면이 'child'로 정한다 */
+    principal?: Principal
   }
 }
 
@@ -30,8 +33,12 @@ type AuthHandlers = {
 /** 로그인 주체. 회원과 관리자는 토큰 · 재발급 쿠키가 따로다 (BE #736) */
 export type Principal = 'member' | 'admin' | 'child'
 
-/** 관리자 API(/admin/…)는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 403) */
-export function principalOf(url: string | undefined): Principal {
+/**
+ * 관리자 API(/admin/…)는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 403).
+ * 경로만으로 주체를 알 수 없는 API(장바구니 · 조르기는 회원과 자녀가 같이 쓴다, BE #998 · #999)는 요청이 정한 주체를 따른다
+ */
+export function principalOf(url: string | undefined, requested?: Principal): Principal {
+  if (requested) return requested
   if (url?.startsWith('/child/') || url?.startsWith('/auth/child/')) return 'child'
   return url?.startsWith('/admin/') ? 'admin' : 'member'
 }
@@ -73,6 +80,24 @@ const reissuing: Record<Principal, Promise<string> | null> = {
 }
 
 /** 동시에 여러 요청이 401을 받아도 재발급은 주체마다 한 번만 보낸다 (Refresh Token이 매번 교체되므로) */
+/**
+ * 새로고침 뒤 로그인 되살리기용 재발급. 서버가 잠깐 멈춘 것(배포 중 503 · 연결 실패)이면 몇 번 기다렸다 다시 시도한다.
+ * 토큰 거절(401 · 403)은 바로 실패한다
+ */
+export async function reissueForRestore(
+  principal: Principal = 'member',
+  { tries = 4, delayMs = 2000 }: { tries?: number; delayMs?: number } = {},
+): Promise<string> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await reissueAccessToken(principal)
+    } catch (error) {
+      if (isSessionRejected(error) || attempt >= tries) throw error
+      await new Promise((resolve) => setTimeout(resolve, delayMs * attempt))
+    }
+  }
+}
+
 export function reissueAccessToken(principal: Principal = 'member'): Promise<string> {
   reissuing[principal] ??= apiClient
     .post<{ accessToken: string }>(REISSUE_PATH[principal], undefined, {
@@ -92,7 +117,7 @@ export function reissueAccessToken(principal: Principal = 'member'): Promise<str
 
 apiClient.interceptors.request.use((config) => {
   config.startedAt = performance.now()
-  const accessToken = authHandlers[principalOf(config.url)].getAccessToken()
+  const accessToken = authHandlers[principalOf(config.url, config.principal)].getAccessToken()
   if (!config.skipAuth && accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
@@ -163,12 +188,14 @@ apiClient.interceptors.response.use(
       throw error
     }
     config.retried = true
-    const principal = principalOf(config.url)
+    const principal = principalOf(config.url, config.principal)
     try {
       const accessToken = await reissueAccessToken(principal)
       config.headers.Authorization = `Bearer ${accessToken}`
-    } catch {
-      // 재발급 실패: 로그인 상태를 정리하고 토큰 없이 한 번 더 보낸다 (공개 API는 이것으로 성공)
+    } catch (reissueError) {
+      // 서버가 잠깐 멈춘 것(배포 중 503 · 연결 실패)이면 로그인을 지우지 않고 원래 오류를 그대로 낸다
+      if (!isSessionRejected(reissueError)) throw error
+      // 재발급 거절: 로그인 상태를 정리하고 토큰 없이 한 번 더 보낸다 (공개 API는 이것으로 성공)
       authHandlers[principal].onAuthFailed()
       config.headers.delete('Authorization')
       config.skipAuth = true

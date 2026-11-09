@@ -8,7 +8,8 @@ import {
 import { getErrorMessage } from '@/shared/api'
 import { Button } from '@/shared/ui/button'
 import { StateMessage } from '@/shared/ui/StateMessage'
-import { DEMO_CHILD } from '../config/demo-child'
+import { useDemoRoleSwitch } from '@/shared/config'
+import { DEMO_CHILD, EMPTY_CHILD } from '../config/demo-child'
 import { useRegisterChild } from '../model/use-register-child'
 
 const withoutOptional = (form: ChildForm): ChildForm => ({
@@ -25,7 +26,11 @@ type RegisterChildFormProps = {
 /** 자녀 등록 폼 (제목 · 바탕은 부르는 화면이 갖는다) */
 export function RegisterChildForm({ onRegistered }: RegisterChildFormProps) {
   const register = useRegisterChild()
-  const [form, setForm] = useState<ChildForm>(withoutOptional(DEMO_CHILD))
+  // 시연 기능이 켜졌을 때만 예시 자녀로 채운다
+  const demoRoleSwitch = useDemoRoleSwitch()
+  const [form, setForm] = useState<ChildForm>(() =>
+    demoRoleSwitch ? withoutOptional(DEMO_CHILD) : EMPTY_CHILD,
+  )
   const [invalid, setInvalid] = useState<string | null>(null)
   const [requiredConsent, setRequiredConsent] = useState(false)
   const [optionalConsent, setOptionalConsent] = useState(false)

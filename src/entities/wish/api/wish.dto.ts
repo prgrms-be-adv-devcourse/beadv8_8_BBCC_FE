@@ -1,5 +1,7 @@
-export type WishItemDto = {
-  wishItemId: string
+/** BE WishRequestResponse.Line (#999). ID는 문자열 */
+export type WishRequestLineDto = {
+  /** 장바구니 칸 ID. #999 전 조르기는 null */
+  cartItemId: string | null
   optionId: string
   productId: string | null
   sellerId: string | null
@@ -7,47 +9,53 @@ export type WishItemDto = {
   optionName: string | null
   size: string | null
   sellerName: string | null
-  requestedQuantity: number
-  approvedQuantity: number | null
+  /** 보낸 때 칸 수량 */
+  quantity: number
+  /** 지금 가격. 상품 정보가 없으면 null */
   unitPrice: number | null
   purchasable: boolean
   saleStatus: string | null
+  /** 결제돼 장바구니에서 빠졌는지 */
+  purchased: boolean
 }
 
+/** BE WishRequestResponse.Purchase. quantity는 그 칸에서 이번에 산 수량 */
+export type WishPurchaseDto = {
+  orderId: string
+  cartItemId: string | null
+  quantity: number
+  purchasedAt: string
+}
+
+/** BE WishRequestResponse (GET · POST /wish/requests, 거절 · 철회 응답도 같음) */
 export type WishRequestDto = {
   requestId: string
+  type: string
   childId: string
-  status: 'REQUESTED' | 'APPROVED' | 'REJECTED'
-  requestedBy: 'PARENT' | 'CHILD'
+  status: 'REQUESTED' | 'PAID' | 'REJECTED' | 'CANCELLED'
+  requestedByType: 'MEMBER' | 'CHILD'
+  requestedById: string
   message: string | null
   requestedAt: string
-  checkout: 'ORDER' | 'CART' | null
-  orderId: string | null
-  orderResult: 'PAID' | 'CANCELLED' | null
+  payerType: string | null
+  payerId: string | null
+  paidAt: string | null
   rejectReason: 'TOO_EXPENSIVE' | 'ALREADY_HAVE' | 'NEXT_TIME' | 'OTHER' | null
-  decidedAt: string | null
-  items: WishItemDto[]
+  rejectedAt: string | null
+  cancelReason: string | null
+  cancelledAt: string | null
+  items: WishRequestLineDto[]
+  purchases: WishPurchaseDto[]
+  paidOrderItemIds: string[]
 }
 
-export type WishLineDto = Omit<WishItemDto, 'requestedQuantity' | 'approvedQuantity'> & {
-  childId: string
-  quantity: number
-  lineAmount: number
-  addedBy: 'PARENT' | 'CHILD'
-  addedAt: string
-  requestId: string | null
-}
-
-export type WishDto = { childId: string; items: WishLineDto[]; totalAmount: number }
+/** BE WishTimelineResponse. steps: SENT → PAID · REJECTED · CANCELLED */
 export type WishTimelineDto = {
   requestId: string
   status: string
-  checkout: string | null
   rejectReason: string | null
-  orderId: string | null
-  steps: {
-    step: string
-    status: 'DONE' | 'PARTIAL' | 'WAITING' | 'NOT_APPLICABLE'
-    at: string | null
-  }[]
+  cancelReason: string | null
+  orderIds: string[]
+  steps: { step: string; status: 'DONE' | 'WAITING'; at: string | null }[]
+  cancelledBy: string | null
 }

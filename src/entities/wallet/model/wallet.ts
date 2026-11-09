@@ -46,7 +46,16 @@ export const CHARGE_STATUS_LABEL: Record<ChargeStatus, string> = {
 
 /** 예치금 거래 종류 (BE WalletLedgerType) */
 export type WalletTxType =
-  'CHARGE' | 'CHARGE_CANCEL' | 'CHARGE_CANCEL_REVERT' | 'PAYMENT' | 'REFUND' | 'SETTLEMENT'
+  | 'CHARGE'
+  | 'CHARGE_CANCEL'
+  | 'CHARGE_CANCEL_REVERT'
+  | 'PAYMENT'
+  | 'REFUND'
+  | 'SETTLEMENT'
+  /** 탈퇴 회원 잔액 환급 (출금) */
+  | 'BALANCE_RETURN'
+  /** 개발용 충전 (local · test · dev, 토스 없이 입금) */
+  | 'DEV_CHARGE'
 
 /** 예치금 거래 한 줄 (잔액이 바뀔 때마다 쌓이는 원장) */
 export type WalletTransaction = {
@@ -68,4 +77,11 @@ export const WALLET_TX_LABEL: Record<WalletTxType, string> = {
   PAYMENT: '주문 결제',
   REFUND: '환불',
   SETTLEMENT: '정산 적립',
+  BALANCE_RETURN: '잔액 환급',
+  DEV_CHARGE: '개발용 충전',
+}
+
+/** 거래 종류 이름. BE가 먼저 더한 모르는 종류여도 화면이 깨지지 않게 '예치금 변동'으로 보인다 */
+export function walletTxLabel(type: string): string {
+  return WALLET_TX_LABEL[type as WalletTxType] ?? '예치금 변동'
 }
