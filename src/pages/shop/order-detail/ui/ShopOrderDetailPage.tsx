@@ -11,6 +11,7 @@ import {
   paymentDeadline,
   paymentDeadlineLabel,
 } from '@/entities/order'
+import { reviewActionOf, useMyReviewsQuery, useReviewableItemsQuery } from '@/entities/review'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
 import { useOrderTracking } from '@/features/track-order'
 import { OrderTimelineCard } from '@/widgets/order-timeline'
@@ -19,12 +20,17 @@ import { paths } from '@/shared/config'
 import { formatDateTime } from '@/shared/lib'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { OrderItemReviewAction } from './OrderItemReviewAction'
 import { OrderSellerBlock } from './OrderSellerBlock'
 import { PaymentSummary } from './PaymentSummary'
 
 export function ShopOrderDetailPage() {
   const { orderId = '' } = useParams()
   const { query, payments, payment, paymentCheck, delayed } = useOrderTracking(orderId)
+  // 구매확정한 주문상품이 있을 때만 리뷰 작성 가능 목록 · 내 리뷰를 불러 줄마다 리뷰 동작을 정한다
+  const hasConfirmed = query.data?.items.some((item) => item.status === 'CONFIRMED') ?? false
+  const reviewable = useReviewableItemsQuery({ enabled: hasConfirmed })
+  const myReviews = useMyReviewsQuery({ enabled: hasConfirmed })
 
   if (query.isPending) return <ListSkeleton rows={4} />
   if (query.isError) return <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>
@@ -32,6 +38,10 @@ export function ShopOrderDetailPage() {
   const order = query.data
   const progress = orderProgress(order)
   const deadline = paymentDeadline(order)
+  const reviewableIds = new Set(reviewable.data?.map((item) => item.orderItemId))
+  const reviewedIds = new Set(myReviews.data?.map((review) => review.orderItemId))
+  const isReviewStateReady = reviewable.isSuccess && myReviews.isSuccess
+  const recheckReviews = () => void Promise.all([reviewable.refetch(), myReviews.refetch()])
   const expired = order.status === 'CANCELLED' && order.cancelReason === 'PAYMENT_EXPIRED'
   // 제목: 지금 단계 (취소면 「주문 취소」, 결제 전이면 「결제 처리 중」)
   const headline = progress.cancelled
@@ -136,11 +146,23 @@ export function ShopOrderDetailPage() {
                 key={group.sellerId}
                 group={group}
                 isCancelled={order.status === 'CANCELLED'}
-                action={(item) =>
-                  canConfirmItem(item) && (
-                    <ConfirmPurchaseButton orderId={order.id} orderItemId={item.id} />
+                action={(item) => {
+                  if (canConfirmItem(item))
+                    return <ConfirmPurchaseButton orderId={order.id} orderItemId={item.id} />
+                  const reviewAction = isReviewStateReady
+                    ? reviewActionOf(item, reviewableIds, reviewedIds)
+                    : null
+                  return (
+                    reviewAction && (
+                      <OrderItemReviewAction
+                        action={reviewAction}
+                        orderItemId={item.id}
+                        onRecheck={recheckReviews}
+                        isRechecking={reviewable.isFetching || myReviews.isFetching}
+                      />
+                    )
                   )
-                }
+                }}
               />
             ))}
           </section>

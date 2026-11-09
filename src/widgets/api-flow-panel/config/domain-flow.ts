@@ -1,7 +1,16 @@
 // 시연용 고정 데이터. 기획서 v1.0 3.3 모듈 연결 지도 · 8장 이벤트 표를 옮겼다 (실제 이벤트 로그가 아니다)
 
 export type DomainId =
-  'member' | 'product' | 'recommend' | 'order' | 'payment' | 'settlement' | 'toss' | 'kakao' | 's3'
+  | 'member'
+  | 'product'
+  | 'recommend'
+  | 'order'
+  | 'payment'
+  | 'settlement'
+  | 'community'
+  | 'toss'
+  | 'kakao'
+  | 's3'
 
 export const DOMAINS: { id: DomainId; name: string; external?: boolean }[] = [
   { id: 'member', name: '회원' },
@@ -10,6 +19,7 @@ export const DOMAINS: { id: DomainId; name: string; external?: boolean }[] = [
   { id: 'order', name: '주문' },
   { id: 'payment', name: '결제' },
   { id: 'settlement', name: '정산' },
+  { id: 'community', name: '커뮤니티' },
   { id: 'kakao', name: '카카오', external: true },
   { id: 'toss', name: '토스', external: true },
   { id: 's3', name: 'S3', external: true },
@@ -25,6 +35,8 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/admin\/(attributes|measurement-items|product-types|categories)/, 'product'],
   [/^\/(cart|orders|seller\/orders|wish|child\/wish)/, 'order'],
   [/^\/(wallets|payments)/, 'payment'],
+  // 리뷰 · 찜 (리뷰 사진 업로드 주소 발급 포함)
+  [/^\/(reviews|favorites)(\/|$)/, 'community'],
   [/^\/(seller\/settlement|admin\/settlements)/, 'settlement'],
   [/^\/(auth|members|children|child\/|dev|admin\/(members|seller|sellers)|seller\/me)/, 'member'],
   // 회원 서비스의 처리 실패 메시지 (인증 · 회원 · 판매자 · 자녀 프로필 모듈)
@@ -89,6 +101,20 @@ const FLOWS: { method: string; pattern: RegExp; steps: FlowStep[] }[] = [
         to: ['s3'],
         description:
           '서버는 파일을 받지 않고 형식 · 크기를 확인해 5분짜리 PUT 주소에 서명만 한다 → 브라우저가 이 주소로 S3에 직접 올린다',
+        kind: 'external',
+      },
+    ],
+  },
+  {
+    method: 'POST',
+    pattern: /^\/reviews\/images\/upload-urls$/,
+    steps: [
+      {
+        name: 'S3 업로드 주소 서명',
+        from: 'community',
+        to: ['s3'],
+        description:
+          '리뷰 사진도 서버는 형식 · 크기 · 장수만 확인해 5분짜리 PUT 주소에 서명한다 → 브라우저가 S3에 직접 올리고, 리뷰를 쓸 때 공개 주소만 보낸다',
         kind: 'external',
       },
     ],
@@ -173,8 +199,8 @@ const FLOWS: { method: string; pattern: RegExp; steps: FlowStep[] }[] = [
       {
         name: 'order-item.purchase-confirmed',
         from: 'order',
-        to: ['settlement', 'recommend'],
-        description: '정산 대상 등록 · 구매 기록 저장',
+        to: ['settlement', 'recommend', 'community'],
+        description: '정산 대상 등록 · 구매 기록 저장 · 리뷰 작성 자격 생성',
         kind: 'event',
       },
     ],
