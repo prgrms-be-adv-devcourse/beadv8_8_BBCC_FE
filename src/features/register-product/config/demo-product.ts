@@ -80,3 +80,26 @@ export const DEMO_PRICE = 25000
 export function demoCategoryId(categories: { id: string; name: string }[]): string {
   return (categories.find((category) => category.name === '상의') ?? categories[0])?.id ?? ''
 }
+
+/** 빈 등록 폼 (시연 기능이 꺼진 운영). 예시 값을 채우지 않아, 그대로 누르면 검증에서 멈춘다 */
+export function emptyRegisterForm(inputs: CategoryInputs): RegisterProductForm {
+  return {
+    name: '',
+    brand: '',
+    description: '',
+    thumbnailUrl: null,
+    imageUrls: [],
+    categoryId: inputs.categoryId,
+    info: Object.fromEntries(
+      inputs.infoAttributes.map((attribute) => [attribute.id, { valueId: '', text: '' }]),
+    ),
+    optionValues: Object.fromEntries(
+      inputs.optionAttributes.map((attribute) => [attribute.id, []]),
+    ),
+    stocks: {},
+    skuCodes: {},
+    removedCombos: [],
+    prices: {},
+    sizeSpecs: {},
+  }
+}
