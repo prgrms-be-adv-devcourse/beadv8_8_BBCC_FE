@@ -1,15 +1,9 @@
-import type {
-  WishDto,
-  WishItemDto,
-  WishLineDto,
-  WishRequestDto,
-  WishTimelineDto,
-} from '../api/wish.dto'
-import type { Wish, WishLine, WishRequest, WishRequestLine, WishTimeline } from './wish'
+import type { WishRequestDto, WishRequestLineDto, WishTimelineDto } from '../api/wish.dto'
+import type { WishRequest, WishRequestLine, WishTimeline } from './wish'
 
-function toProduct(item: WishItemDto | WishLineDto) {
+function toLine(item: WishRequestLineDto, dto: WishRequestDto): WishRequestLine {
   return {
-    wishItemId: item.wishItemId,
+    cartItemId: item.cartItemId,
     optionId: item.optionId,
     productId: item.productId,
     sellerId: item.sellerId,
@@ -17,36 +11,20 @@ function toProduct(item: WishItemDto | WishLineDto) {
     optionName: item.optionName,
     size: item.size,
     sellerName: item.sellerName,
+    quantity: item.quantity,
     unitPrice: item.unitPrice,
     purchasable: item.purchasable,
     saleStatus: item.saleStatus,
-  }
-}
-function toRequestLine(item: WishItemDto): WishRequestLine {
-  return {
-    ...toProduct(item),
-    requestedQuantity: item.requestedQuantity,
-    approvedQuantity: item.approvedQuantity,
-  }
-}
-function toLine(item: WishLineDto): WishLine {
-  return {
-    ...toProduct(item),
-    childId: item.childId,
-    quantity: item.quantity,
-    lineAmount: item.lineAmount,
-    addedBy: item.addedBy,
-    addedAt: item.addedAt,
-    requestId: item.requestId,
+    purchasedQuantity: dto.purchases
+      .filter((purchase) => item.cartItemId !== null && purchase.cartItemId === item.cartItemId)
+      .reduce((sum, purchase) => sum + purchase.quantity, 0),
   }
 }
 export function toWishTimeline(dto: WishTimelineDto): WishTimeline {
   return {
     requestId: dto.requestId,
     status: dto.status,
-    checkout: dto.checkout,
-    rejectReason: dto.rejectReason,
-    orderId: dto.orderId,
+    orderIds: [...dto.orderIds],
     steps: dto.steps.map((step) => ({ step: step.step, status: step.status, at: step.at })),
   }
 }
@@ -55,17 +33,12 @@ export function toWishRequest(dto: WishRequestDto): WishRequest {
     requestId: dto.requestId,
     childId: dto.childId,
     status: dto.status,
-    requestedBy: dto.requestedBy,
+    requestedByType: dto.requestedByType,
     message: dto.message,
     requestedAt: dto.requestedAt,
-    checkout: dto.checkout,
-    orderId: dto.orderId,
-    orderResult: dto.orderResult,
+    decidedAt: dto.paidAt ?? dto.rejectedAt ?? dto.cancelledAt,
     rejectReason: dto.rejectReason,
-    decidedAt: dto.decidedAt,
-    items: dto.items.map(toRequestLine),
+    orderIds: [...new Set(dto.purchases.map((purchase) => purchase.orderId))],
+    items: dto.items.map((item) => toLine(item, dto)),
   }
-}
-export function toWish(dto: WishDto): Wish {
-  return { childId: dto.childId, items: dto.items.map(toLine), totalAmount: dto.totalAmount }
 }

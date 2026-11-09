@@ -18,6 +18,8 @@ declare module 'axios' {
     expected?: ExpectedResponse
     /** true면 목 핸들러를 건너뛰고 실제 서버로 보낸다 (연결 점검) */
     skipMock?: boolean
+    /** 붙일 토큰의 주체. 회원 · 자녀가 같이 쓰는 경로(/cart · /wish/requests)에서 자녀 화면이 'child'로 정한다 */
+    principal?: Principal
   }
 }
 
@@ -31,8 +33,12 @@ type AuthHandlers = {
 /** 로그인 주체. 회원과 관리자는 토큰 · 재발급 쿠키가 따로다 (BE #736) */
 export type Principal = 'member' | 'admin' | 'child'
 
-/** 관리자 API(/admin/…)는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 403) */
-export function principalOf(url: string | undefined): Principal {
+/**
+ * 관리자 API(/admin/…)는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 403).
+ * 경로만으로 주체를 알 수 없는 API(장바구니 · 조르기는 회원과 자녀가 같이 쓴다, BE #998 · #999)는 요청이 정한 주체를 따른다
+ */
+export function principalOf(url: string | undefined, requested?: Principal): Principal {
+  if (requested) return requested
   if (url?.startsWith('/child/') || url?.startsWith('/auth/child/')) return 'child'
   return url?.startsWith('/admin/') ? 'admin' : 'member'
 }
@@ -111,7 +117,7 @@ export function reissueAccessToken(principal: Principal = 'member'): Promise<str
 
 apiClient.interceptors.request.use((config) => {
   config.startedAt = performance.now()
-  const accessToken = authHandlers[principalOf(config.url)].getAccessToken()
+  const accessToken = authHandlers[principalOf(config.url, config.principal)].getAccessToken()
   if (!config.skipAuth && accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
@@ -182,7 +188,7 @@ apiClient.interceptors.response.use(
       throw error
     }
     config.retried = true
-    const principal = principalOf(config.url)
+    const principal = principalOf(config.url, config.principal)
     try {
       const accessToken = await reissueAccessToken(principal)
       config.headers.Authorization = `Bearer ${accessToken}`

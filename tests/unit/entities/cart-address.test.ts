@@ -31,6 +31,7 @@ const line = (patch: Partial<CartLine>): CartLine => ({
   unitPrice: 25000,
   purchasable: true,
   lineAmount: 25000,
+  reserved: false,
   ...patch,
 })
 

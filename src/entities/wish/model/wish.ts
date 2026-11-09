@@ -1,7 +1,8 @@
-export type WishStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED'
-export type WishOrderResult = 'PAID' | 'CANCELLED' | null
-type WishProduct = {
-  wishItemId: string
+/** REQUESTED 대기 · PAID 결제 완료(승인 = 결제) · REJECTED 거절 · CANCELLED 철회 */
+export type WishStatus = 'REQUESTED' | 'PAID' | 'REJECTED' | 'CANCELLED'
+export type WishRequestLine = {
+  /** 예약된 장바구니 칸. 승인은 이 칸으로 주문한다. #999 전 조르기는 null */
+  cartItemId: string | null
   optionId: string
   productId: string | null
   sellerId: string | null
@@ -9,47 +10,32 @@ type WishProduct = {
   optionName: string | null
   size: string | null
   sellerName: string | null
+  /** 보낸 때 수량 */
+  quantity: number
   unitPrice: number | null
   purchasable: boolean
   saleStatus: string | null
+  /** 이 칸에서 결제로 산 수량 합 */
+  purchasedQuantity: number
 }
-export type WishRequestLine = WishProduct & {
-  requestedQuantity: number
-  approvedQuantity: number | null
-}
-export type WishLine = WishProduct & {
-  childId: string
-  quantity: number
-  lineAmount: number
-  addedBy: 'PARENT' | 'CHILD'
-  addedAt: string
-  requestId: string | null
-}
-export type Wish = { childId: string; items: WishLine[]; totalAmount: number }
 export type WishRequest = {
   requestId: string
   childId: string
   status: WishStatus
-  requestedBy: 'PARENT' | 'CHILD'
+  requestedByType: 'MEMBER' | 'CHILD'
   message: string | null
   requestedAt: string
-  checkout: 'ORDER' | 'CART' | null
-  orderId: string | null
-  orderResult: WishOrderResult
-  rejectReason: 'TOO_EXPENSIVE' | 'ALREADY_HAVE' | 'NEXT_TIME' | 'OTHER' | null
+  /** 결제 · 거절 · 철회 시각. 대기면 null */
   decidedAt: string | null
+  rejectReason: 'TOO_EXPENSIVE' | 'ALREADY_HAVE' | 'NEXT_TIME' | 'OTHER' | null
+  /** 조르기로 산 주문 (먼저 산 것부터, 겹치지 않게) */
+  orderIds: string[]
   items: WishRequestLine[]
 }
-export type WishTimelineStep = {
-  step: string
-  status: 'DONE' | 'PARTIAL' | 'WAITING' | 'NOT_APPLICABLE'
-  at: string | null
-}
+export type WishTimelineStep = { step: string; status: 'DONE' | 'WAITING'; at: string | null }
 export type WishTimeline = {
   requestId: string
   status: string
-  checkout: string | null
-  rejectReason: string | null
-  orderId: string | null
+  orderIds: string[]
   steps: WishTimelineStep[]
 }

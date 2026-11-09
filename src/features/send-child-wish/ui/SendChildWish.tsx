@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { canSendWishLine, type WishLine } from '@/entities/wish'
+import type { CartLine } from '@/entities/cart'
+import { canSendWishLine } from '@/entities/wish'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { formatWon } from '@/shared/lib'
@@ -8,7 +9,7 @@ import { Button } from '@/shared/ui/button'
 import { useChildWishSelection } from '../model/use-child-wish-selection'
 import { useSendChildWish } from '../model/use-send-child-wish'
 
-type SendChildWishProps = { items: WishLine[]; renderRemove: (item: WishLine) => ReactNode }
+type SendChildWishProps = { items: CartLine[]; renderRemove: (item: CartLine) => ReactNode }
 export function SendChildWish({ items, renderRemove }: SendChildWishProps) {
   const { ids, isSelected, toggle, clear } = useChildWishSelection(items)
   const [message, setMessage] = useState('')
@@ -16,22 +17,21 @@ export function SendChildWish({ items, renderRemove }: SendChildWishProps) {
   return (
     <div className="space-y-4">
       {items.map((item) => (
-        <div key={item.wishItemId} className="space-y-2 border p-4">
+        <div key={item.id} className="space-y-2 border p-4">
           <label>
             <input
               type="checkbox"
-              checked={isSelected(item.wishItemId)}
+              checked={isSelected(item.id)}
               disabled={!canSendWishLine(item)}
-              onChange={() => toggle(item.wishItemId)}
+              onChange={() => toggle(item.id)}
             />{' '}
             {item.productName} · {item.optionName} · {item.size}
           </label>
           <p>
-            {item.quantity}개 · {formatWon(item.lineAmount)} ·{' '}
-            {item.addedBy === 'CHILD' ? '나' : '보호자'}
+            {item.quantity}개 · {formatWon(item.lineAmount)}
           </p>
           {!item.purchasable && <p>구매할 수 없어요.</p>}
-          {item.requestId && <p>진행 중인 조르기에 담겨 있어요.</p>}
+          {item.reserved && <p>진행 중인 조르기에 담겨 있어요.</p>}
           {renderRemove(item)}
         </div>
       ))}

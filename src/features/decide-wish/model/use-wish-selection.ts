@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { pickShippingAddress, useAddressesQuery } from '@/entities/address'
 import type { WishRequest } from '@/entities/wish'
 
-/** 승인할 줄 · 수량 · 배송지 고르기. 배송지는 고르지 않으면 기본 배송지 */
+/** 승인할 줄 · 수량 · 배송지 고르기 (줄은 옵션으로 구분). 배송지는 고르지 않으면 기본 배송지 */
 export function useWishSelection(wish: WishRequest) {
   const addresses = useAddressesQuery()
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
@@ -10,14 +10,16 @@ export function useWishSelection(wish: WishRequest) {
   const [addressId, setAddressId] = useState<string | null>(null)
   const address = pickShippingAddress(addresses.data ?? [], addressId)
   const quantityOf = (item: WishRequest['items'][number]) =>
-    quantities[item.wishItemId] ?? item.requestedQuantity
+    quantities[item.optionId] ?? item.quantity
   const lines = wish.items
-    .filter((item) => selected.has(item.wishItemId))
+    .filter((item) => selected.has(item.optionId))
     .map((item) => ({
-      wishItemId: item.wishItemId,
+      cartItemId: item.cartItemId,
+      optionId: item.optionId,
       purchasable: item.purchasable,
       unitPrice: item.unitPrice,
       quantity: quantityOf(item),
+      maxQuantity: item.quantity,
     }))
   const toggle = (id: string) =>
     setSelected((current) => {

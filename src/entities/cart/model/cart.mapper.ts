@@ -17,6 +17,7 @@ export function toCart(dto: CartDto): Cart {
       unitPrice: item.unitPrice,
       purchasable: item.purchasable,
       lineAmount: item.lineAmount,
+      reserved: item.reserved,
     })),
     totalAmount: dto.totalAmount,
   }

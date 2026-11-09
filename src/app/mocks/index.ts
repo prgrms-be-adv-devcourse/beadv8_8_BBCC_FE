@@ -1,5 +1,4 @@
 import { registerMockHandlers } from '@/shared/api'
-import { childWishHandlers } from './child-handlers'
 import { adminHandlers } from './admin-handlers'
 import { memberHandlers } from './member-handlers'
 import { orderHandlers } from './order-handlers'
@@ -9,7 +8,6 @@ import { orderHandlers } from './order-handlers'
  * 실제 API가 생기면 패널에서 끄고 확인한 뒤 핸들러를 뺀다
  */
 export function setupMocks() {
-  registerMockHandlers('자녀 장바구니 · 조르기 (가정 계약)', childWishHandlers)
   registerMockHandlers('주문 타임라인', orderHandlers)
   registerMockHandlers('회원 보완 (탈퇴 · 이력 · 판매자 정보)', memberHandlers)
   registerMockHandlers('관리자 전체 조회', adminHandlers)

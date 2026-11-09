@@ -101,7 +101,14 @@ export const ITEM_STATUS_LABEL: Record<OrderItemStatus, string> = {
 
 /** 주문하기 입력 (화면 모델 기준). 요청 DTO로는 매퍼가 바꾼다 */
 export type PlaceOrderInput = {
-  items: { optionId: string; childId: string | null; quantity: number; unitPrice: number }[]
+  items: {
+    optionId: string
+    childId: string | null
+    quantity: number
+    unitPrice: number
+    /** 이 줄을 산 장바구니 칸 (조르기 승인: 예약된 칸) */
+    cartItemId?: string
+  }[]
   shippingAddress: { recipientName: string; phone: string; zipCode: string; address: string }
 }
 

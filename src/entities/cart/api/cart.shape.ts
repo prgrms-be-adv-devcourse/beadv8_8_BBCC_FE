@@ -16,6 +16,7 @@ export const cartShape = obj({
       unitPrice: nullable(num),
       purchasable: bool,
       lineAmount: num,
+      reserved: bool,
     }),
   ),
   totalAmount: num,

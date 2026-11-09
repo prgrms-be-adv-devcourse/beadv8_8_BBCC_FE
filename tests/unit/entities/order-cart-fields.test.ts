@@ -66,6 +66,7 @@ describe('장바구니 판매자별 묶음 (BE #243 sellerId)', () => {
     unitPrice: 1000,
     purchasable: sellerId !== null,
     lineAmount: 1000,
+    reserved: false,
   })
   it('처음 나온 순서대로, 판매자를 모르는 줄은 맨 뒤 한 묶음', () => {
     const groups = groupBySeller([line('1', '2'), line('2', null), line('3', '5'), line('4', '2')])

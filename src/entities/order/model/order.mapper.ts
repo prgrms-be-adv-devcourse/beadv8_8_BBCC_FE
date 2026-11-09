@@ -90,6 +90,7 @@ export function toPlaceOrderRequest(input: PlaceOrderInput): PlaceOrderRequestDt
       childId: item.childId === null ? null : Number(item.childId),
       quantity: item.quantity,
       unitPrice: item.unitPrice,
+      ...(item.cartItemId !== undefined && { cartItemId: Number(item.cartItemId) }),
     })),
     shippingAddress: input.shippingAddress,
   }

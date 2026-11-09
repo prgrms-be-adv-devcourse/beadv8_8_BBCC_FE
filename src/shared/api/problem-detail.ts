@@ -36,6 +36,14 @@ export function isTimeoutError(error: unknown): boolean {
   )
 }
 
+/**
+ * 서버에 없는 경로(스프링 기본 404, NoResourceFoundException). detail이 영어 원문("No static resource …")이라
+ * 사용자에게 그대로 보이지 않게 한다. 업무 404는 BE가 정한 detail을 그대로 쓴다
+ */
+function isMissingRoute(data: ProblemDetail): boolean {
+  return data.status === 404 && (data.detail ?? '').startsWith('No static resource')
+}
+
 /** 화면에 보여 줄 오류 문구. ProblemDetail의 detail을 그대로 쓴다 */
 export function getErrorMessage(error: unknown): string {
   if (!isAxiosError(error)) {
@@ -43,6 +51,7 @@ export function getErrorMessage(error: unknown): string {
   }
   const data: unknown = error.response?.data
   if (isProblemDetail(data)) {
+    if (isMissingRoute(data)) return `요청한 기능을 서버에서 찾을 수 없어요. (${data.status})`
     return data.detail ?? data.title
   }
   if (isTimeoutError(error)) {
