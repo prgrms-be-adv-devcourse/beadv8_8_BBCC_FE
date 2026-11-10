@@ -255,9 +255,11 @@ export const STOCK_REASON_LABEL: Record<StockReason, string> = {
   CORRECTION: '정정',
 }
 
-export type ProductSort = 'NEWEST' | 'PRICE_ASC' | 'PRICE_DESC'
+/** 관련도순은 검색어가 있을 때만 뜻이 있다 (없으면 BE가 최신순과 같게 처리한다) */
+export type ProductSort = 'RELEVANCE' | 'NEWEST' | 'PRICE_ASC' | 'PRICE_DESC'
 
 export const PRODUCT_SORT_LABEL: Record<ProductSort, string> = {
+  RELEVANCE: '관련도순',
   NEWEST: '최신순',
   PRICE_ASC: '낮은 가격순',
   PRICE_DESC: '높은 가격순',
@@ -266,7 +268,7 @@ export const PRODUCT_SORT_LABEL: Record<ProductSort, string> = {
 export type ProductSearch = {
   keyword: string
   categoryId: string | null
-  /** 없으면 최신순 */
+  /** 없으면 검색어가 있을 때 관련도순, 없을 때 최신순 */
   sort?: ProductSort
   /** 고른 옵션 값 "항목코드:값ID" (예: COLOR:3). 같은 항목 안은 하나만 맞아도, 다른 항목끼리는 모두 맞아야 나온다 */
   attributes?: string[]

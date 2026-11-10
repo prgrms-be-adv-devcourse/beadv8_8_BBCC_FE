@@ -217,6 +217,9 @@ export function listOf(query) {
       p.options.some((o) => o.valueIds.some((v) => codeOf(v) === code && ids.includes(Number(v)))),
     )
   const minPriceOf = (p) => Math.min(...p.options.map((o) => o.price))
+  // 관련도순(BE Elasticsearch 점수)은 흉내만: 이름이 검색어로 시작하는 상품을 앞에, 그다음 최신순.
+  // 검색어가 없으면 BE처럼 최신순과 같다
+  const relevanceOf = (p) => (keyword && p.name.startsWith(keyword) ? 1 : 0)
   return Object.values(products)
     .filter((p) => p.status === 'ON_SALE')
     .filter((p) => !keyword || p.name.includes(keyword))
@@ -227,7 +230,8 @@ export function listOf(query) {
         ? minPriceOf(a) - minPriceOf(b)
         : sort === 'PRICE_DESC'
           ? minPriceOf(b) - minPriceOf(a)
-          : Number(b.productId) - Number(a.productId),
+          : (sort === 'RELEVANCE' ? relevanceOf(b) - relevanceOf(a) : 0) ||
+            Number(b.productId) - Number(a.productId),
     )
     .map((p) => ({
       productId: p.productId,

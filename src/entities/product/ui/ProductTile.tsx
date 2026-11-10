@@ -14,6 +14,8 @@ type ProductTileProps = {
   isSoldOut?: boolean
   /** 가격 아래 작은 꼬리표 (예: 「120 잘 맞아요」 · 「사이즈 무관」). fit이면 코랄 */
   tag?: { text: string; fit?: boolean }
+  /** 누를 때 (예: 검색 결과 클릭 기록). 상세로 가는 이동은 그대로 */
+  onClick?: () => void
 }
 
 /**
@@ -28,9 +30,10 @@ export function ProductTile({
   imageUrl,
   isSoldOut = false,
   tag,
+  onClick,
 }: ProductTileProps) {
   return (
-    <Link to={to} className="group rounded-card block">
+    <Link to={to} className="group rounded-card block" onClick={onClick}>
       <div className="rounded-card bg-paper-2 relative overflow-hidden">
         <ProductImage
           src={imageUrl}

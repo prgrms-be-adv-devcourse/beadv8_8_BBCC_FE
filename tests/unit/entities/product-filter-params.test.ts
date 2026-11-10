@@ -18,10 +18,11 @@ describe('홈 거르기 ↔ 주소', () => {
     })
     expect(readProductFilters(new URLSearchParams('sort=WRONG'))).toEqual({ categoryId: null })
   })
-  it('쓰면 다른 값(q · child)은 남기고, 기본값(최신순 · 빈 값)은 싣지 않는다', () => {
+  it('쓰면 다른 값(q · child)은 남기고, 기본값(그 검색어의 기본 정렬 · 빈 값)은 싣지 않는다', () => {
+    // 검색어가 있으면 기본 정렬은 관련도순이다 (검색어가 없으면 최신순)
     const next = writeProductFilters(new URLSearchParams('q=조거&child=3&cat=1'), {
       categoryId: '12',
-      sort: 'NEWEST',
+      sort: 'RELEVANCE',
       attributes: ['SIZE:7', 'COLOR:3'],
     })
     expect(next.toString()).toBe('q=%EC%A1%B0%EA%B1%B0&child=3&cat=12&attr=SIZE%3A7&attr=COLOR%3A3')

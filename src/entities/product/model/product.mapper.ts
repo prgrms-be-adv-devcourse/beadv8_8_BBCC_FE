@@ -26,6 +26,7 @@ import type {
   SellerProductDetail,
   StockStatus,
 } from './product'
+import { effectiveSort } from './product-filter-params'
 import { categoryNameOf, optionCombos, priceGroups, sizeValues } from './product.rules'
 
 export function toProductListItem(dto: ProductListItemDto): ProductListItem {
@@ -256,7 +257,9 @@ export function toProductSearchParams(search: ProductSearch): ProductSearchParam
   const params: ProductSearchParamsDto = {}
   if (search.keyword.trim()) params.keyword = search.keyword.trim()
   if (search.categoryId) params.categoryId = search.categoryId
-  if (search.sort && search.sort !== 'NEWEST') params.sort = search.sort
+  // 최신순은 BE 기본값이라 보내지 않는다. 검색어가 있으면 기본이 관련도순이다
+  const sort = effectiveSort(search.keyword, search.sort)
+  if (sort !== 'NEWEST') params.sort = sort
   if (search.attributes?.length) params.attributes = search.attributes.slice(0, 20)
   return params
 }

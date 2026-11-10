@@ -90,6 +90,19 @@ const PAYMENT_TIMEOUT_MS = 10 * 60e3
 // 다음 주문 하나를 처리하지 않고 결제 마감에 취소한다 (상품 order.created 리스너가 없는 실제 백엔드 흉내).
 // POST /__fake/payment-stall { timeoutMs } — 가짜 백엔드 전용
 let stallNext = null
+const SORTS = ['NEWEST', 'PRICE_ASC', 'PRICE_DESC', 'RELEVANCE']
+/** POST /search/clicks 본문 검사 (BE @Valid). 틀리면 detail, 맞으면 null */
+function searchClickProblem(body) {
+  const keyword = typeof body?.keyword === 'string' ? body.keyword.trim() : ''
+  if (!keyword) return '검색어를 입력해 주세요.'
+  if (body.keyword.length > 50) return '검색어는 50자 이하여야 합니다.'
+  if (!Number.isInteger(body.productId) || body.productId <= 0) return '상품 ID는 양수여야 합니다.'
+  if (!Number.isInteger(body.rank) || body.rank < 1 || body.rank > 10000)
+    return '순위는 1 이상 10000 이하여야 합니다.'
+  if (body.sort != null && !SORTS.includes(body.sort))
+    return '정렬은 NEWEST, PRICE_ASC, PRICE_DESC, RELEVANCE 중 하나여야 합니다.'
+  return null
+}
 const problem = (res, status, title, detail, instance) =>
   send(res, status, { type: 'about:blank', title, status, detail, instance })
 // BE WishErrorCode와 같은 상태 · title · detail (#999)
@@ -604,8 +617,18 @@ http
         ? send(res, 200, inputs)
         : problem(res, 404, '찾을 수 없습니다', '카테고리를 찾을 수 없습니다.', req.url)
     }
-    if (r('GET', /^\/products$/))
+    if (r('GET', /^\/products$/)) {
+      const sort = url.searchParams.get('sort')
+      if (sort && !SORTS.includes(sort))
+        return problem(
+          res,
+          400,
+          '잘못된 요청입니다',
+          '정렬은 NEWEST, PRICE_ASC, PRICE_DESC, RELEVANCE 중 하나여야 합니다.',
+          req.url,
+        )
       return send(res, 200, pageFrom(productListOf(url.searchParams), url.searchParams))
+    }
     if ((x = r('GET', /^\/products\/(\d+)$/))) {
       const detail = productDetailOf(x[1])
       return detail
@@ -616,6 +639,11 @@ http
     const publicReview = publicReviewRoute(m, p, url.searchParams)
     if (publicReview) return reviewResult(res, publicReview, req.url)
     if (!u) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
+    // 검색 결과 클릭 기록 (BE SearchClickRequest): 저장하지 않고 이벤트로만 남기므로 204만 준다
+    if (r('POST', /^\/search\/clicks$/)) {
+      const invalid = searchClickProblem(body)
+      return invalid ? problem(res, 400, '잘못된 요청입니다', invalid, req.url) : send(res, 204)
+    }
     // BE #755 Gateway: 관리자 API는 관리자 토큰만, 회원 토큰은 ADMIN 역할이 있어도 403
     if (p.startsWith('/admin/') && !isAdmin(u))
       return problem(res, 403, '권한이 없습니다', '관리자만 할 수 있습니다.', req.url)

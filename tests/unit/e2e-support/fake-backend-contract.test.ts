@@ -56,6 +56,7 @@ import {
   categoryInputsShape,
   categoryTreeShape,
   productDetailShape,
+  productListPageShape,
   registerProductResultShape,
   saleStatusResultShape,
   sellerProductDetailShape,
@@ -63,6 +64,7 @@ import {
 import {
   toCategoryInputs,
   toEditableProductForm,
+  toProductSearchParams,
   toProductUpdateRequest,
   toRegisterProductRequest,
   type CategoryInputs,
@@ -73,6 +75,7 @@ import { demoRegisterForm } from '@/features/register-product/config/demo-produc
 import { DEMO_APPLICATION } from '@/features/apply-seller/config/demo-application'
 import { DEMO_CHILD } from '@/features/register-child/config/demo-child'
 import { toProductViewRequest } from '@/features/record-product-view'
+import { toSearchClickRequest } from '@/features/record-search-click'
 import { productImageUploadUrlsShape } from '@/features/upload-product-image'
 import {
   reviewableItemsShape,
@@ -1150,4 +1153,29 @@ it.each([
   )
   expect(viewed.status).toBe(status)
   expect(viewed.data.detail).toBe(detail)
+})
+
+it('검색: 관련도순 목록은 목록 응답 모양이고, 결과 클릭 기록은 로그인 회원만 204 (BE SearchClickRequest)', async () => {
+  const params = new URLSearchParams(
+    toProductSearchParams({ keyword: '맨투맨', categoryId: null }) as Record<string, string>,
+  )
+  expect(params.get('sort')).toBe('RELEVANCE')
+  const list = await call('GET', `/products?${params}`, null)
+  expect(list.status).toBe(200)
+  expectContract(list.data, productListPageShape)
+  expect((await call('GET', '/products?sort=POPULAR', null)).status).toBe(400)
+
+  const click = toSearchClickRequest({
+    keyword: '맨투맨',
+    productId: '1',
+    page: 0,
+    size: 20,
+    index: 0,
+    sort: 'RELEVANCE',
+  })
+  expect((await call('POST', '/search/clicks', 1, click)).status).toBe(204)
+  expect((await call('POST', '/search/clicks', null, click)).status).toBe(401)
+  const tooFar = await call('POST', '/search/clicks', 1, { ...click, rank: 10001 })
+  expect(tooFar.status).toBe(400)
+  expect(tooFar.data.detail).toBe('순위는 1 이상 10000 이하여야 합니다.')
 })
