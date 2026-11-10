@@ -41,7 +41,7 @@ export function toRecommendedProduct(dto: RecommendedProductDto): RecommendedPro
   }
 }
 
-/** 맞춤 목록 조회 조건 → BE 요청 값 (카테고리가 없으면 보내지 않는다) */
+/** 맞춤 목록 조회 조건 → BE 요청 값 (카테고리 · 기준 시각이 없으면 보내지 않는다) */
 export function toRecommendedProductsParams(
   query: RecommendedProductsQuery,
 ): RecommendedProductsParamsDto {
@@ -49,5 +49,6 @@ export function toRecommendedProductsParams(
     ...(query.categoryId ? { categoryId: query.categoryId } : {}),
     page: query.page ?? 0,
     size: query.size ?? 20,
+    ...(query.asOf ? { asOf: query.asOf } : {}),
   }
 }

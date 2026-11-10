@@ -38,4 +38,15 @@ describe('추천 요청 주소 (/recommendations 아래, ID는 쿼리)', () => {
       { childId: '501', categoryId: '11', page: 0, size: 20 },
     ])
   })
+
+  it('2쪽부터는 1쪽 응답의 기준 시각 asOf를 쿼리로 함께 보낸다', async () => {
+    const spy = spyGet({ content: [] })
+
+    await recommendationApi.getProducts('501', { page: 1, size: 20, asOf: '2026-11-11T10:20:30' })
+
+    expect(requestOf(spy)).toEqual([
+      '/recommendations/products',
+      { childId: '501', page: 1, size: 20, asOf: '2026-11-11T10:20:30' },
+    ])
+  })
 })

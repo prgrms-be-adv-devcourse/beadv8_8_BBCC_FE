@@ -1068,10 +1068,20 @@ http
       }
       return send(res, 204)
     }
-    // 자녀 맞춤 목록 (BE #316 · #681): 판매 중 상품 중 자녀에게 맞는 사이즈가 있는 것, 최신순
+    // 자녀 맞춤 목록 (BE #316 · #681 · #1151): 판매 중 상품 중 자녀에게 맞는 사이즈가 있는 것, 최신순.
+    // 응답에 목록 기준 시각 asOf (1쪽은 지금, 2쪽부터 받은 asOf 그대로). 지금보다 늦거나 형식이 틀리면 400
     if (r('GET', /^\/recommendations\/products$/)) {
       const childId = url.searchParams.get('childId')
       if (!childId) return problem(res, 400, '잘못된 요청입니다', 'childId는 필수입니다.', req.url)
+      const asOf = url.searchParams.get('asOf') ?? now()
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(asOf) || asOf > now())
+        return problem(
+          res,
+          400,
+          '잘못된 기준 시각입니다',
+          '기준 시각이 올바르지 않습니다.',
+          req.url,
+        )
       const c = children.find((c) => c.id === +childId && c.memberId === me && !c.deleted)
       if (!c)
         return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
@@ -1092,7 +1102,7 @@ http
           },
         ]
       })
-      return send(res, 200, pageFrom(content, url.searchParams))
+      return send(res, 200, { ...pageFrom(content, url.searchParams), asOf })
     }
     // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
     if (r('GET', /^\/admin\/orders$/)) {

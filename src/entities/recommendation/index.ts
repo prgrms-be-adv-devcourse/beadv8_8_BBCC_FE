@@ -21,6 +21,7 @@ export {
   useSizeRecommendationQuery,
 } from './model/queries'
 export { sizeScaleOf, type SizeScale } from './model/size-scale.rules'
+export { nextRecommendedPageOf } from './model/recommended-page.rules'
 export { FIT_LABEL } from './model/recommendation'
 export { FitBadge } from './ui/FitBadge'
 export { SizeRecommendationSummary } from './ui/SizeRecommendationSummary'

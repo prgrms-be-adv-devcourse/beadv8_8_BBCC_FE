@@ -1,6 +1,6 @@
-import { apiClient, expectShape, type Page } from '@/shared/api'
+import { apiClient, expectShape } from '@/shared/api'
 import type {
-  RecommendedProductDto,
+  RecommendedProductPageDto,
   RecommendedProductsParamsDto,
   SizeRecommendationDto,
 } from './recommendation.dto'
@@ -15,7 +15,7 @@ export const recommendationApi = {
       .then(expectShape(sizeRecommendationShape)),
   getProducts: (childId: string, params: RecommendedProductsParamsDto) =>
     apiClient
-      .get<Page<RecommendedProductDto>>('/recommendations/products', {
+      .get<RecommendedProductPageDto>('/recommendations/products', {
         params: { childId, ...params },
       })
       .then(expectShape(recommendedProductPageShape)),
