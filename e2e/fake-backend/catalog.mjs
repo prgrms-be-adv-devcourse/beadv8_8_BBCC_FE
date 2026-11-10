@@ -1,4 +1,4 @@
-// 가짜 백엔드의 관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목(BE #405) · 상품 유형(BE #424) · 카테고리(BE #425) 만들기와 목록 (응답 모양만 흉내).
+// 가짜 백엔드의 관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목(BE #405) · 상품 유형(BE #424, 수정 PUT 포함) · 카테고리(BE #425) 만들기와 목록 (응답 모양만 흉내).
 // 처음 데이터는 BE 초기 데이터 러너의 이름 · 코드를 일부 따른다. 결과는 { status, body } 또는 { status, detail }
 const CODE = /^[A-Z_]+$/
 const COLOR = /^#[0-9a-fA-F]{6}$/
@@ -139,10 +139,9 @@ function productTypeOut(type) {
 }
 
 // BE는 boolean 네 칸이 빠지면 400 (Jackson 3 기본값). 유형 규칙은 필수 옵션만 흉내 낸다
-function createProductType(body) {
-  if (blank(body?.name)) return bad('유형 이름을 입력해 주세요.')
-  if (!Array.isArray(body.attributes)) return bad('연결할 항목을 보내 주세요.')
-  for (const link of body.attributes) {
+function invalidLinks(links) {
+  if (!Array.isArray(links)) return bad('연결할 항목을 보내 주세요.')
+  for (const link of links) {
     if (BOOLEANS.some((key) => typeof link[key] !== 'boolean'))
       return bad('요청 값을 확인해 주세요.')
     if (!Array.isArray(link.allowedValueIds))
@@ -152,23 +151,74 @@ function createProductType(body) {
     if (link.allowedValueIds.some((id) => !a.values.some((v) => v.valueId === String(id))))
       return { status: 404, detail: '목록 값을 다시 확인해 주세요.' }
   }
-  if (!body.attributes.some((link) => link.role === 'OPTION' && link.required))
+  if (!links.some((link) => link.role === 'OPTION' && link.required))
     return ruleBroken('필수 옵션 항목을 하나 이상 연결해 주세요.')
+  return null
+}
+
+const toStoredLinks = (links) =>
+  links.map((link) => ({
+    attributeId: String(link.attributeId),
+    role: link.role,
+    ...Object.fromEntries(BOOLEANS.map((key) => [key, link[key]])),
+    allowedValueIds: link.allowedValueIds.map(String),
+  }))
+
+function createProductType(body) {
+  if (blank(body?.name)) return bad('유형 이름을 입력해 주세요.')
+  const invalid = invalidLinks(body.attributes)
+  if (invalid) return invalid
   const ids = body.attributes.map((link) => String(link.attributeId))
   if (new Set(ids).size !== ids.length || productTypes.some((t) => t.name === body.name))
     return conflict
   const type = {
     productTypeId: String(nextId++),
     name: body.name,
-    links: body.attributes.map((link) => ({
-      attributeId: String(link.attributeId),
-      role: link.role,
-      ...Object.fromEntries(BOOLEANS.map((key) => [key, link[key]])),
-      allowedValueIds: link.allowedValueIds.map(String),
-    })),
+    links: toStoredLinks(body.attributes),
   }
   productTypes.push(type)
   return { status: 201, body: productTypeOut(type) }
+}
+
+// 상품이 있는 유형(여기서는 처음 데이터 「의류」)은 넓히는 변경만 받는다:
+// 허용 값 추가 · 선택 정보 항목 추가 · 필수를 선택으로 · 모든 값 허용으로 넓히기 · 정보 항목끼리 순서 바꾸기
+const IN_USE = new Set([productTypes[0].productTypeId])
+const optionOrder = (links) => links.filter((l) => l.role === 'OPTION').map((l) => l.attributeId)
+
+function breaksProducts(before, after) {
+  const narrows = (old, now) =>
+    !now ||
+    now.role !== old.role ||
+    now.sizeRole !== old.sizeRole ||
+    now.priceAffecting !== old.priceAffecting ||
+    (now.required && !old.required) ||
+    (!now.allValuesAllowed &&
+      (old.allValuesAllowed || old.allowedValueIds.some((id) => !now.allowedValueIds.includes(id))))
+  const find = (id) => after.find((link) => link.attributeId === id)
+  const added = after.filter((link) => !before.some((old) => old.attributeId === link.attributeId))
+  return (
+    before.some((old) => narrows(old, find(old.attributeId))) ||
+    added.some((link) => link.role !== 'INFO' || link.required) ||
+    optionOrder(before).join() !== optionOrder(after).join()
+  )
+}
+
+function changeProductType(productTypeId, body) {
+  const type = productTypes.find((t) => t.productTypeId === productTypeId)
+  if (!type) return { status: 404, detail: '상품 유형을 다시 확인해 주세요.' }
+  const invalid = invalidLinks(body?.attributes)
+  if (invalid) return invalid
+  const ids = body.attributes.map((link) => String(link.attributeId))
+  if (new Set(ids).size !== ids.length) return bad('같은 항목은 한 번만 연결해 주세요.')
+  const links = toStoredLinks(body.attributes)
+  if (IN_USE.has(productTypeId) && breaksProducts(type.links, links))
+    return {
+      status: 409,
+      detail:
+        '상품이 있는 유형은 허용 값 추가, 모든 값 허용으로 넓히기, 선택 정보 항목 추가, 필수 항목을 선택으로 바꾸기, 옵션 항목이 아닌 순서 변경만 할 수 있습니다.',
+    }
+  type.links = links
+  return { status: 200, body: productTypeOut(type) }
 }
 
 // 카테고리: 평면 목록(ID 순서). 말단만 상품 유형과 필수 실측 항목(ID, 넣은 순서)을 가진다
@@ -244,6 +294,8 @@ export function catalogRoute(method, path, body) {
   if (key === 'GET /admin/product-types')
     return () => ({ status: 200, body: productTypes.map(productTypeOut) })
   if (key === 'POST /admin/product-types') return () => createProductType(body)
+  const typeId = key.match(/^PUT \/admin\/product-types\/(\d+)$/)
+  if (typeId) return () => changeProductType(typeId[1], body)
   if (key === 'GET /admin/categories')
     return () => ({ status: 200, body: categories.map(categoryOut) })
   if (key === 'POST /admin/categories') return () => createCategory(body)

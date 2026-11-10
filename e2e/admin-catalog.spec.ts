@@ -2,14 +2,14 @@ import { expect, test } from '@playwright/test'
 import { signInAdmin } from './support/admin'
 
 // 관리자 상품 기준 데이터: 항목(팔레트) 만들기 → 목록 값 더하기, 실측 항목 만들기 (BE #405),
-// 상품 유형 만들기 (BE #424), 카테고리 만들기 (BE #425).
+// 상품 유형 만들기 · 수정 (BE #424), 카테고리 만들기 (BE #425).
 // 가짜 백엔드를 다른 테스트와 같이 쓰므로 코드는 실행마다 다르게 만든다 (대문자와 _만)
 const RUN = String(Date.now())
   .split('')
   .map((digit) => String.fromCharCode(65 + Number(digit)))
   .join('')
 
-test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 · 상품 유형 · 카테고리 만들기', async ({
+test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 · 상품 유형 · 카테고리 만들기와 상품 유형 수정', async ({
   page,
 }) => {
   await signInAdmin(page)
@@ -82,6 +82,26 @@ test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 �
     await expect(page).toHaveURL(/\/admin\/catalog\/product-types$/)
     const created = page.getByRole('row').filter({ hasText: `시연 유형 ${RUN}` })
     await expect(created.getByText('옵션 · 필수 · 허용 값 네이비')).toBeVisible()
+  })
+
+  await test.step('상품 유형 수정: 항목을 더하고 순서를 바꿔 저장하면 목록에 그대로 보인다', async () => {
+    await page.getByRole('link', { name: `시연 유형 ${RUN} 수정` }).click()
+    await expect(page.getByRole('heading', { name: `시연 유형 ${RUN} 수정` })).toBeVisible()
+    await expect(page.getByText('상품이 있는 유형은 다음 변경만 돼요')).toBeVisible()
+    await page.getByLabel('연결할 항목').selectOption({ label: '혼용률 (FABRIC_COMPOSITION)' })
+    await page.getByRole('button', { name: '혼용률 위로' }).click()
+    await page.getByRole('button', { name: '저장하기' }).click()
+    await expect(page).toHaveURL(/\/admin\/catalog\/product-types$/)
+    const edited = page.getByRole('row').filter({ hasText: `시연 유형 ${RUN}` })
+    await expect(edited.getByRole('listitem').first()).toContainText('혼용률정보 · 선택')
+  })
+
+  await test.step('상품 유형 수정: 상품이 있는 유형에서 막힌 변경은 응답 설명을 그대로 보여 준다', async () => {
+    await page.getByRole('link', { name: '의류 수정' }).click()
+    await page.getByLabel('연결할 항목').selectOption({ label: `시연 색 (DEMO_COLOR_${RUN})` })
+    await page.getByRole('button', { name: '저장하기' }).click()
+    await expect(page.getByText(/상품이 있는 유형은 허용 값 추가/)).toBeVisible()
+    await expect(page).toHaveURL(/\/product-types\/\d+\/edit$/)
   })
 
   await test.step('카테고리 만들기: 말단은 유형을 골라야 하고, 만들면 트리에 보인다', async () => {

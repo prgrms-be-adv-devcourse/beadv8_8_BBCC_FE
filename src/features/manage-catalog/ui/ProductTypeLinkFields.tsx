@@ -15,6 +15,9 @@ type ProductTypeLinkFieldsProps = {
   link: ProductTypeLinkForm
   onChange: (link: ProductTypeLinkForm) => void
   onRemove: () => void
+  /** 없으면 그 방향 버튼을 막는다 (맨 앞 · 맨 뒤) */
+  onMoveUp?: () => void
+  onMoveDown?: () => void
 }
 
 type CheckProps = { checked: boolean; onChange: (checked: boolean) => void; children: ReactNode }
@@ -39,6 +42,8 @@ export function ProductTypeLinkFields({
   link,
   onChange,
   onRemove,
+  onMoveUp,
+  onMoveDown,
 }: ProductTypeLinkFieldsProps) {
   const set = (patch: Partial<ProductTypeLinkForm>) => onChange({ ...link, ...patch })
   const isOption = link.role === 'OPTION'
@@ -99,9 +104,31 @@ export function ProductTypeLinkFields({
             모든 값 허용
           </Check>
         )}
-        <Button type="button" size="sm" variant="ghost" className="ml-auto" onClick={onRemove}>
-          빼기
-        </Button>
+        <span className="ml-auto flex gap-1">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-label={`${attribute.name} 위로`}
+            disabled={!onMoveUp}
+            onClick={onMoveUp}
+          >
+            ↑
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-label={`${attribute.name} 아래로`}
+            disabled={!onMoveDown}
+            onClick={onMoveDown}
+          >
+            ↓
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={onRemove}>
+            빼기
+          </Button>
+        </span>
       </div>
       {attribute.inputType !== 'TEXT' && !link.allValuesAllowed && (
         <div className="flex flex-wrap gap-x-4 gap-y-1">
