@@ -78,6 +78,11 @@ import { DEMO_ADDRESS } from '@/features/manage-address/config/demo-address'
 import { demoRegisterForm } from '@/features/register-product/config/demo-product'
 import { DEMO_APPLICATION } from '@/features/apply-seller/config/demo-application'
 import { DEMO_CHILD } from '@/features/register-child/config/demo-child'
+import { toReferenceGarmentRequest } from '@/entities/recommendation'
+import {
+  referenceGarmentListShape,
+  referenceGarmentShape,
+} from '@/entities/recommendation/api/reference-garment.shape'
 import { toProductViewRequest } from '@/features/record-product-view'
 import { toSearchClickRequest } from '@/features/record-search-click'
 import { productImageUploadUrlsShape } from '@/features/upload-product-image'
@@ -1108,6 +1113,52 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     expect(await ids('/admin/product-types', 'productTypeId')).not.toContain(
       type.data.productTypeId,
     )
+  })
+
+  it('추천 기준 옷: 저장(교체) · 목록 · 삭제와 거절 (BE #1111)', async () => {
+    const child = await call('POST', '/children', 1, {
+      ...toChildRequest(DEMO_CHILD),
+      requiredConsent: true,
+      optionalConsent: true,
+    })
+    const url = `/recommendations/children/${child.data.id}/reference-garments`
+    expect((await call('GET', url, 1)).data).toEqual([])
+
+    const top = toReferenceGarmentRequest({
+      categoryId: '11',
+      measurements: { TOTAL_LENGTH: '42', CHEST_WIDTH: '34.5', SHOULDER_WIDTH: '28' },
+    })
+    const saved = await call('PUT', `${url}/TOP`, 1, top)
+    expect(saved.status).toBe(200)
+    expectContract(saved.data, referenceGarmentShape)
+    // 다시 저장하면 교체: 뺀 선택 실측은 사라진다
+    const withoutShoulder = { TOTAL_LENGTH: 42, CHEST_WIDTH: 34.5 }
+    const replaced = await call('PUT', `${url}/TOP`, 1, { ...top, measurements: withoutShoulder })
+    expect(Object.keys(replaced.data.measurements).sort()).toEqual(['CHEST_WIDTH', 'TOTAL_LENGTH'])
+    const bottom = { categoryId: '12', measurements: { TOTAL_LENGTH: 60, WAIST_WIDTH: 25 } }
+    expect((await call('PUT', `${url}/BOTTOM`, 1, bottom)).status).toBe(200)
+    const list = await call('GET', url, 1)
+    expectContract(list.data, referenceGarmentListShape)
+    expect(list.data.map((item: { part: string }) => item.part)).toEqual(['TOP', 'BOTTOM'])
+
+    // 거절: 소문자 구분 · 맞지 않는 세부 종류 · 필수 없음 · 범위 밖 값은 400, 남의 자녀 403, 없는 자녀 404
+    expect((await call('PUT', `${url}/top`, 1, top)).status).toBe(400)
+    expect((await call('PUT', `${url}/BOTTOM`, 1, top)).status).toBe(400)
+    const noChest = { categoryId: '11', measurements: { TOTAL_LENGTH: 42 } }
+    expect((await call('PUT', `${url}/TOP`, 1, noChest)).status).toBe(400)
+    const tooLong = { categoryId: '11', measurements: { TOTAL_LENGTH: 200.1, CHEST_WIDTH: 30 } }
+    expect((await call('PUT', `${url}/TOP`, 1, tooLong)).status).toBe(400)
+    expect((await call('GET', url, 2)).status).toBe(403)
+    expect(
+      (await call('GET', '/recommendations/children/999999/reference-garments', 1)).status,
+    ).toBe(404)
+
+    // 지우기는 204, 이미 없어도 204
+    expect((await call('DELETE', `${url}/TOP`, 1)).status).toBe(204)
+    expect((await call('DELETE', `${url}/TOP`, 1)).status).toBe(204)
+    expect((await call('GET', url, 1)).data.map((item: { part: string }) => item.part)).toEqual([
+      'BOTTOM',
+    ])
   })
 
   it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {
