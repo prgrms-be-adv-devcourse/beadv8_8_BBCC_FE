@@ -7,6 +7,7 @@ import {
   toAttributeValueRequest,
   toCategoryCreateRequest,
   toMeasurementItemRequest,
+  toProductTypeChangeRequest,
   toProductTypeCreateRequest,
   type AttributeForm,
   type AttributeInputType,
@@ -81,6 +82,18 @@ export function useCreateCategory() {
     mutationFn: (form: CategoryForm) =>
       runWithAction('카테고리 만들기', () =>
         catalogApi.createCategory(toCategoryCreateRequest(form)),
+      ),
+    onSuccess,
+  })
+}
+
+/** 상품 유형 연결 바꾸기 (PUT, 연결 목록 전체). 상품이 있는 유형은 넓히는 변경만 되고 나머지는 409 */
+export function useChangeProductType(productTypeId: string) {
+  const onSuccess = useRefetch(catalogKeys.productTypes, '상품 유형을 고쳤어요')
+  return useMutation({
+    mutationFn: (form: ProductTypeForm) =>
+      runWithAction('상품 유형 수정', () =>
+        catalogApi.changeProductType(productTypeId, toProductTypeChangeRequest(form)),
       ),
     onSuccess,
   })

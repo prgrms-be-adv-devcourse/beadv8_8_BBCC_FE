@@ -48,8 +48,13 @@ export {
   validateCategoryForm,
   type CategoryTreeRow,
 } from './model/category.rules'
-export { toProductType, toProductTypeCreateRequest } from './model/product-type.mapper'
-export { canBeOption, validateProductTypeForm } from './model/product-type.rules'
+export {
+  toProductType,
+  toProductTypeChangeRequest,
+  toProductTypeCreateRequest,
+  toProductTypeForm,
+} from './model/product-type.mapper'
+export { canBeOption, moveLink, validateProductTypeForm } from './model/product-type.rules'
 export {
   catalogKeys,
   useAttributesQuery,

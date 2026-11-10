@@ -8,6 +8,7 @@ import type {
   CategoryCreateRequestDto,
   MeasurementItemDto,
   MeasurementItemRequestDto,
+  ProductTypeChangeRequestDto,
   ProductTypeCreateRequestDto,
   ProductTypeDto,
 } from './catalog.dto'
@@ -51,6 +52,14 @@ export const catalogApi = {
   createProductType: (request: ProductTypeCreateRequestDto) =>
     apiClient
       .post<ProductTypeDto>('/admin/product-types', request)
+      .then(expectShape(productTypeShape)),
+  /**
+   * 유형 연결 바꾸기 (이름은 그대로). 연결 목록 전체로 통째로 바꾼다. 유형 규칙에 어긋나면 400,
+   * 상품이 있는 유형에서 허용되지 않는 변경이면 409. 응답은 목록의 유형 하나와 같은 모양
+   */
+  changeProductType: (productTypeId: string, request: ProductTypeChangeRequestDto) =>
+    apiClient
+      .put<ProductTypeDto>(`/admin/product-types/${productTypeId}`, request)
       .then(expectShape(productTypeShape)),
   /** 카테고리 목록. ID 순서의 평면 배열이고 계층은 parentId (트리는 화면에서 만든다) */
   categories: () =>

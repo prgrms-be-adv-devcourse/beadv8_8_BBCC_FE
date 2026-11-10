@@ -104,6 +104,7 @@ export const paths = {
     measurementItemNew: '/admin/catalog/measurement-items/new',
     productTypes: '/admin/catalog/product-types',
     productTypeNew: '/admin/catalog/product-types/new',
+    productTypeEdit: (id: string) => `/admin/catalog/product-types/${id}/edit`,
     categories: '/admin/catalog/categories',
     categoryNew: '/admin/catalog/categories/new',
   },

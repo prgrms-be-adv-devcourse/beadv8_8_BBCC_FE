@@ -35,7 +35,7 @@ export function AdminCatalogProductTypesPage() {
       <PageHeader
         title="상품 유형"
         description="유형마다 상품 등록 화면에 나올 항목과 그 역할(옵션 · 정보)을 정해요. 말단 카테고리는 유형 하나를 써요."
-        note="GET · POST /admin/product-types. 유형 규칙(필수 옵션 · 사이즈 역할 하나 · 옵션은 팔레트 · 목록만)은 화면에서 먼저 막는다"
+        note="GET · POST /admin/product-types, PUT /admin/product-types/{id}(수정). 유형 규칙(필수 옵션 · 사이즈 역할 하나 · 옵션은 팔레트 · 목록만)은 화면에서 먼저 막는다"
         actions={
           <Link
             to={paths.admin.productTypeNew}
@@ -68,6 +68,9 @@ export function AdminCatalogProductTypesPage() {
                 <th scope="col" className="py-2 font-medium">
                   연결한 항목
                 </th>
+                <th scope="col" className="w-20 py-2 font-medium">
+                  <span className="sr-only">수정</span>
+                </th>
               </tr>
             </thead>
             <tbody className="max-md:block">
@@ -92,6 +95,15 @@ export function AdminCatalogProductTypesPage() {
                         </li>
                       ))}
                     </ul>
+                  </td>
+                  <td className="py-3 text-right align-top max-md:p-0 max-md:text-left">
+                    <Link
+                      to={paths.admin.productTypeEdit(type.id)}
+                      aria-label={`${type.name} 수정`}
+                      className="text-signal inline-flex min-h-10 items-center text-[13px] font-semibold hover:underline"
+                    >
+                      수정
+                    </Link>
                   </td>
                 </tr>
               ))}

@@ -374,6 +374,14 @@ export const router = createBrowserRouter(
           ),
         },
         {
+          path: 'catalog/product-types/:productTypeId/edit',
+          ...page(() =>
+            import('@/pages/admin/catalog-product-type-edit').then((m) => ({
+              Component: m.AdminCatalogProductTypeEditPage,
+            })),
+          ),
+        },
+        {
           path: rel(paths.admin.home, paths.admin.categories),
           ...page(() =>
             import('@/pages/admin/catalog-categories').then((m) => ({

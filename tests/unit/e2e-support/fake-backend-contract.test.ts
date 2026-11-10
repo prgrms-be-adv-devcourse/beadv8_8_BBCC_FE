@@ -14,7 +14,10 @@ import {
   toCategoryCreateRequest,
   toAttributeValueRequest,
   toMeasurementItemRequest,
+  toProductType,
+  toProductTypeChangeRequest,
   toProductTypeCreateRequest,
+  toProductTypeForm,
 } from '@/entities/catalog'
 import { addressShape } from '@/entities/address/api/address.shape'
 import { toAddCartItemRequest } from '@/entities/cart'
@@ -879,6 +882,41 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     const withoutRequired = { ...request.attributes[0], required: undefined }
     const missing = { name: '빠진 칸', attributes: [withoutRequired] }
     expect((await call('POST', '/admin/product-types', 3, missing)).status).toBe(400)
+  })
+
+  it('관리자 상품 기준 데이터: 상품 유형 수정 PUT은 연결 목록 전체로 바꾸고, 상품이 있는 유형은 넓히는 변경만 받는다', async () => {
+    const [clothing, ...others] = (await call('GET', '/admin/product-types', 3)).data
+    const created = others.find((type: { name: string }) => type.name === '계약 유형')
+    const form = toProductTypeForm(toProductType(created))
+    const [color, size] = (await call('GET', '/admin/attributes', 3)).data
+    // 상품이 없는 유형: 새 옵션 항목을 앞에 더해도 된다. 응답은 목록의 유형 하나와 같은 모양
+    const sizeLink = {
+      ...form.links[0],
+      attributeId: size.attributeId,
+      allValuesAllowed: true,
+      allowedValueIds: [],
+    }
+    const changed = await call(
+      'PUT',
+      `/admin/product-types/${created.productTypeId}`,
+      3,
+      toProductTypeChangeRequest({ ...form, links: [sizeLink, ...form.links] }),
+    )
+    expect(changed.status).toBe(200)
+    expectContract(changed.data, productTypeShape)
+    expect(changed.data.attributes.map((a: { attributeId: string }) => a.attributeId)).toEqual([
+      size.attributeId,
+      color.attributeId,
+    ])
+
+    // 상품이 있는 유형(의류): 그대로 보내면 200, 옵션 순서를 바꾸면 409, 없는 유형은 404
+    const clothingForm = toProductTypeForm(toProductType(clothing))
+    const url = `/admin/product-types/${clothing.productTypeId}`
+    expect((await call('PUT', url, 3, toProductTypeChangeRequest(clothingForm))).status).toBe(200)
+    const [first, second, ...rest] = clothingForm.links
+    const swapped = toProductTypeChangeRequest({ ...clothingForm, links: [second, first, ...rest] })
+    expect((await call('PUT', url, 3, swapped)).status).toBe(409)
+    expect((await call('PUT', '/admin/product-types/999999', 3, swapped)).status).toBe(404)
   })
 
   it('관리자 상품 기준 데이터: 카테고리 만들기와 목록 (BE #425)', async () => {

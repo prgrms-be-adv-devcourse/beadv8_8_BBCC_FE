@@ -48,3 +48,16 @@ export function validateProductTypeForm(
     return '모든 값을 허용하지 않는 항목에는 허용 값을 하나 이상 골라 주세요.'
   return null
 }
+
+/** 연결 하나를 offset칸 옮긴다 (순서가 등록 화면 순서). 맨 앞 · 맨 뒤를 넘어가면 그대로 */
+export function moveLink(
+  links: ProductTypeLinkForm[],
+  index: number,
+  offset: number,
+): ProductTypeLinkForm[] {
+  const target = index + offset
+  if (target < 0 || target >= links.length) return links
+  const moved = [...links]
+  ;[moved[index], moved[target]] = [moved[target], moved[index]]
+  return moved
+}

@@ -50,6 +50,9 @@ export type ProductTypeLinkRequestDto = {
 /** ProductTypeCreateRequest. 넣은 순서가 연결 순서 */
 export type ProductTypeCreateRequestDto = { name: string; attributes: ProductTypeLinkRequestDto[] }
 
+/** ProductTypeChangeRequest. 이름은 바꾸지 않고, 연결 목록 전체로 기존 연결을 통째로 바꾼다 (순서가 연결 순서) */
+export type ProductTypeChangeRequestDto = { attributes: ProductTypeLinkRequestDto[] }
+
 /** ProductTypeResponse.Link. role은 OPTION · INFO, 모든 값 허용이면 allowedValues는 [] */
 export type ProductTypeLinkDto = {
   attributeId: string
