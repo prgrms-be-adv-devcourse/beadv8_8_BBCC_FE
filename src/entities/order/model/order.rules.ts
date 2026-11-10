@@ -19,6 +19,14 @@ export function canConfirmItem(item: OrderItem): boolean {
   return item.status === 'ORDERED' && item.deliveredAt !== null
 }
 
+/** 받은 옷(배송 완료 · 구매확정)이고 입을 자녀와 사이즈가 있으면 그 자녀의 추천 기준 옷으로 쓸 수 있다 */
+export function canUseAsReferenceGarment(
+  item: OrderItem,
+): item is OrderItem & { child: NonNullable<OrderItem['child']>; size: string } {
+  const isReceived = item.status === 'CONFIRMED' || item.deliveredAt !== null
+  return isReceived && item.child !== null && item.size !== null
+}
+
 /** 주문상품을 보내는 판매자의 배송 */
 export function deliveryOf(order: Order, item: OrderItem) {
   return order.deliveries.find((delivery) => delivery.sellerId === item.sellerId) ?? null

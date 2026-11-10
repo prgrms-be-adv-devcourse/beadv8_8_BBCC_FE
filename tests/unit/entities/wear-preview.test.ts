@@ -5,7 +5,12 @@ const spec = (measurements: Record<string, number | null>): SizeSpec => ({
   size: '120',
   minHeightCm: 115,
   maxHeightCm: 125,
-  measurements: Object.entries(measurements).map(([name, value]) => ({ name, unit: 'cm', value })),
+  measurements: Object.entries(measurements).map(([name, value]) => ({
+    code: name,
+    name,
+    unit: 'cm',
+    value,
+  })),
 })
 
 describe('착용 미리보기 (아동 평균 비율, 길이 비교용)', () => {

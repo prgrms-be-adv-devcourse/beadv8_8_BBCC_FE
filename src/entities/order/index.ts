@@ -17,6 +17,7 @@ export { orderTitle, toAdminOrder, toOrder, toPlaceOrderRequest } from './model/
 export {
   buildOrderTimeline,
   canConfirmItem,
+  canUseAsReferenceGarment,
   countOrdersByTab,
   deliveryOf,
   orderSellerGroups,

@@ -91,7 +91,8 @@ export type SizeSpec = {
   size: string
   minHeightCm: number | null
   maxHeightCm: number | null
-  measurements: { name: string; unit: string; value: number | null }[]
+  /** code는 실측 항목 코드 (예: TOTAL_LENGTH, 추천 기준 옷과 같은 코드) */
+  measurements: { code: string; name: string; unit: string; value: number | null }[]
 }
 
 export type ProductDetail = ProductSummary & {

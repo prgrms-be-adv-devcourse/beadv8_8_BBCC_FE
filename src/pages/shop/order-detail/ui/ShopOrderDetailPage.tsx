@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router'
 import {
   CANCEL_REASON_LABEL,
   canConfirmItem,
+  canUseAsReferenceGarment,
   needsCartReview,
   OrderProcessSteps,
   needsCharge,
@@ -147,20 +148,36 @@ export function ShopOrderDetailPage() {
                 group={group}
                 isCancelled={order.status === 'CANCELLED'}
                 action={(item) => {
-                  if (canConfirmItem(item))
-                    return <ConfirmPurchaseButton orderId={order.id} orderItemId={item.id} />
                   const reviewAction = isReviewStateReady
                     ? reviewActionOf(item, reviewableIds, reviewedIds)
                     : null
                   return (
-                    reviewAction && (
-                      <OrderItemReviewAction
-                        action={reviewAction}
-                        orderItemId={item.id}
-                        onRecheck={recheckReviews}
-                        isRechecking={reviewable.isFetching || myReviews.isFetching}
-                      />
-                    )
+                    <span className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
+                      {canConfirmItem(item) ? (
+                        <ConfirmPurchaseButton orderId={order.id} orderItemId={item.id} />
+                      ) : (
+                        reviewAction && (
+                          <OrderItemReviewAction
+                            action={reviewAction}
+                            orderItemId={item.id}
+                            onRecheck={recheckReviews}
+                            isRechecking={reviewable.isFetching || myReviews.isFetching}
+                          />
+                        )
+                      )}
+                      {canUseAsReferenceGarment(item) && (
+                        <Link
+                          to={paths.shop.childReferenceGarmentFrom(
+                            item.child.id,
+                            item.productId,
+                            item.size,
+                          )}
+                          className="shop-link text-sm"
+                        >
+                          기준 옷으로
+                        </Link>
+                      )}
+                    </span>
                   )
                 }}
               />
