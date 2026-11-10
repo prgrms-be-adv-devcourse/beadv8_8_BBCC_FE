@@ -1,5 +1,9 @@
-import type { CategoryDto, CategoryCreateRequestDto } from '../api/catalog.dto'
-import type { CatalogCategory, CategoryForm } from './catalog'
+import type {
+  CategoryChangeRequestDto,
+  CategoryCreateRequestDto,
+  CategoryDto,
+} from '../api/catalog.dto'
+import type { CatalogCategory, CategoryChangeForm, CategoryForm } from './catalog'
 import { toMeasurementItem } from './catalog.mapper'
 
 export function toCatalogCategory(dto: CategoryDto): CatalogCategory {
@@ -23,4 +27,16 @@ export function toCategoryCreateRequest(form: CategoryForm): CategoryCreateReque
     productTypeId: isLeaf ? form.productTypeId : null,
     measurementItemIds: isLeaf ? form.measurementItemIds : [],
   }
+}
+
+/** 수정 폼은 지금 유형과 실측 항목(지금 순서)으로 채운다 */
+export function toCategoryChangeForm(category: CatalogCategory): CategoryChangeForm {
+  return {
+    productTypeId: category.productTypeId ?? '',
+    measurementItemIds: category.measurementItems.map((item) => item.id),
+  }
+}
+
+export function toCategoryChangeRequest(form: CategoryChangeForm): CategoryChangeRequestDto {
+  return { productTypeId: form.productTypeId, measurementItemIds: form.measurementItemIds }
 }

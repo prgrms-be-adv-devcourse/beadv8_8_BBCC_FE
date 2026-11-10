@@ -2,14 +2,14 @@ import { expect, test } from '@playwright/test'
 import { signInAdmin } from './support/admin'
 
 // 관리자 상품 기준 데이터: 항목(팔레트) 만들기 → 목록 값 더하기, 실측 항목 만들기 (BE #405),
-// 상품 유형 만들기 · 수정 (BE #424), 카테고리 만들기 (BE #425).
+// 상품 유형 만들기 · 수정 (BE #424), 카테고리 만들기 · 수정 (BE #425).
 // 가짜 백엔드를 다른 테스트와 같이 쓰므로 코드는 실행마다 다르게 만든다 (대문자와 _만)
 const RUN = String(Date.now())
   .split('')
   .map((digit) => String.fromCharCode(65 + Number(digit)))
   .join('')
 
-test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 · 상품 유형 · 카테고리 만들기와 상품 유형 수정', async ({
+test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 · 상품 유형 · 카테고리 만들기와 상품 유형 · 카테고리 수정', async ({
   page,
 }) => {
   await signInAdmin(page)
@@ -117,5 +117,30 @@ test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 �
     await page.getByRole('button', { name: '카테고리 만들기' }).click()
     await expect(page).toHaveURL(/\/admin\/catalog\/categories$/)
     await expect(page.getByText(`└ 시연 바지 ${RUN}`)).toBeVisible()
+  })
+
+  await test.step('카테고리 수정: 말단만 수정할 수 있고, 실측 항목을 고른 순서대로 저장한다', async () => {
+    await expect(page.getByRole('link', { name: '의류 수정' })).toHaveCount(0)
+    await page.getByRole('link', { name: `시연 바지 ${RUN} 수정` }).click()
+    await expect(page.getByRole('heading', { name: `시연 바지 ${RUN} 수정` })).toBeVisible()
+    await expect(page.getByText('상품이 있는 카테고리는 다음 변경만 돼요')).toBeVisible()
+    await page.getByLabel('총장').uncheck()
+    await page.getByLabel('어깨너비').check()
+    await page.getByLabel('총장').check()
+    await expect(page.getByText('실측 순서: 어깨너비 → 총장')).toBeVisible()
+    await page.getByRole('button', { name: '저장하기' }).click()
+    await expect(page).toHaveURL(/\/admin\/catalog\/categories$/)
+    const edited = page.getByRole('row').filter({ hasText: `시연 바지 ${RUN}` })
+    await expect(edited.getByText('어깨너비 · 총장')).toBeVisible()
+  })
+
+  await test.step('카테고리 수정: 상품이 있는 카테고리에서 유형을 바꾸면 응답 설명을 그대로 보여 준다', async () => {
+    await page.getByRole('link', { name: '상의 수정' }).click()
+    await page.getByLabel('상품 유형').selectOption({ label: `시연 유형 ${RUN}` })
+    await page.getByRole('button', { name: '저장하기' }).click()
+    await expect(
+      page.getByText('상품이 있는 카테고리는 필수 실측 항목 빼기와 순서 변경만 할 수 있습니다.'),
+    ).toBeVisible()
+    await expect(page).toHaveURL(/\/categories\/\d+\/edit$/)
   })
 })

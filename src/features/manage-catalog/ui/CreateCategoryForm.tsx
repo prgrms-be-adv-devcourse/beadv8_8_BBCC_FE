@@ -15,6 +15,7 @@ import { Input, Select } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useCreateCategory } from '../model/use-manage-catalog'
+import { CategoryLeafFields } from './CategoryLeafFields'
 
 const EMPTY_FORM: CategoryForm = {
   name: '',
@@ -47,12 +48,6 @@ export function CreateCategoryForm({
   const [form, setForm] = useState<CategoryForm>(EMPTY_FORM)
   const [invalid, setInvalid] = useState<string | null>(null)
   const set = (patch: Partial<CategoryForm>) => setForm((prev) => ({ ...prev, ...patch }))
-  const toggleItem = (id: string) =>
-    set({
-      measurementItemIds: form.measurementItemIds.includes(id)
-        ? form.measurementItemIds.filter((itemId) => itemId !== id)
-        : [...form.measurementItemIds, id],
-    })
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -109,39 +104,13 @@ export function CreateCategoryForm({
         </Label>
       </div>
       {form.kind === 'LEAF' && (
-        <>
-          <Label>
-            상품 유형
-            <Select
-              className="h-10"
-              value={form.productTypeId}
-              onChange={(e) => set({ productTypeId: e.target.value })}
-            >
-              <option value="">유형 고르기</option>
-              {productTypes.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </Select>
-          </Label>
-          <fieldset className="space-y-1">
-            <legend className="text-sm font-medium">필수 실측 항목 (고른 순서대로)</legend>
-            <div className="flex flex-wrap gap-x-4 gap-y-2">
-              {measurementItems.map((item) => (
-                <label key={item.id} className="flex min-h-8 items-center gap-1.5 text-sm">
-                  <input
-                    type="checkbox"
-                    className="accent-signal size-4"
-                    checked={form.measurementItemIds.includes(item.id)}
-                    onChange={() => toggleItem(item.id)}
-                  />
-                  {item.name}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        </>
+        <CategoryLeafFields
+          productTypes={productTypes}
+          measurementItems={measurementItems}
+          productTypeId={form.productTypeId}
+          measurementItemIds={form.measurementItemIds}
+          onChange={set}
+        />
       )}
       <Button type="submit" className="h-11 px-6 text-[15px]" disabled={create.isPending}>
         카테고리 만들기

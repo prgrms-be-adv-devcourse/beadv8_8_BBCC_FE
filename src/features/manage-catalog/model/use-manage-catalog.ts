@@ -5,6 +5,7 @@ import {
   toAttribute,
   toAttributeCreateRequest,
   toAttributeValueRequest,
+  toCategoryChangeRequest,
   toCategoryCreateRequest,
   toMeasurementItemRequest,
   toProductTypeChangeRequest,
@@ -12,6 +13,7 @@ import {
   type AttributeForm,
   type AttributeInputType,
   type AttributeValueForm,
+  type CategoryChangeForm,
   type CategoryForm,
   type MeasurementItemForm,
   type ProductTypeForm,
@@ -94,6 +96,18 @@ export function useChangeProductType(productTypeId: string) {
     mutationFn: (form: ProductTypeForm) =>
       runWithAction('상품 유형 수정', () =>
         catalogApi.changeProductType(productTypeId, toProductTypeChangeRequest(form)),
+      ),
+    onSuccess,
+  })
+}
+
+/** 말단 카테고리 수정 (PUT). 상품이 있는 카테고리는 실측 항목 빼기 · 순서 변경만 되고 나머지는 409 */
+export function useChangeCategory(categoryId: string) {
+  const onSuccess = useRefetch(catalogKeys.categories, '카테고리를 고쳤어요')
+  return useMutation({
+    mutationFn: (form: CategoryChangeForm) =>
+      runWithAction('카테고리 수정', () =>
+        catalogApi.changeCategory(categoryId, toCategoryChangeRequest(form)),
       ),
     onSuccess,
   })

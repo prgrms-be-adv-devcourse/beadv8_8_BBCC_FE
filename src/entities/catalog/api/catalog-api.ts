@@ -5,6 +5,7 @@ import type {
   AttributeDto,
   AttributeValueDto,
   AttributeValueRequestDto,
+  CategoryChangeRequestDto,
   CategoryCreateRequestDto,
   MeasurementItemDto,
   MeasurementItemRequestDto,
@@ -67,4 +68,12 @@ export const catalogApi = {
   /** 카테고리 만들기. 말단 아래 · 중간에 실측 항목이면 400, 없는 부모 · 유형 · 실측 항목은 404, 같은 위치 같은 이름은 409 */
   createCategory: (request: CategoryCreateRequestDto) =>
     apiClient.post<CategoryDto>('/admin/categories', request).then(expectShape(categoryShape)),
+  /**
+   * 말단 카테고리의 상품 유형 · 필수 실측 항목 바꾸기 (이름 · 부모는 그대로). 중간 카테고리 · 지운 기준 데이터면 400,
+   * 상품이 있는 카테고리에서 실측 항목 빼기 · 순서 변경이 아니면 409
+   */
+  changeCategory: (categoryId: string, request: CategoryChangeRequestDto) =>
+    apiClient
+      .put<CategoryDto>(`/admin/categories/${categoryId}`, request)
+      .then(expectShape(categoryShape)),
 }

@@ -17,6 +17,7 @@ export {
   type AttributeValue,
   type AttributeValueForm,
   type CatalogCategory,
+  type CategoryChangeForm,
   type CategoryForm,
   type CategoryKind,
   type MeasurementItem,
@@ -40,11 +41,18 @@ export {
   validateAttributeValueForm,
   validateMeasurementItemForm,
 } from './model/catalog.rules'
-export { toCatalogCategory, toCategoryCreateRequest } from './model/category.mapper'
 export {
+  toCatalogCategory,
+  toCategoryChangeForm,
+  toCategoryChangeRequest,
+  toCategoryCreateRequest,
+} from './model/category.mapper'
+export {
+  canChangeCategory,
   categoryPath,
   categoryTree,
   parentCandidates,
+  validateCategoryChangeForm,
   validateCategoryForm,
   type CategoryTreeRow,
 } from './model/category.rules'
