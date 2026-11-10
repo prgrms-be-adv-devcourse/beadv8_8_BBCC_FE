@@ -102,7 +102,9 @@ export { garmentKindOf, wearFitOf, type WearFit } from './model/wear-preview'
 export { WearPreview } from './ui/WearPreview'
 export {
   productListTitle,
+  effectiveSort,
   readProductFilters,
+  sortOptionsFor,
   readProductPage,
   writeProductFilters,
   writeProductPage,

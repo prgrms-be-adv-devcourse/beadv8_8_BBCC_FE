@@ -2,10 +2,12 @@ import { useRef } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { useChildrenQuery } from '@/entities/child'
 import {
+  effectiveSort,
   ProductTile,
   productListTitle,
   readProductFilters,
   readProductPage,
+  sortOptionsFor,
   writeProductFilters,
   writeProductPage,
   type ProductFilters,
@@ -15,6 +17,7 @@ import {
 } from '@/entities/product'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { QuickHeightForm } from '@/features/edit-child'
+import { useRecordSearchClick } from '@/features/record-search-click'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn, useArea } from '@/shared/lib'
@@ -72,6 +75,9 @@ export function ShopHomePage() {
   const title = productListTitle(keyword, categoryName, filters.attributes?.length ?? 0)
   // 조건을 바꾼 직후에는 이전 목록이 남아 있다(keepPreviousData). 그동안은 흐리게 두고 개수를 숨긴다
   const isStale = all.isPlaceholderData
+  // 검색어가 있으면 기본 정렬은 관련도순이다. 검색 결과 클릭 기록(자녀 영역 제외)에도 같은 정렬을 싣는다
+  const sort = effectiveSort(keyword, filters.sort)
+  const recordSearchClick = useRecordSearchClick()
 
   const changePage = (next: number) => {
     writeParams((latest) => writeProductPage(latest, next))
@@ -122,7 +128,11 @@ export function ShopHomePage() {
               </Link>
             )}
           </div>
-          <ProductSortSelect sort={filters.sort} onChange={(sort) => update({ sort })} />
+          <ProductSortSelect
+            sort={sort}
+            options={sortOptionsFor(keyword)}
+            onChange={(next) => update({ sort: next })}
+          />
         </div>
         <ProductFilterBar search={search} onChange={(patch) => update(patch)} />
         {all.isPending && <CardGridSkeleton />}
@@ -151,7 +161,7 @@ export function ShopHomePage() {
           )}
         >
           {!all.isError &&
-            all.data?.content.map((product) => (
+            all.data?.content.map((product, index) => (
               <ProductTile
                 key={product.id}
                 to={isChild ? paths.child.product(product.id) : paths.shop.product(product.id)}
@@ -161,6 +171,19 @@ export function ShopHomePage() {
                 imageUrl={product.imageUrl}
                 isSoldOut={product.soldOut}
                 tag={product.sizeFree ? { text: '사이즈 무관' } : undefined}
+                onClick={
+                  keyword && !isChild
+                    ? () =>
+                        recordSearchClick({
+                          keyword,
+                          productId: product.id,
+                          page: all.data.page,
+                          size: all.data.size,
+                          index,
+                          sort,
+                        })
+                    : undefined
+                }
               />
             ))}
         </div>

@@ -63,10 +63,13 @@ describe('toProductSearchParams: 검색 조건', () => {
     expect(toProductSearchParams({ keyword: '  ', categoryId: null })).toEqual({})
   })
   it('검색어는 앞뒤 공백 제거', () => {
-    expect(toProductSearchParams({ keyword: ' 맨투맨 ', categoryId: '1' })).toEqual({
-      keyword: '맨투맨',
-      categoryId: '1',
-    })
+    // 검색어가 있으면 기본 정렬이 관련도순이라, 공백만 보려고 최신순을 고른다
+    expect(toProductSearchParams({ keyword: ' 맨투맨 ', categoryId: '1', sort: 'NEWEST' })).toEqual(
+      {
+        keyword: '맨투맨',
+        categoryId: '1',
+      },
+    )
   })
 })
 

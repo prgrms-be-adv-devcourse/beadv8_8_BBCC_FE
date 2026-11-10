@@ -6,18 +6,35 @@ export type ProductFilters = Omit<ProductSearch, 'keyword'>
 const isSort = (value: string | null): value is ProductSort =>
   value !== null && value in PRODUCT_SORT_LABEL
 
-/** 주소 → 거르기. ?cat=11&sort=PRICE_ASC&attr=COLOR:3&attr=SIZE:7 (모르는 정렬은 버린다) */
+const hasKeyword = (keyword: string | null) => Boolean(keyword?.trim())
+
+/** 고를 수 있는 정렬: 관련도순은 검색어가 있을 때만 (맨 앞) */
+export function sortOptionsFor(keyword: string): ProductSort[] {
+  const sorts: ProductSort[] = ['NEWEST', 'PRICE_ASC', 'PRICE_DESC']
+  return hasKeyword(keyword) ? ['RELEVANCE', ...sorts] : sorts
+}
+
+/** 실제로 쓸 정렬: 고른 값이 없으면 검색어가 있을 때 관련도순, 없을 때 최신순. 검색어 없는 관련도순은 최신순 */
+export function effectiveSort(keyword: string, sort: ProductSort | undefined): ProductSort {
+  if (sort === 'RELEVANCE' || !sort) return hasKeyword(keyword) ? 'RELEVANCE' : 'NEWEST'
+  return sort
+}
+
+/** 주소 → 거르기. ?cat=11&sort=PRICE_ASC&attr=COLOR:3&attr=SIZE:7 (모르는 정렬은 버린다. 실제 정렬은 effectiveSort) */
 export function readProductFilters(params: URLSearchParams): ProductFilters {
   const sort = params.get('sort')
   const attributes = params.getAll('attr').filter((value) => /^[^:]+:[^:]+$/.test(value))
   return {
     categoryId: params.get('cat') || null,
-    ...(isSort(sort) && sort !== 'NEWEST' ? { sort } : {}),
+    ...(isSort(sort) ? { sort } : {}),
     ...(attributes.length > 0 ? { attributes } : {}),
   }
 }
 
-/** 거르기 → 주소. 다른 값(검색어 q · 자녀 child)은 그대로 두고, 기본값(최신순 · 빈 값)은 싣지 않는다 */
+/**
+ * 거르기 → 주소. 다른 값(검색어 q · 자녀 child)은 그대로 두고, 빈 값과 그 검색어의 기본 정렬
+ * (검색어가 있으면 관련도순, 없으면 최신순)은 싣지 않는다
+ */
 export function writeProductFilters(
   params: URLSearchParams,
   filters: ProductFilters,
@@ -25,7 +42,9 @@ export function writeProductFilters(
   const next = new URLSearchParams(params)
   for (const key of ['cat', 'sort', 'attr', 'page']) next.delete(key)
   if (filters.categoryId) next.set('cat', filters.categoryId)
-  if (filters.sort && filters.sort !== 'NEWEST') next.set('sort', filters.sort)
+  const keyword = next.get('q') ?? ''
+  const sort = effectiveSort(keyword, filters.sort)
+  if (sort !== effectiveSort(keyword, undefined)) next.set('sort', sort)
   for (const value of filters.attributes ?? []) next.append('attr', value)
   return next
 }
