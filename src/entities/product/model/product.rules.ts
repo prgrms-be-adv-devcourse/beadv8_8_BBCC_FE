@@ -35,6 +35,26 @@ export function canStopSale(product: { status: string }): boolean {
   return product.status === 'ON_SALE'
 }
 
+function isDelisted(product: { status: string }): boolean {
+  return product.status === 'DELISTED'
+}
+
+/** 판매자는 판매 시작 전 · 판매 중 · 판매 중지 어느 상태에서나 등록 취소할 수 있다 (되돌리지 못한다) */
+export function canDelist(product: { status: string }): boolean {
+  return !isDelisted(product)
+}
+
+/** 등록 취소한 상품은 상품 정보 · 재고를 바꿀 수 없다 (BE가 409) */
+export function canChangeProduct(product: { status: string }): boolean {
+  return !isDelisted(product)
+}
+
+/** 관리자가 넣은 상품 번호 (판매자 화면 표기 「#100」도 받는다). 1 이상의 정수가 아니면 null */
+export function productIdFromInput(input: string): string | null {
+  const match = /^#?([1-9]\d*)$/.exec(input.trim())
+  return match ? match[1] : null
+}
+
 /** 옵션 · 가격 · 실측은 판매 시작 전에만 고칠 수 있다 (그 밖에는 BE가 409) */
 export function canEditSaleInputs(product: { status: string }): boolean {
   return product.status === 'SALE_PENDING'

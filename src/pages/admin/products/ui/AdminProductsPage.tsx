@@ -1,12 +1,12 @@
 import { listItemMeta, ProductImage, useProductsQuery } from '@/entities/product'
-import { AdminStopSaleForm } from '@/features/manage-product'
+import { AdminRevertDelistForm, AdminStopSaleForm } from '@/features/manage-product'
 import { getErrorMessage } from '@/shared/api'
 import { formatWon } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
-/** 관리자: 판매 중인 상품 표, 줄마다 판매 중지 (기획서 8장 보완, BE #315) */
+/** 관리자: 판매 중인 상품 표, 줄마다 판매 중지 (기획서 8장 보완, BE #315). 아래에 상품 번호로 등록 취소 되돌리기 */
 export function AdminProductsPage() {
   const products = useProductsQuery()
   const items = products.data?.content ?? []
@@ -17,7 +17,7 @@ export function AdminProductsPage() {
         mockEndpoints={['GET /products']}
         title="상품 관리"
         description="판매 중인 상품을 보고, 정책을 어긴 상품은 판매를 중지해요."
-        note="PUT /admin/products/{id}/sale-status (STOPPED). 관리자가 중지한 상품은 판매자가 다시 판매할 수 없어요. 판매 중지 사유는 백엔드가 받지 않아요."
+        note="PUT /admin/products/{id}/sale-status (STOPPED), DELETE /admin/products/{id}/delisting(등록 취소 되돌리기 → STOPPED, 관리자 상품 목록 API가 없어 번호로 부른다). 관리자가 중지한 상품은 판매자가 다시 판매할 수 없어요. 판매 중지 사유는 백엔드가 받지 않아요."
       />
 
       <section aria-label="판매 중 상품" className="space-y-3">
@@ -84,6 +84,17 @@ export function AdminProductsPage() {
             </tbody>
           </table>
         )}
+      </section>
+
+      <section aria-label="등록 취소 되돌리기" className="border-rule space-y-3 border-t pt-6">
+        <div className="space-y-1">
+          <h2 className="text-section">등록 취소 되돌리기</h2>
+          <p className="text-ink-3 text-[13px]">
+            판매자가 등록 취소한 상품은 이 목록에 나오지 않아요. 상품 번호를 넣으면 판매 중지로
+            되돌려요. 다시 팔지는 판매자가 정해요.
+          </p>
+        </div>
+        <AdminRevertDelistForm />
       </section>
     </div>
   )

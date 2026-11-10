@@ -819,6 +819,34 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     expect((await call('PUT', `/seller/products/${productId}`, 2, stale)).status).toBe(409)
   })
 
+  it('등록 취소(판매자)는 판매 상태 응답 모양이고, 그 뒤 판매 상태 · 수정은 409, 관리자가 판매 중지로 되돌린다', async () => {
+    const { inputs, productId, read } = await registerAndRead()
+    await call('PUT', `/seller/products/${productId}/sale-status`, 2, { status: 'ON_SALE' })
+    const delisted = await call('PUT', `/seller/products/${productId}/delisting`, 2)
+    expect(delisted.status).toBe(200)
+    expectContract(delisted.data, saleStatusResultShape)
+    expect(delisted.data.status).toBe('DELISTED')
+    // 다시 보내도 그대로 200
+    expect((await call('PUT', `/seller/products/${productId}/delisting`, 2)).status).toBe(200)
+
+    const detail = toSellerProductDetail((await read()).data)
+    expect(detail.status).toBe('DELISTED')
+    const update = toProductUpdateRequest(inputs, toEditableProductForm(inputs, detail), detail)
+    expect((await call('PUT', `/seller/products/${productId}`, 2, update)).status).toBe(409)
+    const restart = { status: 'ON_SALE' }
+    expect(
+      (await call('PUT', `/seller/products/${productId}/sale-status`, 2, restart)).status,
+    ).toBe(409)
+
+    const reverted = await call('DELETE', `/admin/products/${productId}/delisting`, 3)
+    expect(reverted.status).toBe(200)
+    expectContract(reverted.data, saleStatusResultShape)
+    expect(reverted.data.status).toBe('STOPPED')
+    // 등록 취소한 상품이 아니면 409, 관리자만
+    expect((await call('DELETE', `/admin/products/${productId}/delisting`, 3)).status).toBe(409)
+    expect((await call('DELETE', `/admin/products/${productId}/delisting`, 2)).status).toBe(403)
+  })
+
   it('판매를 시작하면 옵션 · 가격 · 실측을 보내면 409, 셋 다 null이면 200', async () => {
     const { inputs, productId, read } = await registerAndRead()
     await call('PUT', `/seller/products/${productId}/sale-status`, 2, { status: 'ON_SALE' })

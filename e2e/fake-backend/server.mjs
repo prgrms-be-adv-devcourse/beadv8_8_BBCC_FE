@@ -8,7 +8,9 @@ import {
   listOf as productListOf,
   adjustInventory,
   adminChangeSaleStatus,
+  adminRevertDelist,
   changeSaleStatus,
+  delist,
   detailOf as productDetailOf,
   issueImageUploadUrls,
   register,
@@ -1141,6 +1143,12 @@ http
         ? send(res, 200, result.body)
         : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
     }
+    if ((x = r('PUT', /^\/seller\/products\/(\d+)\/delisting$/))) {
+      const result = delist(me, x[1])
+      return result.status === 200
+        ? send(res, 200, result.body)
+        : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
+    }
     if (r('GET', /^\/seller\/products$/)) return send(res, 200, page(sellerListOf(me)))
     if ((x = r('GET', /^\/seller\/products\/(\d+)$/))) {
       const detail = sellerDetailOf(me, x[1])
@@ -1158,6 +1166,14 @@ http
       if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 할 수 있습니다.', req.url)
       const result = adminChangeSaleStatus(x[1], body)
+      return result.status === 200
+        ? send(res, 200, result.body)
+        : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
+    }
+    if ((x = r('DELETE', /^\/admin\/products\/(\d+)\/delisting$/))) {
+      if (!isAdmin(u))
+        return problem(res, 403, '권한이 없습니다', '관리자만 할 수 있습니다.', req.url)
+      const result = adminRevertDelist(x[1])
       return result.status === 200
         ? send(res, 200, result.body)
         : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)

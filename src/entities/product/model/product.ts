@@ -1,4 +1,5 @@
-export type ProductStatus = 'SALE_PENDING' | 'ON_SALE' | 'STOPPED'
+/** 판매 시작 전 · 판매 중 · 판매 중지 · 등록 취소(판매자가 내림, 관리자만 판매 중지로 되돌림) */
+export type ProductStatus = 'SALE_PENDING' | 'ON_SALE' | 'STOPPED' | 'DELISTED'
 
 export type StockStatus = 'AVAILABLE' | 'LOW' | 'SOLD_OUT'
 
@@ -159,6 +160,7 @@ export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
   SALE_PENDING: '판매 시작 전',
   ON_SALE: '판매 중',
   STOPPED: '판매 중지',
+  DELISTED: '등록 취소',
 }
 
 /** 고를 수 있는 카테고리 (트리의 끝). path = "상위 > 하위" */
