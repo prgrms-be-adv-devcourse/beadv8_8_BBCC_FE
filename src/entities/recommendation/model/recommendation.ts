@@ -42,4 +42,6 @@ export type RecommendedProductsQuery = {
   categoryId?: string | null
   page?: number
   size?: number
+  /** 목록 기준 시각 (1쪽 응답의 asOf). 1쪽은 비운다 */
+  asOf?: string | null
 }

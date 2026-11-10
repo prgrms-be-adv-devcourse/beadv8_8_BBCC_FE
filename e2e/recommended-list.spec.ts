@@ -27,7 +27,10 @@ const item = (n: number) => ({
   recommendedSize: '120',
 })
 
-/** 맞춤 목록: 전체 25개, 상의(11)는 3개. 요청의 page · size로 자른다 */
+/** 1쪽 응답의 목록 기준 시각. 2쪽부터는 이 값을 그대로 받아야 한다 */
+const AS_OF = '2026-11-11T10:20:30'
+
+/** 맞춤 목록: 전체 25개, 상의(11)는 3개. 요청의 page · size로 자르고, 받은 asOf(없으면 AS_OF)를 돌려준다 */
 async function fulfillRecommended(route: Route) {
   const url = new URL(route.request().url())
   const categoryId = url.searchParams.get('categoryId')
@@ -42,6 +45,7 @@ async function fulfillRecommended(route: Route) {
       totalElements: all.length,
       totalPages: Math.ceil(all.length / size),
       hasNext: (page + 1) * size < all.length,
+      asOf: url.searchParams.get('asOf') ?? AS_OF,
     },
   })
 }
@@ -74,21 +78,29 @@ test('홈 맞춤 영역 4개 → 더보기 → 맞춤 목록 탭 · 더 보기',
   await expect(page.getByRole('heading', { name: /하윤에게 맞는 옷/ })).toBeVisible()
   await expect(page.getByText('키 118cm · 체형 보통 · 핏 여유')).toBeVisible()
 
-  // 처음 20개 → 「더 보기」로 21 ~ 25를 이어 붙이고, 더 없으면 버튼이 사라진다
+  // 처음 20개 → 「더 보기」로 21 ~ 25를 이어 붙이고, 더 없으면 버튼이 사라진다.
+  // 2쪽은 1쪽 응답의 asOf를 그대로 보낸다 (같은 기준 시각이어야 쪽 사이 순서가 지켜진다)
   const names = page.getByText(/^맞춤 상품 \d+$/)
   await expect(names).toHaveCount(20)
+  const secondPage = page.waitForRequest(
+    (request) =>
+      request.url().includes('/recommendations/products') &&
+      new URL(request.url()).searchParams.get('page') === '1',
+  )
   await page.getByRole('button', { name: '더 보기' }).click()
+  expect(new URL((await secondPage).url()).searchParams.get('asOf')).toBe(AS_OF)
   await expect(names).toHaveCount(25)
   await expect(page.getByRole('button', { name: '더 보기' })).toHaveCount(0)
 
   // 상의 탭: categoryId=11로 다시 부른다
+  // 탭을 바꾸면 처음부터 다시 보므로 asOf 없이 1쪽을 부른다
   const requested = page.waitForRequest(
     (request) =>
       request.url().includes('/recommendations/products') &&
       new URL(request.url()).searchParams.get('categoryId') === '11',
   )
   await page.getByRole('tab', { name: '상의' }).click()
-  await requested
+  expect(new URL((await requested).url()).searchParams.get('asOf')).toBeNull()
   await expect(page.getByRole('tab', { name: '상의' })).toHaveAttribute('aria-selected', 'true')
   await expect(names).toHaveCount(3)
 })

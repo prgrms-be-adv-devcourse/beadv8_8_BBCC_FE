@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { nextPageOf } from '@/shared/api'
 import { recommendationApi } from '../api/recommendation-api'
 import type { RecommendedProductsQuery } from './recommendation'
+import { nextRecommendedPageOf, type RecommendedPageParam } from './recommended-page.rules'
 import {
   toRecommendedProduct,
   toRecommendedProductsParams,
@@ -43,7 +43,12 @@ export function useRecommendedProductsQuery(
   })
 }
 
-/** 맞춤 목록 화면: 「더 보기」로 다음 페이지를 이어 붙인다 (신상품순 고정) */
+const FIRST_PAGE: RecommendedPageParam = { page: 0 }
+
+/**
+ * 맞춤 목록 화면: 「더 보기」로 다음 페이지를 이어 붙인다 (선호 점수순).
+ * 1쪽은 asOf 없이 부르고, 2쪽부터 1쪽 응답의 asOf를 넘긴다. 자녀 · 카테고리가 바뀌면 키가 바뀌어 1쪽부터 다시 부른다
+ */
 export function useRecommendedProductsInfiniteQuery(
   childId: string,
   categoryId: string | null,
@@ -54,10 +59,10 @@ export function useRecommendedProductsInfiniteQuery(
     queryFn: ({ pageParam }) =>
       recommendationApi.getProducts(
         childId,
-        toRecommendedProductsParams({ categoryId, page: pageParam, size }),
+        toRecommendedProductsParams({ categoryId, ...pageParam, size }),
       ),
-    initialPageParam: 0,
-    getNextPageParam: nextPageOf,
+    initialPageParam: FIRST_PAGE,
+    getNextPageParam: nextRecommendedPageOf,
     select: (data) => ({
       products: data.pages.flatMap((page) => page.content.map(toRecommendedProduct)),
       totalElements: data.pages[0]?.totalElements ?? 0,

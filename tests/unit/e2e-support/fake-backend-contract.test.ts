@@ -47,6 +47,7 @@ import {
   sellerApplicationShape,
   sellerShape,
 } from '@/entities/seller/api/seller.shape'
+import { recommendedProductPageShape } from '@/entities/recommendation/api/recommendation.shape'
 import { memberShape, tokenShape } from '@/entities/session/api/session.shape'
 import {
   chargeCancelShape,
@@ -1329,6 +1330,26 @@ it.each([
   )
   expect(viewed.status).toBe(status)
   expect(viewed.data.detail).toBe(detail)
+})
+
+it('맞춤 목록: 1쪽 응답의 기준 시각 asOf를 2쪽에 넘기면 그대로 돌려주고, 지금보다 늦으면 400 (BE #1151)', async () => {
+  const child = await call('POST', '/children', 1, {
+    ...toChildRequest(DEMO_CHILD),
+    requiredConsent: true,
+    optionalConsent: true,
+  })
+  const path = `/recommendations/products?childId=${child.data.id}&size=1`
+  const first = await call('GET', path, 1)
+  expect(first.status).toBe(200)
+  expectContract(first.data, recommendedProductPageShape)
+
+  const second = await call('GET', `${path}&page=1&asOf=${first.data.asOf}`, 1)
+  expect(second.status).toBe(200)
+  expect(second.data.asOf).toBe(first.data.asOf)
+
+  const future = await call('GET', `${path}&page=1&asOf=2999-01-01T00:00:00`, 1)
+  expect(future.status).toBe(400)
+  expect(future.data.title).toBe('잘못된 기준 시각입니다')
 })
 
 it('검색: 관련도순 목록은 목록 응답 모양이고, 결과 클릭 기록은 로그인 회원만 204 (BE SearchClickRequest)', async () => {

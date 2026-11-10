@@ -1,5 +1,7 @@
 // 사이즈 추천(BE #262) · 자녀 맞춤 목록(BE #316) 모두 실제 API. 값 이름은 백엔드 recommend 도메인(Fit · SizeNotice)을 따른다
 
+import type { Page } from '@/shared/api'
+
 /** GET /recommendations/size?productId=&childId= */
 export type SizeRecommendationDto = {
   productId: string
@@ -33,4 +35,9 @@ export type RecommendedProductsParamsDto = {
   categoryId?: string
   page: number
   size: number
+  /** 2쪽부터 1쪽 응답의 asOf를 그대로 보낸다. 지금보다 늦거나 형식이 틀리면 400 */
+  asOf?: string
 }
+
+/** GET /recommendations/products 응답: 공통 목록 응답 + 목록 기준 시각 (한국 시간 LocalDateTime, 초 단위) */
+export type RecommendedProductPageDto = Page<RecommendedProductDto> & { asOf: string }
