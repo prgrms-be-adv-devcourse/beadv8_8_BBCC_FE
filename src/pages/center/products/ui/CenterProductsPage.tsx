@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import {
+  canDelist,
   canStartSale,
   canStopSale,
   filterSellerProducts,
@@ -12,7 +13,7 @@ import {
   type SellerProduct,
   type StockLevel,
 } from '@/entities/product'
-import { StopSaleButton } from '@/features/manage-product'
+import { DelistButton, StopSaleButton } from '@/features/manage-product'
 import { StartSaleButton } from '@/features/register-product'
 import { getErrorMessage } from '@/shared/api'
 import { sellerPathsOf } from '@/shared/config'
@@ -180,9 +181,10 @@ function SellerProductRow({ product, detailHref }: SellerProductRowProps) {
         {product.minPrice !== null ? `${formatWon(product.minPrice)}부터` : '–'}
       </td>
       <td className="py-3 text-right align-middle max-lg:col-start-2 max-lg:p-0 max-lg:pt-1.5 max-lg:text-left">
-        <span className="inline-flex">
+        <span className="inline-flex flex-wrap gap-2">
           {canStopSale(product) && <StopSaleButton productId={product.id} />}
           {canStartSale(product) && <StartSaleButton productId={product.id} />}
+          {canDelist(product) && <DelistButton productId={product.id} />}
         </span>
       </td>
     </tr>

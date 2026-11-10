@@ -133,6 +133,33 @@ const FLOWS: { method: string; pattern: RegExp; steps: FlowStep[] }[] = [
     ],
   },
   {
+    method: 'PUT',
+    pattern: /^\/seller\/products\/[^/]+\/delisting$/,
+    steps: [
+      {
+        name: 'product.changed',
+        from: 'product',
+        to: ['recommend', 'order'],
+        description:
+          '등록 취소: 추천 · 주문 복사본이 팔 수 없는 상품으로 바뀐다 (이미 등록 취소면 보내지 않음)',
+        kind: 'event',
+      },
+    ],
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/admin\/products\/[^/]+\/delisting$/,
+    steps: [
+      {
+        name: 'product.changed',
+        from: 'product',
+        to: ['recommend', 'order'],
+        description: '등록 취소 되돌리기: 판매 중지로 바뀐 상태를 추천 · 주문 복사본에 알린다',
+        kind: 'event',
+      },
+    ],
+  },
+  {
     method: 'POST',
     pattern: /^\/wallets\/me\/charges\/confirm$/,
     steps: [

@@ -89,6 +89,19 @@ export const productApi = {
         request,
       )
       .then(expectShape(inventoryAdjustmentResultShape)),
+  /**
+   * 판매자 등록 취소 (본문 없음). 판매 시작 전 · 판매 중 · 판매 중지 어느 상태에서나 되고, 이미 등록 취소했으면 그대로 200.
+   * 판매자는 되돌릴 수 없고, 그 뒤 판매 상태 · 상품 정보 · 재고를 바꾸면 409
+   */
+  delist: (productId: string) =>
+    apiClient
+      .put<SaleStatusResultDto>(`/seller/products/${productId}/delisting`)
+      .then(expectShape(saleStatusResultShape)),
+  /** 관리자: 등록 취소한 상품을 판매 중지로 되돌린다 (다시 팔지는 판매자가 정한다). 등록 취소한 상품이 아니면 409 */
+  adminRevertDelist: (productId: string) =>
+    apiClient
+      .delete<SaleStatusResultDto>(`/admin/products/${productId}/delisting`)
+      .then(expectShape(saleStatusResultShape)),
   /** 관리자: 정책 위반 상품 판매 중지 (BE #315, 사유는 받지 않음). 판매자는 다시 판매할 수 없다 */
   adminStopSale: (productId: string) =>
     apiClient

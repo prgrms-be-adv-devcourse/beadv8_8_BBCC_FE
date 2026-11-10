@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import {
+  canChangeProduct,
+  canDelist,
   canStartSale,
   canStopSale,
   isOnSale,
@@ -11,7 +13,12 @@ import {
   type SellerProductDetail,
   type StockLevel,
 } from '@/entities/product'
-import { AdjustStockForm, EditProductForm, StopSaleButton } from '@/features/manage-product'
+import {
+  AdjustStockForm,
+  DelistButton,
+  EditProductForm,
+  StopSaleButton,
+} from '@/features/manage-product'
 import { StartSaleButton } from '@/features/register-product'
 import { ProductImageUploader } from '@/features/upload-product-image'
 import { getErrorMessage, getErrorStatus } from '@/shared/api'
@@ -53,7 +60,7 @@ export function CenterProductDetailPage() {
         title={detail?.name ?? '상품 상세'}
         step="②"
         description="옵션별 재고를 조정하고, 상품 정보를 수정해요."
-        note="상품 하나 · 수정 · 재고 조정 · 판매 시작 · 판매 중지는 모두 실제 API예요. 수정은 등록과 같은 값을 모두 보내는 PUT이고, 읽어 간 version이 다르면 409예요. 옵션 · 판매가 · 실측은 판매 시작 전에만 바꿀 수 있고, 재고는 재고 조정으로 바꿔요. 사진은 브라우저에서 긴 변 2000px JPG로 줄인 뒤, 업로드 주소를 발급받아 S3에 바로 올리고 그 주소를 수정 요청에 담아요."
+        note="상품 하나 · 수정 · 재고 조정 · 판매 시작 · 판매 중지 · 등록 취소(PUT /seller/products/{id}/delisting)는 모두 실제 API예요. 등록 취소한 상품은 판매 상태 · 정보 · 재고를 바꾸면 409라 그 버튼을 숨겨요. 수정은 등록과 같은 값을 모두 보내는 PUT이고, 읽어 간 version이 다르면 409예요. 옵션 · 판매가 · 실측은 판매 시작 전에만 바꿀 수 있고, 재고는 재고 조정으로 바꿔요. 사진은 브라우저에서 긴 변 2000px JPG로 줄인 뒤, 업로드 주소를 발급받아 S3에 바로 올리고 그 주소를 수정 요청에 담아요."
       />
 
       {product.isPending && <StateMessage>상품을 불러오는 중…</StateMessage>}
@@ -103,9 +110,16 @@ export function CenterProductDetailPage() {
             <div className="border-rule flex flex-wrap items-center gap-2 border-t px-5 py-4">
               {canStopSale(detail) && <StopSaleButton productId={detail.id} />}
               {canStartSale(detail) && <StartSaleButton productId={detail.id} />}
-              <Button variant="outline" className="max-lg:h-11" onClick={() => setIsEditing(true)}>
-                수정
-              </Button>
+              {canChangeProduct(detail) && (
+                <Button
+                  variant="outline"
+                  className="max-lg:h-11"
+                  onClick={() => setIsEditing(true)}
+                >
+                  수정
+                </Button>
+              )}
+              {canDelist(detail) && <DelistButton productId={detail.id} />}
               {isOnSale(detail) && (
                 <Link
                   to={buyerHref(detail.id)}
@@ -127,7 +141,10 @@ export function CenterProductDetailPage() {
             {detail.options.length === 0 ? (
               <StateMessage>옵션이 없어요.</StateMessage>
             ) : (
-              <OptionStockTable options={detail.options} />
+              <OptionStockTable
+                options={detail.options}
+                canAdjustStock={canChangeProduct(detail)}
+              />
             )}
           </section>
         </>
@@ -136,10 +153,14 @@ export function CenterProductDetailPage() {
   )
 }
 
-type OptionStockTableProps = { options: SellerProductDetail['options'] }
+type OptionStockTableProps = {
+  options: SellerProductDetail['options']
+  /** 등록 취소한 상품은 재고를 바꿀 수 없다 */
+  canAdjustStock: boolean
+}
 
 /** 옵션 표: 옵션 이름 · 판매가 · 재고 · 꼬리표 · 재고 조정. 휴대폰은 라벨 붙은 묶음으로 다시 쌓는다 */
-function OptionStockTable({ options }: OptionStockTableProps) {
+function OptionStockTable({ options, canAdjustStock }: OptionStockTableProps) {
   return (
     <table aria-label="옵션별 재고" className="w-full text-sm max-lg:block">
       <thead className="max-lg:sr-only">
@@ -186,7 +207,7 @@ function OptionStockTable({ options }: OptionStockTableProps) {
               <StockTag stock={option.stock} />
             </td>
             <td className="py-3 text-right align-middle max-lg:col-span-3 max-lg:p-0 max-lg:text-left">
-              <AdjustStockForm option={option} />
+              {canAdjustStock && <AdjustStockForm option={option} />}
             </td>
           </tr>
         ))}

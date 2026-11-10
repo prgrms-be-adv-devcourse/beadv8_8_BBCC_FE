@@ -69,3 +69,22 @@ export function useAdminStopSale(productId: string) {
     onSuccess,
   })
 }
+
+/** 판매자 등록 취소 → product.changed (목록 · 추천에서 빠지고 살 수 없다). 판매자는 되돌릴 수 없다 */
+export function useDelist(productId: string) {
+  const onSuccess = useInvalidateProducts('상품을 등록 취소했어요')
+  return useMutation({
+    mutationFn: () => runWithAction('등록 취소', () => productApi.delist(productId)),
+    onSuccess,
+  })
+}
+
+/** 관리자: 등록 취소한 상품을 판매 중지로 되돌린다 (상품 번호를 넣어 부른다. 등록 취소한 상품이 아니면 409) */
+export function useAdminRevertDelist() {
+  const onSuccess = useInvalidateProducts('등록 취소를 되돌렸어요')
+  return useMutation({
+    mutationFn: (productId: string) =>
+      runWithAction('등록 취소 되돌리기', () => productApi.adminRevertDelist(productId)),
+    onSuccess,
+  })
+}

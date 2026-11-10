@@ -1,6 +1,6 @@
 import { arr, bool, nullable, num, obj, oneOf, pageOf, recordOf, str } from '@/shared/api'
 
-const STATUS = oneOf(['SALE_PENDING', 'ON_SALE', 'STOPPED'])
+const STATUS = oneOf(['SALE_PENDING', 'ON_SALE', 'STOPPED', 'DELISTED'])
 const value = obj({ valueId: str, value: str, colorCode: nullable(str) })
 const measurementItem = obj({ code: str, name: str, unit: str })
 

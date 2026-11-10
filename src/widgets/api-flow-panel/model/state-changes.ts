@@ -98,7 +98,10 @@ function observe(log: ApiCallLog): Observation[] {
       value: String(item.status),
     }))
   }
-  const saleStatus = /^\/seller\/products\/([^/]+)\/sale-status$/.exec(path)
+  // 판매 시작 · 중지, 등록 취소(판매자), 등록 취소 되돌리기(관리자) 응답은 모두 상품 판매 상태
+  const saleStatus =
+    /^\/seller\/products\/([^/]+)\/(sale-status|delisting)$/.exec(path) ??
+    /^\/admin\/products\/([^/]+)\/delisting$/.exec(path)
   if (saleStatus && typeof body.status === 'string') {
     return [{ resource: `상품 #${saleStatus[1]}`, value: body.status }]
   }

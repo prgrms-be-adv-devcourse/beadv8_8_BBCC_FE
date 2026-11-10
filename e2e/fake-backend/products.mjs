@@ -421,6 +421,7 @@ function buildSaleInputs(body) {
 export function updateProduct(sellerId, productId, body) {
   const p = products[productId]
   if (!p || p.sellerId !== sellerId) return { status: 404, detail: '상품을 찾을 수 없습니다.' }
+  if (p.status === 'DELISTED') return DELISTED_CONFLICT
   if (body.version !== p.version)
     return { status: 409, detail: '다른 곳에서 먼저 고쳤습니다. 다시 불러와 주세요.' }
   if (!body.name?.trim()) return { status: 400, detail: '상품명을 입력해 주세요.' }
@@ -451,8 +452,16 @@ export function updateProduct(sellerId, productId, body) {
 
 const saleStatusBody = (p) => ({ productId: p.productId, status: p.status, version: p.version })
 
+// 등록 취소(DELISTED)한 상품은 판매 상태 · 상품 정보 · 재고를 바꾸면 409 (BE PRODUCT_DELISTED)
+const DELISTED_CONFLICT = {
+  status: 409,
+  detail:
+    '등록 취소한 상품은 판매 상태 · 상품 정보 · 재고를 바꿀 수 없습니다. 다시 팔려면 상품을 새로 등록해 주세요.',
+}
+
 /** 판매 시작(ON_SALE) · 중지(STOPPED) 공통 (BE #315). 같은 상태면 그대로 200 */
 function applySaleStatus(p, status, byAdmin) {
+  if (p.status === 'DELISTED') return DELISTED_CONFLICT
   if (status !== 'ON_SALE' && status !== 'STOPPED')
     return {
       status: 400,
@@ -489,6 +498,29 @@ export function adminChangeSaleStatus(productId, body) {
   const p = products[productId]
   if (!p) return { status: 404, detail: '상품을 찾을 수 없습니다.' }
   return applySaleStatus(p, body?.status, true)
+}
+
+/** PUT /seller/products/{id}/delisting: 어느 상태에서나 등록 취소, 이미 등록 취소면 그대로 200 */
+export function delist(sellerId, productId) {
+  const p = products[productId]
+  if (!p) return { status: 404, detail: '상품을 찾을 수 없습니다.' }
+  if (p.sellerId !== sellerId) return { status: 403, detail: '내 상품만 등록 취소할 수 있습니다.' }
+  if (p.status !== 'DELISTED') {
+    p.status = 'DELISTED'
+    p.version += 1
+  }
+  return { status: 200, body: saleStatusBody(p) }
+}
+
+/** DELETE /admin/products/{id}/delisting: 등록 취소한 상품만 판매 중지로 되돌린다 (관리자 중지 표시는 그대로) */
+export function adminRevertDelist(productId) {
+  const p = products[productId]
+  if (!p) return { status: 404, detail: '상품을 찾을 수 없습니다.' }
+  if (p.status !== 'DELISTED')
+    return { status: 409, detail: '등록 취소한 상품만 되돌릴 수 있습니다.' }
+  p.status = 'STOPPED'
+  p.version += 1
+  return { status: 200, body: saleStatusBody(p) }
 }
 
 const createdAtOf = (p) =>
@@ -563,6 +595,7 @@ export function adjustInventory(sellerId, optionId, body) {
     item.options.some((o) => String(o.optionId) === String(optionId)),
   )
   if (!p || p.sellerId !== sellerId) return { status: 404, detail: '옵션을 찾을 수 없습니다.' }
+  if (p.status === 'DELISTED') return DELISTED_CONFLICT
   const option = p.options.find((o) => String(o.optionId) === String(optionId))
   const delta = body?.deltaQuantity
   const reason = body?.reason

@@ -54,6 +54,9 @@ export {
 } from './model/product-edit.mapper'
 export {
   canEditSaleInputs,
+  canChangeProduct,
+  canDelist,
+  productIdFromInput,
   canStartSale,
   detailImagesOf,
   galleryIndexOf,
