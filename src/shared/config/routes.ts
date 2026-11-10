@@ -25,6 +25,8 @@ export function areaOf(pathname: string): Area {
 
 const C = '/console'
 const RECOMMENDED = '/recommended'
+/** 자녀 프로필 안 기준 옷 칸의 id (주소 #) */
+export const REFERENCE_GARMENTS = 'reference-garments'
 
 export const paths = {
   login: '/login',
@@ -52,6 +54,8 @@ export const paths = {
     /** 자녀 등록 (목록과 따로) */
     childNew: '/my/children/new',
     child: (id: string) => `/my/children/${id}`,
+    /** 자녀 프로필의 기준 옷 칸 */
+    childReferenceGarments: (id: string) => `/my/children/${id}#${REFERENCE_GARMENTS}`,
     childWishes: (id: string) => `/my/children/${id}/wishes`,
     childWish: (id: string, requestId: string) => `/my/children/${id}/wishes/${requestId}`,
     profile: '/my/profile',
@@ -116,6 +120,7 @@ export const paths = {
     children: `${C}/children`,
     childNew: `${C}/children/new`,
     child: (id: string) => `${C}/children/${id}`,
+    childReferenceGarments: (id: string) => `${C}/children/${id}#${REFERENCE_GARMENTS}`,
     childWishes: (id: string) => `${C}/children/${id}/wishes`,
     childWish: (id: string, requestId: string) => `${C}/children/${id}/wishes/${requestId}`,
     profile: `${C}/profile`,
@@ -205,6 +210,7 @@ export function memberPathsOf(area: Area) {
     children: base.children,
     childNew: base.childNew,
     child: base.child,
+    childReferenceGarments: base.childReferenceGarments,
     childWishes: base.childWishes,
     childWish: base.childWish,
     addresses: base.addresses,

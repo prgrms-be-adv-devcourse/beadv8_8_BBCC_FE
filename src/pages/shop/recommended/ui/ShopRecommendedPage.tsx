@@ -58,6 +58,12 @@ export function ShopRecommendedPage() {
           <p className="text-ink-3 text-[13px]">
             키에 맞는 사이즈가 판매 중인 상품만, 새로 나온 순서로 보여 드려요.
           </p>
+          <Link
+            to={paths.shop.childReferenceGarments(childId)}
+            className="text-signal inline-flex min-h-10 items-center text-[13px] font-semibold hover:underline"
+          >
+            잘 맞는 옷(기준 옷) 적기
+          </Link>
         </div>
         {child.data && (
           <SizeRulerBar ruler={sizeRulerOf(child.data.heightCm)} name={child.data.name} />

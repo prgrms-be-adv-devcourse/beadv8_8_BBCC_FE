@@ -18,4 +18,5 @@ export {
   shopNeedsLogin,
   walletPathsOf,
   type Area,
+  REFERENCE_GARMENTS,
 } from './routes'
