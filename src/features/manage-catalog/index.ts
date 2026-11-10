@@ -3,6 +3,7 @@ export { CreateAttributeForm } from './ui/CreateAttributeForm'
 export { CreateCategoryForm } from './ui/CreateCategoryForm'
 export { CreateMeasurementItemForm } from './ui/CreateMeasurementItemForm'
 export { CreateProductTypeForm } from './ui/CreateProductTypeForm'
+export { DeleteCatalogButton } from './ui/DeleteCatalogButton'
 export { EditCategoryForm } from './ui/EditCategoryForm'
 export { EditProductTypeForm } from './ui/EditProductTypeForm'
 export {

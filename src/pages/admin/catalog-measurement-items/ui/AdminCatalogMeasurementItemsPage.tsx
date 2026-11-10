@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { useMeasurementItemsQuery } from '@/entities/catalog'
+import { DeleteCatalogButton } from '@/features/manage-catalog'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
@@ -15,7 +16,7 @@ export function AdminCatalogMeasurementItemsPage() {
       <PageHeader
         title="실측 항목"
         description="판매자가 사이즈마다 재서 적는 길이(총장 · 가슴단면 등)예요. 말단 카테고리를 만들 때 필수 실측 항목으로 골라요."
-        note="GET · POST /admin/measurement-items. 코드는 실측 값의 키라 대문자와 _만 받고, 겹치면 409"
+        note="GET · POST /admin/measurement-items, DELETE /admin/measurement-items/{id}(카테고리가 쓰면 409). 코드는 실측 값의 키라 대문자와 _만 받고, 겹치면 409"
         actions={
           <Link
             to={paths.admin.measurementItemNew}
@@ -48,8 +49,11 @@ export function AdminCatalogMeasurementItemsPage() {
                 <th scope="col" className="py-2 pr-4 font-medium">
                   코드
                 </th>
-                <th scope="col" className="py-2 text-right font-medium">
+                <th scope="col" className="py-2 pr-4 text-right font-medium">
                   단위
+                </th>
+                <th scope="col" className="py-2 font-medium">
+                  <span className="sr-only">관리</span>
                 </th>
               </tr>
             </thead>
@@ -60,7 +64,13 @@ export function AdminCatalogMeasurementItemsPage() {
                   <td className="figure text-ink-2 py-3 pr-4 align-middle break-all">
                     {item.code}
                   </td>
-                  <td className="text-ink-2 py-3 text-right align-middle">{item.unit}</td>
+                  <td className="text-ink-2 py-3 pr-4 text-right align-middle">{item.unit}</td>
+                  <td className="py-3 text-right align-middle">
+                    <DeleteCatalogButton
+                      target={{ kind: 'measurementItem', id: item.id }}
+                      name={item.name}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>

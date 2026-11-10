@@ -1,6 +1,6 @@
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { ATTRIBUTE_INPUT_TYPE_LABEL, hasValueList, useAttributesQuery } from '@/entities/catalog'
-import { AddAttributeValueForm } from '@/features/manage-catalog'
+import { AddAttributeValueForm, DeleteCatalogButton } from '@/features/manage-catalog'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
@@ -10,6 +10,7 @@ import { StateMessage } from '@/shared/ui/StateMessage'
 /** 항목 상세: 코드 · 입력 방식 → 목록 값과 「값 더하기」 (목록 값이 있는 항목만) */
 export function AdminCatalogAttributeDetailPage() {
   const { attributeId = '' } = useParams()
+  const navigate = useNavigate()
   // 항목 하나 API가 없어 목록에서 찾는다
   const attributes = useAttributesQuery()
   const attribute = attributes.data?.find((item) => item.id === attributeId)
@@ -34,8 +35,17 @@ export function AdminCatalogAttributeDetailPage() {
       </Link>
       <PageHeader
         title={attribute?.name ?? '항목'}
-        description="이미 만든 코드와 값은 바꾸거나 지울 수 없어요. 목록 값은 더할 수 있어요."
-        note="GET /admin/attributes에서 찾고, POST /admin/attributes/{id}/values로 값을 더한다. 같은 이름이면 409"
+        description="이미 만든 코드와 값의 이름은 바꿀 수 없어요. 목록 값을 더하거나 지울 수 있고, 상품 유형에 연결하지 않은 항목은 지울 수 있어요."
+        note="GET /admin/attributes에서 찾고, POST /admin/attributes/{id}/values로 값을 더한다(같은 이름이면 409). DELETE /admin/attributes/{id}는 유형에 연결됐으면 409, 목록 값 DELETE는 막지 않는다"
+        actions={
+          attribute && (
+            <DeleteCatalogButton
+              target={{ kind: 'attribute', id: attribute.id }}
+              name={attribute.name}
+              onDeleted={() => navigate(paths.admin.attributes, { replace: true })}
+            />
+          )
+        }
       />
       {attributes.isPending && <ListSkeleton rows={2} />}
       {attributes.isError && (
@@ -78,10 +88,18 @@ export function AdminCatalogAttributeDetailPage() {
                       )}
                       <span className="font-semibold">{value.name}</span>
                       {value.colorCode && (
-                        <span className="figure text-ink-3 ml-auto text-[13px]">
-                          {value.colorCode}
-                        </span>
+                        <span className="figure text-ink-3 text-[13px]">{value.colorCode}</span>
                       )}
+                      <span className="ml-auto">
+                        <DeleteCatalogButton
+                          target={{
+                            kind: 'attributeValue',
+                            attributeId: attribute.id,
+                            id: value.id,
+                          }}
+                          name={value.name}
+                        />
+                      </span>
                     </li>
                   ))}
                 </ul>
