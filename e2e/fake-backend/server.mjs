@@ -21,6 +21,7 @@ import {
   updateProduct,
 } from './products.mjs'
 import { catalogRoute } from './catalog.mjs'
+import { referenceGarmentRoute } from './reference-garments.mjs'
 import { memberReviewRoute, publicReviewRoute } from './reviews.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
@@ -1038,6 +1039,18 @@ http
       }
       settlementRuns.push(run)
       return send(res, 201, run)
+    }
+    // 추천 기준 옷 (reference-garments.mjs): 남의 자녀는 403, 없거나 지운 자녀는 404
+    const garment = referenceGarmentRoute(m, p, body, (childId) => {
+      const c = children.find((c) => c.id === +childId && !c.deleted)
+      if (!c) return 'missing'
+      return c.memberId === me ? 'ok' : 'forbidden'
+    })
+    if (garment) {
+      const result = garment()
+      return result.title
+        ? problem(res, result.status, result.title, result.detail, req.url)
+        : send(res, result.status, result.body)
     }
     // 상세 진입 기록 (BE #1112): 추천이 회원 활동으로 센다. 기록은 흉내 내지 않고 상품 · 자녀만 검사한다
     if (r('POST', /^\/recommendations\/product-views$/)) {

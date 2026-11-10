@@ -1,6 +1,7 @@
 export { recommendationApi } from './api/recommendation-api'
 /** 목 응답 작성 전용 (app/mocks) */
 export type { RecommendedProductDto, SizeRecommendationDto } from './api/recommendation.dto'
+export type { ReferenceGarmentDto, ReferenceGarmentRequestDto } from './api/reference-garment.dto'
 export {
   type Fit,
   type RecommendedProduct,
@@ -16,11 +17,36 @@ export {
   toSizeRecommendation,
 } from './model/recommendation.mapper'
 export {
+  recommendationKeys,
   useRecommendedProductsInfiniteQuery,
   useRecommendedProductsQuery,
+  useReferenceGarmentsQuery,
   useSizeRecommendationQuery,
 } from './model/queries'
 export { sizeScaleOf, type SizeScale } from './model/size-scale.rules'
 export { FIT_LABEL } from './model/recommendation'
 export { FitBadge } from './ui/FitBadge'
 export { SizeRecommendationSummary } from './ui/SizeRecommendationSummary'
+export {
+  GARMENT_PART_SPEC,
+  GARMENT_PARTS,
+  MEASUREMENT_LABEL,
+  type GarmentPart,
+  type ReferenceGarment,
+  type ReferenceGarmentForm,
+  type ReferenceGarmentMeasurement,
+} from './model/reference-garment'
+export {
+  toReferenceGarment,
+  toReferenceGarmentForm,
+  toReferenceGarmentFromPurchase,
+  type PurchasedGarment,
+  toReferenceGarmentRequest,
+} from './model/reference-garment.mapper'
+export {
+  categoriesForPart,
+  garmentPartOf,
+  isValidMeasurementText,
+  measurementCodesOf,
+  validateReferenceGarmentForm,
+} from './model/reference-garment.rules'

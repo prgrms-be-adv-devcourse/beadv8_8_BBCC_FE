@@ -7,6 +7,7 @@ import {
   toOrder,
   toPlaceOrderRequest,
   type OrderItem,
+  canUseAsReferenceGarment,
 } from '@/entities/order'
 
 const dto = {
@@ -159,5 +160,32 @@ describe('주문 규칙', () => {
       label: '주문 취소',
       note: '구매할 수 없는 상품이 있어 주문이 취소됐어요.',
     })
+  })
+})
+
+describe('주문상품을 기준 옷으로', () => {
+  const child = { id: '1', name: '테스트', heightCm: 115, weightKg: 20 }
+  it.each([
+    [
+      { status: 'CONFIRMED' as const, deliveredAt: '2026-11-01T10:00:00', child, size: '110' },
+      true,
+    ],
+    [{ status: 'ORDERED' as const, deliveredAt: '2026-11-01T10:00:00', child, size: '110' }, true],
+    [{ status: 'ORDERED' as const, deliveredAt: null, child, size: '110' }, false],
+    [
+      {
+        status: 'CONFIRMED' as const,
+        deliveredAt: '2026-11-01T10:00:00',
+        child: null,
+        size: '110',
+      },
+      false,
+    ],
+    [
+      { status: 'CONFIRMED' as const, deliveredAt: '2026-11-01T10:00:00', child, size: null },
+      false,
+    ],
+  ])('받은 옷이고 자녀 · 사이즈가 있어야 한다 (%#)', (patch, expected) => {
+    expect(canUseAsReferenceGarment(item(patch))).toBe(expected)
   })
 })

@@ -7,8 +7,12 @@ import {
   toRecommendedProductsParams,
   toSizeRecommendation,
 } from './recommendation.mapper'
+import { toReferenceGarment } from './reference-garment.mapper'
 
-const recommendationKeys = {
+export const recommendationKeys = {
+  all: ['recommendation'] as const,
+  referenceGarments: (childId: string) =>
+    ['recommendation', 'reference-garments', childId] as const,
   size: (productId: string, childId: string) =>
     ['recommendation', 'size', productId, childId] as const,
   products: (childId: string, query: RecommendedProductsQuery) =>
@@ -58,5 +62,14 @@ export function useRecommendedProductsInfiniteQuery(
       products: data.pages.flatMap((page) => page.content.map(toRecommendedProduct)),
       totalElements: data.pages[0]?.totalElements ?? 0,
     }),
+  })
+}
+
+/** 자녀의 기준 옷 (상의 → 하의) */
+export function useReferenceGarmentsQuery(childId: string) {
+  return useQuery({
+    queryKey: recommendationKeys.referenceGarments(childId),
+    queryFn: () => recommendationApi.referenceGarments(childId),
+    select: (list) => list.map(toReferenceGarment),
   })
 }
