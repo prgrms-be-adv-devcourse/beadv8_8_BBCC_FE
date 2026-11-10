@@ -17,8 +17,9 @@ import { memberPathsOf } from '@/shared/config'
 import { useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { ReferenceGarmentSection } from './ReferenceGarmentSection'
 
-/** 자녀 상세 · 수정 · 삭제 · 성장 이력 */
+/** 자녀 상세 · 수정 · 삭제 · 기준 옷 · 성장 이력 */
 export function ShopChildDetailPage() {
   const { childId = '' } = useParams()
   const navigate = useNavigate()
@@ -89,6 +90,7 @@ export function ShopChildDetailPage() {
           {accounts.isError && (
             <StateMessage tone="error">{getErrorMessage(accounts.error)}</StateMessage>
           )}
+          <ReferenceGarmentSection childId={childId} />
           <section
             aria-label="성장 이력"
             className="border-rule space-y-4 rounded-lg border p-4 md:p-5"
