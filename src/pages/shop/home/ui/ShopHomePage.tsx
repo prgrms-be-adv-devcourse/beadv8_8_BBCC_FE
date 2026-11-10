@@ -42,7 +42,16 @@ export function ShopHomePage() {
   const [params, setParams] = useSearchParams()
   const keyword = params.get('q') ?? ''
   const filters = readProductFilters(params)
-  const search: ProductSearch = { ...filters, keyword }
+  const kids = children.data ?? []
+  const child = kids.find((item) => item.id === params.get('child')) ?? kids[0] ?? null
+  // 검색할 때만 고른 자녀를 함께 보낸다(BE가 검색 기록에 담음). 자녀 목록을 받기 전에 찾으면
+  // 자녀 없는 검색 기록이 하나 더 남으므로, 보호자의 검색은 자녀 목록이 온 뒤에 보낸다
+  const searchesAsBuyer = isBuyer && keyword.trim() !== ''
+  const search: ProductSearch = {
+    ...filters,
+    keyword,
+    childId: searchesAsBuyer ? (child?.id ?? null) : null,
+  }
   const page = readProductPage(params)
   /**
    * 바뀐 값만 받아 최신 주소에 얹는다. 주소 변경은 화면에 조금 늦게 반영되므로,
@@ -60,10 +69,10 @@ export function ShopHomePage() {
       latest.set('child', childId)
       return latest
     })
-  const all = useProductsQuery(search, page)
+  const all = useProductsQuery(search, page, {
+    enabled: !(searchesAsBuyer && children.isPending),
+  })
   const categories = useCategoriesQuery()
-  const kids = children.data ?? []
-  const child = kids.find((item) => item.id === params.get('child')) ?? kids[0] ?? null
   const listRef = useRef<HTMLElement>(null)
   // 맞춤 영역: 자녀가 있는 보호자에게만. 검색 중에는 숨긴다
   const showsRecommended = isBuyer && child !== null && !keyword

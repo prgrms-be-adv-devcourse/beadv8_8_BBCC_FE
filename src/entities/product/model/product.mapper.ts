@@ -258,6 +258,7 @@ export function toProductSearchParams(search: ProductSearch): ProductSearchParam
   if (search.categoryId) params.categoryId = search.categoryId
   if (search.sort && search.sort !== 'NEWEST') params.sort = search.sort
   if (search.attributes?.length) params.attributes = search.attributes.slice(0, 20)
+  if (search.childId) params.childId = search.childId
   return params
 }
 

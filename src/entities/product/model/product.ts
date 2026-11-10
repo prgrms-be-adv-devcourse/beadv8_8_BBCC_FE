@@ -268,4 +268,6 @@ export type ProductSearch = {
   sort?: ProductSort
   /** 고른 옵션 값 "항목코드:값ID" (예: COLOR:3). 같은 항목 안은 하나만 맞아도, 다른 항목끼리는 모두 맞아야 나온다 */
   attributes?: string[]
+  /** 보호자가 고른 자녀 프로필 ID. 결과는 바뀌지 않고 BE가 검색 기록(search.performed)에 담는다 (BE #1089) */
+  childId?: string | null
 }

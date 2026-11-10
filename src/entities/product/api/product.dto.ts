@@ -220,4 +220,6 @@ export type ProductSearchParamsDto = {
   sort?: string
   /** "항목코드:값ID" 목록, 20개까지 */
   attributes?: string[]
+  /** 고른 자녀 프로필 ID (BE #1089, 선택). 결과는 같고 검색 기록에만 담긴다 */
+  childId?: string
 }
