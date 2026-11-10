@@ -1026,6 +1026,90 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     expect((await call('PUT', '/admin/categories/999999', 3, sameType)).status).toBe(404)
   })
 
+  it('관리자 상품 기준 데이터 삭제: 204로 지우고 목록에서 빠지며, 쓰이는 중이면 409 · 없으면 404', async () => {
+    const ids = async (path: string, key: string) =>
+      (await call('GET', path, 3)).data.map((row: Record<string, string>) => row[key])
+    const del = async (path: string) => (await call('DELETE', path, 3)).status
+
+    // 항목: 유형에 연결된 색상은 409, 연결 없는 새 항목은 204. 목록 값은 막는 경우가 없다
+    const attributes = (await call('GET', '/admin/attributes', 3)).data
+    const color = attributes.find((a: { code: string }) => a.code === 'COLOR')
+    expect(await del(`/admin/attributes/${color.attributeId}`)).toBe(409)
+    const loose = await call(
+      'POST',
+      '/admin/attributes',
+      3,
+      toAttributeCreateRequest({
+        name: '지울 항목',
+        code: 'TO_DELETE',
+        inputType: 'LIST',
+        values: [
+          { name: '하나', colorCode: '' },
+          { name: '둘', colorCode: '' },
+        ],
+      }),
+    )
+    const looseUrl = `/admin/attributes/${loose.data.attributeId}`
+    const [one] = loose.data.values
+    expect(await del(`${looseUrl}/values/${one.valueId}`)).toBe(204)
+    const looseAfter = (await call('GET', '/admin/attributes', 3)).data.find(
+      (a: { attributeId: string }) => a.attributeId === loose.data.attributeId,
+    )
+    expect(looseAfter.values.map((v: { name: string }) => v.name)).toEqual(['둘'])
+    expect(await del(`${looseUrl}/values/${one.valueId}`)).toBe(404)
+    expect(await del(looseUrl)).toBe(204)
+    expect(await ids('/admin/attributes', 'attributeId')).not.toContain(loose.data.attributeId)
+    expect(await del(looseUrl)).toBe(404)
+
+    // 실측 항목: 카테고리가 필수로 연결했으면 409
+    const [length] = (await call('GET', '/admin/measurement-items', 3)).data
+    expect(await del(`/admin/measurement-items/${length.measurementItemId}`)).toBe(409)
+    const unused = await call(
+      'POST',
+      '/admin/measurement-items',
+      3,
+      toMeasurementItemRequest({ name: '지울 길이', code: 'TO_DELETE_LENGTH', unit: 'cm' }),
+    )
+    expect(await del(`/admin/measurement-items/${unused.data.measurementItemId}`)).toBe(204)
+    expect(await ids('/admin/measurement-items', 'measurementItemId')).not.toContain(
+      unused.data.measurementItemId,
+    )
+
+    // 카테고리: 하위가 있으면 409, 말단은 204. 상품 유형: 카테고리가 가리키면 409
+    const categories = (await call('GET', '/admin/categories', 3)).data
+    const clothing = categories.find((c: { name: string }) => c.name === '의류')
+    expect(await del(`/admin/categories/${clothing.categoryId}`)).toBe(409)
+    const bottom = categories.find((c: { name: string }) => c.name === '하의')
+    expect(await del(`/admin/categories/${bottom.categoryId}`)).toBe(204)
+    expect(await ids('/admin/categories', 'categoryId')).not.toContain(bottom.categoryId)
+    expect(await del('/admin/categories/999999')).toBe(404)
+    const top = categories.find((c: { name: string }) => c.name === '상의')
+    expect(await del(`/admin/product-types/${top.productTypeId}`)).toBe(409)
+    const type = await call(
+      'POST',
+      '/admin/product-types',
+      3,
+      toProductTypeCreateRequest({
+        name: '지울 유형',
+        links: [
+          {
+            attributeId: color.attributeId,
+            role: 'OPTION',
+            required: true,
+            allValuesAllowed: true,
+            sizeRole: false,
+            priceAffecting: false,
+            allowedValueIds: [],
+          },
+        ],
+      }),
+    )
+    expect(await del(`/admin/product-types/${type.data.productTypeId}`)).toBe(204)
+    expect(await ids('/admin/product-types', 'productTypeId')).not.toContain(
+      type.data.productTypeId,
+    )
+  })
+
   it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {
     const item = await call(
       'POST',

@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { canChangeCategory, categoryTree, useCatalogCategoriesQuery } from '@/entities/catalog'
+import { DeleteCatalogButton } from '@/features/manage-catalog'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
@@ -15,7 +16,7 @@ export function AdminCatalogCategoriesPage() {
       <PageHeader
         title="카테고리"
         description="상품은 말단 카테고리에만 등록해요. 말단 카테고리는 상품 유형 하나와 필수 실측 항목을 가져요."
-        note="GET · POST /admin/categories, 말단 수정은 PUT /admin/categories/{id}. 목록은 평면 배열이라 parentId로 트리를 만든다"
+        note="GET · POST /admin/categories, 말단 수정은 PUT, 삭제는 DELETE /admin/categories/{id}(하위가 있으면 409). 목록은 평면 배열이라 parentId로 트리를 만든다"
         actions={
           <Link
             to={paths.admin.categoryNew}
@@ -56,8 +57,8 @@ export function AdminCatalogCategoriesPage() {
                 <th scope="col" className="py-2 pr-4 font-medium">
                   필수 실측 항목
                 </th>
-                <th scope="col" className="w-20 py-2 font-medium">
-                  <span className="sr-only">수정</span>
+                <th scope="col" className="py-2 font-medium">
+                  <span className="sr-only">관리</span>
                 </th>
               </tr>
             </thead>
@@ -102,15 +103,21 @@ export function AdminCatalogCategoriesPage() {
                     )}
                   </td>
                   <td className="py-3 text-right align-middle max-md:p-0 max-md:text-left">
-                    {canChangeCategory(category) && (
-                      <Link
-                        to={paths.admin.categoryEdit(category.id)}
-                        aria-label={`${category.name} 수정`}
-                        className="text-signal inline-flex min-h-10 items-center text-[13px] font-semibold hover:underline"
-                      >
-                        수정
-                      </Link>
-                    )}
+                    <span className="inline-flex flex-wrap items-center justify-end gap-x-3 max-md:justify-start">
+                      {canChangeCategory(category) && (
+                        <Link
+                          to={paths.admin.categoryEdit(category.id)}
+                          aria-label={`${category.name} 수정`}
+                          className="text-signal inline-flex min-h-10 items-center text-[13px] font-semibold hover:underline"
+                        >
+                          수정
+                        </Link>
+                      )}
+                      <DeleteCatalogButton
+                        target={{ kind: 'category', id: category.id }}
+                        name={category.name}
+                      />
+                    </span>
                   </td>
                 </tr>
               ))}

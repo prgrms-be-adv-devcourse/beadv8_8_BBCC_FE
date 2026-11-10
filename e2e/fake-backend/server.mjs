@@ -1212,7 +1212,7 @@ http
       if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 할 수 있습니다.', req.url)
       const result = catalog()
-      return result.body
+      return result.body || result.status === 204
         ? send(res, result.status, result.body)
         : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
     }

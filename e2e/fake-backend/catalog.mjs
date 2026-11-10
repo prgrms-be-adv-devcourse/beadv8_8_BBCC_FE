@@ -1,4 +1,4 @@
-// 가짜 백엔드의 관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목(BE #405) · 상품 유형(BE #424, 수정 PUT 포함) · 카테고리(BE #425, 말단 수정 PUT 포함) 만들기와 목록 (응답 모양만 흉내).
+// 가짜 백엔드의 관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목(BE #405) · 상품 유형(BE #424, 수정 PUT 포함) · 카테고리(BE #425, 말단 수정 PUT 포함) 만들기와 목록, 다섯 가지 지우기 (응답 모양만 흉내).
 // 처음 데이터는 BE 초기 데이터 러너의 이름 · 코드를 일부 따른다. 결과는 { status, body } 또는 { status, detail }
 const CODE = /^[A-Z_]+$/
 const COLOR = /^#[0-9a-fA-F]{6}$/
@@ -314,6 +314,61 @@ function changeCategory(categoryId, body) {
   return { status: 200, body: categoryOut(category) }
 }
 
+// 지우기: BE는 소프트 삭제라 목록에서만 빠진다. 여기서는 배열에서 뺀다. 쓰이는 중이면 409
+const gone = { status: 204 }
+const inUse = (detail) => ({ status: 409, detail })
+const removeFrom = (list, item) => list.splice(list.indexOf(item), 1)
+
+function deleteAttribute(attributeId) {
+  const attribute = attributes.find((a) => a.attributeId === attributeId)
+  if (!attribute) return { status: 404, detail: '항목을 다시 확인해 주세요.' }
+  if (productTypes.some((t) => t.links.some((link) => link.attributeId === attributeId)))
+    return inUse('상품 유형에 연결된 항목은 지울 수 없습니다. 연결을 먼저 빼 주세요.')
+  removeFrom(attributes, attribute)
+  return gone
+}
+
+function deleteAttributeValue(attributeId, valueId) {
+  const attribute = attributes.find((a) => a.attributeId === attributeId)
+  const found = attribute?.values.find((v) => v.valueId === valueId)
+  if (!found) return { status: 404, detail: '목록 값을 다시 확인해 주세요.' }
+  removeFrom(attribute.values, found)
+  return gone
+}
+
+function deleteMeasurementItem(measurementItemId) {
+  const item = measurementItems.find((m) => m.measurementItemId === measurementItemId)
+  if (!item) return { status: 404, detail: '실측 항목을 다시 확인해 주세요.' }
+  if (categories.some((c) => c.measurementItemIds.includes(measurementItemId)))
+    return inUse(
+      '카테고리가 필수로 연결한 실측 항목은 지울 수 없습니다. 카테고리에서 먼저 빼 주세요.',
+    )
+  removeFrom(measurementItems, item)
+  return gone
+}
+
+function deleteProductType(productTypeId) {
+  const type = productTypes.find((t) => t.productTypeId === productTypeId)
+  if (!type) return { status: 404, detail: '상품 유형을 다시 확인해 주세요.' }
+  if (categories.some((c) => c.productTypeId === productTypeId))
+    return inUse(
+      '카테고리가 가리키는 상품 유형은 지울 수 없습니다. 카테고리의 유형을 먼저 바꿔 주세요.',
+    )
+  removeFrom(productTypes, type)
+  return gone
+}
+
+function deleteCategory(categoryId) {
+  const category = categories.find((c) => c.categoryId === categoryId)
+  if (!category) return { status: 404, detail: '카테고리를 다시 확인해 주세요.' }
+  if (categories.some((c) => c.parentId === categoryId))
+    return inUse(
+      '하위 카테고리가 있는 카테고리는 지울 수 없습니다. 하위 카테고리를 먼저 지워 주세요.',
+    )
+  removeFrom(categories, category)
+  return gone
+}
+
 /** 기준 데이터 경로면 처리 함수를, 아니면 null (권한 확인은 server.mjs) */
 export function catalogRoute(method, path, body) {
   const key = `${method} ${path}`
@@ -331,6 +386,20 @@ export function catalogRoute(method, path, body) {
   if (key === 'POST /admin/categories') return () => createCategory(body)
   const categoryId = key.match(/^PUT \/admin\/categories\/(\d+)$/)
   if (categoryId) return () => changeCategory(categoryId[1], body)
+  const deleting = key.match(
+    /^DELETE \/admin\/(attributes|measurement-items|product-types|categories)\/(\d+)$/,
+  )
+  if (deleting) {
+    const remove = {
+      attributes: deleteAttribute,
+      'measurement-items': deleteMeasurementItem,
+      'product-types': deleteProductType,
+      categories: deleteCategory,
+    }[deleting[1]]
+    return () => remove(deleting[2])
+  }
+  const deletingValue = key.match(/^DELETE \/admin\/attributes\/(\d+)\/values\/(\d+)$/)
+  if (deletingValue) return () => deleteAttributeValue(deletingValue[1], deletingValue[2])
   if (key === 'GET /admin/measurement-items') return () => ({ status: 200, body: measurementItems })
   if (key === 'POST /admin/measurement-items') return () => createMeasurementItem(body)
   return null

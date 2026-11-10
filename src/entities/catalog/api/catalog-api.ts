@@ -76,4 +76,22 @@ export const catalogApi = {
     apiClient
       .put<CategoryDto>(`/admin/categories/${categoryId}`, request)
       .then(expectShape(categoryShape)),
+  // 지우기: 모두 204이고 BE는 소프트 삭제라 목록에서만 빠진다. 다른 기준 데이터가 쓰고 있으면 409, 없으면 404
+  /** 상품 유형에 연결된 항목이면 409 */
+  deleteAttribute: (attributeId: string) =>
+    apiClient.delete<void>(`/admin/attributes/${attributeId}`).then(() => undefined),
+  /** 목록 값은 막는 경우가 없다. 다른 항목의 값이면 404 */
+  deleteAttributeValue: (attributeId: string, valueId: string) =>
+    apiClient
+      .delete<void>(`/admin/attributes/${attributeId}/values/${valueId}`)
+      .then(() => undefined),
+  /** 카테고리가 필수로 연결한 실측 항목이면 409 */
+  deleteMeasurementItem: (measurementItemId: string) =>
+    apiClient.delete<void>(`/admin/measurement-items/${measurementItemId}`).then(() => undefined),
+  /** 카테고리가 가리키는 유형이면 409 */
+  deleteProductType: (productTypeId: string) =>
+    apiClient.delete<void>(`/admin/product-types/${productTypeId}`).then(() => undefined),
+  /** 하위 카테고리가 있으면 409 */
+  deleteCategory: (categoryId: string) =>
+    apiClient.delete<void>(`/admin/categories/${categoryId}`).then(() => undefined),
 }
