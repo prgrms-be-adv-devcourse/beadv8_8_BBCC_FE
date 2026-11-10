@@ -24,6 +24,7 @@ import { sizeRangesOf, useSizeRecommendationQuery } from '@/entities/recommendat
 import { useSessionStore } from '@/entities/session'
 import { AddToCartButton } from '@/features/add-to-cart'
 import { ChildWishAddButton } from '@/features/child-wish-cart'
+import { useRecordProductView } from '@/features/record-product-view'
 import { getErrorMessage } from '@/shared/api'
 import { loginPath, paths } from '@/shared/config'
 import { formatWon, useArea } from '@/shared/lib'
@@ -44,6 +45,8 @@ export function ShopProductDetailPage() {
   const children = useChildrenQuery({ enabled: Boolean(user) && !isChild })
   const [childId, setChildId] = useState<string | null>(search.get('childId'))
   const recommendation = useSizeRecommendationQuery(productId, isChild ? null : childId)
+  // 보호자 회원만 기록한다 (자녀 화면은 자녀 토큰이라 부르지 않음)
+  useRecordProductView(productId, childId, Boolean(user) && !isChild)
   // 로그인하고 돌아오면 주소(?option=&qty=)에 실어 둔 옵션 · 수량으로 시작한다. 고르기 전까지는 null
   const [pickedByUser, setPicks] = useState<OptionPicks | null>(null)
   const [quantityByUser, setQuantity] = useState<number | null>(null)

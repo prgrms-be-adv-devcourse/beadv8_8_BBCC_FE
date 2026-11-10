@@ -24,7 +24,9 @@ import {
   sizeRangesOf,
   useSizeRecommendationQuery,
 } from '@/entities/recommendation'
+import { useSessionStore } from '@/entities/session'
 import { AddToCartButton } from '@/features/add-to-cart'
+import { useRecordProductView } from '@/features/record-product-view'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { formatWon } from '@/shared/lib'
@@ -40,6 +42,8 @@ export function ConsoleProductDetailPage() {
   const children = useChildrenQuery()
   const [childId, setChildId] = useState<string | null>(search.get('childId'))
   const recommendation = useSizeRecommendationQuery(productId, childId)
+  const user = useSessionStore((state) => state.user)
+  useRecordProductView(productId, childId, Boolean(user))
   const [picks, setPicks] = useState<OptionPicks>({})
   const [quantity, setQuantity] = useState(1)
 
