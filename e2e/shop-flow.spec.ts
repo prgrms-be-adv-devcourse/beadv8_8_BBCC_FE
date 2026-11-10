@@ -326,8 +326,18 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     const testKid = recommended.getByRole('button', { name: /^테스트 \(/ })
     if ((await testKid.count()) > 0) await testKid.first().click()
     await expect(recommended.getByRole('heading', { name: /테스트에게 맞는 옷/ })).toBeVisible()
+    // 상세에 들어가면 고른 자녀로 상세 진입을 한 번 기록한다 (추천이 회원 활동으로 셈)
+    const viewed = page.waitForRequest(
+      (request) =>
+        request.method() === 'POST' && request.url().endsWith('/recommendations/product-views'),
+    )
     await recommended.getByText('데일리 맨투맨 (상품 A)').first().click()
     await expect(page).toHaveURL(/\/products\/\d+\?childId=/)
+    const childId = new URL(page.url()).searchParams.get('childId')
+    expect((await viewed).postDataJSON()).toEqual({
+      productId: expect.any(String),
+      childId,
+    })
     await expect(page.getByText('추천 사이즈')).toBeVisible()
     // 착용 미리보기는 사이즈 칩 위 추천 한 줄의 「사이즈 자세히」를 펼치면 보인다.
     // 추천 사이즈로 시작, 사이즈를 바꾸면 그림 · 문구가 바뀐다

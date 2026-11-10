@@ -72,6 +72,7 @@ import { DEMO_ADDRESS } from '@/features/manage-address/config/demo-address'
 import { demoRegisterForm } from '@/features/register-product/config/demo-product'
 import { DEMO_APPLICATION } from '@/features/apply-seller/config/demo-application'
 import { DEMO_CHILD } from '@/features/register-child/config/demo-child'
+import { toProductViewRequest } from '@/features/record-product-view'
 import { productImageUploadUrlsShape } from '@/features/upload-product-image'
 import {
   reviewableItemsShape,
@@ -1094,4 +1095,12 @@ it('부모 본인인증 계약과 등록 차단을 따른다', async () => {
   expect(verified.status).toBe(201)
   expectContract(verified.data, guardianVerificationShape)
   expect(verified.data.verified).toBe(true)
+})
+
+it('상세 진입 기록은 로그인 회원만 204, 상품 ID가 없으면 400', async () => {
+  const path = '/recommendations/product-views'
+  expect((await call('POST', path, 1, toProductViewRequest('1', null))).status).toBe(204)
+  expect((await call('POST', path, 1, toProductViewRequest('1', '1'))).status).toBe(204)
+  expect((await call('POST', path, null, toProductViewRequest('1', null))).status).toBe(401)
+  expect((await call('POST', path, 1, {})).status).toBe(400)
 })
