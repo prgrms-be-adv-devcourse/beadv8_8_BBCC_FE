@@ -1,8 +1,8 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
 import { acceptConfirms } from './support/confirm'
 
-// 추천 기준 옷 (BE 머지 전이라 FE 목): 자녀 프로필의 「기준 옷」 칸에서 상의를 저장 · 교체 · 삭제한다.
-// 목은 자녀 · 카테고리를 가짜 백엔드에서 읽고, 저장한 값은 탭(sessionStorage)에 남는다
+// 추천 기준 옷: 자녀 프로필의 「기준 옷」 칸에서 상의를 저장 · 교체 · 삭제한다.
+// 가짜 백엔드의 기준 옷 API(카테고리 11 상의 · 12 하의)를 쓰고, 저장한 값은 서버에 남는다
 const API = 'http://localhost:18080/api/v1'
 
 /** 회원 1의 자녀를 만든다 (테스트마다 새로, 다른 테스트의 기준 옷이 섞이지 않게) */
@@ -54,10 +54,10 @@ test('보호자는 자녀 프로필에서 상의 기준 옷을 저장하고 지�
     await expect(top.getByLabel('세부 종류').locator('option', { hasText: '하의' })).toHaveCount(0)
     await top.getByLabel('세부 종류').selectOption({ label: '의류 > 상의' })
     await top.getByLabel('총장 (cm, 필수)').fill('42')
-    await top.getByRole('button', { name: '저장하기' }).click()
+    await top.getByRole('button', { name: '기준 옷 저장' }).click()
     await expect(top.getByText('가슴단면은 꼭 입력해 주세요.')).toBeVisible()
     await top.getByLabel('가슴단면 (cm, 필수)').fill('34.55')
-    await top.getByRole('button', { name: '저장하기' }).click()
+    await top.getByRole('button', { name: '기준 옷 저장' }).click()
     await expect(
       top.getByText('실측 값은 0cm보다 크고 200cm 이하로, 소수 첫째 자리까지 입력해 주세요.'),
     ).toBeVisible()
@@ -66,7 +66,7 @@ test('보호자는 자녀 프로필에서 상의 기준 옷을 저장하고 지�
   await test.step('저장하면 요약에 보이고 새로고침해도 남는다', async () => {
     await top.getByLabel('가슴단면 (cm, 필수)').fill('34.5')
     await top.getByLabel('어깨너비 (cm)').fill('28')
-    await top.getByRole('button', { name: '저장하기' }).click()
+    await top.getByRole('button', { name: '기준 옷 저장' }).click()
     const summary = '의류 > 상의 · 총장 42cm · 가슴단면 34.5cm · 어깨너비 28cm'
     await expect(top.getByText(summary)).toBeVisible()
     await page.reload()
@@ -75,14 +75,14 @@ test('보호자는 자녀 프로필에서 상의 기준 옷을 저장하고 지�
 
   await test.step('선택 실측을 비우고 다시 저장하면 그 값은 사라진다', async () => {
     await top.getByLabel('어깨너비 (cm)').fill('')
-    await top.getByRole('button', { name: '저장하기' }).click()
+    await top.getByRole('button', { name: '기준 옷 저장' }).click()
     await expect(
       top.getByText('의류 > 상의 · 총장 42cm · 가슴단면 34.5cm', { exact: true }),
     ).toBeVisible()
   })
 
   await test.step('지우면 빈 칸으로 돌아간다', async () => {
-    await top.getByRole('button', { name: '삭제' }).click()
+    await top.getByRole('button', { name: '기준 옷 삭제' }).click()
     await expect(top.getByText('아직 저장한 기준 옷이 없어요.')).toBeVisible()
     await expect(top.getByLabel('총장 (cm, 필수)')).toHaveValue('')
   })
@@ -162,7 +162,7 @@ test('주문 상세의 받은 옷으로 기준 옷 칸을 채워 저장한다', 
   await expect(top.getByLabel('어깨너비 (cm)')).toHaveValue('30')
   await expect(top.getByLabel('소매길이 (cm)')).toHaveValue('38')
 
-  await top.getByRole('button', { name: '저장하기' }).click()
+  await top.getByRole('button', { name: '기준 옷 저장' }).click()
   await expect(
     top.getByText('의류 > 상의 · 총장 42cm · 가슴단면 34cm · 어깨너비 30cm · 소매길이 38cm'),
   ).toBeVisible()

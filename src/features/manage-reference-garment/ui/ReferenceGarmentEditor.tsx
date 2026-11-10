@@ -116,8 +116,9 @@ export function ReferenceGarmentEditor({
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2">
+        {/* 자녀 프로필의 다른 폼 「저장하기」와 겹치지 않게 「기준 옷 저장」으로 부른다 */}
         <Button type="submit" disabled={save.isPending}>
-          저장하기
+          기준 옷 저장
         </Button>
         {garment && (
           <Button
@@ -126,7 +127,7 @@ export function ReferenceGarmentEditor({
             disabled={remove.isPending}
             onClick={handleDelete}
           >
-            삭제
+            기준 옷 삭제
           </Button>
         )}
       </div>
