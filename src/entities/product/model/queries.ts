@@ -79,12 +79,14 @@ export function useProductsQuery(search: ProductSearch = NO_SEARCH, page = 0) {
   })
 }
 
-export function useProductQuery(productId: string) {
+/** isEnabled가 false면 부르지 않는다 (예: 주소에 상품이 있을 때만 읽기) */
+export function useProductQuery(productId: string, isEnabled = true) {
   const categories = useCategoryList()
   return useQuery({
     queryKey: productKeys.detail(productId),
     queryFn: () => productApi.get(productId),
     select: useCallback((dto: ProductDetailDto) => toProductDetail(dto, categories), [categories]),
+    enabled: isEnabled,
   })
 }
 

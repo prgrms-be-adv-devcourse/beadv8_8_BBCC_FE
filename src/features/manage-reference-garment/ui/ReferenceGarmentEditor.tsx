@@ -27,6 +27,9 @@ type ReferenceGarmentEditorProps = {
   garment: ReferenceGarment | null
   /** 이 구분에 맞는 말단 카테고리 (세부 종류) */
   categories: { id: string; path: string }[]
+  /** 처음 채울 값 (산 옷에서 고르기). 없으면 저장한 기준 옷 */
+  initialForm?: ReferenceGarmentForm
+  onSaved?: () => void
 }
 
 /** 기준 옷 한 칸: 저장한 값 요약, 세부 종류 · 실측 입력, 저장 · 삭제 */
@@ -35,13 +38,15 @@ export function ReferenceGarmentEditor({
   part,
   garment,
   categories,
+  initialForm,
+  onSaved,
 }: ReferenceGarmentEditorProps) {
   const spec = GARMENT_PART_SPEC[part]
   const save = useSaveReferenceGarment(childId, part)
   const remove = useDeleteReferenceGarment(childId, part)
   // 저장 · 삭제로 기준 옷이 바뀌면 화면이 key를 바꿔 새로 채운다
-  const [form, setForm] = useState<ReferenceGarmentForm>(() =>
-    toReferenceGarmentForm(part, garment),
+  const [form, setForm] = useState<ReferenceGarmentForm>(
+    () => initialForm ?? toReferenceGarmentForm(part, garment),
   )
   const [invalid, setInvalid] = useState<string | null>(null)
   const savedCategory = categories.find((category) => category.id === garment?.categoryId)
@@ -52,7 +57,7 @@ export function ReferenceGarmentEditor({
     event.preventDefault()
     const message = validateReferenceGarmentForm(part, form)
     setInvalid(message)
-    if (!message) save.mutate(form)
+    if (!message) save.mutate(form, { onSuccess: () => onSaved?.() })
   }
 
   const handleDelete = async () => {
@@ -111,8 +116,9 @@ export function ReferenceGarmentEditor({
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2">
+        {/* 자녀 프로필의 다른 폼 「저장하기」와 겹치지 않게 「기준 옷 저장」으로 부른다 */}
         <Button type="submit" disabled={save.isPending}>
-          저장하기
+          기준 옷 저장
         </Button>
         {garment && (
           <Button
@@ -121,7 +127,7 @@ export function ReferenceGarmentEditor({
             disabled={remove.isPending}
             onClick={handleDelete}
           >
-            삭제
+            기준 옷 삭제
           </Button>
         )}
       </div>

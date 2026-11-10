@@ -368,8 +368,10 @@ describe('toProductDetail (BE ProductDetailResponse)', () => {
       },
     ])
   })
-  it('실측은 항목 이름 · 단위와 함께', () => {
-    expect(detail.sizeSpecs[0].measurements).toEqual([{ name: '총장', unit: 'cm', value: 42 }])
+  it('실측은 항목 코드 · 이름 · 단위와 함께', () => {
+    expect(detail.sizeSpecs[0].measurements).toEqual([
+      { code: 'TOTAL_LENGTH', name: '총장', unit: 'cm', value: 42 },
+    ])
   })
 })
 

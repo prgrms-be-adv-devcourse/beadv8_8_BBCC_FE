@@ -39,6 +39,8 @@ export {
 export {
   toReferenceGarment,
   toReferenceGarmentForm,
+  toReferenceGarmentFromPurchase,
+  type PurchasedGarment,
   toReferenceGarmentRequest,
 } from './model/reference-garment.mapper'
 export {

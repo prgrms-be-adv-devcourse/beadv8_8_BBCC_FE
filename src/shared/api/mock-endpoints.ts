@@ -153,22 +153,22 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'GET',
     path: '/recommendations/children/:childId/reference-garments',
-    source: 'mock',
-    backend: 'BE 머지 전: BE #1134(저장 표) · #1140(API) 리뷰 중(11/10) → 목 (FE #257)',
+    source: 'real',
+    backend: 'BE #1134 · #1140 develop 머지(11/10) → 실제 (FE #261)',
     screens: '자녀 프로필(기준 옷)',
   },
   {
     method: 'PUT',
     path: '/recommendations/children/:childId/reference-garments/:part',
-    source: 'mock',
-    backend: 'BE 머지 전: BE #1134(저장 표) · #1140(API) 리뷰 중(11/10) → 목 (FE #257)',
+    source: 'real',
+    backend: 'BE #1134 · #1140 develop 머지(11/10) → 실제 (FE #261)',
     screens: '자녀 프로필(기준 옷)',
   },
   {
     method: 'DELETE',
     path: '/recommendations/children/:childId/reference-garments/:part',
-    source: 'mock',
-    backend: 'BE 머지 전: BE #1134(저장 표) · #1140(API) 리뷰 중(11/10) → 목 (FE #257)',
+    source: 'real',
+    backend: 'BE #1134 · #1140 develop 머지(11/10) → 실제 (FE #261)',
     screens: '자녀 프로필(기준 옷)',
   },
   // 회원 보완

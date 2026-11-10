@@ -118,6 +118,7 @@ export function toProductDetail(dto: ProductDetailDto, categories: Category[] = 
       minHeightCm: spec.minHeightCm,
       maxHeightCm: spec.maxHeightCm,
       measurements: dto.measurementItems.map((item) => ({
+        code: item.code,
         name: item.name,
         unit: item.unit,
         value: spec.measurements[item.code] ?? null,

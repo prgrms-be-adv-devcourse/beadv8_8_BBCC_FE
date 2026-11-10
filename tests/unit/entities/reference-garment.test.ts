@@ -4,6 +4,7 @@ import {
   garmentPartOf,
   isValidMeasurementText,
   toReferenceGarment,
+  toReferenceGarmentFromPurchase,
   toReferenceGarmentForm,
   toReferenceGarmentRequest,
   validateReferenceGarmentForm,
@@ -136,5 +137,43 @@ describe('기준 옷 변환', () => {
         },
       }),
     ).toEqual({ categoryId: '7', measurements: { TOTAL_LENGTH: 42, CHEST_WIDTH: 34.5 } })
+  })
+})
+
+describe('산 옷에서 기준 옷 채우기', () => {
+  const spec = (size: string, values: Record<string, number | null>) => ({
+    size,
+    measurements: Object.entries(values).map(([code, value]) => ({ code, value })),
+  })
+  const sizeSpecs = [
+    spec('110', { TOTAL_LENGTH: 42, CHEST_WIDTH: 34.5, SLEEVE_LENGTH: null, NECK_WIDTH: 12 }),
+    spec('120', { TOTAL_LENGTH: 45, CHEST_WIDTH: 36 }),
+  ]
+
+  it('카테고리로 구분을 정하고, 산 사이즈의 실측 중 그 구분의 항목만 채운다', () => {
+    expect(
+      toReferenceGarmentFromPurchase(
+        { categoryId: '11', categoryPath: '의류 > 상의', sizeSpecs },
+        '110',
+      ),
+    ).toEqual({
+      part: 'TOP',
+      form: {
+        categoryId: '11',
+        measurements: {
+          TOTAL_LENGTH: '42',
+          CHEST_WIDTH: '34.5',
+          SHOULDER_WIDTH: '',
+          SLEEVE_LENGTH: '',
+        },
+      },
+    })
+  })
+
+  it.each([
+    [{ categoryId: '14', categoryPath: '잡화 > 모자', sizeSpecs }, '110'],
+    [{ categoryId: '11', categoryPath: '의류 > 상의', sizeSpecs }, '130'],
+  ])('기준 옷 구분이 아니거나 그 사이즈 실측이 없으면 null (%#)', (purchase, size) => {
+    expect(toReferenceGarmentFromPurchase(purchase, size)).toBeNull()
   })
 })
