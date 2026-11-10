@@ -1009,10 +1009,33 @@ http
       settlementRuns.push(run)
       return send(res, 201, run)
     }
-    // 상세 진입 기록: 추천이 회원 활동으로 센다. 기록은 흉내 내지 않고 상품 ID만 검사한다
+    // 상세 진입 기록 (BE #1112): 추천이 회원 활동으로 센다. 기록은 흉내 내지 않고 상품 · 자녀만 검사한다
     if (r('POST', /^\/recommendations\/product-views$/)) {
-      if (!(Number(body?.productId) > 0))
-        return problem(res, 400, '잘못된 요청입니다', '상품 ID가 필요합니다.', req.url)
+      const productId = body?.productId
+      if (productId === undefined || productId === null)
+        return problem(res, 400, '잘못된 요청입니다', 'productId: 상품 ID가 필요합니다.', req.url)
+      if (!(Number(productId) > 0))
+        return problem(
+          res,
+          400,
+          '잘못된 요청입니다',
+          'productId: 상품 ID는 1 이상이어야 합니다.',
+          req.url,
+        )
+      const childId = body.childId
+      if (childId !== undefined && childId !== null) {
+        if (!(Number(childId) > 0))
+          return problem(
+            res,
+            400,
+            '잘못된 요청입니다',
+            'childId: 자녀 ID는 1 이상이어야 합니다.',
+            req.url,
+          )
+        const c = children.find((c) => c.id === +childId && c.memberId === me && !c.deleted)
+        if (!c)
+          return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
+      }
       return send(res, 204)
     }
     // 자녀 맞춤 목록 (BE #316 · #681): 판매 중 상품 중 자녀에게 맞는 사이즈가 있는 것, 최신순

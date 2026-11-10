@@ -1099,8 +1099,27 @@ it('부모 본인인증 계약과 등록 차단을 따른다', async () => {
 
 it('상세 진입 기록은 로그인 회원만 204, 상품 ID가 없으면 400', async () => {
   const path = '/recommendations/product-views'
+  const child = await call('POST', '/children', 1, {
+    ...toChildRequest(DEMO_CHILD),
+    requiredConsent: true,
+    optionalConsent: true,
+  })
   expect((await call('POST', path, 1, toProductViewRequest('1', null))).status).toBe(204)
-  expect((await call('POST', path, 1, toProductViewRequest('1', '1'))).status).toBe(204)
+  expect((await call('POST', path, 1, toProductViewRequest('1', child.data.id))).status).toBe(204)
   expect((await call('POST', path, null, toProductViewRequest('1', null))).status).toBe(401)
-  expect((await call('POST', path, 1, {})).status).toBe(400)
+  expect((await call('POST', path, 1, {})).data.detail).toBe('productId: 상품 ID가 필요합니다.')
+})
+
+it.each([
+  ['0', 400, 'childId: 자녀 ID는 1 이상이어야 합니다.'],
+  ['99999', 404, '자녀를 찾을 수 없습니다.'],
+])('상세 진입 기록: 자녀 %s → %i (BE #1112)', async (childId, status, detail) => {
+  const viewed = await call(
+    'POST',
+    '/recommendations/product-views',
+    1,
+    toProductViewRequest('1', childId),
+  )
+  expect(viewed.status).toBe(status)
+  expect(viewed.data.detail).toBe(detail)
 })
