@@ -84,6 +84,12 @@ export type CategoryCreateRequestDto = {
   measurementItemIds: string[]
 }
 
+/** 말단 카테고리 수정 (CategoryChangeRequest). 실측 항목은 순서가 실측 순서, 없으면 [] */
+export type CategoryChangeRequestDto = {
+  productTypeId: string
+  measurementItemIds: string[]
+}
+
 /** 관리자 카테고리 목록의 한 줄 (ID 순서의 평면 배열, 계층은 parentId) */
 export type CategoryDto = {
   categoryId: string

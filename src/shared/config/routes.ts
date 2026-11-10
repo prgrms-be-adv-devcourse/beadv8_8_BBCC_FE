@@ -107,6 +107,7 @@ export const paths = {
     productTypeEdit: (id: string) => `/admin/catalog/product-types/${id}/edit`,
     categories: '/admin/catalog/categories',
     categoryNew: '/admin/catalog/categories/new',
+    categoryEdit: (id: string) => `/admin/catalog/categories/${id}/edit`,
   },
   console: {
     home: C,

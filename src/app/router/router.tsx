@@ -397,6 +397,14 @@ export const router = createBrowserRouter(
             })),
           ),
         },
+        {
+          path: 'catalog/categories/:categoryId/edit',
+          ...page(() =>
+            import('@/pages/admin/catalog-category-edit').then((m) => ({
+              Component: m.AdminCatalogCategoryEditPage,
+            })),
+          ),
+        },
         { path: '*', element: <NotFoundPage /> },
       ],
     },

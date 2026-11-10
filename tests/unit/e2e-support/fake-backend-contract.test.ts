@@ -11,7 +11,11 @@ import {
 } from '@/entities/catalog/api/catalog.shape'
 import {
   toAttributeCreateRequest,
+  toCatalogCategory,
+  toCategoryChangeForm,
+  toCategoryChangeRequest,
   toCategoryCreateRequest,
+  type CatalogCategory,
   toAttributeValueRequest,
   toMeasurementItemRequest,
   toProductType,
@@ -983,6 +987,43 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     expect((await call('POST', '/admin/categories', 3, leafRequest)).status).toBe(409)
     const underLeaf = { ...leafRequest, name: '더 아래', parentId: leaf.data.categoryId }
     expect((await call('POST', '/admin/categories', 3, underLeaf)).status).toBe(400)
+  })
+
+  it('관리자 상품 기준 데이터: 카테고리 수정 PUT은 유형과 실측 항목을 바꾸고, 상품이 있는 카테고리는 빼기 · 순서 변경만 받는다', async () => {
+    const categories = (await call('GET', '/admin/categories', 3)).data.map(toCatalogCategory)
+    const [type, other] = (await call('GET', '/admin/product-types', 3)).data
+    const [length, shoulder] = (await call('GET', '/admin/measurement-items', 3)).data
+    // 상품이 없는 말단(하의): 유형을 바꾸고 실측 항목을 더해도 된다. 응답은 목록의 카테고리 하나와 같은 모양
+    const bottom = categories.find((c: CatalogCategory) => c.name === '하의')!
+    const changed = await call(
+      'PUT',
+      `/admin/categories/${bottom.id}`,
+      3,
+      toCategoryChangeRequest({
+        productTypeId: other.productTypeId,
+        measurementItemIds: [shoulder.measurementItemId, length.measurementItemId],
+      }),
+    )
+    expect(changed.status).toBe(200)
+    expectContract(changed.data, categoryShape)
+    expect(changed.data.productTypeId).toBe(other.productTypeId)
+    expect(changed.data.measurementItems.map((m: { code: string }) => m.code)).toEqual([
+      'SHOULDER_WIDTH',
+      'TOTAL_LENGTH',
+    ])
+
+    // 상품이 있는 말단(상의): 순서 바꾸기는 200, 유형을 바꾸면 409. 중간은 400, 없는 카테고리는 404
+    const top = categories.find((c: CatalogCategory) => c.name === '상의')!
+    const url = `/admin/categories/${top.id}`
+    const reversed = toCategoryChangeForm(top)
+    reversed.measurementItemIds.reverse()
+    expect((await call('PUT', url, 3, toCategoryChangeRequest(reversed))).status).toBe(200)
+    const retyped = toCategoryChangeRequest({ ...reversed, productTypeId: other.productTypeId })
+    expect((await call('PUT', url, 3, retyped)).status).toBe(409)
+    const middle = categories.find((c: CatalogCategory) => c.name === '의류')!
+    const sameType = toCategoryChangeRequest({ ...reversed, productTypeId: type.productTypeId })
+    expect((await call('PUT', `/admin/categories/${middle.id}`, 3, sameType)).status).toBe(400)
+    expect((await call('PUT', '/admin/categories/999999', 3, sameType)).status).toBe(404)
   })
 
   it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {

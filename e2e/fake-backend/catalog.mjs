@@ -1,4 +1,4 @@
-// 가짜 백엔드의 관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목(BE #405) · 상품 유형(BE #424, 수정 PUT 포함) · 카테고리(BE #425) 만들기와 목록 (응답 모양만 흉내).
+// 가짜 백엔드의 관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목(BE #405) · 상품 유형(BE #424, 수정 PUT 포함) · 카테고리(BE #425, 말단 수정 PUT 포함) 만들기와 목록 (응답 모양만 흉내).
 // 처음 데이터는 BE 초기 데이터 러너의 이름 · 코드를 일부 따른다. 결과는 { status, body } 또는 { status, detail }
 const CODE = /^[A-Z_]+$/
 const COLOR = /^#[0-9a-fA-F]{6}$/
@@ -284,6 +284,36 @@ function createCategory(body) {
   return { status: 201, body: categoryOut(category) }
 }
 
+// 상품이 있는 카테고리(여기서는 처음 데이터 「상의」)는 유형을 그대로 두고 실측 항목 빼기 · 순서 변경만 받는다
+const CATEGORY_IN_USE = new Set([categories[1].categoryId])
+
+function changeCategory(categoryId, body) {
+  const category = categories.find((c) => c.categoryId === categoryId)
+  if (!category) return { status: 404, detail: '카테고리를 다시 확인해 주세요.' }
+  if (body?.productTypeId == null || !Array.isArray(body.measurementItemIds))
+    return bad('상품 유형과 실측 항목 ID를 보내 주세요. 실측 항목이 없으면 빈 목록을 보내 주세요.')
+  const productTypeId = String(body.productTypeId)
+  const itemIds = body.measurementItemIds.map(String)
+  if (!productTypes.some((t) => t.productTypeId === productTypeId))
+    return { status: 404, detail: '상품 유형을 다시 확인해 주세요.' }
+  if (itemIds.some((id) => !measurementItems.some((m) => m.measurementItemId === id)))
+    return { status: 404, detail: '실측 항목을 다시 확인해 주세요.' }
+  if (new Set(itemIds).size !== itemIds.length) return bad('같은 실측 항목은 한 번만 넣어 주세요.')
+  if (!category.productTypeId)
+    return bad('상품 유형과 필수 실측 항목은 가장 아래 단계의 카테고리에서만 바꿀 수 있습니다.')
+  const breaks =
+    productTypeId !== category.productTypeId ||
+    itemIds.some((id) => !category.measurementItemIds.includes(id))
+  if (CATEGORY_IN_USE.has(categoryId) && breaks)
+    return {
+      status: 409,
+      detail: '상품이 있는 카테고리는 필수 실측 항목 빼기와 순서 변경만 할 수 있습니다.',
+    }
+  category.productTypeId = productTypeId
+  category.measurementItemIds = itemIds
+  return { status: 200, body: categoryOut(category) }
+}
+
 /** 기준 데이터 경로면 처리 함수를, 아니면 null (권한 확인은 server.mjs) */
 export function catalogRoute(method, path, body) {
   const key = `${method} ${path}`
@@ -299,6 +329,8 @@ export function catalogRoute(method, path, body) {
   if (key === 'GET /admin/categories')
     return () => ({ status: 200, body: categories.map(categoryOut) })
   if (key === 'POST /admin/categories') return () => createCategory(body)
+  const categoryId = key.match(/^PUT \/admin\/categories\/(\d+)$/)
+  if (categoryId) return () => changeCategory(categoryId[1], body)
   if (key === 'GET /admin/measurement-items') return () => ({ status: 200, body: measurementItems })
   if (key === 'POST /admin/measurement-items') return () => createMeasurementItem(body)
   return null

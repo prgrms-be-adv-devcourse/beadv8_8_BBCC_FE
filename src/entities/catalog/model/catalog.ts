@@ -92,3 +92,6 @@ export type CategoryForm = {
   productTypeId: string
   measurementItemIds: string[]
 }
+
+/** 말단 카테고리 수정: 상품 유형과 필수 실측 항목(고른 순서가 실측 순서). productTypeId는 고르지 않았으면 '' */
+export type CategoryChangeForm = { productTypeId: string; measurementItemIds: string[] }

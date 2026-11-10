@@ -1,4 +1,4 @@
-import type { CatalogCategory, CategoryForm } from './catalog'
+import type { CatalogCategory, CategoryChangeForm, CategoryForm } from './catalog'
 
 /** 부모로 고를 수 있는 카테고리: 중간 카테고리만 (말단 아래에는 만들 수 없다) */
 export function parentCandidates(categories: CatalogCategory[]): CatalogCategory[] {
@@ -31,6 +31,16 @@ export function validateCategoryForm(
   if (categories.some((category) => category.parentId === parentId && category.name === name))
     return '같은 위치에 같은 이름의 카테고리가 있어요.'
   if (form.kind === 'LEAF' && !form.productTypeId) return '말단 카테고리는 상품 유형을 골라 주세요.'
+  return null
+}
+
+/** 상품 유형과 필수 실측 항목은 말단에서만 바꾼다 (BE는 중간 카테고리 수정을 400으로 막는다) */
+export function canChangeCategory(category: CatalogCategory): boolean {
+  return category.isLeaf
+}
+
+export function validateCategoryChangeForm(form: CategoryChangeForm): string | null {
+  if (!form.productTypeId) return '말단 카테고리는 상품 유형을 골라 주세요.'
   return null
 }
 
