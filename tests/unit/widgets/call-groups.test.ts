@@ -71,4 +71,10 @@ describe('summarizeResponse: 응답 핵심 값', () => {
     ).toEqual(['하이픈 없는 숫자'])
     expect(summarizeResponse(null)).toEqual([])
   })
+
+  it('AI 추천은 고른 쪽(AI · RULE)을 보인다', () => {
+    expect(summarizeResponse({ source: 'AI', products: [{ productId: '2' }] })).toEqual([
+      'source AI',
+    ])
+  })
 })

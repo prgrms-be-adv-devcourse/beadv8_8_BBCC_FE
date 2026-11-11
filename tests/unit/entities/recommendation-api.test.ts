@@ -28,6 +28,17 @@ describe('추천 요청 주소 (/recommendations 아래, ID는 쿼리)', () => {
     expect(requestOf(spy)).toEqual(['/recommendations/size', { productId: '7', childId: '501' }])
   })
 
+  it('함께 사면 좋은 상품은 productId · childId를 쿼리로 보낸다', async () => {
+    const spy = spyGet({ source: 'RULE', products: [] })
+
+    await recommendationApi.getCompanions('7', '501')
+
+    expect(requestOf(spy)).toEqual([
+      '/recommendations/companions',
+      { productId: '7', childId: '501' },
+    ])
+  })
+
   it('맞춤 목록은 childId를 쿼리로 함께 보낸다', async () => {
     const spy = spyGet({ content: [] })
 

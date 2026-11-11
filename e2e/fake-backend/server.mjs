@@ -419,6 +419,23 @@ function sizeRecommendationOf(detail, c) {
     candidateSizes: candidates.map((s) => s.size),
   }
 }
+/** 자녀에게 맞는 사이즈가 있거나 사이즈 무관인 상품만 맞춤 카드로 (BE RecommendedProductResponse) */
+function fitCardsOf(items, c) {
+  return items.flatMap((item) => {
+    const rec = sizeRecommendationOf(productDetailOf(item.productId), c)
+    if (!rec.recommendedSize && !item.sizeFree) return []
+    return [
+      {
+        productId: item.productId,
+        name: item.name,
+        thumbnailUrl: item.thumbnailUrl,
+        businessName: item.businessName,
+        minPrice: item.minPrice,
+        recommendedSize: rec.recommendedSize,
+      },
+    ]
+  })
+}
 const childOf = ({ memberId: _m, deleted: _d, growth: _g, ...c }) => c
 const lineOf = ({ memberId: _m, ...l }) => ({
   ...l,
@@ -1134,21 +1151,33 @@ http
       // 말단 카테고리만 거른다 (BE: 정확히 같은 categoryId)
       const categoryId = url.searchParams.get('categoryId')
       const byCategory = new URLSearchParams(categoryId ? { categoryId } : {})
-      const content = productListOf(byCategory).flatMap((item) => {
-        const rec = sizeRecommendationOf(productDetailOf(item.productId), c)
-        if (!rec.recommendedSize && !item.sizeFree) return []
-        return [
-          {
-            productId: item.productId,
-            name: item.name,
-            thumbnailUrl: item.thumbnailUrl,
-            businessName: item.businessName,
-            minPrice: item.minPrice,
-            recommendedSize: rec.recommendedSize,
-          },
-        ]
-      })
+      const content = fitCardsOf(productListOf(byCategory), c)
       return send(res, 200, { ...pageFrom(content, url.searchParams), asOf })
+    }
+    // 함께 사면 좋은 상품 (BE #1164): 보고 있는 상품과 다른 카테고리 중 자녀에게 맞는 상품 4개까지.
+    // AI 흉내: 상품 ID가 홀수면 AI가 앞 두 개에 이유를 쓰고(나머지는 규칙으로 채워 null), 짝수면 AI를 못 쓴 RULE(이유 모두 null)
+    if (r('GET', /^\/recommendations\/companions$/)) {
+      const productId = url.searchParams.get('productId')
+      const childId = url.searchParams.get('childId')
+      if (!productId || !childId)
+        return problem(res, 400, '잘못된 요청입니다', 'productId · childId는 필수입니다.', req.url)
+      const detail = productDetailOf(productId)
+      if (!detail)
+        return problem(res, 404, '상품을 찾을 수 없습니다', '상품을 찾을 수 없습니다.', req.url)
+      const c = children.find((c) => c.id === +childId && c.memberId === me && !c.deleted)
+      if (!c)
+        return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
+      const others = productListOf(new URLSearchParams()).filter(
+        (item) => productDetailOf(item.productId).categoryId !== detail.categoryId,
+      )
+      const source = Number(productId) % 2 === 1 ? 'AI' : 'RULE'
+      const products = fitCardsOf(others, c)
+        .slice(0, 4)
+        .map((card, index) => ({
+          ...card,
+          reason: source === 'AI' && index < 2 ? `${detail.name}과 함께 입기 좋아요.` : null,
+        }))
+      return send(res, 200, { source, products })
     }
     // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
     if (r('GET', /^\/admin\/orders$/)) {

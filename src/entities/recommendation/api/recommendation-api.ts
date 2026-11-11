@@ -2,11 +2,16 @@ import { apiClient, expectShape, type Page } from '@/shared/api'
 import type { PurchasedGarmentDto } from './purchased-garment.dto'
 import { purchasedGarmentPageShape } from './purchased-garment.shape'
 import type {
+  CompanionProductsDto,
   RecommendedProductPageDto,
   RecommendedProductsParamsDto,
   SizeRecommendationDto,
 } from './recommendation.dto'
-import { recommendedProductPageShape, sizeRecommendationShape } from './recommendation.shape'
+import {
+  companionProductsShape,
+  recommendedProductPageShape,
+  sizeRecommendationShape,
+} from './recommendation.shape'
 import type { ReferenceGarmentDto, ReferenceGarmentRequestDto } from './reference-garment.dto'
 import { referenceGarmentListShape, referenceGarmentShape } from './reference-garment.shape'
 
@@ -26,6 +31,16 @@ export const recommendationApi = {
         params: { childId, ...params },
       })
       .then(expectShape(recommendedProductPageShape)),
+  /**
+   * 함께 사면 좋은 상품 (최대 4개, 후보가 없으면 []). 없는 상품 · 자녀 · 남의 자녀면 404.
+   * AI가 고르면 3초 가까이 걸려 Gateway가 504를 줄 수 있다
+   */
+  getCompanions: (productId: string, childId: string) =>
+    apiClient
+      .get<CompanionProductsDto>('/recommendations/companions', {
+        params: { productId, childId },
+      })
+      .then(expectShape(companionProductsShape)),
   /** 자녀의 기준 옷 (상의 → 하의, 없으면 []). 남의 자녀면 403, 없는 자녀면 404 */
   referenceGarments: (childId: string) =>
     apiClient

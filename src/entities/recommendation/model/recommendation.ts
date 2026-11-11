@@ -31,6 +31,18 @@ export type RecommendedProduct = {
   recommendedSize: string | null
 }
 
+/** 추천을 고른 쪽 (AI · 규칙). 사용자 화면에는 보이지 않고 흐름 패널에서 본다 */
+export type RecommendationSource = 'AI' | 'RULE'
+
+/** 추천 카드 + 추천 이유. 이유가 없으면 null → 이유 칸을 숨긴다 (기본 문구를 넣지 않는다) */
+export type RecommendedPick = RecommendedProduct & { reason: string | null }
+
+/** AI · 규칙이 고른 추천 상품 묶음 (함께 사면 좋은 상품) */
+export type RecommendedPicks = {
+  source: RecommendationSource
+  products: RecommendedPick[]
+}
+
 export const FIT_LABEL: Record<Fit, string> = {
   ROOMY: '여유 있음',
   PROPER: '적정',

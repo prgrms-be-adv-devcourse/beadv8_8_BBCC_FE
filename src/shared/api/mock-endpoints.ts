@@ -112,6 +112,13 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     backend: 'BE #316 develop 머지(10/16) → 실제 (FE #117), BE #681에서 주소 이동(11/02)',
     screens: '쇼핑 홈 · 콘솔 상품(자녀 맞춤)',
   },
+  {
+    method: 'GET',
+    path: '/recommendations/companions',
+    source: 'real',
+    backend: 'BE #1164 develop 머지 → 실제 (FE #266). AI 응답이 느리면 Gateway 504',
+    screens: '쇼핑 · 콘솔 상품 상세(함께 사면 좋은 상품)',
+  },
   // 주문
   {
     method: 'GET',

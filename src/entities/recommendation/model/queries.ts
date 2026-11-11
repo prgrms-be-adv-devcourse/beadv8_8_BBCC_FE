@@ -4,6 +4,7 @@ import { recommendationApi } from '../api/recommendation-api'
 import type { RecommendedProductsQuery } from './recommendation'
 import { nextRecommendedPageOf, type RecommendedPageParam } from './recommended-page.rules'
 import {
+  toCompanionProducts,
   toRecommendedProduct,
   toRecommendedProductsParams,
   toSizeRecommendation,
@@ -20,6 +21,8 @@ export const recommendationKeys = {
     ['recommendation', 'size', productId, childId] as const,
   products: (childId: string, query: RecommendedProductsQuery) =>
     ['recommendation', 'products', childId, toRecommendedProductsParams(query)] as const,
+  companions: (productId: string, childId: string) =>
+    ['recommendation', 'companions', productId, childId] as const,
   more: (childId: string, categoryId: string | null) =>
     ['recommendation', 'more', childId, categoryId] as const,
 }
@@ -30,6 +33,20 @@ export function useSizeRecommendationQuery(productId: string, childId: string | 
     queryFn: () => recommendationApi.getSize(productId, childId!),
     select: toSizeRecommendation,
     enabled: childId !== null,
+  })
+}
+
+/**
+ * 함께 사면 좋은 상품: 자녀를 골랐을 때만 부른다. AI 응답이 느려 Gateway가 504를 줄 수 있어
+ * 실패해도 다시 부르지 않는다 (화면은 영역을 숨긴다)
+ */
+export function useCompanionProductsQuery(productId: string, childId: string | null) {
+  return useQuery({
+    queryKey: recommendationKeys.companions(productId, childId ?? ''),
+    queryFn: () => recommendationApi.getCompanions(productId, childId!),
+    select: toCompanionProducts,
+    enabled: childId !== null,
+    retry: false,
   })
 }
 

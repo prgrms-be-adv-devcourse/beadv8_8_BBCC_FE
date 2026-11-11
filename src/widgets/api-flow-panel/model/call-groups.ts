@@ -53,6 +53,8 @@ const KEY_FIELDS = [
   'balance',
   'availableQuantity',
   'recommendedSize',
+  // AI 추천을 AI가 골랐는지(AI) 규칙으로 골랐는지(RULE)
+  'source',
   'cancelReason',
   'successCount',
   'failCount',

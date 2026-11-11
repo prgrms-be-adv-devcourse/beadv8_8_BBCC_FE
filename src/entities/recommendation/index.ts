@@ -5,6 +5,9 @@ export type { ReferenceGarmentDto, ReferenceGarmentRequestDto } from './api/refe
 export type { PurchasedGarmentDto } from './api/purchased-garment.dto'
 export {
   type Fit,
+  type RecommendationSource,
+  type RecommendedPick,
+  type RecommendedPicks,
   type RecommendedProduct,
   type RecommendedProductsQuery,
   type SizeNotice,
@@ -13,12 +16,14 @@ export {
 } from './model/recommendation'
 export {
   sizeRangesOf,
+  toCompanionProducts,
   toRecommendedProduct,
   toRecommendedProductsParams,
   toSizeRecommendation,
 } from './model/recommendation.mapper'
 export {
   recommendationKeys,
+  useCompanionProductsQuery,
   usePurchasedGarmentsInfiniteQuery,
   useRecommendedProductsInfiniteQuery,
   useRecommendedProductsQuery,

@@ -41,3 +41,15 @@ export type RecommendedProductsParamsDto = {
 
 /** GET /recommendations/products 응답: 공통 목록 응답 + 목록 기준 시각 (한국 시간 LocalDateTime, 초 단위) */
 export type RecommendedProductPageDto = Page<RecommendedProductDto> & { asOf: string }
+
+/** 추천을 고른 쪽: AI가 골랐으면 AI, AI를 쓸 수 없어 규칙으로 골랐으면 RULE */
+export type RecommendationSourceDto = 'AI' | 'RULE'
+
+/** 추천 카드 + 추천 이유. 이유가 없으면(규칙으로 채운 상품 등) null */
+export type RecommendedPickDto = RecommendedProductDto & { reason: string | null }
+
+/** GET /recommendations/companions?productId=&childId= (최대 4개, 후보가 없으면 products는 []) */
+export type CompanionProductsDto = {
+  source: RecommendationSourceDto
+  products: RecommendedPickDto[]
+}
