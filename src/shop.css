@@ -59,7 +59,9 @@
   --color-signal-deep: var(--signal-deep);
   --color-signal-soft: var(--signal-soft);
   --color-signal-ink: var(--signal-ink);
-  --font-body: 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, sans-serif;
+  --font-body:
+    'Noto Sans KR', 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Jua', 'Noto Sans KR', ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme {
@@ -137,6 +139,24 @@ body:has([data-area='shop']) {
   overflow-wrap: break-word;
   min-width: 0;
   text-wrap: balance;
+}
+
+/* 확정 시안: 로고 · 큰 제목은 Jua (굵기 하나뿐이라 합성 굵기를 막는다) */
+[data-area='shop'] .font-display {
+  font-weight: 400;
+  font-synthesis: none;
+  letter-spacing: -0.02em;
+}
+
+/* 홈은 브랜드 퍼플 바탕 (확정 시안 6번). 나머지 화면은 흰 바탕 */
+[data-area='shop']:has([data-shop-home]) {
+  --home-paper: #f6f0f8;
+  background: var(--home-paper);
+}
+
+[data-area='shop']:has([data-shop-home]) > header {
+  background: var(--home-paper);
+  border-color: transparent;
 }
 
 [data-area='shop'] p {
@@ -241,4 +261,9 @@ body:has([data-area='shop']) {
       transition: none;
     }
   }
+}
+
+/* 홈(브랜드 퍼플)에서는 검색 칸을 흰색으로 */
+[data-area='shop']:has([data-shop-home]) form[role='search'] {
+  background: var(--paper);
 }

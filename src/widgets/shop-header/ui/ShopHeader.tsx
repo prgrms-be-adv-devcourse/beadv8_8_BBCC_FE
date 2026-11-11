@@ -28,13 +28,13 @@ function HeaderSearch({ className }: { className?: string }) {
       role="search"
       onSubmit={submit}
       className={cn(
-        'border-ink bg-paper has-[input:focus-visible]:outline-signal flex h-11 min-w-0 items-center rounded-md border-[1.5px] pr-1 pl-4 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2',
+        'bg-paper-2 has-[input:focus-visible]:outline-signal flex h-11 min-w-0 items-center rounded-full pr-1.5 pl-4 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2',
         className,
       )}
     >
       <input
         aria-label="상품 검색"
-        placeholder="우리 아이 옷, 상점 이름으로 찾아보세요"
+        placeholder="검색"
         className="placeholder:text-ink-3 text-ink min-w-0 flex-1 bg-transparent text-[15px] focus-visible:outline-none"
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
@@ -42,7 +42,7 @@ function HeaderSearch({ className }: { className?: string }) {
       <button
         type="submit"
         aria-label="검색"
-        className="text-ink hover:text-signal focus-visible:outline-signal flex size-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 active:translate-y-px"
+        className="text-ink-3 hover:text-signal focus-visible:outline-signal flex size-9 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 active:translate-y-px"
       >
         <svg
           viewBox="0 0 24 24"
@@ -77,7 +77,7 @@ function UtilityLink({ to, label, ariaLabel, count, children }: UtilityLinkProps
       aria-label={ariaLabel ?? label}
       className={({ isActive }) =>
         cn(
-          'hover:text-signal relative flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md text-[13px] font-semibold transition-colors active:translate-y-px md:min-w-0 md:px-2',
+          'hover:text-signal relative flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-full text-[13px] font-semibold transition-colors active:translate-y-px md:min-w-0 md:px-2',
           isActive ? 'text-signal' : 'text-ink',
         )
       }
@@ -97,7 +97,7 @@ function UtilityLink({ to, label, ariaLabel, count, children }: UtilityLinkProps
 }
 
 const ACCOUNT_BOX =
-  'border-rule text-ink hover:border-ink flex h-8 items-center rounded-md border px-2.5 text-[13px] font-semibold transition-colors'
+  'border-rule text-ink hover:border-signal flex h-8 items-center rounded-full border px-3 text-[13px] font-semibold transition-colors'
 
 /** 로그인 · 회원가입(카카오 로그인 한 번으로 가입까지) 또는 로그아웃 */
 function AccountAction() {
@@ -133,7 +133,7 @@ function AccountAction() {
 }
 
 /**
- * 쇼핑 영역 머리말: 로고와 검색 · 알림 · 마이페이지 · 장바구니 · 로그인 한 줄.
+ * 쇼핑 영역 머리말 (확정 시안 11-09): 로고와 둥근 검색 · 판매자센터 · 알림 · 장바구니 · 마이페이지 · 로그인 한 줄.
  * 탭 메뉴는 두지 않는다 (홈은 로고, 자녀 프로필 · 주문 내역은 마이페이지 메뉴에 있다).
  * 화면을 열 때 API를 부르지 않는다 (흐름 기록을 화면 동작만으로 남기려고). 로그아웃은 누를 때만 부른다
  */
@@ -148,12 +148,28 @@ export function ShopHeader() {
         <div className="flex flex-wrap items-center gap-x-8 gap-y-2 py-3 md:h-17 md:flex-nowrap md:py-0">
           <Link
             to={paths.shop.home}
-            className="text-signal shrink-0 font-sans text-[28px] leading-none font-black tracking-tight"
+            aria-label="Kidly"
+            className="font-display text-ink hover:text-signal shrink-0 text-[28px] leading-none"
           >
-            Kidly
+            kidly
           </Link>
           <HeaderSearch className="order-last basis-full md:order-none md:max-w-xl md:flex-1 md:basis-auto" />
           <div className="ml-auto flex shrink-0 items-center md:gap-1">
+            <UtilityLink to={paths.center.home} label="판매자센터">
+              <svg
+                viewBox="0 0 24 24"
+                className="size-6 md:size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                aria-hidden
+              >
+                <path d="M4 9.5 5.5 4h13L20 9.5" />
+                <path d="M4 9.5a2.67 2.67 0 0 0 5.33 0 2.67 2.67 0 0 0 5.34 0 2.67 2.67 0 0 0 5.33 0" />
+                <path d="M5.5 12v8h13v-8" />
+                <path d="M10 20v-4.5h4V20" />
+              </svg>
+            </UtilityLink>
             <UtilityLink to={paths.shop.notifications} label="알림">
               <svg
                 viewBox="0 0 24 24"
@@ -165,19 +181,6 @@ export function ShopHeader() {
               >
                 <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16Z" />
                 <path d="M10 20.5a2 2 0 0 0 4 0" />
-              </svg>
-            </UtilityLink>
-            <UtilityLink to={paths.shop.my} label="마이페이지">
-              <svg
-                viewBox="0 0 24 24"
-                className="size-6 md:size-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                aria-hidden
-              >
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
               </svg>
             </UtilityLink>
             <UtilityLink
@@ -196,6 +199,19 @@ export function ShopHeader() {
               >
                 <path d="M6 8h12l-1 12H7L6 8Z" />
                 <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+              </svg>
+            </UtilityLink>
+            <UtilityLink to={paths.shop.my} label="마이페이지">
+              <svg
+                viewBox="0 0 24 24"
+                className="size-6 md:size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                aria-hidden
+              >
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
               </svg>
             </UtilityLink>
             <AccountAction />

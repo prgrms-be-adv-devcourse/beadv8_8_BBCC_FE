@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { useChildrenQuery } from '@/entities/child'
+import { sizeRulerOf, useChildrenQuery } from '@/entities/child'
 import {
   effectiveSort,
   ProductTile,
@@ -26,13 +26,14 @@ import { Pagination } from '@/shared/ui/Pagination'
 import { Button } from '@/shared/ui/button'
 import { CardGridSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
-import { CategoryCircles } from './CategoryCircles'
+import { CategoryChips } from './CategoryChips'
+import { HomeHero } from './HomeHero'
 import { ProductFilterBar } from './ProductFilterBar'
 import { ProductSortSelect } from './ProductSortSelect'
 import { RecommendedPreview } from './RecommendedPreview'
 
 /**
- * 쇼핑 첫 화면 (셀러 마켓 모양): 카테고리 바로가기 · 자녀 맞춤 상품(자녀가 있을 때) · 전체 상품 · 키 기록.
+ * 쇼핑 첫 화면 (확정 시안 6번 브랜드 퍼플): 계절 · 사이즈 첫 칸 · 카테고리 칩 · 자녀 맞춤 상품(자녀가 있을 때) · 전체 상품 · 키 기록.
  * 자녀 등록 안내는 머리말 띠 하나만 둔다.
  * 검색어는 머리말 검색창이 주소(?q=)에 싣는다. 검색 중에는 전체 상품 검색 결과만 보인다
  */
@@ -94,8 +95,15 @@ export function ShopHomePage() {
   }
 
   return (
-    <div className="shop-look flex flex-col gap-8 md:gap-10">
-      <CategoryCircles
+    // data-shop-home: 홈만 브랜드 퍼플 바탕 (shop.css). 자녀 영역 홈은 그대로
+    <div
+      data-shop-home={isChild ? undefined : ''}
+      className="shop-look flex flex-col gap-8 md:gap-10"
+    >
+      {!isChild && !keyword && (
+        <HomeHero size={child ? sizeRulerOf(child.heightCm).band.size : null} />
+      )}
+      <CategoryChips
         categories={categories.data ?? []}
         selectedId={filters.categoryId}
         onSelect={(categoryId) => update({ categoryId, attributes: [] })}

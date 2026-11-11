@@ -19,7 +19,7 @@ type ProductTileProps = {
 }
 
 /**
- * 쇼핑 상품 칸 (셀러 마켓 모양): 사진 · 상점 이름(굵게) · 상품명 · 가격 · 꼬리표.
+ * 쇼핑 상품 칸 (확정 시안 11-09): 3:4 사진(꼬리표는 사진 왼쪽 아래) · 상점 이름 · 상품명 · 가격.
  * 카드 테두리 없이 사진과 글자만 둔다 (ProductCard는 시연 콘솔용)
  */
 export function ProductTile({
@@ -34,10 +34,12 @@ export function ProductTile({
 }: ProductTileProps) {
   return (
     <Link to={to} className="group rounded-card block" onClick={onClick}>
-      <div className="rounded-card bg-paper-2 relative overflow-hidden">
+      {/* 확정 시안: 홈(브랜드 퍼플)은 둥근 사진, 나머지 화면은 각진 사진 */}
+      <div className="rounded-card bg-paper-2 relative overflow-hidden [[data-shop-home]_&]:rounded-[20px]">
         <ProductImage
           src={imageUrl}
           alt={name}
+          allowSample
           className="aspect-[3/4] transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
         />
         {isSoldOut && (
@@ -45,27 +47,23 @@ export function ProductTile({
             품절
           </span>
         )}
+        {tag && (
+          <span
+            className={cn(
+              'absolute bottom-2.5 left-2.5 inline-flex h-[26px] items-center rounded-full px-2.5 text-xs font-bold',
+              tag.fit ? 'bg-fit-soft text-fit-ink' : 'bg-paper text-signal',
+            )}
+          >
+            {tag.text}
+          </span>
+        )}
       </div>
       <div className="mt-2.5 space-y-0.5">
-        {seller && <p className="text-ink truncate text-[13px] font-bold">{seller}</p>}
-        <p className="text-ink-2 line-clamp-2 text-[13px] leading-snug group-hover:underline">
-          {name}
-        </p>
-        <p className="figure text-ink pt-1 text-base font-bold">
+        {seller && <p className="text-ink-3 truncate text-[13px] font-semibold">{seller}</p>}
+        <p className="text-ink line-clamp-2 text-sm leading-snug group-hover:underline">{name}</p>
+        <p className="figure text-ink pt-0.5 text-[15px] font-bold">
           {price === null ? '—' : formatWon(price)}
         </p>
-        {tag && (
-          <p className="pt-1">
-            <span
-              className={cn(
-                'inline-flex h-5 items-center rounded-sm px-1.5 text-[11px] font-semibold',
-                tag.fit ? 'bg-fit-soft text-fit-ink font-bold' : 'bg-paper-2 text-ink-2',
-              )}
-            >
-              {tag.text}
-            </span>
-          </p>
-        )}
       </div>
     </Link>
   )
