@@ -244,7 +244,7 @@ export const AUTO_DEMO_STEPS: AutoDemoStep[] = [
           orderApi.confirmItem(ctx.data.orderId!, String(item.orderItemId)),
         )
       }
-      // 구매확정 뒤 주문 상세를 다시 받아 정산 대상(목)에 옮겨진다
+      // 구매확정 뒤 주문 상세를 다시 받는다 (정산 대상으로 옮기는 일은 서버가 한다)
       await orderApi.get(ctx.data.orderId!)
     },
   },

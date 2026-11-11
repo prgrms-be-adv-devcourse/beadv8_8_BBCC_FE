@@ -104,7 +104,7 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
         '자녀 버튼("테스트 맞춤")을 눌러 맞는 사이즈가 있는 상품만 봐요',
         '상품 A를 눌러 상세로 가요',
       ],
-      watch: 'GET /recommendations/products — 추천이 자기 복사본으로 계산 (목)',
+      watch: 'GET /recommendations/products — 추천이 자기 복사본으로 계산',
       next: { label: '④ 장바구니', to: C.cart },
     },
   },
