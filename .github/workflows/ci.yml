@@ -33,8 +33,13 @@ jobs:
   # E2E: 가짜 백엔드 + 개발 서버를 띄워 시연 흐름(①~⑦)을 브라우저로 따라간다
   # 가장 오래 걸려(약 3분 반) 파일 단위로 두 갈래로 나눠 동시에 돌린다(#276). 갈래마다 가짜 백엔드를 따로 띄우고,
   # 공용 상태를 바꾸는 zz-auto-demo 는 파일 이름 순서대로 둘째 갈래의 맨 뒤에 남는다
+  # Playwright 공식 이미지 안에서 돌린다: 브라우저 · 시스템 패키지가 들어 있어 apt(Ubuntu 패키지 서버)에 접속하지 않는다(#309).
+  # --user 1001: 러너가 만든 작업 폴더의 주인과 맞춘다. @playwright/test를 올리면 이미지 태그와 아래 PLAYWRIGHT_IMAGE_VERSION도 같이 올린다
   e2e:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --user 1001
     strategy:
       # 한 갈래가 실패해도 다른 갈래는 끝까지 돌려 실패한 테스트를 모두 보이게 한다
       fail-fast: false
@@ -50,19 +55,14 @@ jobs:
 
       - run: npm ci
 
-      # 브라우저는 Playwright 버전마다 캐시한다. 캐시가 있으면 내려받기를 건너뛰고 시스템 라이브러리만 깐다(#271)
-      - name: Playwright 버전
-        id: playwright
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
-      - if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-      - if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+      # 설치한 @playwright/test와 이미지의 브라우저 버전이 다르면 테스트 전에 멈춘다 (브라우저를 찾지 못해 모든 테스트가 실패하는 대신)
+      - name: Playwright 버전 확인
+        env:
+          PLAYWRIGHT_IMAGE_VERSION: 1.64.1
+        run: |
+          installed=$(node -p "require('@playwright/test/package.json').version")
+          echo "installed=$installed image=$PLAYWRIGHT_IMAGE_VERSION"
+          [ "$installed" = "$PLAYWRIGHT_IMAGE_VERSION" ]
       - run: npm run test:e2e -- --shard=${{ matrix.shard }}/2
       - uses: actions/upload-artifact@v4
         if: failure()
