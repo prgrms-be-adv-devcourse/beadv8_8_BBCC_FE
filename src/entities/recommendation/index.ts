@@ -2,6 +2,7 @@ export { recommendationApi } from './api/recommendation-api'
 /** 목 응답 작성 전용 (app/mocks) */
 export type { RecommendedProductDto, SizeRecommendationDto } from './api/recommendation.dto'
 export type { ReferenceGarmentDto, ReferenceGarmentRequestDto } from './api/reference-garment.dto'
+export type { PurchasedGarmentDto } from './api/purchased-garment.dto'
 export {
   type Fit,
   type RecommendationSource,
@@ -23,6 +24,7 @@ export {
 export {
   recommendationKeys,
   useCompanionProductsQuery,
+  usePurchasedGarmentsInfiniteQuery,
   useRecommendedProductsInfiniteQuery,
   useRecommendedProductsQuery,
   useReferenceGarmentsQuery,
@@ -45,8 +47,10 @@ export {
 export {
   toReferenceGarment,
   toReferenceGarmentForm,
+  toReferenceGarmentFormFromPurchase,
   toReferenceGarmentFromPurchase,
-  type PurchasedGarment,
+  type PurchaseSource,
+  type PurchasedProduct,
   toReferenceGarmentRequest,
 } from './model/reference-garment.mapper'
 export {
@@ -54,5 +58,8 @@ export {
   garmentPartOf,
   isValidMeasurementText,
   measurementCodesOf,
+  partsForPurchase,
   validateReferenceGarmentForm,
 } from './model/reference-garment.rules'
+export { type PurchasedGarment } from './model/purchased-garment'
+export { toPurchasedGarment } from './model/purchased-garment.mapper'

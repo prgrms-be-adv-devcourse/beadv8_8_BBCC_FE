@@ -3,34 +3,44 @@ name: Vercel Deploy
 # FE를 Vercel에 배포한다. 브랜치마다 고정 주소가 하나씩 있다
 # - main 머지    → production  https://kidly-fe.vercel.app      (발표 · 공유용)
 # - develop 머지 → preview + 별칭 https://kidly-fe-dev.vercel.app · https://dev.kidly.kro.kr (개발 확인용)
-# 다시 올려야 하면 Actions에서 해당 브랜치로 수동 실행한다. vercel CLI로 로컬 파일을 직접 올리지 않는다
+# CI(ci.yml)가 main · develop push 에서 성공한 뒤에만 올린다(#271). CI 가 실패한 코드는 올리지 않는다
+# 다시 올려야 하면 Actions에서 해당 브랜치로 수동 실행한다(CI 를 기다리지 않는다). vercel CLI로 로컬 파일을 직접 올리지 않는다
 # 필요한 값: Secrets VERCEL_TOKEN, Variables VERCEL_ORG_ID · VERCEL_PROJECT_ID (Settings → Secrets and variables → Actions)
 # 빌드 값(VITE_*)은 Vercel 프로젝트 Settings → Environment Variables에서 정한다. Production = main, Preview = develop
-# 팀 배포(EC2 · GHCR)는 deploy.yml이 맡는다. 이 워크플로는 Vercel 배포만 맡는다
+# FE 배포는 이 워크플로가 맡는다. GHCR 이미지를 만들던 deploy.yml 은 서버에 반영되지 않아 지웠다(#276)
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main, develop]
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 # 같은 브랜치에서 머지가 이어지면 마지막 것만 올린다
 concurrency:
-  group: vercel-deploy-${{ github.ref_name }}
+  group: vercel-deploy-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    # CI 가 main · develop 의 push 에서 성공했을 때(PR 의 CI 는 아님), 또는 main · develop 에서 수동 실행했을 때
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
+      || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'))
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      # 배포할 브랜치 · 커밋. workflow_run 은 기본 브랜치에서 돌므로 CI 가 검사한 커밋을 직접 받는다
+      BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
       # main = production, develop = preview (+ 고정 별칭)
-      VERCEL_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      VERCEL_ENV: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'preview' }}
       DEV_ALIAS: kidly-fe-dev.vercel.app
       # 개발 도메인. Vercel에서 develop 브랜치 도메인으로 지정해 운영 배포가 가져가지 않는다
       DEV_DOMAIN: dev.kidly.kro.kr
@@ -45,11 +55,31 @@ jobs:
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # CI 가 늦게 끝난 옛 커밋이 더 새 배포를 덮지 않게 한다. 같은 브랜치에 더 새 push 의 CI 가 성공했거나 아직 도는 중이면 건너뛴다
+      # 더 새 커밋의 CI 가 실패했으면 이 커밋이 가장 새 통과 커밋이라 올린다. 조회가 실패하면 올린다
+      - name: 최신 통과 커밋인지 확인
+        id: latest
+        if: steps.ready.outputs.ok == 'true' && github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+        run: |
+          newer=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?branch=$BRANCH&event=push&per_page=30" \
+            --jq "[.workflow_runs[] | select(.run_number > $RUN_NUMBER and (.conclusion == null or .conclusion == \"success\"))] | length" 2>/dev/null) || newer=0
+          if [[ "$newer" =~ ^[0-9]+$ ]] && (( newer > 0 )); then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=배포 건너뜀::더 새 커밋의 CI 가 ${newer}건 통과했거나 도는 중이라 건너뜁니다. 그 커밋이 올라갑니다"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v7
-        if: steps.ready.outputs.ok == 'true'
+        if: steps.ready.outputs.ok == 'true' && steps.latest.outputs.skip != 'true'
+        with:
+          ref: ${{ env.SHA }}
 
       - uses: actions/setup-node@v7
-        if: steps.ready.outputs.ok == 'true'
+        if: steps.ready.outputs.ok == 'true' && steps.latest.outputs.skip != 'true'
         with:
           node-version: 24
           cache: npm
@@ -61,7 +91,7 @@ jobs:
       # - VITE_DEMO_ROLE_SWITCH: false면 시연 기능(역할 전환 · 시연 콘솔 · API 흐름 · 시연용 문구)을 감춘다 (없으면 켜짐. 개발용 토큰이 없는 백엔드면 false)
       # - VITE_TOSS_CLIENT_KEY · VITE_KAKAO_CLIENT_ID · VITE_KAKAO_REDIRECT_URI: 충전 · 카카오 로그인에 쓴다 (없으면 그 기능이 동작하지 않는다)
       - name: 빌드
-        if: steps.ready.outputs.ok == 'true'
+        if: steps.ready.outputs.ok == 'true' && steps.latest.outputs.skip != 'true'
         run: |
           npx --yes vercel@64.2.0 pull --yes --environment="$VERCEL_ENV" --token="$VERCEL_TOKEN"
           if [ "$VERCEL_ENV" = production ]; then
@@ -71,7 +101,7 @@ jobs:
           fi
 
       - name: 배포
-        if: steps.ready.outputs.ok == 'true'
+        if: steps.ready.outputs.ok == 'true' && steps.latest.outputs.skip != 'true'
         run: |
           if [ "$VERCEL_ENV" = production ]; then
             url=$(npx --yes vercel@64.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
