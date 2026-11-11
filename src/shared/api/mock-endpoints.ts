@@ -116,15 +116,15 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'GET',
     path: '/recommendations/products/preview',
-    source: 'mock',
-    backend: 'BE SSE 구현 전 → SSE 목 (FE #290). JSON 응답 API는 실제',
+    source: 'real',
+    backend: 'BE SSE #1205 · #1211 develop 머지 → 실제 SSE (FE #290 · #307)',
     screens: '쇼핑 홈(맞춤 맛보기 4개)',
   },
   {
     method: 'GET',
     path: '/recommendations/companions',
-    source: 'mock',
-    backend: 'BE SSE 구현 전 → SSE 목 (FE #290). JSON 응답 API는 실제',
+    source: 'real',
+    backend: 'BE SSE #1205 · #1211 develop 머지 → 실제 SSE (FE #290 · #307)',
     screens: '쇼핑 · 콘솔 상품 상세(함께 사면 좋은 상품)',
   },
   // 주문
