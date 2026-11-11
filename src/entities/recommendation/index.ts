@@ -39,7 +39,7 @@ export {
   useSizeRecommendationQuery,
 } from './model/queries'
 export { candidateNoteOf } from './model/size-recommendation.rules'
-export { shownPicksOf } from './model/recommended-picks.rules'
+export { hasAiReasons, shownPicksOf } from './model/recommended-picks.rules'
 export { sizeScaleOf, type SizeScale } from './model/size-scale.rules'
 export { nextRecommendedPageOf } from './model/recommended-page.rules'
 export { FIT_LABEL, SIZE_REASON_LABEL } from './model/recommendation'
