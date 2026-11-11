@@ -307,8 +307,8 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(names.first()).toHaveText('밴딩 조거 팬츠 (상품 B)')
     await page.getByRole('combobox', { name: '정렬' }).selectOption('NEWEST')
 
-    // 옵션 값 거르기 (BE attributes): 하의 + 색상 그레이 → B만, 네이비로 바꾸면 없음
-    await page.getByRole('button', { name: '하의', exact: true }).click()
+    // 옵션 값 거르기 (BE attributes): 바지 + 색상 그레이 → B만, 네이비로 바꾸면 없음
+    await page.getByRole('button', { name: '바지', exact: true }).click()
     const color = page.getByRole('group', { name: '색상 거르기' })
     await color.getByRole('button', { name: '그레이' }).click()
     await expect(list.getByText('밴딩 조거 팬츠 (상품 B)')).toBeVisible()

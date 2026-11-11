@@ -67,24 +67,30 @@ const leaves = {
       measurement('SLEEVE_LENGTH', '소매길이'),
     ],
   },
+  // BE #1219: 「하의」가 「바지」로 바뀌고 여아 전용(visibleGender GIRL) 「치마」가 생겼다
   12: {
-    name: '하의',
+    name: '바지',
+    items: [measurement('TOTAL_LENGTH', '총장'), measurement('WAIST_WIDTH', '허리단면')],
+  },
+  13: {
+    name: '치마',
+    visibleGender: 'GIRL',
     items: [measurement('TOTAL_LENGTH', '총장'), measurement('WAIST_WIDTH', '허리단면')],
   },
 }
-export const categoryTree = [
-  {
-    categoryId: '10',
-    name: '의류',
-    leaf: false,
-    children: Object.entries(leaves).map(([id, leaf]) => ({
-      categoryId: id,
-      name: leaf.name,
-      leaf: true,
-      children: [],
-    })),
-  },
-]
+/** GET /categories (BE #1219): MALE이면 여아 전용(GIRL) 카테고리를 빼고, FEMALE이거나 없으면 모두 */
+export function categoryTreeFor(gender) {
+  return [
+    {
+      categoryId: '10',
+      name: '의류',
+      leaf: false,
+      children: Object.entries(leaves)
+        .filter(([, leaf]) => gender !== 'MALE' || leaf.visibleGender !== 'GIRL')
+        .map(([id, leaf]) => ({ categoryId: id, name: leaf.name, leaf: true, children: [] })),
+    },
+  ]
+}
 
 const valueOut = (id) => ({
   valueId: String(id),

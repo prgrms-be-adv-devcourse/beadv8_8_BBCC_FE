@@ -25,7 +25,7 @@ type ReferenceGarmentSectionProps = { childId: string }
 type PickedGarment = { key: string; part: GarmentPart; form: ReferenceGarmentForm; notice: string }
 
 /**
- * 자녀 프로필의 기준 옷 칸: 상의 · 하의 두 칸. 「산 옷에서 고르기」로 구매확정한 옷을 고르거나,
+ * 자녀 프로필의 기준 옷 칸: 상의 · 바지 · 아우터 · 원피스 · 치마 다섯 칸. 「산 옷에서 고르기」로 구매확정한 옷을 고르거나,
  * 주문 상세 「기준 옷으로」에서 오면(주소에 상품 · 사이즈) 그 옷의 카테고리와 산 사이즈 실측으로 맞는 칸을 채운다.
  * 저장하면 고른 옷과 주소의 상품 · 사이즈를 지운다
  */
@@ -112,7 +112,7 @@ export function ReferenceGarmentSection({ childId }: ReferenceGarmentSectionProp
       )}
       {product.data && categoryPath !== undefined && !purchase && (
         <StateMessage tone="error">
-          이 옷은 기준 옷으로 쓸 수 없어요. 상의 · 아우터 · 원피스 · 하의 · 치마이고, 산 사이즈의
+          이 옷은 기준 옷으로 쓸 수 없어요. 상의 · 바지 · 아우터 · 원피스 · 치마이고, 산 사이즈의
           실측이 있는 옷만 쓸 수 있어요.
         </StateMessage>
       )}

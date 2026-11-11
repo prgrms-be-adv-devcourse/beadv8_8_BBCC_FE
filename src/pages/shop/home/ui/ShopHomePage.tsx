@@ -76,7 +76,8 @@ export function ShopHomePage() {
   const all = useProductsQuery(search, page, {
     enabled: !(searchesAsBuyer && children.isPending),
   })
-  const categories = useCategoriesQuery()
+  // 보호자가 고른(보이는) 자녀의 성별에 맞는 카테고리만 (남아면 원피스 · 치마가 빠진다)
+  const categories = useCategoriesQuery(isBuyer ? (child?.gender ?? null) : null)
   const listRef = useRef<HTMLElement>(null)
   // 맞춤 영역: 자녀가 있는 보호자에게만. 검색 중에는 숨긴다
   const showsRecommended = isBuyer && child !== null && !keyword

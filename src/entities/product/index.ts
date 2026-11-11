@@ -14,6 +14,7 @@ export {
   PRODUCT_STATUS_LABEL,
   STOCK_REASON_LABEL,
   type Category,
+  type CategoryGender,
   type CategoryGroup,
   type CategoryInputs,
   type InputAttribute,

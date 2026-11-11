@@ -1534,6 +1534,25 @@ it('홈 맛보기 · 사이즈 추천: AI · RULE 응답 모두 계약 모양이
   expect(sizeSources).toEqual(['AI', 'RULE'])
 })
 
+it('카테고리 목록: 남아(MALE)면 여아 전용(치마)을 빼고, 여아 · 없음이면 모두, 그 밖의 값은 400 (BE #1219)', async () => {
+  const leafNames = (tree: { name: string; children: { name: string }[] }[]) =>
+    tree.flatMap((node) => node.children.map((child) => child.name))
+
+  const all = await call('GET', '/categories', null)
+  expectContract(all.data, categoryTreeShape)
+  expect(leafNames(all.data)).toEqual(['상의', '바지', '치마'])
+  expect(leafNames((await call('GET', '/categories?gender=FEMALE', null)).data)).toEqual([
+    '상의',
+    '바지',
+    '치마',
+  ])
+  expect(leafNames((await call('GET', '/categories?gender=MALE', null)).data)).toEqual([
+    '상의',
+    '바지',
+  ])
+  expect((await call('GET', '/categories?gender=X', null)).status).toBe(400)
+})
+
 it('검색: 관련도순 목록은 목록 응답 모양이고, 결과 클릭 기록은 로그인 회원만 204 (BE SearchClickRequest)', async () => {
   const params = new URLSearchParams(
     toProductSearchParams({ keyword: '맨투맨', categoryId: null }) as Record<string, string>,
