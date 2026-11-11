@@ -45,7 +45,9 @@ export function AdminOrdersPage() {
   const visible = useAdminOrdersQuery(status)
   const orders = visible.data?.content ?? []
   const countOf = (value: OrderStatus | null) =>
-    all.data?.content.filter((order) => value === null || order.status === value).length
+    value === null
+      ? all.data?.totalElements
+      : all.data?.content.filter((order) => order.status === value).length
 
   return (
     <div className="shop-look space-y-5">
@@ -85,7 +87,9 @@ export function AdminOrdersPage() {
       {visible.data && (
         <section aria-label="주문 목록" className="space-y-2">
           <div className="text-ink-3 flex min-h-11 items-center justify-between text-[13px]">
-            <span className="figure">{orders.length}건</span>
+            <span className="figure">
+              {status === null ? visible.data.totalElements : orders.length}건
+            </span>
             {orders.length > 0 && (
               <button
                 type="button"

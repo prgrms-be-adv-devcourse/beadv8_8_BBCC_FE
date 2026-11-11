@@ -30,7 +30,7 @@ export function CenterOrdersPage() {
     setParams(next === 'ALL' ? {} : { tab: next }, { replace: true })
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const all = orders.data?.content ?? []
-  const counts = countSellerOrdersByTab(all)
+  const counts = countSellerOrdersByTab(all, orders.data?.totalElements)
   const visible = filterSellerOrdersByTab(all, tab)
   const actionable = visible.filter((order) => nextShippingStep(order) !== null)
   const targets = bulkTargets(visible, selected)

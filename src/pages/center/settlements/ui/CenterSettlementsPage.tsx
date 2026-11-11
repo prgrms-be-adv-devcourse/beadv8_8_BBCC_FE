@@ -52,7 +52,7 @@ export function CenterSettlementsPage() {
           정산 예정
           {targets.data && (
             <span className="text-ink-3 figure ml-2 text-sm font-medium">
-              {targets.data.content.length}건
+              {targets.data.totalElements}건
             </span>
           )}
         </h2>

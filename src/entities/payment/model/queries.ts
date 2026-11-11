@@ -20,6 +20,6 @@ export function useAdminPaymentsQuery() {
   return useQuery({
     queryKey: ['payments', 'admin'] as const,
     queryFn: paymentApi.adminList,
-    select: (page) => page.content.map(toAdminPayment),
+    select: (page) => ({ ...page, content: page.content.map(toAdminPayment) }),
   })
 }

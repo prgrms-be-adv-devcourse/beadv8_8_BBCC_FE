@@ -23,7 +23,7 @@ export function ShopOrdersPage() {
   const setTab = (next: OrderTab) =>
     setParams(next === 'ALL' ? {} : { tab: next }, { replace: true })
   const all = orders.data?.content ?? []
-  const counts = countOrdersByTab(all)
+  const counts = countOrdersByTab(all, orders.data?.totalElements)
   const visible = filterOrdersByTab(all, tab)
 
   return (

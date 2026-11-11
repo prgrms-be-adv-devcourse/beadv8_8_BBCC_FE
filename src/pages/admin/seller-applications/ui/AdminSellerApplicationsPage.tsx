@@ -19,8 +19,9 @@ import { StateMessage } from '@/shared/ui/StateMessage'
  */
 export function AdminSellerApplicationsPage() {
   const applications = useSellerApplicationsQuery(null)
+  const pendingApplications = useSellerApplicationsQuery('PENDING')
   const all = applications.data?.content ?? []
-  const pending = all.filter(canApprove)
+  const pending = pendingApplications.data?.content ?? []
   const processed = all.filter((application) => !canApprove(application))
 
   return (
@@ -31,15 +32,17 @@ export function AdminSellerApplicationsPage() {
         description="신청을 확인하고 승인하거나 거절해요. 거절 사유는 신청자에게 보여요."
         note="승인하면 신청한 회원이 다음 토큰부터 SELLER 역할을 받아요."
       />
-      {applications.isPending && <ListSkeleton />}
-      {applications.isError && (
-        <StateMessage tone="error">{getErrorMessage(applications.error)}</StateMessage>
+      {(applications.isPending || pendingApplications.isPending) && <ListSkeleton />}
+      {(applications.isError || pendingApplications.isError) && (
+        <StateMessage tone="error">
+          {getErrorMessage(applications.error ?? pendingApplications.error)}
+        </StateMessage>
       )}
 
-      {applications.data && (
+      {applications.data && pendingApplications.data && (
         <>
           <section aria-label="심사 대기" className="space-y-3">
-            <SectionTitle count={pending.length}>심사 대기</SectionTitle>
+            <SectionTitle count={pendingApplications.data.totalElements}>심사 대기</SectionTitle>
             {pending.length === 0 ? (
               <p className="bg-paper-2 text-ink-2 rounded-lg py-10 text-center text-sm">
                 심사할 신청이 없어요.
@@ -55,7 +58,14 @@ export function AdminSellerApplicationsPage() {
 
           {processed.length > 0 && (
             <section aria-label="처리한 신청" className="space-y-3">
-              <SectionTitle count={processed.length}>처리한 신청</SectionTitle>
+              <SectionTitle
+                count={Math.max(
+                  0,
+                  applications.data.totalElements - pendingApplications.data.totalElements,
+                )}
+              >
+                처리한 신청
+              </SectionTitle>
               <ApplicationTable label="처리한 신청" lastColumn="상태">
                 {processed.map((application) => (
                   <tr key={application.id} className={ROW}>

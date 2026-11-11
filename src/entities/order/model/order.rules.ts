@@ -214,9 +214,13 @@ export function filterOrdersByTab<T extends { status: OrderStatus }>(
   return tab === 'ALL' ? orders : orders.filter((order) => order.status === tab)
 }
 
-export function countOrdersByTab(orders: { status: OrderStatus }[]): Record<OrderTab, number> {
+// 전체는 서버 건수를 쓰고, 상태별 건수는 별도 집계가 생기기 전까지 받은 목록 범위다.
+export function countOrdersByTab(
+  orders: { status: OrderStatus }[],
+  totalElements = orders.length,
+): Record<OrderTab, number> {
   const counts: Record<OrderTab, number> = {
-    ALL: orders.length,
+    ALL: totalElements,
     PENDING_PAYMENT: 0,
     PAID: 0,
     CANCELLED: 0,

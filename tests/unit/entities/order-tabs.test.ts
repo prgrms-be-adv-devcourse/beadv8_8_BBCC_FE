@@ -42,4 +42,14 @@ describe('주문 내역 상태 탭', () => {
     expect(countOrdersByTab(orders)).toEqual({ ALL: 4, PENDING_PAYMENT: 1, PAID: 2, CANCELLED: 1 })
     expect(countOrdersByTab([])).toEqual({ ALL: 0, PENDING_PAYMENT: 0, PAID: 0, CANCELLED: 0 })
   })
+
+  it('전체 건수는 현재 페이지 길이가 아닌 서버 전체 건수를 사용한다', () => {
+    expect(countOrdersByTab(orders, 103)).toEqual({
+      ALL: 103,
+      PENDING_PAYMENT: 1,
+      PAID: 2,
+      CANCELLED: 1,
+    })
+    expect(countOrdersByTab([], 0).ALL).toBe(0)
+  })
 })

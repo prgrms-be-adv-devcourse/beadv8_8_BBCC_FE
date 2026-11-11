@@ -24,7 +24,9 @@ export function AdminProductsPage() {
         <h2 className="text-section">
           판매 중 상품
           {products.data && (
-            <span className="figure text-ink-3 ml-2 text-sm font-medium">{items.length}개</span>
+            <span className="figure text-ink-3 ml-2 text-sm font-medium">
+              {products.data.totalElements}개
+            </span>
           )}
         </h2>
         {products.isPending && <ListSkeleton />}

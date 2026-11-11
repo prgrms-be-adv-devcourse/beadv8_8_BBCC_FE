@@ -15,7 +15,7 @@ export function AdminPaymentDetailPage() {
   // 결제 한 건 관리자 API가 없어 전체 결제에서 찾는다. 주문은 전체 주문(최근 100건)에서
   const payments = useAdminPaymentsQuery()
   const orders = useAdminOrdersQuery(null)
-  const payment = payments.data?.find((item) => item.id === paymentId)
+  const payment = payments.data?.content.find((item) => item.id === paymentId)
   const order = orders.data?.content.find((item) => item.id === payment?.orderId)
   const issue = payment ? paymentIssueNote(payment) : ''
 

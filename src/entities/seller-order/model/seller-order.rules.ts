@@ -42,13 +42,17 @@ export function filterSellerOrdersByTab(orders: SellerOrder[], tab: SellerOrderT
   return tab === 'ALL' ? orders : orders.filter((order) => order.status === tab)
 }
 
-export function countSellerOrdersByTab(orders: SellerOrder[]): Record<SellerOrderTab, number> {
+// 상태별 건수는 받은 목록 범위이며, 전체 건수만 페이지 응답의 totalElements로 보완한다.
+export function countSellerOrdersByTab(
+  orders: SellerOrder[],
+  totalElements = orders.length,
+): Record<SellerOrderTab, number> {
   const summary = summarizeSellerOrders(orders)
   return {
     READY: summary.toShip,
     SHIPPING: summary.shipping,
     DELIVERED: summary.delivered,
-    ALL: orders.length,
+    ALL: totalElements,
   }
 }
 

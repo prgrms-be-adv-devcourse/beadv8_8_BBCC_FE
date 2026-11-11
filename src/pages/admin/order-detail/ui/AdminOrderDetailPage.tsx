@@ -18,7 +18,7 @@ export function AdminOrderDetailPage() {
   const orders = useAdminOrdersQuery(null)
   const payments = useAdminPaymentsQuery()
   const order = orders.data?.content.find((item) => item.id === orderId)
-  const related = payments.data?.filter((payment) => payment.orderId === orderId) ?? []
+  const related = payments.data?.content.filter((payment) => payment.orderId === orderId) ?? []
 
   return (
     <div className="shop-look space-y-6">

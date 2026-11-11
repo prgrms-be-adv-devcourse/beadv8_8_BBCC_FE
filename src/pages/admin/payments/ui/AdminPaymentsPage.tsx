@@ -26,7 +26,7 @@ const CSV_COLUMNS: CsvColumn<AdminPayment>[] = [
 export function AdminPaymentsPage() {
   const adminPaths = adminPathsOf(useArea())
   const payments = useAdminPaymentsQuery()
-  const rows = payments.data ?? []
+  const rows = payments.data?.content ?? []
 
   return (
     <div className="shop-look space-y-5">
@@ -43,7 +43,7 @@ export function AdminPaymentsPage() {
       {payments.data && (
         <section aria-label="결제 목록" className="space-y-2">
           <div className="text-ink-3 flex min-h-11 items-center justify-between text-[13px]">
-            <span className="figure">{rows.length}건</span>
+            <span className="figure">{payments.data.totalElements}건</span>
             {rows.length > 0 && (
               <button
                 type="button"
