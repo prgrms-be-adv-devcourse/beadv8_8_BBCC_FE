@@ -1247,6 +1247,7 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
       orderItemId: item.orderItemId,
       productId: item.productId,
       size: item.size,
+      part: 'TOP',
     })
     expect(list.data.content[0].measurements).not.toBeNull()
     expect((await call('GET', url, 2)).status).toBe(403)

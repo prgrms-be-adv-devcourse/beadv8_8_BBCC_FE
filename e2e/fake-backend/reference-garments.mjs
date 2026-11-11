@@ -21,6 +21,10 @@ const PARTS = {
   },
 }
 const PART_ORDER = Object.keys(PARTS)
+
+/** 산 옷 목록 한 줄의 기준 옷 칸 (BE #1249): 카테고리가 어느 칸에도 들지 않으면 null */
+export const garmentPartOfCategory = (categoryId) =>
+  PART_ORDER.find((part) => PARTS[part].categoryIds.includes(String(categoryId))) ?? null
 const LEAF_IDS = ['11', '12', '13']
 /** 자녀 ID → { TOP?: garment, BOTTOM?: garment, … } */
 const garments = new Map()

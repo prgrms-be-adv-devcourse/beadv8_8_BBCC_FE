@@ -21,7 +21,7 @@ import {
   updateProduct,
 } from './products.mjs'
 import { catalogRoute } from './catalog.mjs'
-import { referenceGarmentRoute } from './reference-garments.mjs'
+import { garmentPartOfCategory, referenceGarmentRoute } from './reference-garments.mjs'
 import { memberReviewRoute, publicReviewRoute } from './reviews.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
@@ -1095,7 +1095,7 @@ http
       return send(res, 201, run)
     }
     // 기준 옷 「산 옷에서 고르기」 (BE #1168): 이 자녀의 구매확정된 주문상품, 확정이 늦은 순서.
-    // 상품 정보가 없으면 이름 · 카테고리 · 실측이 null, 산 사이즈의 실측이 없으면 실측만 null
+    // 상품 정보가 없으면 이름 · 카테고리 · 칸 · 실측이 null, 산 사이즈의 실측이 없으면 실측만 null
     if ((x = r('GET', /^\/recommendations\/children\/(\d+)\/purchases$/))) {
       const c = children.find((c) => c.id === +x[1] && !c.deleted)
       if (!c)
@@ -1120,6 +1120,7 @@ http
             productId: it.productId,
             productName: detail?.name ?? null,
             categoryId: detail?.categoryId ?? null,
+            part: detail ? garmentPartOfCategory(detail.categoryId) : null,
             size: it.size,
             measurements: spec?.measurements ?? null,
             confirmedAt: it.confirmedAt,

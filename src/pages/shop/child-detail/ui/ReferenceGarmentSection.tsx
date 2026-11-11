@@ -48,14 +48,12 @@ export function ReferenceGarmentSection({ childId }: ReferenceGarmentSectionProp
   const purchases = usePurchasedGarmentsInfiniteQuery(childId)
   const [picked, setPicked] = useState<PickedGarment | null>(null)
   const isReady = Boolean(garments.data && categories.data)
-  const pathOf = (categoryId: string | null) =>
-    categories.data?.find((c) => c.id === categoryId)?.path ?? null
   const purchaseRows = (purchases.data?.garments ?? []).map((garment) => ({
     orderItemId: garment.orderItemId,
     name: garment.productName ?? '상품 정보 없음',
     size: garment.size,
     confirmedAt: garment.confirmedAt,
-    parts: partsForPurchase(pathOf(garment.categoryId)),
+    parts: partsForPurchase(garment),
   }))
 
   const handlePick = (orderItemId: string, part: GarmentPart) => {
@@ -67,7 +65,7 @@ export function ReferenceGarmentSection({ childId }: ReferenceGarmentSectionProp
       part,
       form: toReferenceGarmentFormFromPurchase(part, {
         categoryId: garment.categoryId,
-        categoryPath: pathOf(garment.categoryId),
+        part: garment.part,
         measurements: garment.measurements,
       }),
       notice: `「${name}」 ${garment.size} 사이즈로 ${GARMENT_PART_SPEC[part].label} 칸을 채웠어요. 비어 있는 칸을 채우고 저장해 주세요.`,

@@ -39,10 +39,10 @@ export function toReferenceGarmentRequest(form: ReferenceGarmentForm): Reference
   return { categoryId: form.categoryId, measurements }
 }
 
-/** 고른 산 옷: 말단 카테고리(경로)와 산 사이즈의 실측(항목 코드 → cm). 모르면 null */
+/** 고른 산 옷: 말단 카테고리 · 그 카테고리의 기준 옷 칸 · 산 사이즈의 실측(항목 코드 → cm). 모르면 null */
 export type PurchaseSource = {
   categoryId: string | null
-  categoryPath: string | null
+  part: GarmentPart | null
   measurements: Record<string, number> | null
 }
 
@@ -54,7 +54,7 @@ export function toReferenceGarmentFormFromPurchase(
   part: GarmentPart,
   purchase: PurchaseSource,
 ): ReferenceGarmentForm {
-  const isSamePart = purchase.categoryPath !== null && garmentPartOf(purchase.categoryPath) === part
+  const isSamePart = purchase.part === part
   const values = purchase.measurements ?? {}
   return {
     categoryId: isSamePart ? (purchase.categoryId ?? '') : '',
@@ -92,7 +92,7 @@ export function toReferenceGarmentFromPurchase(
     part,
     form: toReferenceGarmentFormFromPurchase(part, {
       categoryId: purchase.categoryId,
-      categoryPath: purchase.categoryPath,
+      part,
       measurements,
     }),
   }
