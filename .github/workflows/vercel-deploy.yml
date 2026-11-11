@@ -7,7 +7,7 @@ name: Vercel Deploy
 # 다시 올려야 하면 Actions에서 해당 브랜치로 수동 실행한다(CI 를 기다리지 않는다). vercel CLI로 로컬 파일을 직접 올리지 않는다
 # 필요한 값: Secrets VERCEL_TOKEN, Variables VERCEL_ORG_ID · VERCEL_PROJECT_ID (Settings → Secrets and variables → Actions)
 # 빌드 값(VITE_*)은 Vercel 프로젝트 Settings → Environment Variables에서 정한다. Production = main, Preview = develop
-# 팀 배포(EC2 · GHCR)는 deploy.yml이 맡는다. 이 워크플로는 Vercel 배포만 맡는다
+# FE 배포는 이 워크플로가 맡는다. GHCR 이미지를 만들던 deploy.yml 은 서버에 반영되지 않아 지웠다(#276)
 
 on:
   workflow_run:
