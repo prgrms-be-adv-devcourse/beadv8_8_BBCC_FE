@@ -262,6 +262,7 @@ export function toProductSearchParams(search: ProductSearch): ProductSearchParam
   const sort = effectiveSort(search.keyword, search.sort)
   if (sort !== 'NEWEST') params.sort = sort
   if (search.attributes?.length) params.attributes = search.attributes.slice(0, 20)
+  if (search.childId) params.childId = search.childId
   return params
 }
 

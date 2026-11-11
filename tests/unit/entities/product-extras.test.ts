@@ -71,6 +71,15 @@ describe('toProductSearchParams: 검색 조건', () => {
       },
     )
   })
+  it('고른 자녀가 있으면 childId를 함께 보내고, 없으면 보내지 않는다 (BE #1089)', () => {
+    expect(toProductSearchParams({ keyword: '맨투맨', categoryId: null, childId: '11' })).toEqual({
+      keyword: '맨투맨',
+      childId: '11',
+    })
+    expect(toProductSearchParams({ keyword: '맨투맨', categoryId: null, childId: null })).toEqual({
+      keyword: '맨투맨',
+    })
+  })
 })
 
 describe('validateBusinessName: 상호명 (BE NAME_MAX_LENGTH 50)', () => {
