@@ -174,8 +174,8 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'GET',
     path: '/recommendations/children/:childId/purchases',
-    source: 'mock',
-    backend: 'BE #1168 머지 전 → 내 주문 · 상품 상세로 만든 목 (FE #265)',
+    source: 'real',
+    backend: 'BE #1168 develop 머지(11/11) → 실제 (FE #269)',
     screens: '자녀 프로필(기준 옷 · 산 옷에서 고르기)',
   },
   // 회원 보완
