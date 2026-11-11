@@ -38,14 +38,15 @@ function invalid(part, body) {
   if (!PARTS[part].categoryIds.includes(categoryId))
     return bad(
       '구분과 맞지 않는 세부 종류입니다',
-      '상의는 상의, 바지는 하의 · 바지, 아우터 · 원피스 · 치마는 같은 이름의 카테고리에서 골라 주세요.',
+      '상의는 상의, 바지는 하의 · 바지, 아우터는 아우터, 원피스는 원피스, 치마는 치마 카테고리에서 골라 주세요.',
     )
   const codes = Object.keys(body.measurements)
   const { required, optional } = PARTS[part]
   if (codes.some((code) => !required.includes(code) && !optional.includes(code)))
     return bad(
       '이 구분에 없는 실측 항목입니다',
-      '이 구분에서 입력할 수 있는 실측 항목만 보내 주세요.',
+      '상의 · 아우터는 총장 · 가슴단면 · 어깨너비 · 소매길이, 원피스는 총장 · 가슴단면 · 어깨너비, ' +
+        '바지는 총장 · 허리단면 · 밑위, 치마는 총장 · 허리단면 · 엉덩이단면만 입력할 수 있습니다.',
     )
   if (required.some((code) => !codes.includes(code)))
     return bad(
