@@ -16,15 +16,8 @@ import {
 import { ReferenceGarmentEditor } from '@/features/manage-reference-garment'
 import { getErrorMessage } from '@/shared/api'
 import { GARMENT_FROM, REFERENCE_GARMENTS } from '@/shared/config'
-import { MockBadge } from '@/shared/ui/MockBadge'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { PurchasedGarmentPicker } from './PurchasedGarmentPicker'
-
-const REFERENCE_GARMENT_ENDPOINTS = [
-  'GET /recommendations/children/:childId/reference-garments',
-  'PUT /recommendations/children/:childId/reference-garments/:part',
-  'DELETE /recommendations/children/:childId/reference-garments/:part',
-]
 
 type ReferenceGarmentSectionProps = { childId: string }
 
@@ -105,12 +98,9 @@ export function ReferenceGarmentSection({ childId }: ReferenceGarmentSectionProp
       aria-labelledby="reference-garments-title"
       className="border-rule scroll-mt-32 space-y-4 rounded-lg border p-4 md:p-5"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 id="reference-garments-title" className="text-section">
-          기준 옷
-        </h2>
-        <MockBadge endpoints={REFERENCE_GARMENT_ENDPOINTS} />
-      </div>
+      <h2 id="reference-garments-title" className="text-section">
+        기준 옷
+      </h2>
       <p className="text-ink-3 text-[13px]">
         종류마다 잘 맞게 입는 옷의 실측을 적어 두면, 사이즈 추천이 같은 종류의 옷과 비교해요.
       </p>
