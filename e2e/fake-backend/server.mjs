@@ -1040,6 +1040,39 @@ http
       settlementRuns.push(run)
       return send(res, 201, run)
     }
+    // 기준 옷 「산 옷에서 고르기」 (BE #1168): 이 자녀의 구매확정된 주문상품, 확정이 늦은 순서.
+    // 상품 정보가 없으면 이름 · 카테고리 · 실측이 null, 산 사이즈의 실측이 없으면 실측만 null
+    if ((x = r('GET', /^\/recommendations\/children\/(\d+)\/purchases$/))) {
+      const c = children.find((c) => c.id === +x[1] && !c.deleted)
+      if (!c)
+        return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
+      if (c.memberId !== me)
+        return problem(
+          res,
+          403,
+          '자녀에 접근할 수 없습니다',
+          '로그인한 보호자의 자녀만 다룰 수 있습니다.',
+          req.url,
+        )
+      const content = orders
+        .flatMap((o) => o.items)
+        .filter((it) => it.status === 'CONFIRMED' && it.size && it.child?.childId === String(c.id))
+        .sort((a, b) => b.confirmedAt.localeCompare(a.confirmedAt))
+        .map((it) => {
+          const detail = productDetailOf(it.productId)
+          const spec = detail?.sizeSpecs.find((s) => s.size === it.size)
+          return {
+            orderItemId: it.orderItemId,
+            productId: it.productId,
+            productName: detail?.name ?? null,
+            categoryId: detail?.categoryId ?? null,
+            size: it.size,
+            measurements: spec?.measurements ?? null,
+            confirmedAt: it.confirmedAt,
+          }
+        })
+      return send(res, 200, pageFrom(content, url.searchParams))
+    }
     // 추천 기준 옷 (reference-garments.mjs): 남의 자녀는 403, 없거나 지운 자녀는 404
     const garment = referenceGarmentRoute(m, p, body, (childId) => {
       const c = children.find((c) => c.id === +childId && !c.deleted)
