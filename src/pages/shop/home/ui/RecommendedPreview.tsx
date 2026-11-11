@@ -3,13 +3,13 @@ import { ChildPicker, SizeRulerBar, sizeRulerOf, type Child } from '@/entities/c
 import { ProductTile } from '@/entities/product'
 import {
   PickReveal,
-  RecommendedPicksSkeleton,
+  RecommendedPicksLoading,
+  RecommendedPicksNotice,
   useHomePreviewQuery,
 } from '@/entities/recommendation'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { MockBadge } from '@/shared/ui/MockBadge'
-import { StateMessage } from '@/shared/ui/StateMessage'
 
 type RecommendedPreviewProps = {
   kids: Child[]
@@ -27,6 +27,7 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
 
   if (!child) return null
   const ruler = sizeRulerOf(child.heightCm)
+  const waiting = `${child.name}에게 맞는 상품을 고르고 있어요`
 
   return (
     <section aria-label="맞춤 상품" className="border-rule space-y-5 rounded-lg border p-4 md:p-6">
@@ -80,12 +81,19 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
         <SizeRulerBar ruler={ruler} name={child.name} />
       </div>
       {preview.isPending && (
-        <RecommendedPicksSkeleton message={`${child.name}에게 맞는 상품을 고르고 있어요`} />
+        <div className="space-y-3">
+          <p className="text-ink-2 text-[13px]">{waiting}</p>
+          <RecommendedPicksLoading message={waiting} />
+        </div>
       )}
       {preview.isError && (
-        <StateMessage tone="error">{getErrorMessage(preview.error)}</StateMessage>
+        <RecommendedPicksNotice onRetry={() => void preview.refetch()}>
+          {getErrorMessage(preview.error)}
+        </RecommendedPicksNotice>
       )}
-      {preview.data === null && <StateMessage>맞는 사이즈가 판매 중인 상품이 없어요.</StateMessage>}
+      {preview.data === null && (
+        <RecommendedPicksNotice>맞는 사이즈가 판매 중인 상품이 없어요.</RecommendedPicksNotice>
+      )}
       {preview.data && (
         <ul className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-4">
           {preview.data.products.map((product, index) => (

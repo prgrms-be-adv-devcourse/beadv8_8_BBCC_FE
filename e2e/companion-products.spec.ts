@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
 // 상품 상세 맨 아래 「함께 사면 좋은 상품」(BE #1164, SSE FE #290): 자녀를 골랐을 때 상세와 함께 바로 부르고,
-// AI 답을 기다리는 동안 안내 · 자리를 두고, 이유가 없는 카드는 이유 칸을 숨기고, 실패(Gateway 504)하면 영역을 숨긴다.
+// AI 답을 기다리는 동안 카드 칸마다 원형 로딩을 두고, 이유가 없는 카드는 이유 칸을 숨기고,
+// 실패(Gateway 504)하거나 함께 볼 상품이 없어도 영역에 안내를 남긴다.
 // SSE는 목이 서버의 JSON 답을 받아 흘려보낸다: AI 답이면 rule → ai, 같은 요청을 다시 하면 ai만, 규칙 답이면 rule만
 // 상품 설명은 처음에 윗부분만 보이고 「상세정보 펼쳐보기」로 펼친다
 
@@ -102,12 +103,16 @@ test('AI 없이 규칙 결과만 오고 닫히면 받아 둔 규칙 결과를 �
   await expect.poll(() => lastStreamEvents(page)).toEqual(['rule'])
 })
 
-test('자녀를 고르지 않았으면 부르지 않고, 실패(504)하면 영역을 숨긴다', async ({ page }) => {
+test('자녀를 고르지 않았으면 부르지 않고, 실패(504)하면 영역에 안내를 남기고 다시 불러온다', async ({
+  page,
+}) => {
   await asParentWithChild(page)
   let calls = 0
   await page.route('**/api/v1/recommendations/companions?*', (route) => {
     calls += 1
-    return route.fulfill({ status: 504, body: 'Gateway Timeout' })
+    return calls === 1
+      ? route.fulfill({ status: 504, body: 'Gateway Timeout' })
+      : route.fulfill({ json: { source: 'RULE', products: [card(5, null)] } })
   })
 
   await page.goto('/products/1')
@@ -116,8 +121,25 @@ test('자녀를 고르지 않았으면 부르지 않고, 실패(504)하면 영�
 
   await page.goto('/products/1?childId=501')
   await expect.poll(() => calls).toBe(1)
-  await expect(page.getByRole('heading', { name: '리뷰' })).toBeVisible()
-  await expect(companionSection(page)).toHaveCount(0)
+  const section = companionSection(page)
+  await expect(section.getByText('지금은 함께 볼 상품을 불러오지 못했어요')).toBeVisible()
+
+  await section.getByRole('button', { name: '다시 불러오기' }).click()
+  await expect(section.getByRole('link', { name: /함께 상품 5/ })).toBeVisible()
+  expect(calls).toBe(2)
+})
+
+test('함께 볼 상품이 없으면 영역에 안내를 남긴다', async ({ page }) => {
+  await asParentWithChild(page)
+  await page.route('**/api/v1/recommendations/companions?*', (route) =>
+    route.fulfill({ json: { source: 'RULE', products: [] } }),
+  )
+
+  await page.goto('/products/1?childId=501')
+
+  const section = companionSection(page)
+  await expect(section.getByText('이 상품과 함께 볼 만한 상품이 아직 없어요')).toBeVisible()
+  await expect(section.getByRole('button', { name: '다시 불러오기' })).toHaveCount(0)
 })
 
 test('긴 상품 설명은 접혀 있다가 「상세정보 펼쳐보기」로 펼친다', async ({ page }) => {
