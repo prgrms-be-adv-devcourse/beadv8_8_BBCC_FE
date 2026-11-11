@@ -208,6 +208,7 @@ export function ShopHomePage() {
                           size: all.data.size,
                           index,
                           sort,
+                          childId: search.childId ?? null,
                         })
                     : undefined
                 }

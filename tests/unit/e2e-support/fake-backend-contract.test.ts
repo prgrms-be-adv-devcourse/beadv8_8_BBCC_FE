@@ -1599,8 +1599,14 @@ it('검색: 관련도순 목록은 목록 응답 모양이고, 결과 클릭 기
     size: 20,
     index: 0,
     sort: 'RELEVANCE',
+    childId: null,
   })
   expect((await call('POST', '/search/clicks', 1, click)).status).toBe(204)
+  // 고른 자녀를 실으면 양수만 받는다 (BE @Positive)
+  expect((await call('POST', '/search/clicks', 1, { ...click, childId: 7 })).status).toBe(204)
+  const badChild = await call('POST', '/search/clicks', 1, { ...click, childId: 0 })
+  expect(badChild.status).toBe(400)
+  expect(badChild.data.detail).toBe('자녀 ID는 양수여야 합니다.')
   expect((await call('POST', '/search/clicks', null, click)).status).toBe(401)
   const tooFar = await call('POST', '/search/clicks', 1, { ...click, rank: 10001 })
   expect(tooFar.status).toBe(400)
