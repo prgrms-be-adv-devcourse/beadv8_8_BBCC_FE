@@ -39,7 +39,10 @@ type ApiFlowLogState = {
   add: (log: Omit<ApiCallLog, 'id' | 'contractIssues' | 'step'>) => number
   attachContractIssues: (logId: number, issues: ContractIssue[]) => void
   /** 스트림처럼 응답이 끝난 뒤에야 알 수 있는 값(받은 이벤트 · 걸린 시간)을 채운다 */
-  completeLog: (logId: number, patch: Pick<ApiCallLog, 'responseBody' | 'durationMs'>) => void
+  completeLog: (
+    logId: number,
+    patch: Partial<Pick<ApiCallLog, 'responseBody' | 'durationMs'>>,
+  ) => void
   clear: () => void
 }
 

@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { getEventStream, obj, oneOf, registerMockHandlers, str, useApiFlowLog } from '@/shared/api'
+import {
+  getErrorMessage,
+  getErrorStatus,
+  getEventStream,
+  obj,
+  oneOf,
+  registerMockHandlers,
+  str,
+  useApiFlowLog,
+} from '@/shared/api'
 
 // 공통 클라이언트로 SSE를 받는다: 목 어댑터가 이벤트를 흘려보내고, 흐름 기록에 이벤트 순서 · 계약 불일치가 남는다
 const PATH = '/recommendations/companions'
@@ -10,15 +19,26 @@ registerMockHandlers('스트림 테스트', [
     method: 'GET',
     path: PATH,
     handle: ({ query }) =>
-      query.get('case') === 'rule-only'
-        ? { status: 200, events: [{ event: 'rule', data: { source: 'RULE', note: '규칙' } }] }
-        : {
-            status: 200,
-            events: [
-              { event: 'rule', data: { source: 'RULE', note: '규칙' } },
-              { event: 'ai', data: { source: 'AI', note: 7 } },
-            ],
-          },
+      query.get('case') === 'missing'
+        ? {
+            status: 404,
+            data: {
+              type: 'about:blank',
+              title: '자녀를 찾을 수 없습니다',
+              status: 404,
+              detail: '자녀를 다시 확인해 주세요.',
+              instance: PATH,
+            },
+          }
+        : query.get('case') === 'rule-only'
+          ? { status: 200, events: [{ event: 'rule', data: { source: 'RULE', note: '규칙' } }] }
+          : {
+              status: 200,
+              events: [
+                { event: 'rule', data: { source: 'RULE', note: '규칙' } },
+                { event: 'ai', data: { source: 'AI', note: 7 } },
+              ],
+            },
   },
 ])
 
@@ -56,5 +76,18 @@ describe('getEventStream: 공통 클라이언트로 text/event-stream 받기', (
 
     expect(events.map((item) => item.event)).toEqual(['rule'])
     expect(lastLog()?.contractIssues).toEqual([])
+  })
+
+  it('스트림을 열기 전 오류(ProblemDetail)는 상태 코드와 detail을 그대로 읽을 수 있다', async () => {
+    const failed = await getEventStream(PATH, { params: { case: 'missing' }, shape }).catch(
+      (error: unknown) => error,
+    )
+
+    expect(getErrorStatus(failed)).toBe(404)
+    expect(getErrorMessage(failed)).toBe('자녀를 다시 확인해 주세요.')
+    expect(lastLog()).toMatchObject({
+      status: 404,
+      responseBody: { detail: '자녀를 다시 확인해 주세요.' },
+    })
   })
 })

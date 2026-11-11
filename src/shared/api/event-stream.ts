@@ -26,6 +26,23 @@ async function eventsOf(response: AxiosResponse<ReadableStream<Uint8Array>>): Pr
   return [{ event: 'message', data: text }]
 }
 
+/** 스트림 요청의 오류 본문(ProblemDetail)도 스트림으로 온다. JSON으로 읽어 두어 화면이 detail · 상태 코드를 쓰게 한다 */
+async function withReadBody(error: unknown): Promise<never> {
+  const response = axios.isAxiosError(error) ? error.response : undefined
+  if (response?.data instanceof ReadableStream) {
+    const text = await new Response(response.data).text()
+    try {
+      response.data = text ? JSON.parse(text) : null
+    } catch {
+      response.data = text
+    }
+    const logId = response.config.logId
+    if (logId !== undefined)
+      useApiFlowLog.getState().completeLog(logId, { responseBody: response.data })
+  }
+  throw error
+}
+
 /**
  * text/event-stream을 공통 클라이언트로 받아 닫힐 때까지 모은다 (토큰 · 401 재발급 · 목 · 흐름 기록을 그대로 쓴다).
  * 이벤트 data는 JSON으로 읽어 계약 모양을 검사하고, 흐름 기록에 받은 이벤트 순서 · 마지막 data · 걸린 시간을 남긴다.
@@ -36,15 +53,18 @@ export async function getEventStream<T>(
   { params, signal, shape }: GetEventStreamOptions,
 ): Promise<StreamEvent<T>[]> {
   const startedAt = performance.now()
-  const response = await apiClient.get<ReadableStream<Uint8Array>>(path, {
-    params,
-    signal,
-    adapter: streamAdapter,
-    responseType: 'stream',
-    // AI 답을 기다리는 동안 끊지 않는다 (연결 제한은 Gateway가 둔다)
-    timeout: 0,
-    headers: { Accept: 'text/event-stream' },
-  })
+  const response = await apiClient
+    .get<ReadableStream<Uint8Array>>(path, {
+      params,
+      signal,
+      adapter: streamAdapter,
+      responseType: 'stream',
+      // AI 답을 기다리는 동안 끊지 않는다 (연결 제한은 Gateway가 둔다: 스트림 요청 15초)
+      timeout: 0,
+      // Gateway가 이 헤더를 보고 스트림 라우트(긴 제한 시간)로 보낸다
+      headers: { Accept: 'text/event-stream' },
+    })
+    .catch(withReadBody)
   const events = (await eventsOf(response)).map((item) => ({
     event: item.event,
     data: JSON.parse(item.data) as T,

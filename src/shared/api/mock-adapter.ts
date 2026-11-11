@@ -160,6 +160,12 @@ function notifyObservers(
   }
 }
 
+function textStreamOf(text: string): ReadableStream<Uint8Array> {
+  return (
+    new Response(text).body ?? new ReadableStream({ start: (controller) => controller.close() })
+  )
+}
+
 /** 목 SSE 이벤트를 차례로 흘려보내는 스트림. 요청을 끊으면(signal) 닫는다 */
 function eventStreamOf(
   events: MockStreamEvent[],
@@ -208,9 +214,12 @@ export function createMockAdapter(realAdapter: AxiosAdapter): AxiosAdapter {
         // 실제 네트워크처럼 복사본을 준다 (목 저장소 객체를 그대로 넘기면 캐시가 바뀐 줄 모른다)
         data: result.events
           ? eventStreamOf(result.events, config.signal)
-          : result.data === undefined
-            ? ''
-            : JSON.parse(JSON.stringify(result.data)),
+          : config.responseType === 'stream'
+            ? // 실제 fetch처럼 스트림 요청은 오류 본문(ProblemDetail)도 스트림으로 준다
+              textStreamOf(result.data === undefined ? '' : JSON.stringify(result.data))
+            : result.data === undefined
+              ? ''
+              : JSON.parse(JSON.stringify(result.data)),
         status: result.status,
         statusText: String(result.status),
         headers: new AxiosHeaders({
