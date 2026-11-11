@@ -1121,7 +1121,7 @@ http
       const content = fitCardsOf(productListOf(byCategory), c)
       return send(res, 200, { ...pageFrom(content, url.searchParams), asOf })
     }
-    // 홈 맛보기 (BE #1162): 맞춤 목록 앞 4개. AI 흉내는 선택 동의한 자녀면 AI(앞 두 개만 이유), 아니면 RULE(이유 모두 null)
+    // 홈 맛보기 (BE #1163): 맞춤 목록 앞 4개. AI 흉내는 선택 동의한 자녀면 AI(앞 두 개만 이유), 아니면 RULE(이유 모두 null)
     if (r('GET', /^\/recommendations\/products\/preview$/)) {
       const childId = url.searchParams.get('childId')
       if (!childId) return problem(res, 400, '잘못된 요청입니다', 'childId는 필수입니다.', req.url)

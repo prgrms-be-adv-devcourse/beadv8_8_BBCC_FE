@@ -55,7 +55,7 @@ async function asParentWithChild(page: Page) {
     route.request().method() === 'GET' ? route.fulfill({ json: [CHILD] }) : route.fallback(),
   )
   await page.route('**/api/v1/children/501', (route) => route.fulfill({ json: CHILD }))
-  // 홈 맛보기 (BE #1162): AI가 고른 4개 중 앞 두 개만 이유가 있다
+  // 홈 맛보기 (BE #1163): AI가 고른 4개 중 앞 두 개만 이유가 있다
   await page.route('**/api/v1/recommendations/products/preview?childId=501', (route) =>
     route.fulfill({
       json: {

@@ -116,7 +116,7 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     method: 'GET',
     path: '/recommendations/products/preview',
     source: 'real',
-    backend: 'BE #1162 develop 머지 → 실제 (FE #275)',
+    backend: 'BE #1163 develop 머지 → 실제 (FE #275)',
     screens: '쇼핑 홈(맞춤 맛보기 4개)',
   },
   {

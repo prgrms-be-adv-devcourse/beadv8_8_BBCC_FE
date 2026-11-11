@@ -1382,7 +1382,7 @@ it('함께 사면 좋은 상품: AI · RULE 응답 모두 계약 모양이고, �
   expect((await call('GET', missingChild, 1)).status).toBe(404)
 })
 
-it('홈 맛보기 · 사이즈 추천: AI · RULE 응답 모두 계약 모양이다 (BE #1162 · #1163)', async () => {
+it('홈 맛보기 · 사이즈 추천: AI · RULE 응답 모두 계약 모양이다 (BE #1163 · #1162)', async () => {
   const sources: string[] = []
   const ids: string[] = []
   for (const optionalConsent of [true, false]) {

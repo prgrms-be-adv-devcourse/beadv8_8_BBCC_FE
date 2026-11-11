@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// 사이즈 추천 근거 (BE #1163): AI가 고르면 추천 한 줄 바로 아래에 근거(종류 라벨 + 문구)를 보이고, 규칙이면 숨긴다.
+// 사이즈 추천 근거 (BE #1162): AI가 고르면 추천 한 줄 바로 아래에 근거(종류 라벨 + 문구)를 보이고, 규칙이면 숨긴다.
 // AI는 규칙 후보 밖의 실제 사이즈를 고를 수 있다 (recommendedSize가 candidateSizes에 없음)
 
 const CHILD = {
