@@ -1,12 +1,14 @@
 import { apiClient, expectShape } from '@/shared/api'
 import type {
   CompanionProductsDto,
+  HomePreviewDto,
   RecommendedProductPageDto,
   RecommendedProductsParamsDto,
   SizeRecommendationDto,
 } from './recommendation.dto'
 import {
   companionProductsShape,
+  homePreviewShape,
   recommendedProductPageShape,
   sizeRecommendationShape,
 } from './recommendation.shape'
@@ -29,6 +31,11 @@ export const recommendationApi = {
         params: { childId, ...params },
       })
       .then(expectShape(recommendedProductPageShape)),
+  /** 홈 맛보기 4개 (후보가 없으면 []). 없는 자녀 · 남의 자녀면 404 */
+  getPreview: (childId: string) =>
+    apiClient
+      .get<HomePreviewDto>('/recommendations/products/preview', { params: { childId } })
+      .then(expectShape(homePreviewShape)),
   /**
    * 함께 사면 좋은 상품 (최대 4개, 후보가 없으면 []). 없는 상품 · 자녀 · 남의 자녀면 404.
    * AI가 고르면 3초 가까이 걸려 Gateway가 504를 줄 수 있다

@@ -4,6 +4,7 @@ import type { RecommendedProductsQuery } from './recommendation'
 import { nextRecommendedPageOf, type RecommendedPageParam } from './recommended-page.rules'
 import {
   toCompanionProducts,
+  toHomePreview,
   toRecommendedProduct,
   toRecommendedProductsParams,
   toSizeRecommendation,
@@ -18,6 +19,7 @@ export const recommendationKeys = {
     ['recommendation', 'size', productId, childId] as const,
   products: (childId: string, query: RecommendedProductsQuery) =>
     ['recommendation', 'products', childId, toRecommendedProductsParams(query)] as const,
+  preview: (childId: string) => ['recommendation', 'preview', childId] as const,
   companions: (productId: string, childId: string) =>
     ['recommendation', 'companions', productId, childId] as const,
   more: (childId: string, categoryId: string | null) =>
@@ -29,6 +31,16 @@ export function useSizeRecommendationQuery(productId: string, childId: string | 
     queryKey: recommendationKeys.size(productId, childId ?? ''),
     queryFn: () => recommendationApi.getSize(productId, childId!),
     select: toSizeRecommendation,
+    enabled: childId !== null,
+  })
+}
+
+/** 홈 맛보기 4개 (AI가 자녀 맞춤 상위 20개 중에서 고르고 이유를 쓴다) */
+export function useHomePreviewQuery(childId: string | null) {
+  return useQuery({
+    queryKey: recommendationKeys.preview(childId ?? ''),
+    queryFn: () => recommendationApi.getPreview(childId!),
+    select: toHomePreview,
     enabled: childId !== null,
   })
 }
