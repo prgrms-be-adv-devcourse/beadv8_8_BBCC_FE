@@ -1,18 +1,40 @@
 import { useState } from 'react'
 import { cn } from '@/shared/lib'
 import type { SizeSpec } from '../model/product'
-import { BODY, garmentKindOf, wearFitOf } from '../model/wear-preview'
+import { BODY, garmentKindOf, wearFitOf, type GarmentKind } from '../model/wear-preview'
 
 type WearPreviewProps = {
   specs: SizeSpec[]
   child: { name: string; heightCm: number }
   /** 처음 보여 줄 사이즈 (추천 사이즈) */
   initialSize?: string | null
+  /** 상품의 말단 카테고리 이름 (원피스 · 치마를 가른다). 모르면 실측 이름으로 상의 · 하의 */
+  categoryName?: string | null
   /** 짧게: 그림 옆에는 밑단 · 소매 한 줄씩만 (쇼핑 상세). 콘솔은 설명까지 다 보인다 */
   isCompact?: boolean
 }
 
 const SCALE = 1.5 // 1cm = 1.5 단위
+
+/** 옷 종류마다 그림 옆에 보일 몸 기준선 (밑단과 견줄 곳) */
+const LANDMARKS: Record<GarmentKind, [string, number][]> = {
+  top: [
+    ['허리', BODY.waist],
+    ['엉덩이', BODY.crotch],
+  ],
+  dress: [
+    ['엉덩이', BODY.crotch],
+    ['무릎', BODY.knee],
+  ],
+  skirt: [
+    ['엉덩이', BODY.crotch],
+    ['무릎', BODY.knee],
+  ],
+  bottom: [
+    ['무릎', BODY.knee],
+    ['발목', BODY.ankle],
+  ],
+}
 const W = 170
 
 type Point = { x: number; y: number }
@@ -29,13 +51,19 @@ function band(from: Point, to: Point, width: number): string {
  * 아이 키에 맞춘 실루엣 위에 사이즈별 옷 길이를 겹쳐 그린다 (아동 평균 비율, 길이 비교용).
  * 몸은 둥근 마네킹 모양(단발 머리 · 손 · 신발), 옷은 목둘레 · 소매 · 밑단이 있는 실제 옷 모양
  */
-export function WearPreview({ specs, child, initialSize, isCompact = false }: WearPreviewProps) {
-  const drawable = specs.filter((spec) => garmentKindOf(spec) !== null)
+export function WearPreview({
+  specs,
+  child,
+  initialSize,
+  categoryName = null,
+  isCompact = false,
+}: WearPreviewProps) {
+  const drawable = specs.filter((spec) => garmentKindOf(spec, categoryName) !== null)
   const [picked, setPicked] = useState<string | null>(null)
   if (drawable.length === 0) return null
   const spec = drawable.find((item) => item.size === (picked ?? initialSize)) ?? drawable[0]
-  const kind = garmentKindOf(spec)!
-  const fit = wearFitOf(spec, child.heightCm)!
+  const kind = garmentKindOf(spec, categoryName)!
+  const fit = wearFitOf(spec, child.heightCm, categoryName)!
   const h = child.heightCm
   const u = h * SCALE // 키 전체 길이 (그림 단위)
   const viewH = u + 12
@@ -76,20 +104,14 @@ export function WearPreview({ specs, child, initialSize, isCompact = false }: We
   // 옷: 상의는 목둘레 → 어깨 → 살짝 퍼지는 밑단, 하의는 허리 → 두 바짓가랑이
   const topHemHalf = shoulderHalf + 0.018 * u
   const top = `M ${cx - neckHalf * 1.8} ${at(0.815)} Q ${cx} ${at(0.785)} ${cx + neckHalf * 1.8} ${at(0.815)} L ${cx + shoulderHalf + 0.01 * u} ${shoulderY} L ${cx + topHemHalf} ${hemY} Q ${cx} ${hemY + 0.012 * u} ${cx - topHemHalf} ${hemY} L ${cx - shoulderHalf - 0.01 * u} ${shoulderY} Z`
+  // 원피스: 상의처럼 어깨에서 내려와 허리 아래로 퍼지는 몸판, 치마: 허리에서 퍼지는 사다리꼴
+  const flareHalf = hipHalf + 0.05 * u
+  const dress = `M ${cx - neckHalf * 1.8} ${at(0.815)} Q ${cx} ${at(0.785)} ${cx + neckHalf * 1.8} ${at(0.815)} L ${cx + shoulderHalf + 0.01 * u} ${shoulderY} L ${cx + waistHalf + 0.012 * u} ${at(BODY.waist)} L ${cx + flareHalf} ${hemY} Q ${cx} ${hemY + 0.012 * u} ${cx - flareHalf} ${hemY} L ${cx - waistHalf - 0.012 * u} ${at(BODY.waist)} L ${cx - shoulderHalf - 0.01 * u} ${shoulderY} Z`
+  const skirt = `M ${cx - waistHalf - 0.012 * u} ${at(BODY.waist)} L ${cx + waistHalf + 0.012 * u} ${at(BODY.waist)} L ${cx + flareHalf} ${hemY} Q ${cx} ${hemY + 0.012 * u} ${cx - flareHalf} ${hemY} Z`
   const pantsHem = Math.max(hemY, crotchY + 4)
   const pantHalf = hipHalf + 0.012 * u
   const pants = `M ${cx - waistHalf - 0.012 * u} ${at(BODY.waist)} L ${cx + waistHalf + 0.012 * u} ${at(BODY.waist)} L ${cx + pantHalf} ${at(BODY.hip)} L ${cx + pantHalf - 0.008 * u} ${pantsHem} L ${cx + 0.002 * u} ${pantsHem} L ${cx} ${crotchY + 0.012 * u} L ${cx - 0.002 * u} ${pantsHem} L ${cx - pantHalf + 0.008 * u} ${pantsHem} L ${cx - pantHalf} ${at(BODY.hip)} Z`
-  const landmarks = (
-    kind === 'top'
-      ? [
-          ['허리', BODY.waist],
-          ['엉덩이', BODY.crotch],
-        ]
-      : [
-          ['무릎', BODY.knee],
-          ['발목', BODY.ankle],
-        ]
-  ) as [string, number][]
+  const landmarks = LANDMARKS[kind]
 
   return (
     <figure className="space-y-3">
@@ -159,17 +181,17 @@ export function WearPreview({ specs, child, initialSize, isCompact = false }: We
           ))}
           {/* 옷 */}
           <g className="fill-primary/25 stroke-primary" strokeWidth={1.4} strokeLinejoin="round">
-            {kind === 'top' ? (
+            {(kind === 'top' || kind === 'dress') && (
               <>
                 {fit.sleeveCm !== null &&
                   ([-1, 1] as const).map((side) => (
                     <path key={side} d={band(armStart(side), sleeveEnd(side), armWidth * 1.4)} />
                   ))}
-                <path d={top} />
+                <path d={kind === 'top' ? top : dress} />
               </>
-            ) : (
-              <path d={pants} />
             )}
+            {kind === 'skirt' && <path d={skirt} />}
+            {kind === 'bottom' && <path d={pants} />}
           </g>
           {/* 몸 기준선 이름 */}
           {/* 밑단 표시와 겹치는 기준선 이름은 뺀다 */}
@@ -211,7 +233,7 @@ export function WearPreview({ specs, child, initialSize, isCompact = false }: We
             textAnchor="end"
             className="fill-primary text-[10px] font-bold"
           >
-            {kind === 'top' ? '밑단' : '끝'}
+            {kind === 'bottom' ? '끝' : '밑단'}
           </text>
         </svg>
         <figcaption className="space-y-1 text-sm">
@@ -221,7 +243,7 @@ export function WearPreview({ specs, child, initialSize, isCompact = false }: We
             </p>
           )}
           <p>
-            {kind === 'top' ? '밑단' : '바지 끝'}: <strong>{fit.hem}</strong>
+            {kind === 'bottom' ? '바지 끝' : '밑단'}: <strong>{fit.hem}</strong>
           </p>
           {fit.sleeve && (
             <p>

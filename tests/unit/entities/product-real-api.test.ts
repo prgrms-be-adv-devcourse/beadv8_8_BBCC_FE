@@ -276,18 +276,21 @@ describe('toProductDetail (BE ProductDetailResponse)', () => {
     status: 'ON_SALE',
     sizeFree: false,
     minPrice: 25000,
+    thumbnailUrl: null,
     imageUrls: [],
     optionAttributes: [
       {
         attributeId: '1',
         code: 'COLOR',
         name: '색상',
+        sizeRole: false,
         values: [{ valueId: '101', value: '네이비', colorCode: '#1F2A44' }],
       },
       {
         attributeId: '2',
         code: 'SIZE',
         name: '사이즈',
+        sizeRole: true,
         values: [
           { valueId: '202', value: '110', colorCode: null },
           { valueId: '203', value: '120', colorCode: null },

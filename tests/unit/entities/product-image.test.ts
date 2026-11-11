@@ -43,6 +43,7 @@ describe('상품 · 추천 매퍼: thumbnailUrl → imageUrl', () => {
       status: 'ON_SALE',
       sizeFree: true,
       minPrice: null,
+      thumbnailUrl: null,
       optionAttributes: [],
       options: [],
       productInfo: [],

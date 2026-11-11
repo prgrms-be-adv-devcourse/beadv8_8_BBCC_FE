@@ -14,8 +14,11 @@ export const productDetailShape = obj({
   status: STATUS,
   sizeFree: bool,
   minPrice: nullable(num),
+  thumbnailUrl: nullable(str),
   imageUrls: arr(str),
-  optionAttributes: arr(obj({ attributeId: str, code: str, name: str, values: arr(value) })),
+  optionAttributes: arr(
+    obj({ attributeId: str, code: str, name: str, sizeRole: bool, values: arr(value) }),
+  ),
   options: arr(
     obj({
       optionId: str,

@@ -119,6 +119,7 @@ export function ShopProductDetailPage() {
           preview={
             <WearPreview
               specs={detail.sizeSpecs}
+              categoryName={detail.categoryName}
               child={pickedChild}
               initialSize={recommendation.data.recommendedSize}
               isCompact

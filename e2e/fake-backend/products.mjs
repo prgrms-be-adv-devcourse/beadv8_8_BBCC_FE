@@ -265,11 +265,15 @@ export function detailOf(productId) {
     status: p.status,
     sizeFree: !p.options.some((o) => sizeOf(o.valueIds)),
     minPrice: p.options.length ? Math.min(...p.options.map((o) => o.price)) : null,
+    // 대표 사진 (BE #1253): 등록 때 따로 받은 대표, 없으면 null (화면은 imageUrls 첫 번째로 대신)
+    thumbnailUrl: p.thumbnailUrl ?? null,
     imageUrls: p.imageUrls,
+    // 사이즈 항목 표시 (BE #1252): 상품 유형 설정의 sizeRole 그대로
     optionAttributes: ['1', '2'].map((attributeId) => ({
       attributeId,
       code: attrs[attributeId].code,
       name: attrs[attributeId].name,
+      sizeRole: attrs[attributeId].sizeRole,
       values: used.filter((v) => values[v].attributeId === attributeId).map(valueOut),
     })),
     options: p.options.map((o) => {

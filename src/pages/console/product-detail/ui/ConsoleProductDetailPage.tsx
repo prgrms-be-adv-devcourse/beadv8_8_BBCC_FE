@@ -94,6 +94,7 @@ export function ConsoleProductDetailPage() {
         {pickedChild && (
           <WearPreview
             specs={detail.sizeSpecs}
+            categoryName={detail.categoryName}
             child={pickedChild}
             initialSize={recommendation.data?.recommendedSize}
           />

@@ -57,14 +57,9 @@ export function toProductSummary(
   }
 }
 
-/** 사이즈 항목: 실측(sizeSpecs)의 사이즈 이름을 값으로 가진 옵션 항목. 실측이 없으면 코드에 SIZE가 든 항목 */
+/** 사이즈 항목은 서버가 정한다 (sizeRole) */
 function sizeAttributeOf(dto: ProductDetailDto) {
-  const sizes = new Set(dto.sizeSpecs.map((spec) => spec.size))
-  return (
-    dto.optionAttributes.find((attribute) =>
-      attribute.values.some((value) => sizes.has(value.value)),
-    ) ?? dto.optionAttributes.find((attribute) => /SIZE/i.test(attribute.code))
-  )
+  return dto.optionAttributes.find((attribute) => attribute.sizeRole)
 }
 
 export function toProductDetail(dto: ProductDetailDto, categories: Category[] = []): ProductDetail {
@@ -98,7 +93,8 @@ export function toProductDetail(dto: ProductDetailDto, categories: Category[] = 
     description: dto.description?.trim() || null,
     status: dto.status as ProductStatus,
     minPrice: dto.minPrice,
-    imageUrl: toImageUrl(dto.imageUrls[0] ?? null),
+    // 대표 사진이 없으면 상세 사진의 첫 번째
+    imageUrl: toImageUrl(dto.thumbnailUrl ?? dto.imageUrls[0] ?? null),
     imageUrls: dto.imageUrls,
     sizeFree: dto.sizeFree,
     optionAttributes: dto.optionAttributes.map((attribute) => ({
