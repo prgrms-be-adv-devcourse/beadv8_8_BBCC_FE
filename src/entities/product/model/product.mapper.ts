@@ -137,6 +137,8 @@ export function toSellerProduct(dto: SellerProductSummaryDto): SellerProduct {
     totalStock: dto.totalAvailableQuantity,
     minPrice: dto.minPrice,
     createdAt: dto.createdAt,
+    soldOutOptionCount: dto.soldOutOptionCount,
+    lowStockOptionCount: dto.lowStockOptionCount,
   }
 }
 

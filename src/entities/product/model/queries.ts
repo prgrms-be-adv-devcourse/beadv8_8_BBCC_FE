@@ -14,13 +14,15 @@ import {
   toSellerProduct,
   toSellerProductDetail,
 } from './product.mapper'
+import { toSellerProductsParams, type SellerProductTab } from './seller-product-tab.rules'
 
 export const productKeys = {
   all: ['products'] as const,
   list: ['products', 'list'] as const,
   search: (search: ProductSearch, page: number) => ['products', 'list', search, page] as const,
   detail: (productId: string) => ['products', 'detail', productId] as const,
-  sellerList: ['products', 'seller'] as const,
+  sellerList: (tab: SellerProductTab, page: number, size: number) =>
+    ['products', 'seller', 'list', tab, page, size] as const,
   sellerDetail: (productId: string) => ['products', 'seller', productId] as const,
   categories: (gender: CategoryGender | null = null) =>
     ['products', 'categories', gender ?? 'ALL'] as const,
@@ -99,12 +101,22 @@ export function useProductQuery(productId: string, isEnabled = true) {
   })
 }
 
-/** (목) 내 상품 */
-export function useSellerProductsQuery() {
+/** 내 상품 한 쪽 (탭으로 서버가 거르고 쪽을 나눈다, 등록 최신순) */
+export function useSellerProductsQuery(tab: SellerProductTab, page: number, size = 20) {
   return useQuery({
-    queryKey: productKeys.sellerList,
-    queryFn: productApi.sellerList,
-    select: (page) => ({ ...page, content: page.content.map(toSellerProduct) }),
+    queryKey: productKeys.sellerList(tab, page, size),
+    queryFn: () => productApi.sellerList(toSellerProductsParams(tab, page, size)),
+    select: (result) => ({ ...result, content: result.content.map(toSellerProduct) }),
+    placeholderData: keepPreviousData,
+  })
+}
+
+/** 탭의 전체 상품 수 (size 1 요청의 totalElements). 판매자 홈 숫자 · 상품 관리 탭 숫자가 같이 쓴다 */
+export function useSellerProductCountQuery(tab: SellerProductTab) {
+  return useQuery({
+    queryKey: productKeys.sellerList(tab, 0, 1),
+    queryFn: () => productApi.sellerList(toSellerProductsParams(tab, 0, 1)),
+    select: (result) => result.totalElements,
   })
 }
 

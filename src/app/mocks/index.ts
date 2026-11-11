@@ -3,6 +3,7 @@ import { adminHandlers } from './admin-handlers'
 import { memberHandlers } from './member-handlers'
 import { orderHandlers } from './order-handlers'
 import { recommendStreamHandlers } from './recommend-stream-handlers'
+import { sellerProductHandlers } from './seller-product-handlers'
 
 /**
  * 백엔드에 아직 없는 API만 목으로 응답한다 (실제 응답을 목 저장소에 옮겨 적는 관찰자도 함께). 도메인마다 흐름 패널에서 켜고 끌 수 있고,
@@ -13,4 +14,5 @@ export function setupMocks() {
   registerMockHandlers('회원 보완 (탈퇴 · 이력 · 판매자 정보)', memberHandlers)
   registerMockHandlers('관리자 전체 조회', adminHandlers)
   registerMockHandlers('추천 SSE (함께 사면 · 홈 맛보기)', recommendStreamHandlers)
+  registerMockHandlers('판매자 상품 거르기 · 옵션 수', sellerProductHandlers)
 }

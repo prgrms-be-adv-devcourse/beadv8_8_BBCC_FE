@@ -163,6 +163,21 @@ export type SellerProductSummaryDto = {
   /** 옵션이 없으면 null */
   minPrice: number | null
   createdAt: string
+  /** 판매 중 옵션 가운데 판매 가능 수량 0 (판매 중지 · 보관 옵션은 세지 않음) */
+  soldOutOptionCount: number
+  /** 판매 중 옵션 가운데 판매 가능 수량 1 ~ 5 */
+  lowStockOptionCount: number
+}
+
+/**
+ * GET /seller/products 요청 값 (BE #1239). status가 없으면 모든 상태.
+ * lowStock=true면 판매 중 옵션 가운데 수량 5 이하(0 포함)가 하나라도 있는 상품만 (상태는 거르지 않음)
+ */
+export type SellerProductsParamsDto = {
+  status?: string
+  lowStock?: boolean
+  page: number
+  size: number
 }
 
 /**

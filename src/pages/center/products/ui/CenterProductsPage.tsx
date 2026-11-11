@@ -1,49 +1,50 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import {
   canDelist,
   canStartSale,
   canStopSale,
-  filterSellerProducts,
   isOnSale,
   PRODUCT_STATUS_LABEL,
   ProductImage,
-  stockLevelOf,
+  SELLER_PRODUCT_TABS,
+  sellerProductStockTagsOf,
+  sellerProductTabOf,
+  toSellerProductTabSearch,
+  useSellerProductCountQuery,
   useSellerProductsQuery,
   type SellerProduct,
-  type StockLevel,
+  type SellerProductTab,
+  type StockTag as StockTagValue,
 } from '@/entities/product'
 import { DelistButton, StopSaleButton } from '@/features/manage-product'
 import { StartSaleButton } from '@/features/register-product'
 import { getErrorMessage } from '@/shared/api'
-import { sellerPathsOf } from '@/shared/config'
-import { formatWon, useArea } from '@/shared/lib'
-import { Input } from '@/shared/ui/input'
+import { OPTION_STOCK, sellerPathsOf } from '@/shared/config'
+import { cn, formatWon, useArea } from '@/shared/lib'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
+import { Pagination } from '@/shared/ui/Pagination'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
-/** 상품 관리(목록): 제목 줄의 「상품 등록」, 거르기 줄, 내 상품 표. 옵션별 재고 · 수정은 상품 상세에서 */
+const PAGE_SIZE = 20
+
+/**
+ * 상품 관리(목록): 제목 줄의 「상품 등록」, 상태 탭, 내 상품 표, 페이지 번호.
+ * 탭 · 쪽은 서버가 거르고 나눈다 (전체 상품 기준). 옵션별 재고 · 수정은 상품 상세에서
+ */
 export function CenterProductsPage() {
-  const products = useSellerProductsQuery()
   const sellerPaths = sellerPathsOf(useArea())
-  // 거르기는 주소에 (홈 "재고 적은 상품"에서 ?stock=low로 열린다)
+  // 탭은 주소에 (홈 숫자에서 ?status= · ?stock=low로 열린다)
   const [params, setParams] = useSearchParams()
-  const keyword = params.get('q') ?? ''
-  const lowStockOnly = params.get('stock') === 'low'
-  const setFilter = (key: 'q' | 'stock', value: string | null) => {
-    setParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        if (value) next.set(key, value)
-        else next.delete(key)
-        return next
-      },
-      { replace: true },
-    )
+  const tab = sellerProductTabOf({ status: params.get('status'), stock: params.get('stock') })
+  const [page, setPage] = useState(0)
+  const products = useSellerProductsQuery(tab, page, PAGE_SIZE)
+  const handleTab = (next: SellerProductTab) => {
+    setPage(0)
+    setParams(toSellerProductTabSearch(next), { replace: true })
   }
-  const all = products.data?.content ?? []
-  const visible = filterSellerProducts(all, { keyword, lowStockOnly })
+  const list = products.data?.content ?? []
 
   return (
     <div className="shop-look space-y-6">
@@ -64,41 +65,42 @@ export function CenterProductsPage() {
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-          <h2 className="text-section mr-auto">
-            내 상품
-            {products.data && (
-              <span className="figure text-ink-3 ml-2 text-sm font-medium">
-                {products.data.totalElements}개
-              </span>
-            )}
-          </h2>
-          <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm max-lg:min-h-11">
-            <input
-              type="checkbox"
-              className="accent-signal size-4 disabled:opacity-50"
-              checked={lowStockOnly}
-              onChange={(e) => setFilter('stock', e.target.checked ? 'low' : null)}
-            />
-            재고 적은 상품만
-          </label>
-          <Input
-            aria-label="내 상품 찾기"
-            placeholder="상품명으로 찾기"
-            className="h-10 w-full sm:w-60"
-            value={keyword}
-            onChange={(e) => setFilter('q', e.target.value || null)}
-          />
+          <h2 className="text-section mr-auto">내 상품</h2>
+        </div>
+        <div
+          role="tablist"
+          aria-label="판매 상태"
+          className="border-rule flex gap-6 overflow-x-auto border-b"
+        >
+          {SELLER_PRODUCT_TABS.map((item) => (
+            <button
+              key={item.tab}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.tab}
+              onClick={() => handleTab(item.tab)}
+              className={cn(
+                '-mb-px flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 text-[15px] font-bold transition-colors',
+                tab === item.tab
+                  ? 'border-ink text-ink'
+                  : 'text-ink-3 hover:text-ink active:text-ink border-transparent',
+              )}
+            >
+              {item.label} <TabCount tab={item.tab} />
+            </button>
+          ))}
         </div>
 
         {products.isPending && <ListSkeleton />}
         {products.isError && (
           <StateMessage tone="error">{getErrorMessage(products.error)}</StateMessage>
         )}
-        {products.data && all.length === 0 && <StateMessage>등록한 상품이 없어요.</StateMessage>}
-        {products.data && all.length > 0 && visible.length === 0 && (
-          <StateMessage>조건에 맞는 상품이 없어요.</StateMessage>
+        {products.data && list.length === 0 && (
+          <StateMessage>
+            {tab === 'ALL' ? '등록한 상품이 없어요.' : '이 탭에 해당하는 상품이 없어요.'}
+          </StateMessage>
         )}
-        {visible.length > 0 && (
+        {list.length > 0 && (
           <table aria-label="내 상품" className="w-full text-sm max-lg:block">
             <thead className="max-lg:sr-only">
               <tr className="border-rule text-ink-3 border-b text-left text-[13px]">
@@ -126,7 +128,7 @@ export function CenterProductsPage() {
               </tr>
             </thead>
             <tbody className="max-lg:block">
-              {visible.map((product) => (
+              {list.map((product) => (
                 <SellerProductRow
                   key={product.id}
                   product={product}
@@ -135,6 +137,9 @@ export function CenterProductsPage() {
               ))}
             </tbody>
           </table>
+        )}
+        {products.data && (
+          <Pagination page={page} totalPages={products.data.totalPages} onChange={setPage} />
         )}
       </section>
     </div>
@@ -172,10 +177,12 @@ function SellerProductRow({ product, detailHref }: SellerProductRowProps) {
         <CellLabel>옵션</CellLabel> {product.optionCount}개
       </td>
       <td className="py-3 pr-4 text-right align-middle max-lg:col-start-2 max-lg:p-0 max-lg:text-left">
-        <span className="inline-flex items-center gap-2">
+        <span className="inline-flex flex-wrap items-center gap-2">
           <CellLabel>총 재고</CellLabel>
           <span className="figure font-bold">{product.totalStock}</span>
-          <StockTag stock={product.totalStock} />
+          {sellerProductStockTagsOf(product).map((tag) => (
+            <StockTag key={tag.kind} tag={tag} href={`${detailHref}#${OPTION_STOCK}`} />
+          ))}
         </span>
       </td>
       <td className="figure py-3 pr-4 text-right align-middle max-lg:col-start-2 max-lg:p-0 max-lg:text-left">
@@ -215,21 +222,31 @@ function StatusTag({ product }: StatusTagProps) {
   )
 }
 
-const STOCK_TAG: Record<StockLevel, { label: string; className: string } | null> = {
-  OUT: { label: '품절', className: 'text-destructive' },
-  LOW: { label: '재고 적음', className: 'text-ink-2' },
-  OK: null,
+type TabCountProps = { tab: SellerProductTab }
+
+/** 탭 옆 전체 개수 (판매자 홈 숫자와 같은 요청이라 캐시를 같이 쓴다) */
+function TabCount({ tab }: TabCountProps) {
+  const count = useSellerProductCountQuery(tab)
+  return <span className="figure text-sm">{count.data ?? ''}</span>
 }
 
-type StockTagProps = { stock: number }
+const STOCK_TAG = {
+  OUT: { label: '품절', className: 'text-destructive' },
+  LOW: { label: '재고 적음', className: 'text-ink-2' },
+} as const
 
-function StockTag({ stock }: StockTagProps) {
-  const tag = STOCK_TAG[stockLevelOf(stock)]
-  return tag ? (
-    <span
-      className={`bg-paper-2 inline-flex h-6 items-center rounded-sm px-2 text-xs font-semibold whitespace-nowrap ${tag.className}`}
+type StockTagProps = { tag: StockTagValue; href: string }
+
+/** 판매 중 상품의 품절 · 재고 적은 옵션 수. 누르면 상품 상세의 옵션별 재고로 */
+function StockTag({ tag, href }: StockTagProps) {
+  const { label, className } = STOCK_TAG[tag.kind]
+  return (
+    <Link
+      to={href}
+      aria-label={`${label} 옵션 ${tag.count}개 보기`}
+      className={`bg-paper-2 hover:bg-paper-3 inline-flex h-6 items-center rounded-sm px-2 text-xs font-semibold whitespace-nowrap ${className}`}
     >
-      {tag.label}
-    </span>
-  ) : null
+      {label} {tag.count}
+    </Link>
+  )
 }

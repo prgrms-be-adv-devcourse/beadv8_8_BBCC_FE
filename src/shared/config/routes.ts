@@ -27,6 +27,8 @@ const C = '/console'
 const RECOMMENDED = '/recommended'
 /** 자녀 프로필 안 기준 옷 칸의 id (주소 #) */
 export const REFERENCE_GARMENTS = 'reference-garments'
+/** 판매자 상품 상세 안 옵션별 재고 칸의 id (주소 #, 목록의 품절 · 재고 적음 꼬리표가 여기로 온다) */
+export const OPTION_STOCK = 'option-stock'
 /** 산 옷으로 기준 옷 칸을 채울 때 주소에 싣는 상품 · 사이즈 */
 export const GARMENT_FROM = { product: 'garmentProduct', size: 'garmentSize' } as const
 

@@ -110,6 +110,8 @@ export const sellerProductSummaryPageShape = pageOf(
     totalAvailableQuantity: num,
     minPrice: nullable(num),
     createdAt: str,
+    soldOutOptionCount: num,
+    lowStockOptionCount: num,
   }),
 )
 export const sellerProductDetailShape = obj({

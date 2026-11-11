@@ -1,17 +1,18 @@
-import { useState, type ReactNode } from 'react'
-import { Link, useParams } from 'react-router'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Link, useLocation, useParams } from 'react-router'
 import {
   canChangeProduct,
   canDelist,
   canStartSale,
   canStopSale,
   isOnSale,
+  optionStockStateOf,
   PRODUCT_STATUS_LABEL,
   ProductImage,
-  stockLevelOf,
+  summarizeOptionStock,
   useSellerProductQuery,
+  type OptionStockState,
   type SellerProductDetail,
-  type StockLevel,
 } from '@/entities/product'
 import {
   AdjustStockForm,
@@ -22,7 +23,7 @@ import {
 import { StartSaleButton } from '@/features/register-product'
 import { ProductImageUploader } from '@/features/upload-product-image'
 import { getErrorMessage, getErrorStatus } from '@/shared/api'
-import { paths, sellerPathsOf } from '@/shared/config'
+import { OPTION_STOCK, paths, sellerPathsOf } from '@/shared/config'
 import { formatWon, useArea } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { PageHeader } from '@/shared/ui/PageHeader'
@@ -37,6 +38,13 @@ export function CenterProductDetailPage() {
   const product = useSellerProductQuery(productId)
   const [isEditing, setIsEditing] = useState(false)
   const detail = product.data
+  const { hash } = useLocation()
+
+  // 목록의 품절 · 재고 적음 꼬리표에서 #option-stock으로 오면 옵션별 재고로 내린다
+  useEffect(() => {
+    if (hash === `#${OPTION_STOCK}` && detail)
+      document.getElementById(OPTION_STOCK)?.scrollIntoView({ block: 'start' })
+  }, [hash, detail])
 
   return (
     <div className="shop-look max-w-3xl space-y-6">
@@ -105,6 +113,7 @@ export function CenterProductDetailPage() {
                   <dt className="text-ink-3 text-[13px]">옵션</dt>
                   <dd className="figure font-bold">{detail.options.length}개</dd>
                 </div>
+                <StockSummary options={detail.options} />
               </dl>
             </div>
             <div className="border-rule flex flex-wrap items-center gap-2 border-t px-5 py-4">
@@ -131,7 +140,7 @@ export function CenterProductDetailPage() {
             </div>
           </section>
 
-          <section className="space-y-3">
+          <section id={OPTION_STOCK} className="scroll-mt-32 space-y-3">
             <h2 className="text-section">
               옵션별 재고
               <span className="figure text-ink-3 ml-2 text-sm font-medium">
@@ -187,7 +196,7 @@ function OptionStockTable({ options, canAdjustStock }: OptionStockTableProps) {
           <tr
             key={option.id}
             aria-label={`옵션 ${option.name}`}
-            className="border-rule border-b max-lg:grid max-lg:grid-cols-[auto_auto_minmax(0,1fr)] max-lg:items-center max-lg:gap-x-4 max-lg:gap-y-2 max-lg:py-4"
+            className={`border-rule border-b ${option.onSale ? '' : 'text-ink-3'} max-lg:grid max-lg:grid-cols-[auto_auto_minmax(0,1fr)] max-lg:items-center max-lg:gap-x-4 max-lg:gap-y-2 max-lg:py-4`}
           >
             <td className="py-3 pr-4 align-middle font-semibold max-lg:col-span-3 max-lg:p-0">
               {option.name}
@@ -198,13 +207,13 @@ function OptionStockTable({ options, canAdjustStock }: OptionStockTableProps) {
             <td className="py-3 pr-4 text-right align-middle max-lg:p-0 max-lg:text-left">
               <CellLabel>재고</CellLabel>{' '}
               <span
-                className={`figure font-bold ${option.stock === 0 ? 'text-destructive' : 'text-ink'}`}
+                className={`figure font-bold ${optionStockStateOf(option) === 'OUT' ? 'text-destructive' : option.onSale ? 'text-ink' : 'text-ink-3'}`}
               >
                 {option.stock}
               </span>
             </td>
             <td className="py-3 pr-4 align-middle max-lg:p-0">
-              <StockTag stock={option.stock} />
+              <StockTag state={optionStockStateOf(option)} />
             </td>
             <td className="py-3 text-right align-middle max-lg:col-span-3 max-lg:p-0 max-lg:text-left">
               {canAdjustStock && <AdjustStockForm option={option} />}
@@ -238,16 +247,34 @@ function StatusTag({ product }: StatusTagProps) {
   )
 }
 
-const STOCK_TAG: Record<StockLevel, { label: string; className: string } | null> = {
+type StockSummaryProps = { options: SellerProductDetail['options'] }
+
+/** 「재고 확인」: 판매 중 옵션만 세서 품절 · 재고 적음 (판매 중지 옵션은 세지 않는다) */
+function StockSummary({ options }: StockSummaryProps) {
+  const { soldOut, lowStock } = summarizeOptionStock(options)
+  return (
+    <div className="space-y-1">
+      <dt className="text-ink-3 text-[13px]">재고 확인</dt>
+      <dd className="figure font-bold">
+        <span className={soldOut > 0 ? 'text-destructive' : undefined}>품절 {soldOut}</span>
+        {' · '}
+        <span>재고 적음 {lowStock}</span>
+      </dd>
+    </div>
+  )
+}
+
+const STOCK_TAG: Record<OptionStockState, { label: string; className: string } | null> = {
+  STOPPED: { label: '판매 중지', className: 'text-ink-3' },
   OUT: { label: '품절', className: 'text-destructive' },
   LOW: { label: '재고 적음', className: 'text-ink-2' },
   OK: null,
 }
 
-type StockTagProps = { stock: number }
+type StockTagProps = { state: OptionStockState }
 
-function StockTag({ stock }: StockTagProps) {
-  const tag = STOCK_TAG[stockLevelOf(stock)]
+function StockTag({ state }: StockTagProps) {
+  const tag = STOCK_TAG[state]
   return tag ? (
     <span
       className={`bg-paper-2 inline-flex h-6 items-center rounded-sm px-2 text-xs font-semibold whitespace-nowrap ${tag.className}`}

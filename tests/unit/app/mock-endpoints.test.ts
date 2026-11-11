@@ -3,9 +3,16 @@ import { adminHandlers } from '@/app/mocks/admin-handlers'
 import { memberHandlers } from '@/app/mocks/member-handlers'
 import { orderHandlers } from '@/app/mocks/order-handlers'
 import { recommendStreamHandlers } from '@/app/mocks/recommend-stream-handlers'
+import { sellerProductHandlers } from '@/app/mocks/seller-product-handlers'
 import { MOCK_ENDPOINTS } from '@/shared/api'
 
-const handlers = [...orderHandlers, ...memberHandlers, ...adminHandlers, ...recommendStreamHandlers]
+const handlers = [
+  ...orderHandlers,
+  ...memberHandlers,
+  ...adminHandlers,
+  ...recommendStreamHandlers,
+  ...sellerProductHandlers,
+]
 const key = (item: { method: string; path: string }) => `${item.method} ${item.path}`
 
 describe('엔드포인트별 목 ↔ 실제 목록 (mock-endpoints)', () => {

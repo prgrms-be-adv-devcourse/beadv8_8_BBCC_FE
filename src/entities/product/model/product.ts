@@ -121,6 +121,9 @@ export type SellerProduct = {
   totalStock: number
   minPrice: number | null
   createdAt: string
+  /** 판매 중 옵션 가운데 품절(0) · 재고 적음(1 ~ 5) 옵션 수 (서버가 센 값) */
+  soldOutOptionCount: number
+  lowStockOptionCount: number
 }
 
 /** 내 상품 하나: 옵션별 재고 + 수정 폼을 채울 저장 값 (수정 요청과 같은 모양) */
