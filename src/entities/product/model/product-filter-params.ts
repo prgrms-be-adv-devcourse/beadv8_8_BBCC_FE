@@ -20,10 +20,13 @@ export function effectiveSort(keyword: string, sort: ProductSort | undefined): P
   return sort
 }
 
+/** 옵션 값 「항목코드:값ID」 (BE ProductListRequest.attributes와 같은 형식. 틀리면 BE가 400) */
+const ATTRIBUTE_VALUE = /^[A-Z_]+:[1-9][0-9]{0,17}$/
+
 /** 주소 → 거르기. ?cat=11&sort=PRICE_ASC&attr=COLOR:3&attr=SIZE:7 (모르는 정렬은 버린다. 실제 정렬은 effectiveSort) */
 export function readProductFilters(params: URLSearchParams): ProductFilters {
   const sort = params.get('sort')
-  const attributes = params.getAll('attr').filter((value) => /^[^:]+:[^:]+$/.test(value))
+  const attributes = params.getAll('attr').filter((value) => ATTRIBUTE_VALUE.test(value))
   return {
     categoryId: params.get('cat') || null,
     ...(isSort(sort) ? { sort } : {}),
