@@ -170,7 +170,8 @@ describe('주문상품을 기준 옷으로', () => {
       { status: 'CONFIRMED' as const, deliveredAt: '2026-11-01T10:00:00', child, size: '110' },
       true,
     ],
-    [{ status: 'ORDERED' as const, deliveredAt: '2026-11-01T10:00:00', child, size: '110' }, true],
+    // 배송 완료라도 구매확정 전이면 아직 쓸 수 없다 (산 옷 목록과 같은 기준)
+    [{ status: 'ORDERED' as const, deliveredAt: '2026-11-01T10:00:00', child, size: '110' }, false],
     [{ status: 'ORDERED' as const, deliveredAt: null, child, size: '110' }, false],
     [
       {
@@ -185,7 +186,7 @@ describe('주문상품을 기준 옷으로', () => {
       { status: 'CONFIRMED' as const, deliveredAt: '2026-11-01T10:00:00', child, size: null },
       false,
     ],
-  ])('받은 옷이고 자녀 · 사이즈가 있어야 한다 (%#)', (patch, expected) => {
+  ])('구매확정한 옷이고 자녀 · 사이즈가 있어야 한다 (%#)', (patch, expected) => {
     expect(canUseAsReferenceGarment(item(patch))).toBe(expected)
   })
 })

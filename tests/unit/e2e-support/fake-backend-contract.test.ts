@@ -47,6 +47,7 @@ import {
   sellerApplicationShape,
   sellerShape,
 } from '@/entities/seller/api/seller.shape'
+import { purchasedGarmentPageShape } from '@/entities/recommendation/api/purchased-garment.shape'
 import {
   companionProductsShape,
   homePreviewShape,
@@ -1165,6 +1166,67 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     expect((await call('GET', url, 1)).data.map((item: { part: string }) => item.part)).toEqual([
       'BOTTOM',
     ])
+  })
+
+  it('기준 옷 산 옷 목록: 이 자녀의 구매확정된 옷만, 산 사이즈 실측과 함께 (BE #1168)', async () => {
+    const child = await call('POST', '/children', 1, {
+      ...toChildRequest(DEMO_CHILD),
+      requiredConsent: true,
+      optionalConsent: true,
+    })
+    const url = `/recommendations/children/${child.data.id}/purchases`
+    expect((await call('GET', url, 1)).data).toMatchObject({ content: [], totalElements: 0 })
+
+    await call(
+      'POST',
+      '/cart/items',
+      1,
+      toAddCartItemRequest({ optionId: '2', childId: String(child.data.id), quantity: 1 }),
+    )
+    const cart = await call('GET', '/cart', 1)
+    const line = cart.data.items.find(
+      (item: { childId: string | null }) => item.childId === String(child.data.id),
+    )
+    const placed = await call('POST', '/orders', 1, {
+      items: [
+        {
+          optionId: Number(line.optionId),
+          childId: child.data.id,
+          quantity: 1,
+          unitPrice: line.unitPrice,
+        },
+      ],
+      shippingAddress: { recipientName: '홍길동', phone: '010', zipCode: '04524', address: '서울' },
+    })
+    const orderId = placed.data.orderId
+    let order = placed
+    for (let i = 0; i < 20 && order.data.status === 'PENDING_PAYMENT'; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 250))
+      order = await call('GET', `/orders/${orderId}`, 1)
+    }
+    // 배송 완료 전에는 목록에 없다
+    expect((await call('GET', url, 1)).data.totalElements).toBe(0)
+    const sellerOrder = (await call('GET', '/seller/orders', 2)).data.content.find(
+      (item: { orderId: string }) => String(item.orderId) === String(orderId),
+    )
+    await call('POST', `/seller/orders/${sellerOrder.sellerOrderId}/ship`, 2, {
+      carrier: 'CJ',
+      trackingNumber: '1234',
+    })
+    await call('POST', `/seller/orders/${sellerOrder.sellerOrderId}/deliver`, 2)
+    const item = order.data.items[0]
+    await call('POST', `/orders/${orderId}/items/${item.orderItemId}/confirm`, 1)
+
+    const list = await call('GET', url, 1)
+    expectContract(list.data, purchasedGarmentPageShape)
+    expect(list.data.content[0]).toMatchObject({
+      orderItemId: item.orderItemId,
+      productId: item.productId,
+      size: item.size,
+    })
+    expect(list.data.content[0].measurements).not.toBeNull()
+    expect((await call('GET', url, 2)).status).toBe(403)
+    expect((await call('GET', '/recommendations/children/999999/purchases', 1)).status).toBe(404)
   })
 
   it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {

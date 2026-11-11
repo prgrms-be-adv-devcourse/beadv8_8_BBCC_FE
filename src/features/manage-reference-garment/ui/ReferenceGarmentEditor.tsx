@@ -42,7 +42,7 @@ export function ReferenceGarmentEditor({
   onSaved,
 }: ReferenceGarmentEditorProps) {
   const spec = GARMENT_PART_SPEC[part]
-  const save = useSaveReferenceGarment(childId, part)
+  const save = useSaveReferenceGarment(childId, part, onSaved)
   const remove = useDeleteReferenceGarment(childId, part)
   // 저장 · 삭제로 기준 옷이 바뀌면 화면이 key를 바꿔 새로 채운다
   const [form, setForm] = useState<ReferenceGarmentForm>(
@@ -57,7 +57,7 @@ export function ReferenceGarmentEditor({
     event.preventDefault()
     const message = validateReferenceGarmentForm(part, form)
     setInvalid(message)
-    if (!message) save.mutate(form, { onSuccess: () => onSaved?.() })
+    if (!message) save.mutate(form)
   }
 
   const handleDelete = async () => {

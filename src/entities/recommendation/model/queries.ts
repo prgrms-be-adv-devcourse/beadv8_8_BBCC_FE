@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { nextPageOf } from '@/shared/api'
 import { recommendationApi } from '../api/recommendation-api'
 import type { RecommendedProductsQuery } from './recommendation'
 import { nextRecommendedPageOf, type RecommendedPageParam } from './recommended-page.rules'
@@ -9,12 +10,14 @@ import {
   toRecommendedProductsParams,
   toSizeRecommendation,
 } from './recommendation.mapper'
+import { toPurchasedGarment } from './purchased-garment.mapper'
 import { toReferenceGarment } from './reference-garment.mapper'
 
 export const recommendationKeys = {
   all: ['recommendation'] as const,
   referenceGarments: (childId: string) =>
     ['recommendation', 'reference-garments', childId] as const,
+  purchases: (childId: string) => ['recommendation', 'purchases', childId] as const,
   size: (productId: string, childId: string) =>
     ['recommendation', 'size', productId, childId] as const,
   products: (childId: string, query: RecommendedProductsQuery) =>
@@ -105,5 +108,20 @@ export function useReferenceGarmentsQuery(childId: string) {
     queryKey: recommendationKeys.referenceGarments(childId),
     queryFn: () => recommendationApi.referenceGarments(childId),
     select: (list) => list.map(toReferenceGarment),
+  })
+}
+
+/** 자녀에게 산 옷 (구매확정, 확정이 늦은 순서): 「더 보기」로 다음 페이지를 이어 붙인다 */
+export function usePurchasedGarmentsInfiniteQuery(childId: string, size = 10) {
+  return useInfiniteQuery({
+    queryKey: recommendationKeys.purchases(childId),
+    queryFn: ({ pageParam }) =>
+      recommendationApi.purchasedGarments(childId, { page: pageParam, size }),
+    initialPageParam: 0,
+    getNextPageParam: nextPageOf,
+    select: (data) => ({
+      garments: data.pages.flatMap((page) => page.content.map(toPurchasedGarment)),
+      totalElements: data.pages[0]?.totalElements ?? 0,
+    }),
   })
 }

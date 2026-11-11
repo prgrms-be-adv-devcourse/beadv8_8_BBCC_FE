@@ -6,8 +6,14 @@ on:
   push:
     branches: [main, develop]
 
+# 같은 PR 에 연달아 push 하면 이전 CI 를 취소한다(#271). main · develop push 는 끝까지 돈다(Vercel 배포가 그 결과를 기다린다)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  build:
+  # lint · 형식 · 빌드 · 단위 테스트는 한 번만 돈다
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -24,12 +30,58 @@ jobs:
       - run: npm run build
       - run: npm run test
 
-      # E2E: 가짜 백엔드 + 개발 서버를 띄워 시연 흐름(①~⑦)을 브라우저로 따라간다
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+  # E2E: 가짜 백엔드 + 개발 서버를 띄워 시연 흐름(①~⑦)을 브라우저로 따라간다
+  # 가장 오래 걸려(약 3분 반) 파일 단위로 두 갈래로 나눠 동시에 돌린다(#276). 갈래마다 가짜 백엔드를 따로 띄우고,
+  # 공용 상태를 바꾸는 zz-auto-demo 는 파일 이름 순서대로 둘째 갈래의 맨 뒤에 남는다
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      # 한 갈래가 실패해도 다른 갈래는 끝까지 돌려 실패한 테스트를 모두 보이게 한다
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # 브라우저는 Playwright 버전마다 캐시한다. 캐시가 있으면 내려받기를 건너뛰고 시스템 라이브러리만 깐다(#271)
+      - name: Playwright 버전
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/2
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: playwright-report/
           retention-days: 7
+
+  # develop · main 보호 규칙의 필수 검사 이름이 build 다. 위 두 job 이 모두 성공해야 성공한다
+  # 하나라도 실패 · 취소되면 실패해 CI 전체가 실패하고, Vercel 배포(vercel-deploy.yml)도 돌지 않는다
+  build:
+    needs: [check, e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 검사 결과 확인
+        env:
+          CHECK: ${{ needs.check.result }}
+          E2E: ${{ needs.e2e.result }}
+        run: |
+          echo "check=$CHECK e2e=$E2E"
+          [[ "$CHECK" == success && "$E2E" == success ]]

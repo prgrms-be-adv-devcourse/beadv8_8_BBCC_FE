@@ -1,5 +1,7 @@
 # 프론트 배포
 
+> 지금 서비스는 아래 "Vercel 배포"로 한다. 이 문서의 EC2 · Nginx 컨테이너 구성은 쓰지 않으며, GHCR 이미지를 만들던 `.github/workflows/deploy.yml` 은 지웠다(#276). `Dockerfile` · `deploy/nginx` · `deploy/compose.rehearsal.yml` 은 리허설용으로 남아 있다.
+
 데브코스 AWS 지원(EC2 1대 · S3 버킷 1개, CloudFront · ACM 기본 불가)에 맞춘 구성이다.
 
 ```
@@ -20,7 +22,6 @@
 | `Dockerfile`                         | `vite build` → `nginx:1.27-alpine`에 dist와 Nginx 설정                                          |
 | `deploy/nginx/default.conf.template` | SPA fallback · `/assets` 1년 캐시 · `index.html` 캐시 안 함 · gzip · `/api` 프록시 · `/healthz` |
 | `deploy/compose.rehearsal.yml`       | 배포와 같은 이미지를 내 PC에서 띄워 로컬 백엔드(8080)에 붙여 보는 리허설                        |
-| `.github/workflows/deploy.yml`       | PR: 이미지 빌드 확인 / main 머지 · 수동: GHCR에 올림 (`ghcr.io/<저장소>:latest`, `:<커밋>`)     |
 
 ## 빌드 값 (빌드 인자 = 저장소 Actions Variables)
 
@@ -57,7 +58,7 @@ fe:
 
 ## Vercel 배포 (개발 확인 · 공유용)
 
-팀 배포(EC2)와 따로, 머지하면 Vercel에도 올라간다 (`.github/workflows/vercel-deploy.yml`).
+CI 가 main · develop push 에서 성공하면 Vercel에 올라간다 (`.github/workflows/vercel-deploy.yml`).
 
 | 브랜치  | Vercel 환경 | 주소                                                       |
 | ------- | ----------- | ---------------------------------------------------------- |
