@@ -72,13 +72,13 @@ describe('toProductSearchParams: 검색 조건', () => {
     )
   })
   it('고른 자녀가 있으면 childId를 함께 보내고, 없으면 보내지 않는다 (BE #1089)', () => {
-    expect(toProductSearchParams({ keyword: '맨투맨', categoryId: null, childId: '11' })).toEqual({
+    // 검색어가 있으면 기본 정렬이 관련도순이라, 자녀 ID만 보려고 최신순을 고른다
+    const search = { keyword: '맨투맨', categoryId: null, sort: 'NEWEST' } as const
+    expect(toProductSearchParams({ ...search, childId: '11' })).toEqual({
       keyword: '맨투맨',
       childId: '11',
     })
-    expect(toProductSearchParams({ keyword: '맨투맨', categoryId: null, childId: null })).toEqual({
-      keyword: '맨투맨',
-    })
+    expect(toProductSearchParams({ ...search, childId: null })).toEqual({ keyword: '맨투맨' })
   })
 })
 
