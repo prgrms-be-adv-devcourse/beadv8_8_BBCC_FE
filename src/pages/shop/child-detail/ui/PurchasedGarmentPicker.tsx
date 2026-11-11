@@ -57,7 +57,7 @@ function PartChooser({ row, onPick }: PartChooserProps) {
 
 /**
  * 「산 옷에서 고르기」: 구매확정한 옷 목록. 고르면 그 칸의 편집기를 채운다.
- * 카테고리로 칸이 정해지면 「○○ 칸에」 버튼, 카테고리를 모르면 칸을 골라 채운다
+ * 서버가 칸을 정했으면 「○○ 칸에」 버튼, 상품 정보가 없어 칸을 모르면 칸을 골라 채운다
  */
 export function PurchasedGarmentPicker({
   rows,

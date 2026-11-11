@@ -2,7 +2,7 @@
 
 /**
  * GET /recommendations/children/{childId}/purchases 한 줄: 구매확정된 주문상품 (확정이 늦은 순서).
- * 상품 정보가 없으면 productName · categoryId · measurements가 null, 산 사이즈의 실측이 없으면 measurements만 null
+ * 상품 정보가 없으면 productName · categoryId · part · measurements가 null, 산 사이즈의 실측이 없으면 measurements만 null
  */
 export type PurchasedGarmentDto = {
   orderItemId: string
@@ -10,6 +10,8 @@ export type PurchasedGarmentDto = {
   productName: string | null
   /** 상품의 말단 카테고리 */
   categoryId: string | null
+  /** 이 옷이 들어갈 기준 옷 칸 (BE #1249, TOP · BOTTOM · OUTER · DRESS · SKIRT). 기준 옷이 아닌 옷(모자 · 양말)이면 null */
+  part: string | null
   /** 주문 당시 사이즈 */
   size: string
   /** 산 사이즈의 실측: 항목 코드 → cm */
