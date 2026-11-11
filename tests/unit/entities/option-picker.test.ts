@@ -52,10 +52,11 @@ function productOf(
     status: 'ON_SALE',
     sizeFree: false,
     minPrice: 25000,
+    thumbnailUrl: null,
     imageUrls: [],
     optionAttributes: [
-      { attributeId: '1', code: 'COLOR', name: '색상', values: colors },
-      { attributeId: '2', code: 'SIZE', name: '사이즈', values: sizes },
+      { attributeId: '1', code: 'COLOR', name: '색상', sizeRole: false, values: colors },
+      { attributeId: '2', code: 'SIZE', name: '사이즈', sizeRole: true, values: sizes },
     ],
     options: optionsOf(rows),
     productInfo: [],

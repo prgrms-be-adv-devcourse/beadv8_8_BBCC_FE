@@ -15,11 +15,15 @@ export type ProductDetailDto = {
   sizeFree: boolean
   /** 옵션이 없으면 null */
   minPrice: number | null
+  /** 대표 사진 (BE #1253). 없으면 null이고 화면은 imageUrls의 첫 번째를 쓴다 */
+  thumbnailUrl: string | null
   imageUrls: string[]
   optionAttributes: {
     attributeId: string
     code: string
     name: string
+    /** 사이즈를 나타내는 항목이면 true (BE #1252, 상품 유형 설정) */
+    sizeRole: boolean
     values: { valueId: string; value: string; colorCode: string | null }[]
   }[]
   options: {
