@@ -10,3 +10,8 @@ export function shownPicksOf(received: RecommendedPicks[]): RecommendedPicks | n
     received.findLast((picks) => picks.source === 'RULE')
   return picked && picked.products.length > 0 ? picked : null
 }
+
+/** AI가 쓴 이유가 하나라도 보이는지 (보이면 「AI가 쓴 문장」 안내를 단다) */
+export function hasAiReasons(picks: RecommendedPicks): boolean {
+  return picks.source === 'AI' && picks.products.some((product) => product.reason !== null)
+}
