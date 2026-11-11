@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { ChildPicker, SizeRulerBar, sizeRulerOf, type Child } from '@/entities/child'
 import { ProductTile } from '@/entities/product'
 import {
+  hasAiReasons,
   PickReveal,
   RecommendedPicksLoading,
   RecommendedPicksNotice,
@@ -110,15 +111,34 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
                     : { text: '사이즈 무관' }
                 }
               />
-              {/* 이유가 없으면(규칙으로 채운 상품) 칸을 그리지 않는다 */}
+              {/* 이유가 없으면(규칙으로 채운 상품) 칸을 그리지 않는다. 길이 제한이 없어 2줄에서 자르고 전문은 title로 */}
               {product.reason && (
-                <p className="text-ink-2 bg-paper-2 rounded-md px-2.5 py-2 text-[13px] leading-snug">
+                <p
+                  title={product.reason}
+                  className="text-ink-2 bg-paper-2 line-clamp-2 rounded-md px-2.5 py-2 text-[13px] leading-snug"
+                >
                   {product.reason}
                 </p>
               )}
             </PickReveal>
           ))}
         </ul>
+      )}
+      {preview.data && hasAiReasons(preview.data) && (
+        <p className="text-ink-3 flex items-center gap-1.5 text-xs">
+          <svg
+            viewBox="0 0 24 24"
+            className="size-3.5 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v5M12 8h.01" />
+          </svg>
+          추천 이유는 AI가 쓴 문장이라 실제와 다를 수 있어요.
+        </p>
       )}
     </section>
   )
