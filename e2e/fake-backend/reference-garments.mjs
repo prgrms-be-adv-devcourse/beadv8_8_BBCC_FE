@@ -1,15 +1,24 @@
-// 가짜 백엔드의 추천 기준 옷 (BE #1111): 자녀별 상의 · 하의 한 벌씩 (응답 모양과 거절만 흉내).
-// 세부 종류는 가짜 상품 카테고리(11 상의, 12 하의)로 판단한다. 결과는 { status, body } 또는 { status, title, detail }
-const PARTS = {
-  TOP: {
-    required: ['TOTAL_LENGTH', 'CHEST_WIDTH'],
-    optional: ['SHOULDER_WIDTH', 'SLEEVE_LENGTH'],
-    categoryIds: ['11'],
-  },
-  BOTTOM: { required: ['TOTAL_LENGTH', 'WAIST_WIDTH'], optional: ['RISE'], categoryIds: ['12'] },
+// 가짜 백엔드의 추천 기준 옷 (BE #1111, 5칸 FE #280): 자녀별 상의 · 바지 · 아우터 · 원피스 · 치마 한 벌씩
+// (응답 모양과 거절만 흉내). 세부 종류는 가짜 상품 카테고리(11 상의, 12 하의)로 판단한다. 가짜 상품에는
+// 아우터 · 원피스 · 치마 카테고리가 없어 그 칸은 저장되지 않는다. 결과는 { status, body } 또는 { status, title, detail }
+const TOP_ITEMS = {
+  required: ['TOTAL_LENGTH', 'CHEST_WIDTH'],
+  optional: ['SHOULDER_WIDTH', 'SLEEVE_LENGTH'],
 }
+const PARTS = {
+  TOP: { ...TOP_ITEMS, categoryIds: ['11'] },
+  BOTTOM: { required: ['TOTAL_LENGTH', 'WAIST_WIDTH'], optional: ['RISE'], categoryIds: ['12'] },
+  OUTER: { ...TOP_ITEMS, categoryIds: [] },
+  DRESS: {
+    required: ['TOTAL_LENGTH', 'CHEST_WIDTH'],
+    optional: ['SHOULDER_WIDTH'],
+    categoryIds: [],
+  },
+  SKIRT: { required: ['TOTAL_LENGTH', 'WAIST_WIDTH'], optional: ['HIP_WIDTH'], categoryIds: [] },
+}
+const PART_ORDER = Object.keys(PARTS)
 const LEAF_IDS = ['11', '12']
-/** 자녀 ID → { TOP?: garment, BOTTOM?: garment } */
+/** 자녀 ID → { TOP?: garment, BOTTOM?: garment, … } */
 const garments = new Map()
 
 const bad = (title, detail) => ({ status: 400, title, detail })
@@ -29,19 +38,20 @@ function invalid(part, body) {
   if (!PARTS[part].categoryIds.includes(categoryId))
     return bad(
       '구분과 맞지 않는 세부 종류입니다',
-      '상의 기준 옷은 상의 · 아우터 · 원피스, 하의 기준 옷은 하의 · 치마 카테고리에서 골라 주세요.',
+      '상의는 상의, 바지는 하의 · 바지, 아우터는 아우터, 원피스는 원피스, 치마는 치마 카테고리에서 골라 주세요.',
     )
   const codes = Object.keys(body.measurements)
   const { required, optional } = PARTS[part]
   if (codes.some((code) => !required.includes(code) && !optional.includes(code)))
     return bad(
       '이 구분에 없는 실측 항목입니다',
-      '상의는 총장 · 가슴단면 · 어깨너비 · 소매길이, 하의는 총장 · 허리단면 · 밑위만 입력할 수 있습니다.',
+      '상의 · 아우터는 총장 · 가슴단면 · 어깨너비 · 소매길이, 원피스는 총장 · 가슴단면 · 어깨너비, ' +
+        '바지는 총장 · 허리단면 · 밑위, 치마는 총장 · 허리단면 · 엉덩이단면만 입력할 수 있습니다.',
     )
   if (required.some((code) => !codes.includes(code)))
     return bad(
       '필수 실측이 없습니다',
-      '상의는 총장과 가슴단면, 하의는 총장과 허리단면을 입력해 주세요.',
+      '상의 · 아우터 · 원피스는 총장과 가슴단면, 바지 · 치마는 총장과 허리단면을 입력해 주세요.',
     )
   if (Object.values(body.measurements).some((value) => !validValue(value)))
     return bad(
@@ -63,7 +73,10 @@ export function referenceGarmentRoute(method, path, body, childOf) {
   if ((isList && method !== 'GET') || (!isList && !['PUT', 'DELETE'].includes(method))) return null
   return () => {
     if (!isList && !PARTS[part])
-      return bad('알 수 없는 기준 옷 구분입니다', '기준 옷 구분은 TOP 또는 BOTTOM입니다.')
+      return bad(
+        '알 수 없는 기준 옷 구분입니다',
+        '기준 옷 구분은 TOP · BOTTOM · OUTER · DRESS · SKIRT 중 하나입니다.',
+      )
     const child = childOf(childId)
     if (child === 'missing')
       return { status: 404, title: '자녀를 찾을 수 없습니다', detail: '자녀를 다시 확인해 주세요.' }
@@ -74,7 +87,7 @@ export function referenceGarmentRoute(method, path, body, childOf) {
         detail: '로그인한 보호자의 자녀만 다룰 수 있습니다.',
       }
     const saved = garments.get(childId) ?? {}
-    if (isList) return { status: 200, body: ['TOP', 'BOTTOM'].flatMap((p) => saved[p] ?? []) }
+    if (isList) return { status: 200, body: PART_ORDER.flatMap((p) => saved[p] ?? []) }
     if (method === 'DELETE') {
       delete saved[part]
       garments.set(childId, saved)

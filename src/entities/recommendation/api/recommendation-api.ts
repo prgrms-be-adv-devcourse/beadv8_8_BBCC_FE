@@ -54,7 +54,7 @@ export const recommendationApi = {
       .get<ReferenceGarmentDto[]>(referenceGarments(childId))
       .then(expectShape(referenceGarmentListShape)),
   /**
-   * 기준 옷 저장 (처음이든 교체든 같은 응답). part는 TOP · BOTTOM만, 구분 · 카테고리 · 실측이 맞지 않으면 400.
+   * 기준 옷 저장 (처음이든 교체든 같은 응답). part는 TOP · BOTTOM · OUTER · DRESS · SKIRT만, 구분 · 카테고리 · 실측이 맞지 않으면 400.
    * 같은 자녀 · 구분의 첫 저장이 동시에 오면 하나가 409 (다시 보내면 교체)
    */
   saveReferenceGarment: (childId: string, part: string, request: ReferenceGarmentRequestDto) =>

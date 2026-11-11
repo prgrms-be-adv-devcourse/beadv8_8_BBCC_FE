@@ -1151,6 +1151,13 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     // 거절: 소문자 구분 · 맞지 않는 세부 종류 · 필수 없음 · 범위 밖 값은 400, 남의 자녀 403, 없는 자녀 404
     expect((await call('PUT', `${url}/top`, 1, top)).status).toBe(400)
     expect((await call('PUT', `${url}/BOTTOM`, 1, top)).status).toBe(400)
+    // 5칸: 아우터 · 원피스 · 치마도 구분이고, 상의 카테고리를 아우터 칸에 넣으면 맞지 않는 세부 종류로 거절한다
+    const outerWithTop = await call('PUT', `${url}/OUTER`, 1, top)
+    expect(outerWithTop.status).toBe(400)
+    expect(outerWithTop.data.title).toBe('구분과 맞지 않는 세부 종류입니다')
+    expect((await call('PUT', `${url}/SKIRT`, 1, bottom)).data.title).toBe(
+      '구분과 맞지 않는 세부 종류입니다',
+    )
     const noChest = { categoryId: '11', measurements: { TOTAL_LENGTH: 42 } }
     expect((await call('PUT', `${url}/TOP`, 1, noChest)).status).toBe(400)
     const tooLong = { categoryId: '11', measurements: { TOTAL_LENGTH: 200.1, CHEST_WIDTH: 30 } }

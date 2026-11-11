@@ -1,7 +1,8 @@
-/** 기준 옷 구분: 상의 · 하의 */
-export type GarmentPart = 'TOP' | 'BOTTOM'
+/** 기준 옷 구분: 상의 · 바지 · 아우터 · 원피스 · 치마 */
+export type GarmentPart = 'TOP' | 'BOTTOM' | 'OUTER' | 'DRESS' | 'SKIRT'
 
-export const GARMENT_PARTS: readonly GarmentPart[] = ['TOP', 'BOTTOM']
+/** 화면 · 응답 순서 */
+export const GARMENT_PARTS: readonly GarmentPart[] = ['TOP', 'BOTTOM', 'OUTER', 'DRESS', 'SKIRT']
 
 /**
  * 구분마다 필수 · 선택 실측(화면 순서)과 이 구분에 드는 카테고리 이름.
@@ -15,13 +16,31 @@ export const GARMENT_PART_SPEC: Record<
     label: '상의',
     required: ['TOTAL_LENGTH', 'CHEST_WIDTH'],
     optional: ['SHOULDER_WIDTH', 'SLEEVE_LENGTH'],
-    categoryNames: ['상의', '아우터', '원피스'],
+    categoryNames: ['상의'],
   },
   BOTTOM: {
-    label: '하의',
+    label: '바지',
     required: ['TOTAL_LENGTH', 'WAIST_WIDTH'],
     optional: ['RISE'],
-    categoryNames: ['하의', '치마'],
+    categoryNames: ['하의', '바지'],
+  },
+  OUTER: {
+    label: '아우터',
+    required: ['TOTAL_LENGTH', 'CHEST_WIDTH'],
+    optional: ['SHOULDER_WIDTH', 'SLEEVE_LENGTH'],
+    categoryNames: ['아우터'],
+  },
+  DRESS: {
+    label: '원피스',
+    required: ['TOTAL_LENGTH', 'CHEST_WIDTH'],
+    optional: ['SHOULDER_WIDTH'],
+    categoryNames: ['원피스'],
+  },
+  SKIRT: {
+    label: '치마',
+    required: ['TOTAL_LENGTH', 'WAIST_WIDTH'],
+    optional: ['HIP_WIDTH'],
+    categoryNames: ['치마'],
   },
 }
 
@@ -33,6 +52,7 @@ export const MEASUREMENT_LABEL: Record<string, string> = {
   SLEEVE_LENGTH: '소매길이',
   WAIST_WIDTH: '허리단면',
   RISE: '밑위',
+  HIP_WIDTH: '엉덩이단면',
 }
 
 export type ReferenceGarmentMeasurement = { code: string; label: string; value: number }

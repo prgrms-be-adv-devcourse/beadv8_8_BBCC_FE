@@ -49,10 +49,11 @@ describe('산 옷 목록 변환', () => {
 describe('산 옷을 채울 수 있는 칸', () => {
   it.each([
     ['의류 > 상의', ['TOP']],
-    ['원피스', ['TOP']],
-    ['의류 > 치마', ['BOTTOM']],
+    ['의류 > 아우터', ['OUTER']],
+    ['원피스', ['DRESS']],
+    ['의류 > 치마', ['SKIRT']],
     ['잡화 > 모자', []],
-    [null, ['TOP', 'BOTTOM']],
+    [null, ['TOP', 'BOTTOM', 'OUTER', 'DRESS', 'SKIRT']],
   ])('카테고리 경로 %s → %j (상품 정보가 없으면 보호자가 칸을 고른다)', (path, expected) => {
     expect(partsForPurchase(path)).toEqual(expected)
   })
@@ -69,6 +70,19 @@ describe('고른 산 옷으로 기준 옷 폼 채우기', () => {
     expect(toReferenceGarmentFormFromPurchase('BOTTOM', pants)).toEqual({
       categoryId: '12',
       measurements: { TOTAL_LENGTH: '60', WAIST_WIDTH: '25.5', RISE: '' },
+    })
+  })
+
+  it('치마는 엉덩이단면을 채우고 허벅지단면은 뺀다', () => {
+    expect(
+      toReferenceGarmentFormFromPurchase('SKIRT', {
+        categoryId: '15',
+        categoryPath: '의류 > 치마',
+        measurements: { TOTAL_LENGTH: 35, WAIST_WIDTH: 24, HIP_WIDTH: 33, THIGH_WIDTH: 19 },
+      }),
+    ).toEqual({
+      categoryId: '15',
+      measurements: { TOTAL_LENGTH: '35', WAIST_WIDTH: '24', HIP_WIDTH: '33' },
     })
   })
 
