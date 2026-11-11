@@ -14,6 +14,7 @@ export function toCatalogCategory(dto: CategoryDto): CatalogCategory {
     isLeaf: dto.leaf,
     productTypeId: dto.productTypeId,
     productTypeName: dto.productTypeName,
+    visibleGender: dto.visibleGender,
     measurementItems: dto.measurementItems.map(toMeasurementItem),
   }
 }
@@ -26,6 +27,7 @@ export function toCategoryCreateRequest(form: CategoryForm): CategoryCreateReque
     parentId: form.parentId || null,
     productTypeId: isLeaf ? form.productTypeId : null,
     measurementItemIds: isLeaf ? form.measurementItemIds : [],
+    visibleGender: form.visibleGender,
   }
 }
 
@@ -34,9 +36,14 @@ export function toCategoryChangeForm(category: CatalogCategory): CategoryChangeF
   return {
     productTypeId: category.productTypeId ?? '',
     measurementItemIds: category.measurementItems.map((item) => item.id),
+    visibleGender: category.visibleGender,
   }
 }
 
 export function toCategoryChangeRequest(form: CategoryChangeForm): CategoryChangeRequestDto {
-  return { productTypeId: form.productTypeId, measurementItemIds: form.measurementItemIds }
+  return {
+    productTypeId: form.productTypeId,
+    measurementItemIds: form.measurementItemIds,
+    visibleGender: form.visibleGender,
+  }
 }

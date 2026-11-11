@@ -16,6 +16,7 @@ const top: CatalogCategory = {
   isLeaf: true,
   productTypeId: '1',
   productTypeName: '의류',
+  visibleGender: 'ALL',
   measurementItems: [
     { id: '7', name: '총장', code: 'TOTAL_LENGTH', unit: 'cm' },
     { id: '8', name: '어깨너비', code: 'SHOULDER_WIDTH', unit: 'cm' },
@@ -44,6 +45,7 @@ describe('카테고리 수정', () => {
     expect(toCategoryChangeForm(top)).toEqual({
       productTypeId: '1',
       measurementItemIds: ['7', '8'],
+      visibleGender: 'ALL',
     })
   })
 
@@ -54,19 +56,36 @@ describe('카테고리 수정', () => {
     ],
     [[], []],
   ])('실측 항목 %j는 고른 순서 그대로 보낸다 (없으면 빈 목록)', (ids, expected) => {
-    expect(toCategoryChangeRequest({ productTypeId: '2', measurementItemIds: ids })).toEqual({
+    expect(
+      toCategoryChangeRequest({
+        productTypeId: '2',
+        measurementItemIds: ids,
+        visibleGender: 'ALL',
+      }),
+    ).toEqual({
       productTypeId: '2',
       measurementItemIds: expected,
+      visibleGender: 'ALL',
     })
   })
 
   it('상품 유형을 고르지 않으면 막는다', () => {
-    expect(validateCategoryChangeForm({ productTypeId: '', measurementItemIds: [] })).toBe(
-      '말단 카테고리는 상품 유형을 골라 주세요.',
-    )
+    expect(
+      validateCategoryChangeForm({
+        productTypeId: '',
+        measurementItemIds: [],
+        visibleGender: 'ALL',
+      }),
+    ).toBe('말단 카테고리는 상품 유형을 골라 주세요.')
   })
 
   it('상품 유형을 골랐으면 통과한다', () => {
-    expect(validateCategoryChangeForm({ productTypeId: '1', measurementItemIds: [] })).toBeNull()
+    expect(
+      validateCategoryChangeForm({
+        productTypeId: '1',
+        measurementItemIds: [],
+        visibleGender: 'ALL',
+      }),
+    ).toBeNull()
   })
 })

@@ -1,6 +1,7 @@
+import { useEffect } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { childProfileLine, SizeRulerBar, sizeRulerOf, useChildQuery } from '@/entities/child'
-import { ProductTile, useCategoriesQuery } from '@/entities/product'
+import { ProductTile, useCategoriesQuery, visibleCategoryIdOf } from '@/entities/product'
 import { useRecommendedProductsInfiniteQuery } from '@/entities/recommendation'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
@@ -22,6 +23,11 @@ export function ShopRecommendedPage() {
   // 카테고리 목록은 말단만 담는다 (toCategories가 트리의 끝만 고른다) → 탭이 빈 목록이 되지 않는다
   // 그 자녀에게 보일 카테고리만 탭으로 (남아면 원피스 · 치마가 빠진다)
   const categories = useCategoriesQuery(child.data?.gender ?? null)
+  // 골라 둔 탭이 이 자녀에게 보이지 않으면(남아인데 치마) 「전체」로 돌린다
+  const visibleCategoryId = visibleCategoryIdOf(categoryId, categories.data)
+  useEffect(() => {
+    if (visibleCategoryId !== categoryId) setParams({}, { replace: true })
+  }, [visibleCategoryId, categoryId, setParams])
   const list = useRecommendedProductsInfiniteQuery(childId, categoryId)
 
   const selectTab = (next: string | null) => setParams(next ? { cat: next } : {}, { replace: true })

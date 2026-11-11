@@ -222,10 +222,11 @@ function changeProductType(productTypeId, body) {
 }
 
 // 카테고리: 평면 목록(ID 순서). 말단만 상품 유형과 필수 실측 항목(ID, 넣은 순서)을 가진다
-const leafOf = (name, parentId, codes) => ({
+const leafOf = (name, parentId, codes, visibleGender = 'ALL') => ({
   categoryId: String(nextId++),
   name,
   parentId,
+  visibleGender,
   productTypeId: productTypes[0].productTypeId,
   measurementItemIds: codes.map(
     (code) => measurementItems.find((m) => m.code === code).measurementItemId,
@@ -235,14 +236,19 @@ const clothing = {
   categoryId: String(nextId++),
   name: '의류',
   parentId: null,
+  visibleGender: 'ALL',
   productTypeId: null,
   measurementItemIds: [],
 }
+// BE #1219: 「하의」가 「바지」로 바뀌고, 보일 성별(visibleGender ALL · GIRL)이 생겼다
 const categories = [
   clothing,
   leafOf('상의', clothing.categoryId, ['TOTAL_LENGTH', 'SHOULDER_WIDTH']),
-  leafOf('하의', clothing.categoryId, ['TOTAL_LENGTH']),
+  leafOf('바지', clothing.categoryId, ['TOTAL_LENGTH']),
+  leafOf('치마', clothing.categoryId, ['TOTAL_LENGTH'], 'GIRL'),
 ]
+const VISIBLE_GENDERS = ['ALL', 'GIRL']
+const badGender = (value) => value != null && !VISIBLE_GENDERS.includes(value)
 
 function categoryOut({ measurementItemIds, ...category }) {
   return {
@@ -258,6 +264,7 @@ function categoryOut({ measurementItemIds, ...category }) {
 
 function createCategory(body) {
   if (blank(body?.name)) return bad('카테고리 이름을 입력해 주세요.')
+  if (badGender(body.visibleGender)) return bad('보일 성별이 올바르지 않습니다.')
   if (!Array.isArray(body.measurementItemIds))
     return bad('실측 항목 ID를 보내 주세요. 없으면 빈 목록을 보내 주세요.')
   const productTypeId = body.productTypeId == null ? null : String(body.productTypeId)
@@ -277,6 +284,8 @@ function createCategory(body) {
     categoryId: String(nextId++),
     name: body.name,
     parentId,
+    // 보내지 않으면 ALL
+    visibleGender: body.visibleGender ?? 'ALL',
     productTypeId,
     measurementItemIds: itemIds,
   }
@@ -292,6 +301,7 @@ function changeCategory(categoryId, body) {
   if (!category) return { status: 404, detail: '카테고리를 다시 확인해 주세요.' }
   if (body?.productTypeId == null || !Array.isArray(body.measurementItemIds))
     return bad('상품 유형과 실측 항목 ID를 보내 주세요. 실측 항목이 없으면 빈 목록을 보내 주세요.')
+  if (badGender(body.visibleGender)) return bad('보일 성별이 올바르지 않습니다.')
   const productTypeId = String(body.productTypeId)
   const itemIds = body.measurementItemIds.map(String)
   if (!productTypes.some((t) => t.productTypeId === productTypeId))
@@ -311,6 +321,8 @@ function changeCategory(categoryId, body) {
     }
   category.productTypeId = productTypeId
   category.measurementItemIds = itemIds
+  // 보내지 않으면 지금 값 그대로 (보일 성별은 상품이 있어도 바꿀 수 있다)
+  if (body.visibleGender != null) category.visibleGender = body.visibleGender
   return { status: 200, body: categoryOut(category) }
 }
 

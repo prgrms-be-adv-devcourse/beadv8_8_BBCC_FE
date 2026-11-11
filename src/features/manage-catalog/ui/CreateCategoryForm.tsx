@@ -16,6 +16,7 @@ import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useCreateCategory } from '../model/use-manage-catalog'
 import { CategoryLeafFields } from './CategoryLeafFields'
+import { VisibleGenderField } from './VisibleGenderField'
 
 const EMPTY_FORM: CategoryForm = {
   name: '',
@@ -23,6 +24,7 @@ const EMPTY_FORM: CategoryForm = {
   kind: 'LEAF',
   productTypeId: '',
   measurementItemIds: [],
+  visibleGender: 'ALL',
 }
 
 const KIND_LABEL: Record<CategoryKind, string> = {
@@ -102,6 +104,10 @@ export function CreateCategoryForm({
             ))}
           </Select>
         </Label>
+        <VisibleGenderField
+          value={form.visibleGender}
+          onChange={(visibleGender) => set({ visibleGender })}
+        />
       </div>
       {form.kind === 'LEAF' && (
         <CategoryLeafFields

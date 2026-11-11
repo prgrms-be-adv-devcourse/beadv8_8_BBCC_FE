@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { sizeRulerOf, useChildrenQuery } from '@/entities/child'
 import {
@@ -12,6 +12,7 @@ import {
   writeProductPage,
   type ProductFilters,
   useCategoriesQuery,
+  visibleCategoryIdOf,
   useProductsQuery,
   type ProductSearch,
 } from '@/entities/product'
@@ -78,6 +79,14 @@ export function ShopHomePage() {
   })
   // 보호자가 고른(보이는) 자녀의 성별에 맞는 카테고리만 (남아면 원피스 · 치마가 빠진다)
   const categories = useCategoriesQuery(isBuyer ? (child?.gender ?? null) : null)
+  // 골라 둔 카테고리가 바꾼 자녀에게 보이지 않으면(남아로 바꿨는데 치마) 카테고리 거르기를 푼다
+  const visibleCategoryId = visibleCategoryIdOf(filters.categoryId, categories.data)
+  useEffect(() => {
+    if (visibleCategoryId === filters.categoryId) return
+    const latest = new URLSearchParams(window.location.search)
+    const next = { ...readProductFilters(latest), categoryId: null, attributes: [] }
+    setParams(writeProductFilters(latest, next), { replace: true })
+  }, [visibleCategoryId, filters.categoryId, setParams])
   const listRef = useRef<HTMLElement>(null)
   // 맞춤 영역: 자녀가 있는 보호자에게만. 검색 중에는 숨긴다
   const showsRecommended = isBuyer && child !== null && !keyword

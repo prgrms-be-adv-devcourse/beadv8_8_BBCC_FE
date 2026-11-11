@@ -38,5 +38,6 @@ export const categoryShape = obj({
   leaf: bool,
   productTypeId: nullable(str),
   productTypeName: nullable(str),
+  visibleGender: oneOf(['ALL', 'GIRL']),
   measurementItems: arr(measurementItemShape),
 })
