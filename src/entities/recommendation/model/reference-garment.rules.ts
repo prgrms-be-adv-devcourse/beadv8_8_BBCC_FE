@@ -17,6 +17,16 @@ export function garmentPartOf(categoryPath: string): GarmentPart | null {
   )
 }
 
+/**
+ * 산 옷을 채울 수 있는 기준 옷 칸. 카테고리로 구분이 정해지면 그 칸만, 기준 옷이 아닌 옷이면 없음.
+ * 상품 정보가 없어 카테고리를 모르면(null) 보호자가 칸을 고른다
+ */
+export function partsForPurchase(categoryPath: string | null): GarmentPart[] {
+  if (categoryPath === null) return [...GARMENT_PARTS]
+  const part = garmentPartOf(categoryPath)
+  return part ? [part] : []
+}
+
 /** 구분에 맞는 카테고리만 (세부 종류 고르기) */
 export function categoriesForPart<T extends { path: string }>(
   part: GarmentPart,

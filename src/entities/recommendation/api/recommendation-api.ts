@@ -1,4 +1,6 @@
-import { apiClient, expectShape } from '@/shared/api'
+import { apiClient, expectShape, type Page } from '@/shared/api'
+import type { PurchasedGarmentDto } from './purchased-garment.dto'
+import { purchasedGarmentPageShape } from './purchased-garment.shape'
 import type {
   RecommendedProductPageDto,
   RecommendedProductsParamsDto,
@@ -37,6 +39,11 @@ export const recommendationApi = {
     apiClient
       .put<ReferenceGarmentDto>(`${referenceGarments(childId)}/${part}`, request)
       .then(expectShape(referenceGarmentShape)),
+  /** 자녀에게 산 옷 중 구매확정된 것 (확정이 늦은 순서, size 1 ~ 100). 남의 자녀면 403, 없는 자녀면 404 */
+  purchasedGarments: (childId: string, params: { page: number; size: number }) =>
+    apiClient
+      .get<Page<PurchasedGarmentDto>>(`/recommendations/children/${childId}/purchases`, { params })
+      .then(expectShape(purchasedGarmentPageShape)),
   /** 기준 옷 지우기 (204, 이미 없어도 204) */
   deleteReferenceGarment: (childId: string, part: string) =>
     apiClient.delete<void>(`${referenceGarments(childId)}/${part}`).then(() => undefined),
