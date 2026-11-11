@@ -28,6 +28,59 @@ async function createChild(request: APIRequestContext): Promise<{ id: number }> 
     .then((res) => res.json())
 }
 
+async function tokenOf(request: APIRequestContext, memberId: number, roles: string[]) {
+  const token = await request
+    .post(`${API}/dev/tokens`, { data: { memberId, roles } })
+    .then((res) => res.json())
+  return { authorization: `Bearer ${token.accessToken}` }
+}
+
+/** 회원 1이 자녀 몫으로 상품 A 120(옵션 2)을 사서 배송 완료 뒤 구매확정한다 */
+async function buyAndConfirm(request: APIRequestContext, childId: number) {
+  const buyer = await tokenOf(request, 1, ['BUYER'])
+  const seller = await tokenOf(request, 2, ['BUYER', 'SELLER'])
+  // 다른 테스트도 회원 1의 예치금을 쓰므로 살 만큼 먼저 충전한다
+  await request.post(`${API}/wallets/me/charges/confirm`, {
+    headers: buyer,
+    data: { paymentKey: 'e2e', orderId: `reference-garment-${Date.now()}`, amount: 25000 },
+  })
+  const placed = await request
+    .post(`${API}/orders`, {
+      headers: buyer,
+      data: {
+        items: [{ optionId: 2, childId, quantity: 1, unitPrice: 25000 }],
+        shippingAddress: {
+          recipientName: '보호자',
+          phone: '010',
+          zipCode: '00000',
+          address: '서울',
+        },
+      },
+    })
+    .then((res) => res.json())
+  await expect
+    .poll(async () => {
+      const order = await request.get(`${API}/orders/${placed.orderId}`, { headers: buyer })
+      return (await order.json()).status
+    })
+    .toBe('PAID')
+  const sellerOrders = await request
+    .get(`${API}/seller/orders`, { headers: seller })
+    .then((res) => res.json())
+  const sellerOrder = sellerOrders.content.find(
+    (item: { orderId: string }) => String(item.orderId) === String(placed.orderId),
+  )
+  await request.post(`${API}/seller/orders/${sellerOrder.sellerOrderId}/ship`, {
+    headers: seller,
+    data: { carrier: 'CJ', trackingNumber: '1234' },
+  })
+  await request.post(`${API}/seller/orders/${sellerOrder.sellerOrderId}/deliver`, {
+    headers: seller,
+  })
+  const itemId = placed.items[0].orderItemId
+  await request.post(`${API}/orders/${placed.orderId}/items/${itemId}/confirm`, { headers: buyer })
+}
+
 async function signInGuardian(page: Page) {
   await page.goto('/login')
   await page.getByRole('main').getByRole('button', { name: '보호자', exact: true }).click()
@@ -168,4 +221,34 @@ test('주문 상세의 받은 옷으로 기준 옷 칸을 채워 저장한다', 
   ).toBeVisible()
   // 저장하면 주소의 상품 · 사이즈를 지워, 새로고침해도 다시 채우지 않는다
   await expect(page).not.toHaveURL(/garmentProduct/)
+})
+
+test('산 옷에서 고르기: 구매확정한 옷으로 상의 칸을 채워 저장한다', async ({ page, request }) => {
+  const child = await createChild(request)
+  await buyAndConfirm(request, child.id)
+
+  await signInGuardian(page)
+  await page.goto(`/my/children/${child.id}`)
+  const bought = page.getByRole('list', { name: '산 옷' })
+  await expect(bought.getByText('데일리 맨투맨 (상품 A)')).toBeVisible()
+  // 상의 카테고리라 상의 칸에만 채울 수 있다
+  await expect(bought.getByRole('button', { name: /하의 칸에 채우기/ })).toHaveCount(0)
+  await bought.getByRole('button', { name: '데일리 맨투맨 (상품 A) 120 상의 칸에 채우기' }).click()
+
+  await expect(
+    page.getByText('「데일리 맨투맨 (상품 A)」 120 사이즈로 상의 칸을 채웠어요.', { exact: false }),
+  ).toBeVisible()
+  const top = page.getByRole('form', { name: '상의 기준 옷' })
+  await expect(top.getByLabel('세부 종류')).toHaveValue('11')
+  await expect(top.getByLabel('총장 (cm, 필수)')).toHaveValue('45')
+  await expect(top.getByLabel('가슴단면 (cm, 필수)')).toHaveValue('36')
+  await expect(top.getByLabel('어깨너비 (cm)')).toHaveValue('32')
+  await expect(top.getByLabel('소매길이 (cm)')).toHaveValue('41')
+
+  await top.getByRole('button', { name: '기준 옷 저장' }).click()
+  await expect(
+    top.getByText('의류 > 상의 · 총장 45cm · 가슴단면 36cm · 어깨너비 32cm · 소매길이 41cm'),
+  ).toBeVisible()
+  // 저장하면 고른 옷 안내가 사라진다
+  await expect(page.getByText('사이즈로 상의 칸을 채웠어요.', { exact: false })).toHaveCount(0)
 })

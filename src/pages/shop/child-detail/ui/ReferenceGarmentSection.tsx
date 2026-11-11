@@ -1,23 +1,33 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router'
 import { useCategoriesQuery, useProductQuery } from '@/entities/product'
 import {
   GARMENT_PART_SPEC,
   GARMENT_PARTS,
   categoriesForPart,
+  partsForPurchase,
+  toReferenceGarmentFormFromPurchase,
   toReferenceGarmentFromPurchase,
+  usePurchasedGarmentsInfiniteQuery,
   useReferenceGarmentsQuery,
+  type GarmentPart,
+  type ReferenceGarmentForm,
 } from '@/entities/recommendation'
 import { ReferenceGarmentEditor } from '@/features/manage-reference-garment'
 import { getErrorMessage } from '@/shared/api'
 import { GARMENT_FROM, REFERENCE_GARMENTS } from '@/shared/config'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { PurchasedGarmentPicker } from './PurchasedGarmentPicker'
 
 type ReferenceGarmentSectionProps = { childId: string }
 
+/** 「산 옷에서 고르기」로 고른 옷: 채울 칸 · 폼 · 안내 글 */
+type PickedGarment = { key: string; part: GarmentPart; form: ReferenceGarmentForm; notice: string }
+
 /**
- * 자녀 프로필의 기준 옷 칸: 상의 · 하의 두 칸. 주문 상세 「기준 옷으로」에서 오면(주소에 상품 · 사이즈)
- * 그 상품의 카테고리와 산 사이즈 실측으로 맞는 칸을 채운다. 저장하면 주소의 상품 · 사이즈를 지운다
+ * 자녀 프로필의 기준 옷 칸: 상의 · 하의 두 칸. 「산 옷에서 고르기」로 구매확정한 옷을 고르거나,
+ * 주문 상세 「기준 옷으로」에서 오면(주소에 상품 · 사이즈) 그 옷의 카테고리와 산 사이즈 실측으로 맞는 칸을 채운다.
+ * 저장하면 고른 옷과 주소의 상품 · 사이즈를 지운다
  */
 export function ReferenceGarmentSection({ childId }: ReferenceGarmentSectionProps) {
   const garments = useReferenceGarmentsQuery(childId)
@@ -35,7 +45,35 @@ export function ReferenceGarmentSection({ childId }: ReferenceGarmentSectionProp
           size,
         )
       : null
+  const purchases = usePurchasedGarmentsInfiniteQuery(childId)
+  const [picked, setPicked] = useState<PickedGarment | null>(null)
   const isReady = Boolean(garments.data && categories.data)
+  const pathOf = (categoryId: string | null) =>
+    categories.data?.find((c) => c.id === categoryId)?.path ?? null
+  const purchaseRows = (purchases.data?.garments ?? []).map((garment) => ({
+    orderItemId: garment.orderItemId,
+    name: garment.productName ?? '상품 정보 없음',
+    size: garment.size,
+    confirmedAt: garment.confirmedAt,
+    parts: partsForPurchase(pathOf(garment.categoryId)),
+  }))
+
+  const handlePick = (orderItemId: string, part: GarmentPart) => {
+    const garment = purchases.data?.garments.find((item) => item.orderItemId === orderItemId)
+    if (!garment) return
+    const name = garment.productName ?? '고른 옷'
+    setPicked({
+      key: `${orderItemId}-${part}`,
+      part,
+      form: toReferenceGarmentFormFromPurchase(part, {
+        categoryId: garment.categoryId,
+        categoryPath: pathOf(garment.categoryId),
+        measurements: garment.measurements,
+      }),
+      notice: `「${name}」 ${garment.size} 사이즈로 ${GARMENT_PART_SPEC[part].label} 칸을 채웠어요. 비어 있는 칸을 채우고 저장해 주세요.`,
+    })
+    document.getElementById(REFERENCE_GARMENTS)?.scrollIntoView({ block: 'start' })
+  }
 
   // 맞춤 목록 · 주문 상세에서 #reference-garments로 오면 이 칸으로 내린다
   useEffect(() => {
@@ -43,7 +81,16 @@ export function ReferenceGarmentSection({ childId }: ReferenceGarmentSectionProp
       document.getElementById(REFERENCE_GARMENTS)?.scrollIntoView({ block: 'start' })
   }, [hash, isReady, purchase?.part])
 
-  const clearPurchase = () => setParams({}, { replace: true })
+  // 고른 산 옷이 주소로 온 옷보다 먼저다
+  const initialFormOf = (part: GarmentPart) => {
+    if (picked) return picked.part === part ? picked.form : undefined
+    return purchase?.part === part ? purchase.form : undefined
+  }
+
+  const clearPurchase = () => {
+    setPicked(null)
+    if (productId) setParams({}, { replace: true })
+  }
 
   return (
     <section
@@ -57,7 +104,8 @@ export function ReferenceGarmentSection({ childId }: ReferenceGarmentSectionProp
       <p className="text-ink-3 text-[13px]">
         잘 맞게 입는 옷의 실측을 적어 두면, 사이즈 추천이 이 옷과 비교해요.
       </p>
-      {purchase && product.data && (
+      {picked && <StateMessage>{picked.notice}</StateMessage>}
+      {!picked && purchase && product.data && (
         <StateMessage>
           {`「${product.data.name}」 ${size} 사이즈 실측으로 ${GARMENT_PART_SPEC[purchase.part].label} 칸을 채웠어요. 확인하고 저장해 주세요.`}
         </StateMessage>
@@ -82,10 +130,11 @@ export function ReferenceGarmentSection({ childId }: ReferenceGarmentSectionProp
         <div className="grid gap-4 md:grid-cols-2">
           {GARMENT_PARTS.map((part) => {
             const garment = garments.data.find((item) => item.part === part) ?? null
-            const initialForm = purchase?.part === part ? purchase.form : undefined
+            const initialForm = initialFormOf(part)
+            const source = picked?.part === part ? picked.key : initialForm ? 'purchase' : 'saved'
             return (
               <ReferenceGarmentEditor
-                key={`${part}-${JSON.stringify(garment)}-${initialForm ? 'purchase' : 'saved'}`}
+                key={`${part}-${JSON.stringify(garment)}-${source}`}
                 childId={childId}
                 part={part}
                 garment={garment}
@@ -96,6 +145,18 @@ export function ReferenceGarmentSection({ childId }: ReferenceGarmentSectionProp
             )
           })}
         </div>
+      )}
+      {purchases.isError && (
+        <StateMessage tone="error">{getErrorMessage(purchases.error)}</StateMessage>
+      )}
+      {purchases.data && categories.data && (
+        <PurchasedGarmentPicker
+          rows={purchaseRows}
+          hasMore={purchases.hasNextPage}
+          isLoadingMore={purchases.isFetchingNextPage}
+          onMore={() => purchases.fetchNextPage()}
+          onPick={handlePick}
+        />
       )}
     </section>
   )
