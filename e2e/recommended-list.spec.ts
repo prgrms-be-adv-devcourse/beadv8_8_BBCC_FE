@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
 
-// 쇼핑 홈: 위 「자녀에게 맞는 옷」(맛보기 4개 + 더보기)과 아래 「전체 상품」(페이지 번호)을 나눈다.
+// 쇼핑 홈: 위 「자녀에게 맞는 옷」(AI 맛보기 4개 + 이유, 더보기)과 아래 「전체 상품」(페이지 번호)을 나눈다.
 // 맞춤 목록 화면은 탭(전체 + 말단 카테고리)과 「더 보기」로 다음 페이지를 이어 붙인다.
 // 개수를 정해 두려고 자녀 · 맞춤 목록 · 상품 목록 응답을 바꿔 본다
 
@@ -55,6 +55,18 @@ async function asParentWithChild(page: Page) {
     route.request().method() === 'GET' ? route.fulfill({ json: [CHILD] }) : route.fallback(),
   )
   await page.route('**/api/v1/children/501', (route) => route.fulfill({ json: CHILD }))
+  // 홈 맛보기 (BE #1163): AI가 고른 4개 중 앞 두 개만 이유가 있다
+  await page.route('**/api/v1/recommendations/products/preview?childId=501', (route) =>
+    route.fulfill({
+      json: {
+        source: 'AI',
+        products: [1, 2, 3, 4].map((n) => ({
+          ...item(n),
+          reason: n <= 2 ? `맞춤 이유 ${n}: 키에 잘 맞아요.` : null,
+        })),
+      },
+    }),
+  )
   await page.route(
     (url) =>
       url.pathname.endsWith('/recommendations/products') &&
@@ -72,6 +84,8 @@ test('홈 맞춤 영역 4개 → 더보기 → 맞춤 목록 탭 · 더 보기',
   await expect(recommended.getByRole('heading', { name: /하윤에게 맞는 옷/ })).toBeVisible()
   await expect(recommended.getByText(/^맞춤 상품 \d+$/)).toHaveCount(4)
   await expect(recommended.getByText('120 잘 맞아요').first()).toBeVisible()
+  // 이유가 있는 카드만 이유 칸을 그린다 (null이면 기본 문구 없이 숨김)
+  await expect(recommended.getByText(/^맞춤 이유 \d: 키에 잘 맞아요\.$/)).toHaveCount(2)
 
   await recommended.getByRole('link', { name: /더보기/ }).click()
   await expect(page).toHaveURL(/\/recommended\/501$/)

@@ -1,7 +1,9 @@
 import { Badge } from '@/shared/ui/badge'
 import type { SizeRange, SizeRecommendation } from '../model/recommendation'
+import { candidateNoteOf } from '../model/size-recommendation.rules'
 import { FitBadge } from './FitBadge'
 import { SizeFitChart } from './SizeFitChart'
+import { SizeReasonList } from './SizeReasonList'
 
 type SizeRecommendationSummaryProps = {
   recommendation: SizeRecommendation
@@ -16,17 +18,16 @@ export function SizeRecommendationSummary({
   child,
   sizes,
 }: SizeRecommendationSummaryProps) {
-  const { recommendedSize, fit, notices, candidateSizes } = recommendation
+  const { recommendedSize, fit, notices, candidateSizes, reasons } = recommendation
+  const candidateNote = candidateNoteOf(recommendation)
   return (
     <div data-clarity-mask="true" className="space-y-1">
       {recommendedSize ? (
         <p>
           추천 사이즈 <Badge variant="highlight">{recommendedSize}</Badge>{' '}
           {fit && <FitBadge fit={fit} />}
-          {candidateSizes.length > 1 && (
-            <span className="text-muted-foreground ml-1 text-xs">
-              후보 {candidateSizes.join(' · ')} 중
-            </span>
+          {candidateNote && (
+            <span className="text-muted-foreground ml-1 text-xs">{candidateNote}</span>
           )}
         </p>
       ) : (
@@ -42,6 +43,7 @@ export function SizeRecommendationSummary({
           child={child}
         />
       )}
+      <SizeReasonList reasons={reasons} />
       {recommendedSize && notices.length > 0 && (
         <ul className="text-muted-foreground list-disc pl-5 text-xs">
           {notices.map((notice) => (

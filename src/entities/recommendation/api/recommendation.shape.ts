@@ -1,6 +1,15 @@
 import { arr, bool, nullable, num, obj, oneOf, str } from '@/shared/api'
 
 const FIT = oneOf(['ROOMY', 'PROPER', 'TIGHT'])
+const SOURCE = oneOf(['AI', 'RULE'])
+const SIZE_REASON_TYPE = oneOf([
+  'HEIGHT',
+  'BODY_TYPE',
+  'PREFERRED_FIT',
+  'MEASUREMENT',
+  'RULE_RESULT',
+  'GROWTH',
+])
 
 export const sizeRecommendationShape = obj({
   productId: str,
@@ -10,6 +19,8 @@ export const sizeRecommendationShape = obj({
   notices: arr(obj({ code: str, message: str })),
   candidateSizes: arr(str),
   lastPurchasedSize: nullable(str),
+  source: SOURCE,
+  reasons: arr(obj({ type: SIZE_REASON_TYPE, detail: str, sourceId: nullable(str) })),
 })
 
 const RECOMMENDED_CARD = {
@@ -32,10 +43,11 @@ export const recommendedProductPageShape = obj({
   asOf: str,
 })
 
-const SOURCE = oneOf(['AI', 'RULE'])
-
 /** 함께 사면 좋은 상품: 출처 + 카드(맞춤 목록 카드 칸 + 이유) */
 export const companionProductsShape = obj({
   source: SOURCE,
   products: arr(obj({ ...RECOMMENDED_CARD, reason: nullable(str) })),
 })
+
+/** 홈 맛보기: 함께 사면 좋은 상품과 같은 모양 */
+export const homePreviewShape = companionProductsShape

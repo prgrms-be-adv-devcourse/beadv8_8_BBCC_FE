@@ -110,7 +110,14 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     path: '/recommendations/products',
     source: 'real',
     backend: 'BE #316 develop 머지(10/16) → 실제 (FE #117), BE #681에서 주소 이동(11/02)',
-    screens: '쇼핑 홈 · 콘솔 상품(자녀 맞춤)',
+    screens: '쇼핑 맞춤 목록(더보기) · 콘솔 상품(자녀 맞춤)',
+  },
+  {
+    method: 'GET',
+    path: '/recommendations/products/preview',
+    source: 'real',
+    backend: 'BE #1163 develop 머지 → 실제 (FE #275)',
+    screens: '쇼핑 홈(맞춤 맛보기 4개)',
   },
   {
     method: 'GET',

@@ -1,6 +1,7 @@
 import { useId, useState, type ReactNode } from 'react'
 import {
   FIT_LABEL,
+  SizeReasonList,
   sizeScaleOf,
   type SizeRange,
   type SizeRecommendation,
@@ -19,12 +20,12 @@ type SizeAdviceProps = {
 
 /**
  * 사이즈 칩 바로 위 추천 한 줄: 「추천 사이즈 120 · 여유 있음 · 김들희 115cm 기준」 + 「사이즈 자세히」.
- * 펼치면 백엔드 안내 · 이 상품 사이즈 눈금 · 착용 미리보기
+ * 그 아래 AI 근거(있으면). 펼치면 백엔드 안내 · 이 상품 사이즈 눈금 · 착용 미리보기
  */
 export function SizeAdvice({ child, recommendation, sizes, preview }: SizeAdviceProps) {
   const [isOpen, setIsOpen] = useState(false)
   const detailsId = useId()
-  const { recommendedSize, fit, notices } = recommendation
+  const { recommendedSize, fit, notices, reasons } = recommendation
 
   return (
     <div className="bg-paper-2 rounded-md">
@@ -73,6 +74,8 @@ export function SizeAdvice({ child, recommendation, sizes, preview }: SizeAdvice
           </svg>
         </button>
       </div>
+      {/* AI가 고른 근거는 추천 한 줄 바로 아래에 늘 보인다 (규칙 추천이면 없음) */}
+      <SizeReasonList reasons={reasons} className="px-3.5 pb-2.5" />
       {isOpen && (
         <div id={detailsId} className="border-rule space-y-4 border-t px-3.5 pt-3 pb-4">
           {recommendedSize && notices[0] && (

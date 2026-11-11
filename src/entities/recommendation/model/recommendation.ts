@@ -17,6 +17,25 @@ export type SizeRecommendation = {
   /** 추천 후보 사이즈 (자녀 키가 권장 키 ±2cm 안) */
   candidateSizes: string[]
   lastPurchasedSize: string | null
+  /** 추천을 정한 쪽. AI가 고른 사이즈는 후보 밖일 수 있다 */
+  source: RecommendationSource
+  /** 사이즈를 고른 근거 (규칙이면 빈 목록) */
+  reasons: SizeReason[]
+}
+
+export type SizeReasonType =
+  'HEIGHT' | 'BODY_TYPE' | 'PREFERRED_FIT' | 'MEASUREMENT' | 'RULE_RESULT' | 'GROWTH'
+
+/** 사이즈 근거 하나: 종류 라벨 + 문구(그대로 보인다) */
+export type SizeReason = { type: SizeReasonType; detail: string }
+
+export const SIZE_REASON_LABEL: Record<SizeReasonType, string> = {
+  HEIGHT: '키',
+  BODY_TYPE: '체형',
+  PREFERRED_FIT: '선호 핏',
+  MEASUREMENT: '실측',
+  RULE_RESULT: '키 기준표',
+  GROWTH: '성장',
 }
 
 export type RecommendedProduct = {
@@ -37,7 +56,7 @@ export type RecommendationSource = 'AI' | 'RULE'
 /** 추천 카드 + 추천 이유. 이유가 없으면 null → 이유 칸을 숨긴다 (기본 문구를 넣지 않는다) */
 export type RecommendedPick = RecommendedProduct & { reason: string | null }
 
-/** AI · 규칙이 고른 추천 상품 묶음 (함께 사면 좋은 상품) */
+/** AI · 규칙이 고른 추천 상품 묶음 (홈 맛보기 · 함께 사면 좋은 상품) */
 export type RecommendedPicks = {
   source: RecommendationSource
   products: RecommendedPick[]

@@ -1,6 +1,7 @@
 import { toImageUrl } from '@/shared/lib'
 import type {
   CompanionProductsDto,
+  HomePreviewDto,
   RecommendedPickDto,
   RecommendedProductDto,
   SizeRecommendationDto,
@@ -12,6 +13,7 @@ import type {
   RecommendedProduct,
   RecommendedProductsQuery,
   SizeRange,
+  SizeReasonType,
   SizeRecommendation,
 } from './recommendation'
 import type { RecommendedProductsParamsDto } from '../api/recommendation.dto'
@@ -23,6 +25,8 @@ export function toSizeRecommendation(dto: SizeRecommendationDto): SizeRecommenda
     notices: dto.notices,
     candidateSizes: dto.candidateSizes,
     lastPurchasedSize: dto.lastPurchasedSize,
+    source: dto.source,
+    reasons: dto.reasons.map(({ type, detail }) => ({ type: type as SizeReasonType, detail })),
   }
 }
 
@@ -54,6 +58,11 @@ function toRecommendedPick(dto: RecommendedPickDto): RecommendedPick {
 
 /** 함께 사면 좋은 상품: 이유가 비었으면 null (화면이 이유 칸을 숨긴다) */
 export function toCompanionProducts(dto: CompanionProductsDto): RecommendedPicks {
+  return { source: dto.source, products: dto.products.map(toRecommendedPick) }
+}
+
+/** 홈 맛보기: AI여도 이유가 없는 카드는 null (화면이 이유 칸을 숨긴다) */
+export function toHomePreview(dto: HomePreviewDto): RecommendedPicks {
   return { source: dto.source, products: dto.products.map(toRecommendedPick) }
 }
 

@@ -12,11 +12,14 @@ export {
   type RecommendedProductsQuery,
   type SizeNotice,
   type SizeRange,
+  type SizeReason,
+  type SizeReasonType,
   type SizeRecommendation,
 } from './model/recommendation'
 export {
   sizeRangesOf,
   toCompanionProducts,
+  toHomePreview,
   toRecommendedProduct,
   toRecommendedProductsParams,
   toSizeRecommendation,
@@ -24,16 +27,19 @@ export {
 export {
   recommendationKeys,
   useCompanionProductsQuery,
+  useHomePreviewQuery,
   usePurchasedGarmentsInfiniteQuery,
   useRecommendedProductsInfiniteQuery,
   useRecommendedProductsQuery,
   useReferenceGarmentsQuery,
   useSizeRecommendationQuery,
 } from './model/queries'
+export { candidateNoteOf } from './model/size-recommendation.rules'
 export { sizeScaleOf, type SizeScale } from './model/size-scale.rules'
 export { nextRecommendedPageOf } from './model/recommended-page.rules'
-export { FIT_LABEL } from './model/recommendation'
+export { FIT_LABEL, SIZE_REASON_LABEL } from './model/recommendation'
 export { FitBadge } from './ui/FitBadge'
+export { SizeReasonList } from './ui/SizeReasonList'
 export { SizeRecommendationSummary } from './ui/SizeRecommendationSummary'
 export {
   GARMENT_PART_SPEC,

@@ -50,7 +50,9 @@ import {
 import { purchasedGarmentPageShape } from '@/entities/recommendation/api/purchased-garment.shape'
 import {
   companionProductsShape,
+  homePreviewShape,
   recommendedProductPageShape,
+  sizeRecommendationShape,
 } from '@/entities/recommendation/api/recommendation.shape'
 import { memberShape, tokenShape } from '@/entities/session/api/session.shape'
 import {
@@ -1440,6 +1442,47 @@ it('함께 사면 좋은 상품: AI · RULE 응답 모두 계약 모양이고, �
   expect((await call('GET', path('999999'), 1)).status).toBe(404)
   const missingChild = '/recommendations/companions?productId=1&childId=999999'
   expect((await call('GET', missingChild, 1)).status).toBe(404)
+})
+
+it('홈 맛보기 · 사이즈 추천: AI · RULE 응답 모두 계약 모양이다 (BE #1163 · #1162)', async () => {
+  const sources: string[] = []
+  const ids: string[] = []
+  for (const optionalConsent of [true, false]) {
+    const profile = toChildRequest(DEMO_CHILD)
+    const child = await call('POST', '/children', 1, {
+      ...profile,
+      ...(optionalConsent ? {} : { bodyType: null, preferredFit: null }),
+      requiredConsent: true,
+      optionalConsent,
+    })
+    ids.push(child.data.id)
+    const preview = await call(
+      'GET',
+      `/recommendations/products/preview?childId=${child.data.id}`,
+      1,
+    )
+    expect(preview.status).toBe(200)
+    expectContract(preview.data, homePreviewShape)
+    sources.push(preview.data.source)
+  }
+  expect(sources).toEqual(['AI', 'RULE'])
+  expect((await call('GET', '/recommendations/products/preview?childId=999999', 1)).status).toBe(
+    404,
+  )
+
+  const childId = ids[0]
+  const sizeSources: string[] = []
+  for (const productId of ['1', '2']) {
+    const size = await call(
+      'GET',
+      `/recommendations/size?productId=${productId}&childId=${childId}`,
+      1,
+    )
+    expectContract(size.data, sizeRecommendationShape)
+    sizeSources.push(size.data.source)
+    if (size.data.source === 'RULE') expect(size.data.reasons).toEqual([])
+  }
+  expect(sizeSources).toEqual(['AI', 'RULE'])
 })
 
 it('검색: 관련도순 목록은 목록 응답 모양이고, 결과 클릭 기록은 로그인 회원만 204 (BE SearchClickRequest)', async () => {

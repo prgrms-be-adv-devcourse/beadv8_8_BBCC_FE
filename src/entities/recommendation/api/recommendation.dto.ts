@@ -16,6 +16,19 @@ export type SizeRecommendationDto = {
   candidateSizes: string[]
   /** 같은 카테고리에서 이 자녀에게 산 사이즈. 지금은 늘 null */
   lastPurchasedSize: string | null
+  /** 추천을 정한 쪽. AI가 고른 사이즈는 candidateSizes 밖일 수 있다 */
+  source: RecommendationSourceDto
+  /** 사이즈를 고른 근거 (RULE이면 []) */
+  reasons: SizeReasonDto[]
+}
+
+/** 사이즈 추천 근거. type은 HEIGHT · BODY_TYPE · PREFERRED_FIT · MEASUREMENT · RULE_RESULT · GROWTH */
+export type SizeReasonDto = {
+  type: string
+  /** 화면에 그대로 보여 주는 문구 */
+  detail: string
+  /** 근거로 쓴 글 조각 ID. BE가 글 조각을 AI에 주지 않아 지금은 늘 null */
+  sourceId: string | null
 }
 
 /** GET /recommendations/products?childId= 한 줄 */
@@ -48,8 +61,14 @@ export type RecommendationSourceDto = 'AI' | 'RULE'
 /** 추천 카드 + 추천 이유. 이유가 없으면(규칙으로 채운 상품 등) null */
 export type RecommendedPickDto = RecommendedProductDto & { reason: string | null }
 
-/** GET /recommendations/companions?productId=&childId= (최대 4개, 후보가 없으면 products는 []) */
-export type CompanionProductsDto = {
+/** AI · 규칙이 고른 추천 묶음 (후보가 없으면 products는 []) */
+type RecommendedPicksDto = {
   source: RecommendationSourceDto
   products: RecommendedPickDto[]
 }
+
+/** GET /recommendations/companions?productId=&childId= (최대 4개) */
+export type CompanionProductsDto = RecommendedPicksDto
+
+/** GET /recommendations/products/preview?childId= (홈 맛보기 4개. AI여도 reason은 null일 수 있다) */
+export type HomePreviewDto = RecommendedPicksDto

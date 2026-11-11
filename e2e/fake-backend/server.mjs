@@ -1154,6 +1154,23 @@ http
       const content = fitCardsOf(productListOf(byCategory), c)
       return send(res, 200, { ...pageFrom(content, url.searchParams), asOf })
     }
+    // 홈 맛보기 (BE #1163): 맞춤 목록 앞 4개. AI 흉내는 선택 동의한 자녀면 AI(앞 두 개만 이유), 아니면 RULE(이유 모두 null)
+    if (r('GET', /^\/recommendations\/products\/preview$/)) {
+      const childId = url.searchParams.get('childId')
+      if (!childId) return problem(res, 400, '잘못된 요청입니다', 'childId는 필수입니다.', req.url)
+      const c = children.find((c) => c.id === +childId && c.memberId === me && !c.deleted)
+      if (!c)
+        return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
+      const source = c.hasOptionalConsent ? 'AI' : 'RULE'
+      const products = fitCardsOf(productListOf(new URLSearchParams()), c)
+        .slice(0, 4)
+        .map((card, index) => ({
+          ...card,
+          reason:
+            source === 'AI' && index < 2 ? `키 ${c.heightCm}cm에 맞는 사이즈가 있어요.` : null,
+        }))
+      return send(res, 200, { source, products })
+    }
     // 함께 사면 좋은 상품 (BE #1164): 보고 있는 상품과 다른 카테고리 중 자녀에게 맞는 상품 4개까지.
     // AI 흉내: 상품 ID가 홀수면 AI가 앞 두 개에 이유를 쓰고(나머지는 규칙으로 채워 null), 짝수면 AI를 못 쓴 RULE(이유 모두 null)
     if (r('GET', /^\/recommendations\/companions$/)) {
@@ -1228,7 +1245,23 @@ http
       const c = children.find((c) => c.id === +childId && c.memberId === me && !c.deleted)
       if (!c)
         return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
-      return send(res, 200, sizeRecommendationOf(detail, c))
+      // AI 흉내: 상품 ID가 홀수이고 추천 사이즈가 있으면 AI 근거 두 개, 아니면 RULE(근거 [])
+      const rec = sizeRecommendationOf(detail, c)
+      const isAi = Number(productId) % 2 === 1 && rec.recommendedSize !== null
+      return send(res, 200, {
+        ...rec,
+        source: isAi ? 'AI' : 'RULE',
+        reasons: isAi
+          ? [
+              {
+                type: 'HEIGHT',
+                detail: `키 ${c.heightCm}cm에 ${rec.recommendedSize}이 잘 맞아요.`,
+                sourceId: null,
+              },
+              { type: 'RULE_RESULT', detail: '키 기준표 계산과 같은 사이즈예요.', sourceId: null },
+            ]
+          : [],
+      })
     }
     if (r('POST', /^\/seller\/product-images\/upload-urls$/)) {
       if (!(u.roles || []).includes('SELLER'))
