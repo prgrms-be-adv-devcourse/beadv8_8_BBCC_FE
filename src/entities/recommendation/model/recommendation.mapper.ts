@@ -1,7 +1,14 @@
 import { toImageUrl } from '@/shared/lib'
-import type { RecommendedProductDto, SizeRecommendationDto } from '../api/recommendation.dto'
+import type {
+  CompanionProductsDto,
+  RecommendedPickDto,
+  RecommendedProductDto,
+  SizeRecommendationDto,
+} from '../api/recommendation.dto'
 import type {
   Fit,
+  RecommendedPick,
+  RecommendedPicks,
   RecommendedProduct,
   RecommendedProductsQuery,
   SizeRange,
@@ -39,6 +46,15 @@ export function toRecommendedProduct(dto: RecommendedProductDto): RecommendedPro
     imageUrl: toImageUrl(dto.thumbnailUrl),
     recommendedSize: dto.recommendedSize,
   }
+}
+
+function toRecommendedPick(dto: RecommendedPickDto): RecommendedPick {
+  return { ...toRecommendedProduct(dto), reason: dto.reason?.trim() || null }
+}
+
+/** 함께 사면 좋은 상품: 이유가 비었으면 null (화면이 이유 칸을 숨긴다) */
+export function toCompanionProducts(dto: CompanionProductsDto): RecommendedPicks {
+  return { source: dto.source, products: dto.products.map(toRecommendedPick) }
 }
 
 /** 맞춤 목록 조회 조건 → BE 요청 값 (카테고리 · 기준 시각이 없으면 보내지 않는다) */

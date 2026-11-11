@@ -47,7 +47,10 @@ import {
   sellerApplicationShape,
   sellerShape,
 } from '@/entities/seller/api/seller.shape'
-import { recommendedProductPageShape } from '@/entities/recommendation/api/recommendation.shape'
+import {
+  companionProductsShape,
+  recommendedProductPageShape,
+} from '@/entities/recommendation/api/recommendation.shape'
 import { memberShape, tokenShape } from '@/entities/session/api/session.shape'
 import {
   chargeCancelShape,
@@ -1350,6 +1353,31 @@ it('맞춤 목록: 1쪽 응답의 기준 시각 asOf를 2쪽에 넘기면 그대
   const future = await call('GET', `${path}&page=1&asOf=2999-01-01T00:00:00`, 1)
   expect(future.status).toBe(400)
   expect(future.data.title).toBe('잘못된 기준 시각입니다')
+})
+
+it('함께 사면 좋은 상품: AI · RULE 응답 모두 계약 모양이고, 이유는 null일 수 있다 (BE #1164)', async () => {
+  const child = await call('POST', '/children', 1, {
+    ...toChildRequest(DEMO_CHILD),
+    requiredConsent: true,
+    optionalConsent: true,
+  })
+  const path = (productId: string) =>
+    `/recommendations/companions?productId=${productId}&childId=${child.data.id}`
+
+  const ai = await call('GET', path('1'), 1)
+  expect(ai.status).toBe(200)
+  expectContract(ai.data, companionProductsShape)
+  expect(ai.data.source).toBe('AI')
+  expect(ai.data.products.length).toBeLessThanOrEqual(4)
+
+  const rule = await call('GET', path('2'), 1)
+  expectContract(rule.data, companionProductsShape)
+  expect(rule.data.source).toBe('RULE')
+  expect(rule.data.products.every((p: { reason: unknown }) => p.reason === null)).toBe(true)
+
+  expect((await call('GET', path('999999'), 1)).status).toBe(404)
+  const missingChild = '/recommendations/companions?productId=1&childId=999999'
+  expect((await call('GET', missingChild, 1)).status).toBe(404)
 })
 
 it('검색: 관련도순 목록은 목록 응답 모양이고, 결과 클릭 기록은 로그인 회원만 204 (BE SearchClickRequest)', async () => {
