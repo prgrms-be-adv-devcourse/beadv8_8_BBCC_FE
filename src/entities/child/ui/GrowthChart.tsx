@@ -179,11 +179,12 @@ export function GrowthChart({ records, currentHeightCm }: GrowthChartProps) {
             </dd>
           </div>
         </dl>
-        {forecast.cmPerMonth === null && (
-          <p className="text-sm">
-            한 달 이상 떨어진 키 기록이 2개 넘게 쌓이면 다음 사이즈 시기를 알려 드려요.
-          </p>
-        )}
+        {/* 성장 속도는 한 달 넘게 쌓인 기록으로 낸다 (그 전에는 평균값) → 기록을 권한다 */}
+        <p className="text-sm">
+          {forecast.cmPerMonth === null
+            ? '한 달에 한 번 키를 기록해 주세요. 한 달 이상 떨어진 기록이 2개 넘게 쌓이면 다음 사이즈 시기를 알려 드리고 추천도 더 정확해져요.'
+            : '한 달에 한 번 키를 기록하면 추천이 정확해져요.'}
+        </p>
         <p className="text-muted-foreground text-xs">
           아이 기록으로 낸 추정이에요. 사이즈 구간은 아동복 일반 표기(호칭 = 키) 기준이고 브랜드마다
           다를 수 있어요.

@@ -282,7 +282,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(
       page.getByRole('img', { name: /키 기록 \d+개, 지금 118cm는 120 사이즈 구간/ }),
     ).toBeVisible()
-    await expect(page.getByText(/한 달 이상 떨어진 키 기록이 2개 넘게 쌓이면/)).toBeVisible()
+    await expect(page.getByText(/한 달에 한 번 키를 기록해 주세요/)).toBeVisible()
     await page.getByRole('listitem').getByRole('button', { name: '수정' }).first().click()
     await page.getByLabel('기록 키').fill('117')
     await page.getByRole('button', { name: '저장', exact: true }).click()
