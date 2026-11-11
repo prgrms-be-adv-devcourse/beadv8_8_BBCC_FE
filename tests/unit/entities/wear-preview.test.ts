@@ -43,3 +43,37 @@ describe('착용 미리보기 (아동 평균 비율, 길이 비교용)', () => {
     )
   })
 })
+
+// 원피스 · 치마는 상품 카테고리(말단 이름)로 가른다. 실측 이름으로는 원피스가 상의(가슴), 치마가 하의(허리)로 보인다.
+// 밑단은 원피스 = 목옆점 − 총장, 치마 = 허리 − 총장. 무릎 ±3cm 안이면 무릎 높이로 본다 (키 100cm: 목옆점 81 · 허리 60 · 무릎 27)
+describe('착용 미리보기: 원피스 · 치마', () => {
+  it.each([
+    [spec({ 총장: 55, 가슴단면: 30 }), '원피스', 'dress'],
+    [spec({ 총장: 30, 허리단면: 22 }), '치마', 'skirt'],
+    [spec({ 총장: 45, 소매길이: 41 }), '상의', 'top'],
+    [spec({ 총장: 55, 가슴단면: 30 }), null, 'top'],
+    [spec({ 가슴단면: 30 }), '원피스', null],
+  ] as [SizeSpec, string | null, string | null][])(
+    '%j · 카테고리 %s → %s (카테고리를 모르면 실측 이름으로)',
+    (input, categoryName, expected) => {
+      expect(garmentKindOf(input, categoryName)).toBe(expected)
+    },
+  )
+
+  it.each([
+    [50.9, '무릎 위에서 끝나요'],
+    [51, '무릎까지 와요'],
+    [57, '무릎까지 와요'],
+    [57.1, '무릎 아래로 내려와요'],
+  ])('원피스 총장 %scm (키 100cm) → %s', (length, hem) => {
+    expect(wearFitOf(spec({ 총장: length, 가슴단면: 30 }), 100, '원피스')!.hem).toBe(hem)
+  })
+
+  it.each([
+    [29.9, '무릎 위에서 끝나요'],
+    [30, '무릎을 덮어요'],
+    [45, '무릎을 덮어요'],
+  ])('치마 총장 %scm (키 100cm) → %s', (length, hem) => {
+    expect(wearFitOf(spec({ 총장: length, 허리단면: 22 }), 100, '치마')!.hem).toBe(hem)
+  })
+})
