@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { signInAdmin } from './support/admin'
 
 // 관리자 상품 기준 데이터: 항목(팔레트) 만들기 → 목록 값 더하기, 실측 항목 만들기 (BE #405),
-// 상품 유형 만들기 · 수정 (BE #424), 카테고리 만들기 · 수정 (BE #425).
+// 상품 유형 만들기 · 수정 (BE #424), 카테고리 만들기 · 수정 (BE #425, 보일 성별 BE #1219).
 // 가짜 백엔드를 다른 테스트와 같이 쓰므로 코드는 실행마다 다르게 만든다 (대문자와 _만)
 const RUN = String(Date.now())
   .split('')
@@ -128,10 +128,14 @@ test('관리자 상품 기준 데이터: 항목 · 목록 값 · 실측 항목 �
     await page.getByLabel('어깨너비').check()
     await page.getByLabel('총장').check()
     await expect(page.getByText('실측 순서: 어깨너비 → 총장')).toBeVisible()
+    // 보일 성별 (BE #1219): 만들 때 기본 「모두」, 「여아만」으로 바꾸면 목록에 그대로 보인다
+    await expect(page.getByLabel('보일 성별')).toHaveValue('ALL')
+    await page.getByLabel('보일 성별').selectOption('GIRL')
     await page.getByRole('button', { name: '저장하기' }).click()
     await expect(page).toHaveURL(/\/admin\/catalog\/categories$/)
     const edited = page.getByRole('row').filter({ hasText: `시연 바지 ${RUN}` })
     await expect(edited.getByText('어깨너비 · 총장')).toBeVisible()
+    await expect(edited.getByText('여아만')).toBeVisible()
   })
 
   await test.step('카테고리 수정: 상품이 있는 카테고리에서 유형을 바꾸면 응답 설명을 그대로 보여 준다', async () => {

@@ -27,6 +27,7 @@ const category = (
   isLeaf,
   productTypeId: isLeaf ? '1' : null,
   productTypeName: isLeaf ? '의류' : null,
+  visibleGender: 'ALL',
   measurementItems: [],
 })
 const categories = [
@@ -41,6 +42,7 @@ const form = (patch: Partial<CategoryForm> = {}): CategoryForm => ({
   kind: 'LEAF',
   productTypeId: '1',
   measurementItemIds: ['1', '5'],
+  visibleGender: 'ALL',
   ...patch,
 })
 
@@ -124,12 +126,24 @@ describe('카테고리 매퍼', () => {
     [
       '말단',
       form({ name: ' 하의 ' }),
-      { name: '하의', parentId: '10', productTypeId: '1', measurementItemIds: ['1', '5'] },
+      {
+        name: '하의',
+        parentId: '10',
+        productTypeId: '1',
+        measurementItemIds: ['1', '5'],
+        visibleGender: 'ALL',
+      },
     ],
     [
       '최상위 중간 (고른 유형 · 실측 항목은 보내지 않는다)',
       form({ name: '신발', parentId: '', kind: 'MIDDLE' }),
-      { name: '신발', parentId: null, productTypeId: null, measurementItemIds: [] },
+      {
+        name: '신발',
+        parentId: null,
+        productTypeId: null,
+        measurementItemIds: [],
+        visibleGender: 'ALL',
+      },
     ],
   ])('폼 → 요청: %s', (_case, input, expected) => {
     expect(toCategoryCreateRequest(input)).toEqual(expected)
@@ -143,6 +157,7 @@ describe('카테고리 매퍼', () => {
     leaf: true,
     productTypeId: '1',
     productTypeName: '의류',
+    visibleGender: 'ALL',
     measurementItems: [{ measurementItemId: '1', name: '총장', code: 'TOTAL_LENGTH', unit: 'cm' }],
   }
 
@@ -154,6 +169,7 @@ describe('카테고리 매퍼', () => {
       isLeaf: true,
       productTypeId: '1',
       productTypeName: '의류',
+      visibleGender: 'ALL',
       measurementItems: [{ id: '1', name: '총장', code: 'TOTAL_LENGTH', unit: 'cm' }],
     })
   })

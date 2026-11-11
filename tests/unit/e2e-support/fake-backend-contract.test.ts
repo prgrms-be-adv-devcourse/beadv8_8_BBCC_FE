@@ -992,6 +992,7 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
         kind: 'MIDDLE',
         productTypeId: type.productTypeId,
         measurementItemIds: [item.measurementItemId],
+        visibleGender: 'ALL',
       }),
     )
     expect(middle.status).toBe(201)
@@ -1002,10 +1003,12 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
       kind: 'LEAF',
       productTypeId: type.productTypeId,
       measurementItemIds: [item.measurementItemId],
+      visibleGender: 'GIRL',
     })
     const leaf = await call('POST', '/admin/categories', 3, leafRequest)
     expect(leaf.status).toBe(201)
     expectContract(leaf.data, categoryShape)
+    expect(leaf.data.visibleGender).toBe('GIRL')
     expectContract((await call('GET', '/admin/categories', 3)).data, arr(categoryShape))
     // 같은 위치 같은 이름은 409, 말단 아래는 400
     expect((await call('POST', '/admin/categories', 3, leafRequest)).status).toBe(409)
@@ -1017,8 +1020,8 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     const categories = (await call('GET', '/admin/categories', 3)).data.map(toCatalogCategory)
     const [type, other] = (await call('GET', '/admin/product-types', 3)).data
     const [length, shoulder] = (await call('GET', '/admin/measurement-items', 3)).data
-    // 상품이 없는 말단(하의): 유형을 바꾸고 실측 항목을 더해도 된다. 응답은 목록의 카테고리 하나와 같은 모양
-    const bottom = categories.find((c: CatalogCategory) => c.name === '하의')!
+    // 상품이 없는 말단(바지): 유형을 바꾸고 실측 항목을 더해도 된다. 응답은 목록의 카테고리 하나와 같은 모양
+    const bottom = categories.find((c: CatalogCategory) => c.name === '바지')!
     const changed = await call(
       'PUT',
       `/admin/categories/${bottom.id}`,
@@ -1026,6 +1029,7 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
       toCategoryChangeRequest({
         productTypeId: other.productTypeId,
         measurementItemIds: [shoulder.measurementItemId, length.measurementItemId],
+        visibleGender: bottom.visibleGender,
       }),
     )
     expect(changed.status).toBe(200)
@@ -1103,7 +1107,7 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     const categories = (await call('GET', '/admin/categories', 3)).data
     const clothing = categories.find((c: { name: string }) => c.name === '의류')
     expect(await del(`/admin/categories/${clothing.categoryId}`)).toBe(409)
-    const bottom = categories.find((c: { name: string }) => c.name === '하의')
+    const bottom = categories.find((c: { name: string }) => c.name === '바지')
     expect(await del(`/admin/categories/${bottom.categoryId}`)).toBe(204)
     expect(await ids('/admin/categories', 'categoryId')).not.toContain(bottom.categoryId)
     expect(await del('/admin/categories/999999')).toBe(404)

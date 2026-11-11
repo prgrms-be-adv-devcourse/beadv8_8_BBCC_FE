@@ -1,5 +1,10 @@
 import { Link } from 'react-router'
-import { canChangeCategory, categoryTree, useCatalogCategoriesQuery } from '@/entities/catalog'
+import {
+  canChangeCategory,
+  categoryTree,
+  useCatalogCategoriesQuery,
+  VISIBLE_GENDER_LABEL,
+} from '@/entities/catalog'
 import { DeleteCatalogButton } from '@/features/manage-catalog'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
@@ -16,7 +21,7 @@ export function AdminCatalogCategoriesPage() {
       <PageHeader
         title="카테고리"
         description="상품은 말단 카테고리에만 등록해요. 말단 카테고리는 상품 유형 하나와 필수 실측 항목을 가져요."
-        note="GET · POST /admin/categories, 말단 수정은 PUT, 삭제는 DELETE /admin/categories/{id}(하위가 있으면 409). 목록은 평면 배열이라 parentId로 트리를 만든다"
+        note="GET · POST /admin/categories(보일 성별 visibleGender ALL · GIRL), 말단 수정은 PUT, 삭제는 DELETE /admin/categories/{id}(하위가 있으면 409). 목록은 평면 배열이라 parentId로 트리를 만든다"
         actions={
           <Link
             to={paths.admin.categoryNew}
@@ -52,6 +57,9 @@ export function AdminCatalogCategoriesPage() {
                   종류
                 </th>
                 <th scope="col" className="py-2 pr-4 font-medium">
+                  보일 성별
+                </th>
+                <th scope="col" className="py-2 pr-4 font-medium">
                   상품 유형
                 </th>
                 <th scope="col" className="py-2 pr-4 font-medium">
@@ -84,6 +92,12 @@ export function AdminCatalogCategoriesPage() {
                       }`}
                     >
                       {category.isLeaf ? '말단' : '중간'}
+                    </span>
+                  </td>
+                  <td className="text-ink-2 py-3 pr-4 align-middle max-md:p-0">
+                    {/* 여아만이면 남아 자녀를 고른 보호자에게 이 카테고리와 그 아래가 보이지 않는다 */}
+                    <span className={category.visibleGender === 'GIRL' ? 'font-semibold' : ''}>
+                      {VISIBLE_GENDER_LABEL[category.visibleGender]}
                     </span>
                   </td>
                   <td className="text-ink-2 py-3 pr-4 align-middle max-md:p-0">

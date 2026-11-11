@@ -70,6 +70,14 @@ export type ProductTypeLinkForm = {
 
 export type ProductTypeForm = { name: string; links: ProductTypeLinkForm[] }
 
+/** 카테고리를 보여 줄 자녀 성별: 모두 · 여아만 (여아만이면 남아에게 공개 목록에서 빠진다) */
+export type CategoryVisibleGender = 'ALL' | 'GIRL'
+
+export const VISIBLE_GENDER_LABEL: Record<CategoryVisibleGender, string> = {
+  ALL: '모두',
+  GIRL: '여아만',
+}
+
 /** 관리자 카테고리. 말단만 상품 유형과 필수 실측 항목을 가진다 */
 export type CatalogCategory = {
   id: string
@@ -78,6 +86,7 @@ export type CatalogCategory = {
   isLeaf: boolean
   productTypeId: string | null
   productTypeName: string | null
+  visibleGender: CategoryVisibleGender
   measurementItems: MeasurementItem[]
 }
 
@@ -91,7 +100,12 @@ export type CategoryForm = {
   kind: CategoryKind
   productTypeId: string
   measurementItemIds: string[]
+  visibleGender: CategoryVisibleGender
 }
 
-/** 말단 카테고리 수정: 상품 유형과 필수 실측 항목(고른 순서가 실측 순서). productTypeId는 고르지 않았으면 '' */
-export type CategoryChangeForm = { productTypeId: string; measurementItemIds: string[] }
+/** 말단 카테고리 수정: 상품 유형과 필수 실측 항목(고른 순서가 실측 순서) · 보일 성별. productTypeId는 고르지 않았으면 '' */
+export type CategoryChangeForm = {
+  productTypeId: string
+  measurementItemIds: string[]
+  visibleGender: CategoryVisibleGender
+}

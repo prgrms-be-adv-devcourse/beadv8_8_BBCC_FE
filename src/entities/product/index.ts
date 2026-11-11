@@ -127,5 +127,6 @@ export {
 } from './model/option-picker.rules'
 export { ALL_CATEGORIES_ICON } from './config/category-icons'
 export { categoryIconOf } from './model/category-icon.rules'
+export { visibleCategoryIdOf } from './model/visible-category.rules'
 export { CategoryIcon } from './ui/CategoryIcon'
 export { HOME_HERO_PHOTO } from './config/sample-photos'

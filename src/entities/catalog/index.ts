@@ -20,12 +20,14 @@ export {
   type CategoryChangeForm,
   type CategoryForm,
   type CategoryKind,
+  type CategoryVisibleGender,
   type MeasurementItem,
   type MeasurementItemForm,
   type ProductType,
   type ProductTypeForm,
   type ProductTypeLink,
   type ProductTypeLinkForm,
+  VISIBLE_GENDER_LABEL,
 } from './model/catalog'
 export {
   toAttribute,
