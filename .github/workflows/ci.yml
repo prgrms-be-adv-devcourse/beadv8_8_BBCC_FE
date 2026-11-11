@@ -6,6 +6,11 @@ on:
   push:
     branches: [main, develop]
 
+# 같은 PR 에 연달아 push 하면 이전 CI 를 취소한다(#271). main · develop push 는 끝까지 돈다(Vercel 배포가 그 결과를 기다린다)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,7 +30,19 @@ jobs:
       - run: npm run test
 
       # E2E: 가짜 백엔드 + 개발 서버를 띄워 시연 흐름(①~⑦)을 브라우저로 따라간다
-      - run: npx playwright install --with-deps chromium
+      # 브라우저는 Playwright 버전마다 캐시한다. 캐시가 있으면 내려받기를 건너뛰고 시스템 라이브러리만 깐다(#271)
+      - name: Playwright 버전
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
