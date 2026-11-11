@@ -16,13 +16,13 @@ import { PageHeader } from '@/shared/ui/PageHeader'
 export function AdminHomePage() {
   const orders = useAdminOrdersQuery(null)
   const payments = useAdminPaymentsQuery()
-  const applications = useSellerApplicationsQuery(null)
-  const members = useAdminMembersQuery('ALL', '')
+  const applications = useSellerApplicationsQuery('PENDING')
+  const members = useAdminMembersQuery('SUSPENDED', '')
   const today = kstDateString()
   const summary = orders.data ? summarizeOrdersOn(orders.data.content, today) : null
-  const pending = applications.data?.content.filter((item) => item.status === 'PENDING').length
-  const suspended = members.data?.content.filter((member) => member.status === 'SUSPENDED').length
-  const refunds = payments.data?.filter((payment) => payment.refundedAmount > 0).length
+  const pending = applications.data?.totalElements
+  const suspended = members.data?.totalElements
+  const refunds = payments.data?.content.filter((payment) => payment.refundedAmount > 0).length
 
   return (
     <div className="shop-look space-y-8">

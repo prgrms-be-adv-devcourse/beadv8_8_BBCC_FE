@@ -30,6 +30,12 @@ const orders = [
 describe('판매자 주문 탭', () => {
   it('탭별 건수 · 거르기', () => {
     expect(countSellerOrdersByTab(orders)).toEqual({ READY: 2, SHIPPING: 1, DELIVERED: 1, ALL: 4 })
+    expect(countSellerOrdersByTab(orders, 107)).toEqual({
+      READY: 2,
+      SHIPPING: 1,
+      DELIVERED: 1,
+      ALL: 107,
+    })
     expect(filterSellerOrdersByTab(orders, 'READY').map((o) => o.id)).toEqual(['1', '2'])
     expect(filterSellerOrdersByTab(orders, 'ALL')).toHaveLength(4)
   })

@@ -1857,8 +1857,14 @@ http
       m.sellerStatus = 'SUSPENDED'
       return send(res, 200, { sellerId: +x[1], businessName: m.nickname, status: 'SUSPENDED' })
     }
-    if (r('GET', /^\/admin\/seller-applications$/))
-      return send(res, 200, page(apps.map(appSummaryOf)))
+    if (r('GET', /^\/admin\/seller-applications$/)) {
+      const status = url.searchParams.get('status')
+      const content = apps
+        .filter((application) => !status || application.status === status)
+        .sort((a, b) => b.id - a.id)
+        .map(appSummaryOf)
+      return send(res, 200, pageFrom(content, url.searchParams))
+    }
     if ((x = r('POST', /^\/admin\/seller-applications\/(\d+)\/reject$/))) {
       const a = apps.find((a) => a.id === +x[1])
       if (a.status !== 'PENDING')

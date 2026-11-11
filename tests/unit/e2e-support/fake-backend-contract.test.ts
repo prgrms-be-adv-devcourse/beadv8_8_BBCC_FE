@@ -411,6 +411,18 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     )
     const latest = await call('GET', '/members/me/seller-application', 2)
     expect(latest.data).toMatchObject({ status: 'REJECTED', rejectReason: '서류 미비' })
+    const pending = await call('GET', '/admin/seller-applications?status=PENDING&page=0&size=1', 3)
+    expect(pending.data).toMatchObject({ content: [], totalElements: 0 })
+    const rejectedPage = await call(
+      'GET',
+      '/admin/seller-applications?status=REJECTED&page=0&size=1',
+      3,
+    )
+    expect(rejectedPage.data).toMatchObject({
+      content: [{ id: mine.data.id, status: 'REJECTED' }],
+      totalElements: 1,
+      size: 1,
+    })
     expectContract((await call('GET', '/seller/me', 2)).data, sellerShape)
   })
 

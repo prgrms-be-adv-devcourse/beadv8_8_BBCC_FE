@@ -34,7 +34,7 @@ export function ShopMyPage() {
     )
   }
 
-  const counts = countOrdersByTab(orders.data?.content ?? [])
+  const counts = countOrdersByTab(orders.data?.content ?? [], orders.data?.totalElements)
   return (
     <div className="shop-look space-y-10">
       <h1 className="sr-only">마이페이지</h1>

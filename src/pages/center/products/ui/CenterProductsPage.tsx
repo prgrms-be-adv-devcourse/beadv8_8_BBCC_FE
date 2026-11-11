@@ -67,7 +67,9 @@ export function CenterProductsPage() {
           <h2 className="text-section mr-auto">
             내 상품
             {products.data && (
-              <span className="figure text-ink-3 ml-2 text-sm font-medium">{all.length}개</span>
+              <span className="figure text-ink-3 ml-2 text-sm font-medium">
+                {products.data.totalElements}개
+              </span>
             )}
           </h2>
           <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm max-lg:min-h-11">
