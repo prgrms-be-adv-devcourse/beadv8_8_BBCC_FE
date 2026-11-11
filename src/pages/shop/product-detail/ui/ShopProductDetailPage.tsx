@@ -44,7 +44,9 @@ export function ShopProductDetailPage() {
   // 로그인 전에는 자녀를 부르지 않는다 (상품은 누구나 본다)
   const children = useChildrenQuery({ enabled: Boolean(user) && !isChild })
   const [childId, setChildId] = useState<string | null>(search.get('childId'))
-  const recommendation = useSizeRecommendationQuery(productId, isChild ? null : childId)
+  // 사이즈 추천은 로그인한 보호자가 자녀를 골랐을 때만 (자녀가 붙은 주소로 로그인 전에 들어와도 부르지 않는다)
+  const recommendedChildId = user && !isChild ? childId : null
+  const recommendation = useSizeRecommendationQuery(productId, recommendedChildId)
   // 보호자 회원만 기록한다 (자녀 화면은 자녀 토큰이라 부르지 않음)
   useRecordProductView(productId, childId, Boolean(user) && !isChild)
   // 로그인하고 돌아오면 주소(?option=&qty=)에 실어 둔 옵션 · 수량으로 시작한다. 고르기 전까지는 null

@@ -8,16 +8,19 @@ export function setupAuth() {
     getAccessToken: () => useSessionStore.getState().accessToken,
     onTokenReissued: (accessToken) => useSessionStore.getState().setAccessToken(accessToken),
     onAuthFailed: () => {
+      const hadSession = useSessionStore.getState().accessToken !== null
       useSessionStore.getState().clear()
-      queryClient.clear()
+      // 로그인하지 않은 채 받은 401이면 지울 로그인 데이터가 없다. 캐시를 지우면 진행 중인 공개 조회(상품 상세)가 결과를 잃는다
+      if (hadSession) queryClient.clear()
     },
   })
   configureAuth('child', {
     getAccessToken: () => useChildSessionStore.getState().accessToken,
     onTokenReissued: (accessToken) => useChildSessionStore.getState().setAccessToken(accessToken),
     onAuthFailed: () => {
+      const hadSession = useChildSessionStore.getState().accessToken !== null
       useChildSessionStore.getState().clear()
-      queryClient.clear()
+      if (hadSession) queryClient.clear()
     },
   })
   configureAuth('admin', {
