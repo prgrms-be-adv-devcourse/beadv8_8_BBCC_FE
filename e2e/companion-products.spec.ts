@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// 상품 상세 맨 아래 「함께 사면 좋은 상품」(BE #1164): 자녀를 골랐을 때 상세와 함께 바로 부르고,
-// 기다리는 동안 자리를 두고, 이유가 없는 카드는 이유 칸을 숨기고, 실패(Gateway 504)하면 영역을 숨긴다.
+// 상품 상세 맨 아래 「함께 사면 좋은 상품」(BE #1164, SSE FE #290): 자녀를 골랐을 때 상세와 함께 바로 부르고,
+// AI 답을 기다리는 동안 안내 · 자리를 두고, 이유가 없는 카드는 이유 칸을 숨기고, 실패(Gateway 504)하면 영역을 숨긴다.
+// SSE는 목이 서버의 JSON 답을 받아 흘려보낸다: AI 답이면 rule → ai, 같은 요청을 다시 하면 ai만, 규칙 답이면 rule만
 // 상품 설명은 처음에 윗부분만 보이고 「상세정보 펼쳐보기」로 펼친다
 
 const CHILD = {
@@ -41,6 +42,17 @@ async function asParentWithChild(page: Page) {
 }
 
 const companionSection = (page: Page) => page.getByRole('region', { name: '함께 사면 좋은 상품' })
+const WAITING = '함께 입기 좋은 상품을 고르고 있어요'
+
+/** 흐름 기록(탭 저장)에서 마지막 함께 사면 호출이 받은 이벤트 순서 */
+const lastStreamEvents = (page: Page) =>
+  page.evaluate(() => {
+    const logs = JSON.parse(sessionStorage.getItem('kidly.api-flow-log') ?? '[]') as {
+      path: string
+      responseBody: { events?: string[] } | null
+    }[]
+    return logs.findLast((log) => log.path === '/recommendations/companions')?.responseBody?.events
+  })
 
 test('자녀를 고르면 함께 사면 좋은 상품을 부르고, 이유가 없는 카드는 이유 칸을 숨긴다', async ({
   page,
@@ -57,7 +69,8 @@ test('자녀를 고르면 함께 사면 좋은 상품을 부르고, 이유가 �
 
   await page.goto('/products/1?childId=501')
   const section = companionSection(page)
-  await expect(section.getByRole('status', { name: '불러오는 중' })).toBeVisible()
+  await expect(section.getByRole('heading', { name: '함께 사면 좋은 상품' })).toBeVisible()
+  await expect(section.getByRole('status', { name: WAITING })).toBeVisible()
   release()
 
   await expect(section.getByRole('link', { name: /함께 상품 1/ })).toBeVisible()
@@ -66,6 +79,27 @@ test('자녀를 고르면 함께 사면 좋은 상품을 부르고, 이유가 �
   await expect(section.getByRole('listitem').nth(1).locator('p.bg-paper-2')).toHaveCount(0)
   expect(requested[0]?.searchParams.get('productId')).toBe('1')
   expect(requested[0]?.searchParams.get('childId')).toBe('501')
+  await expect.poll(() => lastStreamEvents(page)).toEqual(['rule', 'ai'])
+
+  // 같은 상세를 다시 열면 저장해 둔 AI 답처럼 ai만 온다
+  await page.reload()
+  await expect(companionSection(page).getByText(REASON)).toBeVisible()
+  await expect.poll(() => lastStreamEvents(page)).toEqual(['ai'])
+})
+
+test('AI 없이 규칙 결과만 오고 닫히면 받아 둔 규칙 결과를 그린다', async ({ page }) => {
+  await asParentWithChild(page)
+  await page.route('**/api/v1/recommendations/companions?*', (route) =>
+    route.fulfill({ json: { source: 'RULE', products: [card(3, null), card(4, null)] } }),
+  )
+
+  await page.goto('/products/2?childId=501')
+
+  const section = companionSection(page)
+  await expect(section.getByRole('link', { name: /함께 상품 3/ })).toBeVisible()
+  await expect(section.getByRole('link', { name: /함께 상품 4/ })).toBeVisible()
+  await expect(section.getByRole('status', { name: WAITING })).toHaveCount(0)
+  await expect.poll(() => lastStreamEvents(page)).toEqual(['rule'])
 })
 
 test('자녀를 고르지 않았으면 부르지 않고, 실패(504)하면 영역을 숨긴다', async ({ page }) => {

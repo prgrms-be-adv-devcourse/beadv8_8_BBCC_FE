@@ -248,6 +248,36 @@ function send(res, status, body, headers = {}) {
   })
   res.end(body === undefined ? '' : JSON.stringify(body))
 }
+// 함께 사면 · 홈 맛보기 SSE (BE 계약, FE #290). Accept: text/event-stream이면 흘려보낸다
+// AI 답이고 처음 묻는 요청이면 rule(같은 상품, 이유 없음) → 잠시 뒤 ai, 다시 물으면 저장해 둔 답처럼 ai만, 규칙 답이면 rule만
+const answeredStreams = new Set()
+const STREAM_AI_WAIT_MS = 300
+function sendPicks(req, res, picks) {
+  if (!String(req.headers.accept ?? '').includes('text/event-stream')) return send(res, 200, picks)
+  res.writeHead(200, {
+    'content-type': 'text/event-stream',
+    'cache-control': 'no-cache',
+    'x-accel-buffering': 'no',
+  })
+  const write = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+  if (picks.source === 'RULE') {
+    write('rule', picks)
+    return res.end()
+  }
+  if (answeredStreams.has(req.url)) {
+    write('ai', picks)
+    return res.end()
+  }
+  answeredStreams.add(req.url)
+  write('rule', {
+    source: 'RULE',
+    products: picks.products.map((product) => ({ ...product, reason: null })),
+  })
+  setTimeout(() => {
+    write('ai', picks)
+    res.end()
+  }, STREAM_AI_WAIT_MS)
+}
 const page = (content) => ({
   content,
   page: 0,
@@ -1169,7 +1199,7 @@ http
           reason:
             source === 'AI' && index < 2 ? `키 ${c.heightCm}cm에 맞는 사이즈가 있어요.` : null,
         }))
-      return send(res, 200, { source, products })
+      return sendPicks(req, res, { source, products })
     }
     // 함께 사면 좋은 상품 (BE #1164): 보고 있는 상품과 다른 카테고리 중 자녀에게 맞는 상품 4개까지.
     // AI 흉내: 상품 ID가 홀수면 AI가 앞 두 개에 이유를 쓰고(나머지는 규칙으로 채워 null), 짝수면 AI를 못 쓴 RULE(이유 모두 null)
@@ -1194,7 +1224,7 @@ http
           ...card,
           reason: source === 'AI' && index < 2 ? `${detail.name}과 함께 입기 좋아요.` : null,
         }))
-      return send(res, 200, { source, products })
+      return sendPicks(req, res, { source, products })
     }
     // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
     if (r('GET', /^\/admin\/orders$/)) {

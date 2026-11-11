@@ -221,3 +221,30 @@
     @apply font-sans;
   }
 }
+
+/* AI 추천을 기다리는 자리 (RecommendedPicksSkeleton): 빛이 왼쪽에서 오른쪽으로 지나간다 */
+@keyframes pick-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+.pick-shimmer {
+  background: linear-gradient(
+    100deg,
+    var(--muted) 30%,
+    color-mix(in oklab, var(--muted) 35%, white) 50%,
+    var(--muted) 70%
+  );
+  background-size: 200% 100%;
+  animation: pick-shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pick-shimmer {
+    animation: none;
+  }
+}

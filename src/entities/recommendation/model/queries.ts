@@ -2,6 +2,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { nextPageOf } from '@/shared/api'
 import { recommendationApi } from '../api/recommendation-api'
 import type { RecommendedProductsQuery } from './recommendation'
+import { shownPicksOf } from './recommended-picks.rules'
 import { nextRecommendedPageOf, type RecommendedPageParam } from './recommended-page.rules'
 import {
   toCompanionProducts,
@@ -38,25 +39,29 @@ export function useSizeRecommendationQuery(productId: string, childId: string | 
   })
 }
 
-/** 홈 맛보기 4개 (AI가 자녀 맞춤 상위 20개 중에서 고르고 이유를 쓴다) */
+/**
+ * 홈 맛보기 4개 (SSE): 스트림이 닫힐 때까지 기다려 AI 답, 없으면 규칙 결과를 돌려준다. 그릴 것이 없으면 null.
+ * 다시 부르면 AI를 또 기다리므로 실패해도 다시 부르지 않는다. 화면을 떠나면 스트림을 끊는다(signal)
+ */
 export function useHomePreviewQuery(childId: string | null) {
   return useQuery({
     queryKey: recommendationKeys.preview(childId ?? ''),
-    queryFn: () => recommendationApi.getPreview(childId!),
-    select: toHomePreview,
+    queryFn: ({ signal }) => recommendationApi.streamPreview(childId!, signal),
+    select: (events) => shownPicksOf(events.map((item) => toHomePreview(item.data))),
     enabled: childId !== null,
+    retry: false,
   })
 }
 
 /**
- * 함께 사면 좋은 상품: 자녀를 골랐을 때만 부른다. AI 응답이 느려 Gateway가 504를 줄 수 있어
- * 실패해도 다시 부르지 않는다 (화면은 영역을 숨긴다)
+ * 함께 사면 좋은 상품 (SSE): 자녀를 골랐을 때만 부른다. 홈 맛보기와 같이 닫힐 때까지 모아 그릴 결과를 고른다.
+ * 실패(401 · 504 포함)하면 다시 부르지 않는다 (화면은 영역을 숨긴다)
  */
 export function useCompanionProductsQuery(productId: string, childId: string | null) {
   return useQuery({
     queryKey: recommendationKeys.companions(productId, childId ?? ''),
-    queryFn: () => recommendationApi.getCompanions(productId, childId!),
-    select: toCompanionProducts,
+    queryFn: ({ signal }) => recommendationApi.streamCompanions(productId, childId!, signal),
+    select: (events) => shownPicksOf(events.map((item) => toCompanionProducts(item.data))),
     enabled: childId !== null,
     retry: false,
   })
