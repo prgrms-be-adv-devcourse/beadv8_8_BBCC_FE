@@ -1,6 +1,9 @@
 import { useId, useState, type ReactNode } from 'react'
+import { Link } from 'react-router'
 import {
+  AiSentenceNotice,
   FIT_LABEL,
+  showsAiSizeNotice,
   SizeReasonList,
   sizeScaleOf,
   type SizeRange,
@@ -16,13 +19,22 @@ type SizeAdviceProps = {
   sizes: SizeRange[]
   /** 착용 미리보기 */
   preview?: ReactNode
+  /** 이 상품 구분의 기준 옷이 없을 때 등록하러 가는 링크 (없으면 안내를 숨긴다) */
+  referenceGarmentLink?: { label: string; to: string } | null
 }
 
 /**
  * 사이즈 칩 바로 위 추천 한 줄: 「추천 사이즈 120 · 여유 있음 · 김들희 115cm 기준」 + 「사이즈 자세히」.
- * 그 아래 AI 근거(있으면). 펼치면 백엔드 안내 · 이 상품 사이즈 눈금 · 착용 미리보기
+ * 그 아래 AI 근거(있으면) · AI 안내 · 기준 옷 등록 안내. 펼치면 백엔드 안내 · 이 상품 사이즈 눈금 · 착용 미리보기.
+ * 기준 핏(기준 옷과의 cm 차이) · 입을 수 있는 기간이 BE 응답에 생기면 추천 한 줄 아래, 근거 위에 둔다
  */
-export function SizeAdvice({ child, recommendation, sizes, preview }: SizeAdviceProps) {
+export function SizeAdvice({
+  child,
+  recommendation,
+  sizes,
+  preview,
+  referenceGarmentLink,
+}: SizeAdviceProps) {
   const [isOpen, setIsOpen] = useState(false)
   const detailsId = useId()
   const { recommendedSize, fit, notices, reasons } = recommendation
@@ -76,6 +88,18 @@ export function SizeAdvice({ child, recommendation, sizes, preview }: SizeAdvice
       </div>
       {/* AI가 고른 근거는 추천 한 줄 바로 아래에 늘 보인다 (규칙 추천이면 없음) */}
       <SizeReasonList reasons={reasons} className="px-3.5 pb-2.5" />
+      {showsAiSizeNotice(recommendation) && <AiSentenceNotice className="px-3.5 pb-2.5" />}
+      {referenceGarmentLink && (
+        <p className="text-ink-2 flex flex-wrap items-center gap-x-2 px-3.5 pb-2.5 text-[13px]">
+          잘 맞는 옷을 등록하면 더 정확해요
+          <Link
+            to={referenceGarmentLink.to}
+            className="text-signal inline-flex min-h-9 items-center font-semibold hover:underline"
+          >
+            {referenceGarmentLink.label}
+          </Link>
+        </p>
+      )}
       {isOpen && (
         <div id={detailsId} className="border-rule space-y-4 border-t px-3.5 pt-3 pb-4">
           {recommendedSize && notices[0] && (

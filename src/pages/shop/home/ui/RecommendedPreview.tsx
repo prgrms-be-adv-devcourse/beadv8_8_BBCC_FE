@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { ChildPicker, SizeRulerBar, sizeRulerOf, type Child } from '@/entities/child'
 import { ProductTile } from '@/entities/product'
 import {
+  AiSentenceNotice,
   hasAiReasons,
   PickReveal,
   RecommendedPicksLoading,
@@ -124,22 +125,7 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
           ))}
         </ul>
       )}
-      {preview.data && hasAiReasons(preview.data) && (
-        <p className="text-ink-3 flex items-center gap-1.5 text-xs">
-          <svg
-            viewBox="0 0 24 24"
-            className="size-3.5 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden
-          >
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 11v5M12 8h.01" />
-          </svg>
-          추천 이유는 AI가 쓴 문장이라 실제와 다를 수 있어요.
-        </p>
-      )}
+      {preview.data && hasAiReasons(preview.data) && <AiSentenceNotice />}
     </section>
   )
 }

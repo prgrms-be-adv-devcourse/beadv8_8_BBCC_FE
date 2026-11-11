@@ -114,12 +114,13 @@ export function useRecommendedProductsInfiniteQuery(
   })
 }
 
-/** 자녀의 기준 옷 (상의 → 하의) */
-export function useReferenceGarmentsQuery(childId: string) {
+/** 자녀의 기준 옷 (상의 → 하의). 자녀를 고르지 않았으면(null) 부르지 않는다 */
+export function useReferenceGarmentsQuery(childId: string | null) {
   return useQuery({
-    queryKey: recommendationKeys.referenceGarments(childId),
-    queryFn: () => recommendationApi.referenceGarments(childId),
+    queryKey: recommendationKeys.referenceGarments(childId ?? ''),
+    queryFn: () => recommendationApi.referenceGarments(childId ?? ''),
     select: (list) => list.map(toReferenceGarment),
+    enabled: childId !== null,
   })
 }
 
