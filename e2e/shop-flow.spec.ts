@@ -229,9 +229,15 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     // 재고 적음 탭 (상품 B 옵션 재고 5): 서버가 판매 중 상품 가운데 재고 적은 옵션이 있는 것만 준다
     await mine.getByRole('link', { name: '상품 관리' }).click()
     await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
-    // (BE 거르기가 머지되기 전이라 판매자 상품 목록은 FE 목이 응답한다. 요청 값은 단위 테스트가 본다)
     const lowTab = page.getByRole('tab', { name: /재고 적음/ })
+    const lowRequest = page.waitForRequest(
+      (request) =>
+        request.url().includes('/seller/products?') &&
+        new URL(request.url()).searchParams.get('lowStock') === 'true' &&
+        new URL(request.url()).searchParams.get('size') === '20',
+    )
     await lowTab.click()
+    expect(new URL((await lowRequest).url()).searchParams.get('status')).toBe('ON_SALE')
     await expect(lowTab).toHaveAttribute('aria-selected', 'true')
     await expect(page).toHaveURL(/stock=low/)
     const products = page.getByRole('table', { name: '내 상품' })
