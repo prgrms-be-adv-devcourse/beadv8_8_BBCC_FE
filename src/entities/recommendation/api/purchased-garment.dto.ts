@@ -1,4 +1,4 @@
-// 추천 기준 옷 「산 옷에서 고르기」 (BE #1168 PurchasedGarmentResponse, 머지 전)
+// 추천 기준 옷 「산 옷에서 고르기」 (BE #1168 PurchasedGarmentResponse)
 
 /**
  * GET /recommendations/children/{childId}/purchases 한 줄: 구매확정된 주문상품 (확정이 늦은 순서).

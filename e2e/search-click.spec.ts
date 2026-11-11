@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test'
 
 // 검색: 검색어가 있으면 기본 정렬이 관련도순이고(고를 수 있는 것도 이때만), 최신순을 고르면 주소에 남는다.
-// 로그인 회원이 검색 결과를 누르면 검색어 · 상품 · 순위 · 정렬을 기록한다 (POST /search/clicks)
+// 로그인 회원이 검색 결과를 누르면 검색어 · 상품 · 순위 · 정렬을 기록한다 (POST /search/clicks).
+// 자녀가 없는 보호자라 자녀 없이 기록한다 (자녀를 싣는 경우는 search-child)
 const API = 'http://localhost:18080/api/v1'
 
 test('검색: 관련도순 기본 정렬과 검색 결과 클릭 기록', async ({ page, request }) => {
@@ -33,6 +34,10 @@ test('검색: 관련도순 기본 정렬과 검색 결과 클릭 기록', async 
     data: { status: 'ON_SALE' },
   })
 
+  // 앞 테스트가 가짜 백엔드에 자녀를 남겨도 자녀 없는 보호자로 본다
+  await page.route('**/api/v1/children', (route) =>
+    route.request().method() === 'GET' ? route.fulfill({ json: [] }) : route.fallback(),
+  )
   await page.goto('/')
   await page.getByRole('button', { name: '보호자', exact: true }).first().click()
   await expect(page.getByText('보호자 · 회원 1')).toBeVisible()

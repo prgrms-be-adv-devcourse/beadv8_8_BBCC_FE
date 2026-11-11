@@ -102,6 +102,8 @@ function searchClickProblem(body) {
     return '순위는 1 이상 10000 이하여야 합니다.'
   if (body.sort != null && !SORTS.includes(body.sort))
     return '정렬은 NEWEST, PRICE_ASC, PRICE_DESC, RELEVANCE 중 하나여야 합니다.'
+  if (body.childId != null && (!Number.isInteger(body.childId) || body.childId <= 0))
+    return '자녀 ID는 양수여야 합니다.'
   return null
 }
 const problem = (res, status, title, detail, instance) =>

@@ -18,7 +18,7 @@ type GetEventStreamOptions = {
   shape: Shape
 }
 
-/** 서버가 스트림 대신 JSON으로 답하면(SSE 구현 전) 그 응답을 이벤트 하나('message')로 본다 */
+/** 서버가 스트림 대신 JSON으로 답하면(Accept를 무시한 서버 · 테스트 응답) 그 응답을 이벤트 하나('message')로 본다 */
 async function eventsOf(response: AxiosResponse<ReadableStream<Uint8Array>>): Promise<SseEvent[]> {
   const contentType = String(response.headers['content-type'] ?? '')
   if (!contentType.includes('application/json')) return readSseEvents(response.data)

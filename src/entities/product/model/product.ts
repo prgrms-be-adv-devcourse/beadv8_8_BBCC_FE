@@ -110,7 +110,6 @@ export type ProductDetail = ProductSummary & {
   sizeSpecs: SizeSpec[]
 }
 
-/** (목) 판매자 상품 목록 한 줄. 재고는 모르면 null */
 /** 내 상품 목록 한 줄 (요약) */
 export type SellerProduct = {
   id: string

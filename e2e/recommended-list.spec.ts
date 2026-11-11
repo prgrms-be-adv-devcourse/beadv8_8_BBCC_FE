@@ -87,9 +87,7 @@ test('홈 맞춤 영역 4개 → 더보기 → 맞춤 목록 탭 · 더 보기',
   // 이유가 있는 카드만 이유 칸을 그린다 (null이면 기본 문구 없이 숨김)
   await expect(recommended.getByText(/^맞춤 이유 \d: 키에 잘 맞아요\.$/)).toHaveCount(2)
   // AI가 쓴 이유가 보이면 카드 아래에 안내를 단다 (BE가 이유 길이를 검사하지 않음)
-  await expect(
-    recommended.getByText('추천 이유는 AI가 쓴 문장이라 실제와 다를 수 있어요.'),
-  ).toBeVisible()
+  await expect(recommended.getByText('AI를 활용한 문장이라 실수가 있을 수 있어요.')).toBeVisible()
 
   await recommended.getByRole('link', { name: /더보기/ }).click()
   await expect(page).toHaveURL(/\/recommended\/501$/)

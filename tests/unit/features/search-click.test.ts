@@ -10,6 +10,7 @@ const click = {
   size: 20,
   index: 2,
   sort: 'RELEVANCE' as const,
+  childId: null,
 }
 
 describe('toSearchClickRequest', () => {
@@ -20,6 +21,17 @@ describe('toSearchClickRequest', () => {
       rank: 3,
       sort: 'RELEVANCE',
     })
+  })
+
+  // 보호자가 고른 자녀 (BE SearchClickRequest.childId, 선택 · 양수 Long). 없거나 숫자가 아니면 싣지 않는다
+  it.each([
+    ['42', 42],
+    ['1', 1],
+    [null, undefined],
+    ['abc', undefined],
+    ['0', undefined],
+  ])('고른 자녀 %s는 childId %s로 보낸다', (childId, expected) => {
+    expect(toSearchClickRequest({ ...click, childId })?.childId).toBe(expected)
   })
 
   it.each([

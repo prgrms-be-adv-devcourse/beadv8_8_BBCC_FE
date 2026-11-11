@@ -38,11 +38,12 @@ export {
   useReferenceGarmentsQuery,
   useSizeRecommendationQuery,
 } from './model/queries'
-export { candidateNoteOf } from './model/size-recommendation.rules'
+export { candidateNoteOf, showsAiSizeNotice } from './model/size-recommendation.rules'
 export { hasAiReasons, shownPicksOf } from './model/recommended-picks.rules'
 export { sizeScaleOf, type SizeScale } from './model/size-scale.rules'
 export { nextRecommendedPageOf } from './model/recommended-page.rules'
 export { FIT_LABEL, SIZE_REASON_LABEL } from './model/recommendation'
+export { AiSentenceNotice } from './ui/AiSentenceNotice'
 export { FitBadge } from './ui/FitBadge'
 export { PickReveal } from './ui/PickReveal'
 export { RecommendedPicksLoading } from './ui/RecommendedPicksLoading'
@@ -73,6 +74,7 @@ export {
   isValidMeasurementText,
   measurementCodesOf,
   partsForPurchase,
+  referencePartToRegister,
   validateReferenceGarmentForm,
 } from './model/reference-garment.rules'
 export { type PurchasedGarment } from './model/purchased-garment'

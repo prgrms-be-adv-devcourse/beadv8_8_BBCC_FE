@@ -18,6 +18,23 @@ describe('홈 거르기 ↔ 주소', () => {
     })
     expect(readProductFilters(new URLSearchParams('sort=WRONG'))).toEqual({ categoryId: null })
   })
+  // BE ProductListRequest.attributes: 항목코드(대문자 · 밑줄):값ID(1부터, 18자리까지). 틀리면 BE가 400이라 주소에서 버린다
+  it.each([
+    ['COLOR:3', true],
+    ['PRODUCT_SIZE:1', true],
+    ['SIZE:123456789012345678', true],
+    ['SIZE:1234567890123456789', false],
+    ['SIZE:0', false],
+    ['SIZE:07', false],
+    ['color:3', false],
+    ['COLOR1:3', false],
+    ['COLOR:a', false],
+    [':3', false],
+    ['COLOR:', false],
+  ])('옵션 값 %s를 주소에서 읽는지: %s', (value, isKept) => {
+    const filters = readProductFilters(new URLSearchParams({ attr: value }))
+    expect(filters.attributes ?? []).toEqual(isKept ? [value] : [])
+  })
   it('쓰면 다른 값(q · child)은 남기고, 기본값(그 검색어의 기본 정렬 · 빈 값)은 싣지 않는다', () => {
     // 검색어가 있으면 기본 정렬은 관련도순이다 (검색어가 없으면 최신순)
     const next = writeProductFilters(new URLSearchParams('q=조거&child=3&cat=1'), {

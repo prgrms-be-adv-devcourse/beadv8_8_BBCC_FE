@@ -1,7 +1,8 @@
 import { expect, test, type Request } from '@playwright/test'
 
 // 보호자가 검색하면 고른 자녀를 GET /products의 childId로 함께 보낸다 (BE #1089, 검색 기록용).
-// 둘러보기(검색어 없음)에는 붙이지 않고, 자녀 목록을 받기 전에 자녀 없는 검색을 먼저 보내지 않는다
+// 둘러보기(검색어 없음)에는 붙이지 않고, 자녀 목록을 받기 전에 자녀 없는 검색을 먼저 보내지 않는다.
+// 검색 결과를 누르면 클릭 기록(POST /search/clicks)에도 같은 자녀를 싣는다
 
 const CHILD = {
   id: 501,
@@ -47,4 +48,13 @@ test('보호자 검색에는 고른 자녀 childId가 붙고, 둘러보기에는
   const browses = listRequests.filter((url) => !url.searchParams.has('keyword'))
   expect(browses.length).toBeGreaterThan(0)
   expect(browses.some((url) => url.searchParams.has('childId'))).toBe(false)
+
+  const clicked = page.waitForRequest(
+    (request) => request.method() === 'POST' && request.url().endsWith('/search/clicks'),
+  )
+  await page
+    .getByRole('link', { name: /밴딩 조거 팬츠/ })
+    .first()
+    .click()
+  expect((await clicked).postDataJSON()).toMatchObject({ keyword: '조거', childId: 501 })
 })

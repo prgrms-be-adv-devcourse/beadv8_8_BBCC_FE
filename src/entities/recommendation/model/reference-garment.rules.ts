@@ -1,5 +1,5 @@
 import { GARMENT_PART_SPEC, GARMENT_PARTS, MEASUREMENT_LABEL } from './reference-garment'
-import type { GarmentPart, ReferenceGarmentForm } from './reference-garment'
+import type { GarmentPart, ReferenceGarment, ReferenceGarmentForm } from './reference-garment'
 
 /** 구분의 실측 코드 (필수 → 선택) */
 export function measurementCodesOf(part: GarmentPart): string[] {
@@ -15,6 +15,21 @@ export function garmentPartOf(categoryPath: string): GarmentPart | null {
       GARMENT_PART_SPEC[part].categoryNames.some((name) => names.includes(name)),
     ) ?? null
   )
+}
+
+/**
+ * 상품 상세에서 기준 옷 등록을 권할 구분. 상품이 기준 옷 구분에 들고 그 구분의 기준 옷이 아직 없을 때만.
+ * 기준 옷 구분이 아닌 옷(모자 · 양말) · 사이즈 무관 상품 · 카테고리를 모르면 null
+ */
+export function referencePartToRegister(
+  categoryPath: string | null,
+  isSizeFree: boolean,
+  garments: ReferenceGarment[],
+): GarmentPart | null {
+  if (isSizeFree || categoryPath === null) return null
+  const part = garmentPartOf(categoryPath)
+  if (part === null || garments.some((garment) => garment.part === part)) return null
+  return part
 }
 
 /**

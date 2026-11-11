@@ -17,12 +17,16 @@ import {
   picksOfOption,
   type OptionPicks,
   ProductSpecs,
+  useCategoriesQuery,
   useProductQuery,
   WearPreview,
 } from '@/entities/product'
 import {
+  GARMENT_PART_SPEC,
+  referencePartToRegister,
   sizeRangesOf,
   useCompanionProductsQuery,
+  useReferenceGarmentsQuery,
   useSizeRecommendationQuery,
 } from '@/entities/recommendation'
 import { useSessionStore } from '@/entities/session'
@@ -54,6 +58,9 @@ export function ShopProductDetailPage() {
   const recommendation = useSizeRecommendationQuery(productId, recommendedChildId)
   // 함께 사면 좋은 상품은 AI 응답이 3초 가까이 걸려, 영역이 보일 때가 아니라 상세와 함께 바로 부른다
   const companions = useCompanionProductsQuery(productId, recommendedChildId)
+  // 기준 옷 등록 안내: 고른 자녀의 기준 옷 · 카테고리 경로(구분을 정함)
+  const garments = useReferenceGarmentsQuery(recommendedChildId)
+  const categories = useCategoriesQuery()
   // 보호자 회원만 기록한다 (자녀 화면은 자녀 토큰이라 부르지 않음)
   useRecordProductView(productId, childId, Boolean(user) && !isChild)
   // 로그인하고 돌아오면 주소(?option=&qty=)에 실어 둔 옵션 · 수량으로 시작한다. 고르기 전까지는 null
@@ -87,6 +94,11 @@ export function ShopProductDetailPage() {
   const isSelling = isOnSale(detail)
   // 추천 한 줄은 사이즈 칩 바로 위에 (사이즈 항목이 없는 상품이면 옵션 맨 위)
   const sizeAttributeId = detail.optionAttributes.find((attribute) => attribute.isSize)?.id ?? null
+  const categoryPath = categories.data?.find((c) => c.id === detail.categoryId)?.path ?? null
+  const partToRegister =
+    pickedChild && garments.data
+      ? referencePartToRegister(categoryPath, detail.sizeFree, garments.data)
+      : null
   const sizeAdvice = (
     <>
       {recommendation.isFetching && <StateMessage>추천 계산 중…</StateMessage>}
@@ -98,6 +110,12 @@ export function ShopProductDetailPage() {
           child={pickedChild}
           recommendation={recommendation.data}
           sizes={sizeRangesOf(detail.sizeSpecs)}
+          referenceGarmentLink={
+            partToRegister && {
+              label: `${GARMENT_PART_SPEC[partToRegister].label} 기준 옷 적기`,
+              to: paths.shop.childReferenceGarments(pickedChild.id),
+            }
+          }
           preview={
             <WearPreview
               specs={detail.sizeSpecs}
