@@ -1,7 +1,6 @@
 import { GARMENT_PART_SPEC, type GarmentPart } from '@/entities/recommendation'
 import { formatDateTime } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
-import { MockBadge } from '@/shared/ui/MockBadge'
 
 /** 산 옷 한 줄: 채울 수 있는 칸이 없으면 기준 옷으로 쓸 수 없는 옷 */
 export type PurchasedGarmentRow = {
@@ -30,10 +29,7 @@ export function PurchasedGarmentPicker({
 }: PurchasedGarmentPickerProps) {
   return (
     <div className="space-y-2">
-      <h3 className="flex items-center gap-2 text-[15px] font-semibold">
-        산 옷에서 고르기
-        <MockBadge endpoints={['GET /recommendations/children/:childId/purchases']} />
-      </h3>
+      <h3 className="text-[15px] font-semibold">산 옷에서 고르기</h3>
       {rows.length === 0 ? (
         <p className="text-ink-3 text-[13px]">구매확정한 옷이 아직 없어요.</p>
       ) : (
