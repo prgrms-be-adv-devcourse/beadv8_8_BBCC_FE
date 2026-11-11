@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { appSettings, env, useAppSettings } from '@/shared/config'
+import { appSettings, env, resolveMockEnabled, useAppSettings } from '@/shared/config'
 
 describe('실행 중 설정 (앱 시작 때 BE 설정을 적용)', () => {
   const initial = appSettings.current()
@@ -25,5 +25,20 @@ describe('실행 중 설정 (앱 시작 때 BE 설정을 적용)', () => {
     unsubscribe()
 
     expect(seen).toEqual([false])
+  })
+})
+
+describe('시연 데이터(목) 사용 여부: 관리자 설정에서 고른 값이 빌드 값보다 앞선다', () => {
+  it('고른 적이 없으면 빌드 값을 따른다 (없으면 켬)', () => {
+    expect(resolveMockEnabled(undefined, null)).toBe(true)
+    expect(resolveMockEnabled('true', null)).toBe(true)
+    expect(resolveMockEnabled('false', null)).toBe(false)
+  })
+  it('켬 · 끔을 고른 적이 있으면 빌드 값과 상관없이 그 값을 쓴다', () => {
+    expect(resolveMockEnabled('false', 'on')).toBe(true)
+    expect(resolveMockEnabled(undefined, 'off')).toBe(false)
+  })
+  it('알 수 없는 저장 값은 무시하고 빌드 값을 쓴다', () => {
+    expect(resolveMockEnabled('false', 'yes')).toBe(false)
   })
 })
