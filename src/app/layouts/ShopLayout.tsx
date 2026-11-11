@@ -34,7 +34,7 @@ export function ShopLayout() {
         <footer className="bg-paper-2 mt-10">
           <div className="text-ink-3 mx-auto max-w-6xl space-y-3 px-4 py-10 text-[13px] md:px-6">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <span className="text-ink-2 font-sans text-lg font-black tracking-tight">Kidly</span>
+              <span className="font-display text-ink-2 text-xl">kidly</span>
               <Link to={paths.center.apply} className="text-ink-2 hover:text-ink font-semibold">
                 판매자 입점
               </Link>
