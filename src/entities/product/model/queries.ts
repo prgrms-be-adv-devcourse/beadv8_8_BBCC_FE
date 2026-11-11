@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import { productApi } from '../api/product-api'
 import type { ProductDetailDto, ProductListItemDto } from '../api/product.dto'
 import type { Page } from '@/shared/api'
-import type { Category, ProductSearch } from './product'
+import type { Category, CategoryGender, ProductSearch } from './product'
 import {
   toCategories,
   toCategoryGroups,
@@ -22,17 +22,21 @@ export const productKeys = {
   detail: (productId: string) => ['products', 'detail', productId] as const,
   sellerList: ['products', 'seller'] as const,
   sellerDetail: (productId: string) => ['products', 'seller', productId] as const,
-  categories: ['products', 'categories'] as const,
+  categories: (gender: CategoryGender | null = null) =>
+    ['products', 'categories', gender ?? 'ALL'] as const,
   categoryInputs: (categoryId: string) => ['products', 'category-inputs', categoryId] as const,
 }
 
 const NO_CATEGORIES: Category[] = []
 
-/** 카테고리는 거의 바뀌지 않아 한 번만 불러온다 */
-export function useCategoriesQuery() {
+/**
+ * 카테고리는 거의 바뀌지 않아 한 번만 불러온다. 고른 자녀의 성별을 주면 그 자녀에게 보일 카테고리만 받는다
+ * (쇼핑 홈 · 맞춤 목록). 상품 상세의 카테고리 이름 찾기처럼 전체가 필요하면 주지 않는다
+ */
+export function useCategoriesQuery(gender: CategoryGender | null = null) {
   return useQuery({
-    queryKey: productKeys.categories,
-    queryFn: productApi.categories,
+    queryKey: productKeys.categories(gender),
+    queryFn: () => productApi.categories(gender),
     select: (tree) => toCategories(tree),
     staleTime: Infinity,
   })
@@ -41,8 +45,8 @@ export function useCategoriesQuery() {
 /** 등록 화면 2단 선택용 카테고리 묶음 (같은 트리를 한 번만 불러온다) */
 export function useCategoryGroupsQuery() {
   return useQuery({
-    queryKey: productKeys.categories,
-    queryFn: productApi.categories,
+    queryKey: productKeys.categories(),
+    queryFn: () => productApi.categories(),
     select: (tree) => toCategoryGroups(tree),
     staleTime: Infinity,
   })

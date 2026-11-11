@@ -1,6 +1,6 @@
 // 가짜 백엔드의 추천 기준 옷 (BE #1111, 5칸 FE #280): 자녀별 상의 · 바지 · 아우터 · 원피스 · 치마 한 벌씩
-// (응답 모양과 거절만 흉내). 세부 종류는 가짜 상품 카테고리(11 상의, 12 하의)로 판단한다. 가짜 상품에는
-// 아우터 · 원피스 · 치마 카테고리가 없어 그 칸은 저장되지 않는다. 결과는 { status, body } 또는 { status, title, detail }
+// (응답 모양과 거절만 흉내). 세부 종류는 가짜 상품 카테고리(11 상의, 12 바지, 13 치마)로 판단한다. 가짜 상품에는
+// 아우터 · 원피스 카테고리가 없어 그 칸은 저장되지 않는다. 결과는 { status, body } 또는 { status, title, detail }
 const TOP_ITEMS = {
   required: ['TOTAL_LENGTH', 'CHEST_WIDTH'],
   optional: ['SHOULDER_WIDTH', 'SLEEVE_LENGTH'],
@@ -14,10 +14,14 @@ const PARTS = {
     optional: ['SHOULDER_WIDTH'],
     categoryIds: [],
   },
-  SKIRT: { required: ['TOTAL_LENGTH', 'WAIST_WIDTH'], optional: ['HIP_WIDTH'], categoryIds: [] },
+  SKIRT: {
+    required: ['TOTAL_LENGTH', 'WAIST_WIDTH'],
+    optional: ['HIP_WIDTH'],
+    categoryIds: ['13'],
+  },
 }
 const PART_ORDER = Object.keys(PARTS)
-const LEAF_IDS = ['11', '12']
+const LEAF_IDS = ['11', '12', '13']
 /** 자녀 ID → { TOP?: garment, BOTTOM?: garment, … } */
 const garments = new Map()
 

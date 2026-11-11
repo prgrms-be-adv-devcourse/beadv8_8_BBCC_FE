@@ -4,7 +4,7 @@
 import http from 'node:http'
 import {
   categoryInputs,
-  categoryTree,
+  categoryTreeFor,
   listOf as productListOf,
   adjustInventory,
   adminChangeSaleStatus,
@@ -658,7 +658,12 @@ http
     if (r('POST', /^\/auth\/child\/logout$/))
       return send(res, 204, undefined, { 'set-cookie': childCookie('', 0) })
     // 공개 API: 카테고리 · 입력 항목 · 상품 상세
-    if (r('GET', /^\/categories$/)) return send(res, 200, categoryTree)
+    if (r('GET', /^\/categories$/)) {
+      const gender = url.searchParams.get('gender')
+      if (gender !== null && gender !== 'MALE' && gender !== 'FEMALE')
+        return problem(res, 400, '잘못된 요청입니다', 'gender: 값이 올바르지 않습니다.', req.url)
+      return send(res, 200, categoryTreeFor(gender))
+    }
     if ((x = r('GET', /^\/categories\/(\d+)\/attributes$/))) {
       const inputs = categoryInputs(+x[1])
       return inputs

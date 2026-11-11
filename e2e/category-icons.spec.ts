@@ -10,7 +10,7 @@ test('쇼핑 홈: 기본 카테고리는 아이콘, 새 카테고리는 첫 글�
     await route.fulfill({ response, json: [...tree, extra] })
   })
   await page.goto('/')
-  for (const name of ['전체 카테고리', '상의', '하의']) {
+  for (const name of ['전체 카테고리', '상의', '바지', '치마']) {
     await expect(page.getByRole('button', { name, exact: true }).locator('svg')).toBeVisible()
   }
   const shoes = page.getByRole('button', { name: '신발', exact: true })

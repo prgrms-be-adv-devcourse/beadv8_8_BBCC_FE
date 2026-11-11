@@ -167,6 +167,9 @@ export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
 /** 고를 수 있는 카테고리 (트리의 끝). path = "상위 > 하위" */
 export type Category = { id: string; name: string; path: string }
 
+/** 카테고리 목록을 볼 자녀의 성별. MALE이면 여아 전용 카테고리(원피스 · 치마)를 뺀 목록이 온다 (BE #1219) */
+export type CategoryGender = 'MALE' | 'FEMALE'
+
 /** 등록 화면 2단 선택: 가장 위 카테고리와 그 아래 끝 카테고리 */
 export type CategoryGroup = { id: string; name: string; categories: Category[] }
 

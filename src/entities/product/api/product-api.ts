@@ -29,8 +29,11 @@ import {
 // 실제: 카테고리 · 입력 항목 · 목록 · 상세 · 등록 · 판매 시작 · 판매자 목록 · 상세 · 재고 조정 · 판매 중지(판매자 · 관리자). 목: 수정
 
 export const productApi = {
-  categories: () =>
-    apiClient.get<CategoryTreeDto[]>('/categories').then(expectShape(categoryTreeShape)),
+  /** 카테고리 트리. 고른 자녀의 성별을 주면 그 자녀에게 보일 카테고리만 (MALE이면 원피스 · 치마 제외), 없으면 모두 */
+  categories: (gender: 'MALE' | 'FEMALE' | null = null) =>
+    apiClient
+      .get<CategoryTreeDto[]>('/categories', gender ? { params: { gender } } : undefined)
+      .then(expectShape(categoryTreeShape)),
   /** 카테고리에 맞는 등록 폼 항목 (옵션 · 정보 항목과 고를 값, 실측 항목) */
   categoryInputs: (categoryId: string) =>
     apiClient

@@ -98,13 +98,14 @@ test('보호자는 자녀 프로필에서 상의 기준 옷을 저장하고 지�
     await page.getByRole('link', { name: '잘 맞는 옷(기준 옷) 적기' }).click()
     await expect(page).toHaveURL(new RegExp(`/my/children/${child.id}#reference-garments$`))
     await expect(page.getByRole('heading', { name: '기준 옷' })).toBeVisible()
-    // 상의 · 바지 · 아우터 · 원피스 · 치마 5칸. 가짜 상품에는 치마 카테고리가 없어 고를 세부 종류가 없다고 알린다
+    // 상의 · 바지 · 아우터 · 원피스 · 치마 5칸. 가짜 상품에는 원피스 카테고리가 없어 고를 세부 종류가 없다고 알린다
+    // (치마는 BE #1219에서 생겨 고를 수 있다)
     for (const label of ['상의', '바지', '아우터', '원피스', '치마'])
       await expect(page.getByRole('form', { name: `${label} 기준 옷` })).toBeVisible()
     await expect(
       page
-        .getByRole('form', { name: '치마 기준 옷' })
-        .getByText('아직 치마 카테고리 상품이 없어 고를 세부 종류가 없어요.'),
+        .getByRole('form', { name: '원피스 기준 옷' })
+        .getByText('아직 원피스 카테고리 상품이 없어 고를 세부 종류가 없어요.'),
     ).toBeVisible()
   })
 
@@ -112,7 +113,7 @@ test('보호자는 자녀 프로필에서 상의 기준 옷을 저장하고 지�
   await test.step('필수 실측이 없거나 값이 틀리면 저장 전에 막는다', async () => {
     await expect(top.getByText('아직 저장한 기준 옷이 없어요.')).toBeVisible()
     // 상의 칸은 상의 카테고리만 고를 수 있다
-    await expect(top.getByLabel('세부 종류').locator('option', { hasText: '하의' })).toHaveCount(0)
+    await expect(top.getByLabel('세부 종류').locator('option', { hasText: '바지' })).toHaveCount(0)
     await top.getByLabel('세부 종류').selectOption({ label: '의류 > 상의' })
     await top.getByLabel('총장 (cm, 필수)').fill('42')
     await top.getByRole('button', { name: '기준 옷 저장' }).click()
