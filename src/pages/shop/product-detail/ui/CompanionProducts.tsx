@@ -1,50 +1,58 @@
 import { ProductTile } from '@/entities/product'
-import type { RecommendedPicks } from '@/entities/recommendation'
+import {
+  PickReveal,
+  RecommendedPicksLoading,
+  RecommendedPicksNotice,
+  type RecommendedPicks,
+} from '@/entities/recommendation'
 import { paths } from '@/shared/config'
-import { Skeleton } from '@/shared/ui/Skeleton'
 
-const SLOT_COUNT = 4
+const WAITING = '함께 입기 좋은 상품을 고르고 있어요'
 
 type CompanionProductsProps = {
   /** 고른 자녀. 없으면 그리지 않는다 */
   childId: string | null
   isPending: boolean
-  /** 실패(504 포함)면 undefined → 영역을 숨긴다 */
-  picks: RecommendedPicks | undefined
+  isError: boolean
+  /** 그릴 결과(AI, 없으면 규칙). 함께 볼 상품이 없으면 null */
+  picks: RecommendedPicks | null | undefined
+  onRetry: () => void
 }
 
 /**
  * 상품 상세 맨 아래 「함께 사면 좋은 상품」: 카드 4칸 + 카드마다 추천 이유.
- * 불러오는 동안 카드 · 이유 자리를 두고, 상품이 없거나 실패하면 영역을 숨긴다. 이유가 없는 카드는 이유 칸을 그리지 않는다
+ * AI 답을 기다리는 동안 카드 칸마다 원형 로딩을 두고, 답이 오면 그 자리에서 부드럽게 나타난다.
+ * 불러오지 못했거나 함께 볼 상품이 없어도 영역을 남기고 안내한다. 이유가 없는 카드는 이유 칸을 그리지 않는다
  */
-export function CompanionProducts({ childId, isPending, picks }: CompanionProductsProps) {
+export function CompanionProducts({
+  childId,
+  isPending,
+  isError,
+  picks,
+  onRetry,
+}: CompanionProductsProps) {
   if (!childId) return null
-  if (!isPending && !picks?.products.length) return null
 
   return (
     <section aria-labelledby="companion-products" className="space-y-4">
-      <h2 id="companion-products" className="text-section">
-        함께 사면 좋은 상품
-      </h2>
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 id="companion-products" className="text-section">
+          함께 사면 좋은 상품
+        </h2>
+        {isPending && <span className="text-ink-2 text-[13px]">{WAITING}</span>}
+      </div>
       {isPending ? (
-        <div
-          role="status"
-          aria-label="불러오는 중"
-          className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-4"
-        >
-          {Array.from({ length: SLOT_COUNT }, (_, index) => (
-            <div key={index} className="space-y-2">
-              <Skeleton className="rounded-card aspect-[3/4]" />
-              <Skeleton className="h-3 w-1/3" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-8 w-full" />
-            </div>
-          ))}
-        </div>
+        <RecommendedPicksLoading message={WAITING} />
+      ) : isError ? (
+        <RecommendedPicksNotice onRetry={onRetry}>
+          지금은 함께 볼 상품을 불러오지 못했어요
+        </RecommendedPicksNotice>
+      ) : !picks ? (
+        <RecommendedPicksNotice>이 상품과 함께 볼 만한 상품이 아직 없어요</RecommendedPicksNotice>
       ) : (
         <ul className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-4">
-          {picks?.products.map((product) => (
-            <li key={product.id} className="space-y-2">
+          {picks.products.map((product, index) => (
+            <PickReveal key={product.id} index={index} className="space-y-2">
               <ProductTile
                 to={paths.shop.product(product.id, childId)}
                 name={product.name}
@@ -62,7 +70,7 @@ export function CompanionProducts({ childId, isPending, picks }: CompanionProduc
                   {product.reason}
                 </p>
               )}
-            </li>
+            </PickReveal>
           ))}
         </ul>
       )}

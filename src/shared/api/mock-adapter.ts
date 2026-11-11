@@ -21,7 +21,11 @@ export type MockRequest = {
   headers: InternalAxiosRequestConfig['headers']
 }
 
-export type MockResult = { status: number; data?: unknown }
+/** SSE 목 이벤트 하나. delayMs만큼 기다렸다 보낸다 (AI 답을 기다리는 시간 흉내) */
+export type MockStreamEvent = { event: string; data: unknown; delayMs?: number }
+
+/** events를 주면 text/event-stream으로 흘려보낸다 (요청이 responseType 'stream'일 때) */
+export type MockResult = { status: number; data?: unknown; events?: MockStreamEvent[] }
 
 type MockMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -156,6 +160,34 @@ function notifyObservers(
   }
 }
 
+function textStreamOf(text: string): ReadableStream<Uint8Array> {
+  return (
+    new Response(text).body ?? new ReadableStream({ start: (controller) => controller.close() })
+  )
+}
+
+/** 목 SSE 이벤트를 차례로 흘려보내는 스트림. 요청을 끊으면(signal) 닫는다 */
+function eventStreamOf(
+  events: MockStreamEvent[],
+  signal: InternalAxiosRequestConfig['signal'],
+): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder()
+  let index = 0
+  return new ReadableStream({
+    async pull(controller) {
+      const next = events[index++]
+      if (!next || signal?.aborted) {
+        controller.close()
+        return
+      }
+      if (next.delayMs) await new Promise((resolve) => setTimeout(resolve, next.delayMs))
+      controller.enqueue(
+        encoder.encode(`event: ${next.event}\ndata: ${JSON.stringify(next.data)}\n\n`),
+      )
+    },
+  })
+}
+
 export function createMockAdapter(realAdapter: AxiosAdapter): AxiosAdapter {
   return async (config) => {
     const [pathname, search = ''] = (config.url ?? '').split('?')
@@ -180,10 +212,20 @@ export function createMockAdapter(realAdapter: AxiosAdapter): AxiosAdapter {
       await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
       const response: AxiosResponse = {
         // 실제 네트워크처럼 복사본을 준다 (목 저장소 객체를 그대로 넘기면 캐시가 바뀐 줄 모른다)
-        data: result.data === undefined ? '' : JSON.parse(JSON.stringify(result.data)),
+        data: result.events
+          ? eventStreamOf(result.events, config.signal)
+          : config.responseType === 'stream'
+            ? // 실제 fetch처럼 스트림 요청은 오류 본문(ProblemDetail)도 스트림으로 준다
+              textStreamOf(result.data === undefined ? '' : JSON.stringify(result.data))
+            : result.data === undefined
+              ? ''
+              : JSON.parse(JSON.stringify(result.data)),
         status: result.status,
         statusText: String(result.status),
-        headers: new AxiosHeaders({ 'x-mock': 'true' }),
+        headers: new AxiosHeaders({
+          'x-mock': 'true',
+          ...(result.events ? { 'content-type': 'text/event-stream' } : {}),
+        }),
         config,
         request: null,
       }

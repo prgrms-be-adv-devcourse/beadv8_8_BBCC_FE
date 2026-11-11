@@ -103,7 +103,7 @@ import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
 import { toWriteReviewRequest } from '@/features/write-review'
 import { toReview } from '@/entities/review'
-import { arr, validate, type Shape } from '@/shared/api'
+import { arr, readSseEvents, validate, type Shape } from '@/shared/api'
 
 // E2E가 쓰는 가짜 백엔드의 응답이 FE 계약(응답 모양)과 같은지 확인한다.
 // 어긋나면 E2E가 아니라 여기서 먼저, 어느 필드인지까지 드러난다.
@@ -1436,6 +1436,36 @@ it('맞춤 목록: 1쪽 응답의 기준 시각 asOf를 2쪽에 넘기면 그대
   const future = await call('GET', `${path}&page=1&asOf=2999-01-01T00:00:00`, 1)
   expect(future.status).toBe(400)
   expect(future.data.title).toBe('잘못된 기준 시각입니다')
+})
+
+/** Accept: text/event-stream으로 불러 이벤트 이름 · data를 읽는다 */
+async function stream(url: string, as: number) {
+  const response = await fetch(`${BASE}${url}`, {
+    headers: { accept: 'text/event-stream', authorization: `Bearer ${tokens[as]}` },
+  })
+  expect(response.headers.get('content-type')).toBe('text/event-stream')
+  const events = await readSseEvents(response.body!)
+  return events.map((item) => ({ event: item.event, data: JSON.parse(item.data) as unknown }))
+}
+
+it('함께 사면 · 홈 맛보기 SSE: rule → ai, 다시 물으면 ai만, 규칙 답이면 rule만 (FE #290)', async () => {
+  const child = await call('POST', '/children', 1, {
+    ...toChildRequest(DEMO_CHILD),
+    requiredConsent: true,
+    optionalConsent: true,
+  })
+  const companions = (productId: string) =>
+    `/recommendations/companions?productId=${productId}&childId=${child.data.id}`
+
+  const first = await stream(companions('1'), 1)
+  expect(first.map((item) => item.event)).toEqual(['rule', 'ai'])
+  first.forEach((item) => expectContract(item.data, companionProductsShape))
+  expect((await stream(companions('1'), 1)).map((item) => item.event)).toEqual(['ai'])
+  expect((await stream(companions('2'), 1)).map((item) => item.event)).toEqual(['rule'])
+
+  const preview = await stream(`/recommendations/products/preview?childId=${child.data.id}`, 1)
+  expect(preview.map((item) => item.event)).toEqual(['rule', 'ai'])
+  preview.forEach((item) => expectContract(item.data, homePreviewShape))
 })
 
 it('함께 사면 좋은 상품: AI · RULE 응답 모두 계약 모양이고, 이유는 null일 수 있다 (BE #1164)', async () => {

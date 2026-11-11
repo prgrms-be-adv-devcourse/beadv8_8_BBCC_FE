@@ -138,7 +138,8 @@ function record(config: InternalAxiosRequestConfig, response: AxiosResponse | un
     startedAt: new Date(performance.timeOrigin + startedAt).toISOString(),
     mock: response?.headers['x-mock'] === 'true',
     requestBody: parseBody(config.data),
-    responseBody: response?.data ?? null,
+    // 스트림은 아직 읽기 전이라 비워 두고, 다 읽은 뒤 getEventStream이 채운다
+    responseBody: config.responseType === 'stream' ? null : (response?.data ?? null),
   })
 }
 

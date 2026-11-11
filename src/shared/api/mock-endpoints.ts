@@ -115,15 +115,15 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'GET',
     path: '/recommendations/products/preview',
-    source: 'real',
-    backend: 'BE #1163 develop 머지 → 실제 (FE #275)',
+    source: 'mock',
+    backend: 'BE SSE 구현 전 → SSE 목 (FE #290). JSON 응답 API는 실제',
     screens: '쇼핑 홈(맞춤 맛보기 4개)',
   },
   {
     method: 'GET',
     path: '/recommendations/companions',
-    source: 'real',
-    backend: 'BE #1164 develop 머지 → 실제 (FE #266). AI 응답이 느리면 Gateway 504',
+    source: 'mock',
+    backend: 'BE SSE 구현 전 → SSE 목 (FE #290). JSON 응답 API는 실제',
     screens: '쇼핑 · 콘솔 상품 상세(함께 사면 좋은 상품)',
   },
   // 주문

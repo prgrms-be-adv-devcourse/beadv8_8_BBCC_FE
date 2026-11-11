@@ -162,7 +162,8 @@ type CompanionCardProps = {
   childId: string
   isPending: boolean
   isError: boolean
-  picks: RecommendedPicks | undefined
+  /** 그릴 결과 (AI, 없으면 규칙). 그릴 것이 없으면 null */
+  picks: RecommendedPicks | null | undefined
 }
 
 /** 함께 사면 좋은 상품 (자녀를 골랐을 때). 콘솔은 쇼핑과 달리 빈 결과 · 실패도 문구로 남긴다 */
@@ -177,9 +178,9 @@ function CompanionCard({ childId, isPending, isError, picks }: CompanionCardProp
           </span>
         )}
       </p>
-      {isPending && <StateMessage>AI 추천 계산 중…</StateMessage>}
+      {isPending && <StateMessage>AI 추천 계산 중… (SSE: 규칙 결과 → AI 답)</StateMessage>}
       {isError && <StateMessage>불러오지 못해 쇼핑 화면에서는 영역을 숨겨요.</StateMessage>}
-      {picks?.products.length === 0 && <StateMessage>함께 살 만한 상품이 없어요.</StateMessage>}
+      {picks === null && <StateMessage>함께 살 만한 상품이 없어요.</StateMessage>}
       <ul className="space-y-1.5 text-sm">
         {picks?.products.map((product) => (
           <li key={product.id}>

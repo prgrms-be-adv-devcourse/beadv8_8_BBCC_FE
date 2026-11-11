@@ -1,12 +1,15 @@
 import { Link } from 'react-router'
 import { ChildPicker, SizeRulerBar, sizeRulerOf, type Child } from '@/entities/child'
 import { ProductTile } from '@/entities/product'
-import { useHomePreviewQuery } from '@/entities/recommendation'
+import {
+  PickReveal,
+  RecommendedPicksLoading,
+  RecommendedPicksNotice,
+  useHomePreviewQuery,
+} from '@/entities/recommendation'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { MockBadge } from '@/shared/ui/MockBadge'
-import { CardGridSkeleton } from '@/shared/ui/Skeleton'
-import { StateMessage } from '@/shared/ui/StateMessage'
 
 type RecommendedPreviewProps = {
   kids: Child[]
@@ -19,11 +22,12 @@ type RecommendedPreviewProps = {
  * 자녀가 없으면 그리지 않는다 (안내는 머리말 띠)
  */
 export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPreviewProps) {
-  // 맛보기 4개는 AI가 맞춤 상위 20개 중에서 고르고 이유를 쓴다. 나머지는 「더보기」(맞춤 목록 화면)에서 본다
+  // 맛보기 4개는 AI가 맞춤 상위 20개 중에서 고르고 이유를 쓴다(SSE). 나머지는 「더보기」(맞춤 목록 화면)에서 본다
   const preview = useHomePreviewQuery(child?.id ?? null)
 
   if (!child) return null
   const ruler = sizeRulerOf(child.heightCm)
+  const waiting = `${child.name}에게 맞는 상품을 고르고 있어요`
 
   return (
     <section aria-label="맞춤 상품" className="border-rule space-y-5 rounded-lg border p-4 md:p-6">
@@ -76,37 +80,46 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
         </div>
         <SizeRulerBar ruler={ruler} name={child.name} />
       </div>
-      {preview.isPending && <CardGridSkeleton count={4} />}
+      {preview.isPending && (
+        <div className="space-y-3">
+          <p className="text-ink-2 text-[13px]">{waiting}</p>
+          <RecommendedPicksLoading message={waiting} />
+        </div>
+      )}
       {preview.isError && (
-        <StateMessage tone="error">{getErrorMessage(preview.error)}</StateMessage>
+        <RecommendedPicksNotice onRetry={() => void preview.refetch()}>
+          {getErrorMessage(preview.error)}
+        </RecommendedPicksNotice>
       )}
-      {preview.data?.products.length === 0 && (
-        <StateMessage>맞는 사이즈가 판매 중인 상품이 없어요.</StateMessage>
+      {preview.data === null && (
+        <RecommendedPicksNotice>맞는 사이즈가 판매 중인 상품이 없어요.</RecommendedPicksNotice>
       )}
-      <ul className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-4">
-        {preview.data?.products.map((product) => (
-          <li key={product.id} className="space-y-2">
-            <ProductTile
-              to={paths.shop.product(product.id, child.id)}
-              name={product.name}
-              seller={product.businessName}
-              price={product.minPrice}
-              imageUrl={product.imageUrl}
-              tag={
-                product.recommendedSize
-                  ? { text: `${product.recommendedSize} 잘 맞아요`, fit: true }
-                  : { text: '사이즈 무관' }
-              }
-            />
-            {/* 이유가 없으면(규칙으로 채운 상품) 칸을 그리지 않는다 */}
-            {product.reason && (
-              <p className="text-ink-2 bg-paper-2 rounded-md px-2.5 py-2 text-[13px] leading-snug">
-                {product.reason}
-              </p>
-            )}
-          </li>
-        ))}
-      </ul>
+      {preview.data && (
+        <ul className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-4">
+          {preview.data.products.map((product, index) => (
+            <PickReveal key={product.id} index={index} className="space-y-2">
+              <ProductTile
+                to={paths.shop.product(product.id, child.id)}
+                name={product.name}
+                seller={product.businessName}
+                price={product.minPrice}
+                imageUrl={product.imageUrl}
+                tag={
+                  product.recommendedSize
+                    ? { text: `${product.recommendedSize} 잘 맞아요`, fit: true }
+                    : { text: '사이즈 무관' }
+                }
+              />
+              {/* 이유가 없으면(규칙으로 채운 상품) 칸을 그리지 않는다 */}
+              {product.reason && (
+                <p className="text-ink-2 bg-paper-2 rounded-md px-2.5 py-2 text-[13px] leading-snug">
+                  {product.reason}
+                </p>
+              )}
+            </PickReveal>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

@@ -1,6 +1,10 @@
 export { recommendationApi } from './api/recommendation-api'
 /** 목 응답 작성 전용 (app/mocks) */
-export type { RecommendedProductDto, SizeRecommendationDto } from './api/recommendation.dto'
+export type {
+  CompanionProductsDto,
+  RecommendedProductDto,
+  SizeRecommendationDto,
+} from './api/recommendation.dto'
 export type { ReferenceGarmentDto, ReferenceGarmentRequestDto } from './api/reference-garment.dto'
 export type { PurchasedGarmentDto } from './api/purchased-garment.dto'
 export {
@@ -35,10 +39,14 @@ export {
   useSizeRecommendationQuery,
 } from './model/queries'
 export { candidateNoteOf } from './model/size-recommendation.rules'
+export { shownPicksOf } from './model/recommended-picks.rules'
 export { sizeScaleOf, type SizeScale } from './model/size-scale.rules'
 export { nextRecommendedPageOf } from './model/recommended-page.rules'
 export { FIT_LABEL, SIZE_REASON_LABEL } from './model/recommendation'
 export { FitBadge } from './ui/FitBadge'
+export { PickReveal } from './ui/PickReveal'
+export { RecommendedPicksLoading } from './ui/RecommendedPicksLoading'
+export { RecommendedPicksNotice } from './ui/RecommendedPicksNotice'
 export { SizeReasonList } from './ui/SizeReasonList'
 export { SizeRecommendationSummary } from './ui/SizeRecommendationSummary'
 export {

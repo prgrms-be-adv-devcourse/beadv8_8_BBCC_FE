@@ -272,7 +272,9 @@ export function ShopProductDetailPage() {
       <CompanionProducts
         childId={recommendedChildId}
         isPending={companions.isPending}
+        isError={companions.isError}
         picks={companions.data}
+        onRetry={() => void companions.refetch()}
       />
     </div>
   )
