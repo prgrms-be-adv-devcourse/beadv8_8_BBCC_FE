@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { adminHandlers } from '@/app/mocks/admin-handlers'
 import { memberHandlers } from '@/app/mocks/member-handlers'
 import { orderHandlers } from '@/app/mocks/order-handlers'
+import { recommendHandlers } from '@/app/mocks/recommend-handlers'
 import { MOCK_ENDPOINTS } from '@/shared/api'
 
-const handlers = [...orderHandlers, ...memberHandlers, ...adminHandlers]
+const handlers = [...orderHandlers, ...memberHandlers, ...adminHandlers, ...recommendHandlers]
 const key = (item: { method: string; path: string }) => `${item.method} ${item.path}`
 
 describe('엔드포인트별 목 ↔ 실제 목록 (mock-endpoints)', () => {

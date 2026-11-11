@@ -11,17 +11,19 @@ import {
   type ReferenceGarmentForm,
 } from '@/entities/recommendation'
 
-// 추천 기준 옷: 자녀별 상의 · 하의 한 벌씩. 상의는 총장 · 가슴단면 필수, 어깨너비 · 소매길이 선택.
-// 하의는 총장 · 허리단면 필수, 밑위 선택. 값은 cm, 0 초과 200 이하, 소수 첫째 자리까지
+// 추천 기준 옷: 자녀별 상의 · 바지 · 아우터 · 원피스 · 치마 한 벌씩. 상의 · 아우터는 총장 · 가슴단면 필수,
+// 어깨너비 · 소매길이 선택. 원피스는 총장 · 가슴단면 필수, 어깨너비 선택. 바지는 총장 · 허리단면 필수, 밑위 선택.
+// 치마는 총장 · 허리단면 필수, 엉덩이단면 선택. 값은 cm, 0 초과 200 이하, 소수 첫째 자리까지
 
 describe('기준 옷 구분과 카테고리', () => {
   it.each([
     ['의류 > 상의', 'TOP'],
     ['의류 > 상의 > 티셔츠', 'TOP'],
-    ['의류 > 아우터', 'TOP'],
-    ['원피스', 'TOP'],
+    ['의류 > 아우터', 'OUTER'],
+    ['원피스', 'DRESS'],
     ['의류 > 하의', 'BOTTOM'],
-    ['의류 > 치마', 'BOTTOM'],
+    ['의류 > 바지', 'BOTTOM'],
+    ['의류 > 치마', 'SKIRT'],
     ['잡화 > 모자', null],
     ['의류 > 상의세트', null],
   ])('카테고리 경로 %s의 구분은 %s다', (path, expected) => {
@@ -35,7 +37,8 @@ describe('기준 옷 구분과 카테고리', () => {
       { id: '13', name: '아우터', path: '의류 > 아우터' },
       { id: '14', name: '모자', path: '잡화 > 모자' },
     ]
-    expect(categoriesForPart('TOP', categories).map((c) => c.id)).toEqual(['11', '13'])
+    expect(categoriesForPart('TOP', categories).map((c) => c.id)).toEqual(['11'])
+    expect(categoriesForPart('OUTER', categories).map((c) => c.id)).toEqual(['13'])
     expect(categoriesForPart('BOTTOM', categories).map((c) => c.id)).toEqual(['12'])
   })
 })
@@ -77,6 +80,21 @@ describe('기준 옷 저장 폼 검사', () => {
     ],
   ])('막는 경우 (%#)', (form, message) => {
     expect(validateReferenceGarmentForm('TOP', form)).toBe(message)
+  })
+
+  it('치마는 허리단면이 필수이고 엉덩이단면은 비워도 된다', () => {
+    expect(
+      validateReferenceGarmentForm('SKIRT', {
+        categoryId: '15',
+        measurements: { TOTAL_LENGTH: '35', WAIST_WIDTH: '', HIP_WIDTH: '' },
+      }),
+    ).toBe('허리단면은 꼭 입력해 주세요.')
+    expect(
+      validateReferenceGarmentForm('SKIRT', {
+        categoryId: '15',
+        measurements: { TOTAL_LENGTH: '35', WAIST_WIDTH: '24', HIP_WIDTH: '' },
+      }),
+    ).toBeNull()
   })
 
   it('하의는 허리단면이 필수다', () => {

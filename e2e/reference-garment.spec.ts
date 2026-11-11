@@ -98,6 +98,14 @@ test('보호자는 자녀 프로필에서 상의 기준 옷을 저장하고 지�
     await page.getByRole('link', { name: '잘 맞는 옷(기준 옷) 적기' }).click()
     await expect(page).toHaveURL(new RegExp(`/my/children/${child.id}#reference-garments$`))
     await expect(page.getByRole('heading', { name: '기준 옷' })).toBeVisible()
+    // 상의 · 바지 · 아우터 · 원피스 · 치마 5칸. 가짜 상품에는 치마 카테고리가 없어 고를 세부 종류가 없다고 알린다
+    for (const label of ['상의', '바지', '아우터', '원피스', '치마'])
+      await expect(page.getByRole('form', { name: `${label} 기준 옷` })).toBeVisible()
+    await expect(
+      page
+        .getByRole('form', { name: '치마 기준 옷' })
+        .getByText('아직 치마 카테고리 상품이 없어 고를 세부 종류가 없어요.'),
+    ).toBeVisible()
   })
 
   const top = page.getByRole('form', { name: '상의 기준 옷' })

@@ -102,6 +102,11 @@ export function ReferenceGarmentEditor({
           ))}
         </Select>
       </Label>
+      {categories.length === 0 && (
+        <p className="text-ink-3 text-[12px]">
+          {`아직 ${spec.label} 카테고리 상품이 없어 고를 세부 종류가 없어요.`}
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-3">
         {measurementCodesOf(part).map((code) => (
           <Label key={code}>
