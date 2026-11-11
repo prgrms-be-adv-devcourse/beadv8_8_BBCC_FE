@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { filterSellerProducts, stockLevelOf } from '@/entities/product'
 import {
   bulkTargets,
   countSellerOrdersByTab,
@@ -48,28 +47,6 @@ describe('판매자 주문 탭', () => {
     const targets = bulkTargets(orders, new Set(['1', '3', '4']))
     expect(targets.toShip.map((o) => o.id)).toEqual(['1'])
     expect(targets.toDeliver.map((o) => o.id)).toEqual(['3'])
-  })
-})
-
-describe('재고 수준 (경계: 0 · 5 · 6)', () => {
-  it('0 품절 · 5 이하 적음 · 6 충분', () => {
-    expect(stockLevelOf(0)).toBe('OUT')
-    expect(stockLevelOf(1)).toBe('LOW')
-    expect(stockLevelOf(5)).toBe('LOW')
-    expect(stockLevelOf(6)).toBe('OK')
-  })
-  it('판매자 상품 거르기: 이름 · 재고 적은 것만', () => {
-    const products = [
-      { name: '데일리 맨투맨', totalStock: 20 },
-      { name: '밴딩 조거 팬츠', totalStock: 5 },
-      { name: '후드 집업', totalStock: 0 },
-    ]
-    expect(filterSellerProducts(products, { keyword: ' 조거', lowStockOnly: false })).toHaveLength(
-      1,
-    )
-    expect(
-      filterSellerProducts(products, { keyword: '', lowStockOnly: true }).map((p) => p.name),
-    ).toEqual(['밴딩 조거 팬츠', '후드 집업'])
   })
 })
 

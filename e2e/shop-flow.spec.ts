@@ -182,7 +182,10 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     // 내 상품은 등록 최신순 → 방금 등록한 상품이 목록 표 맨 위 행. 상품명을 눌러 상세로 간다
     await page.getByRole('main').getByRole('link', { name: '상품 관리' }).click()
     await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
-    await page.getByRole('table', { name: '내 상품' }).getByRole('link').first().click()
+    // 등록 전 목록이 캐시에 있다가 새로 받아 오므로, 방금 등록한 상품이 맨 위에 올 때까지 기다린다
+    const newest = page.getByRole('table', { name: '내 상품' }).getByRole('link').first()
+    await expect(newest).toHaveText(/데일리 맨투맨/)
+    await newest.click()
     const mine = page.getByRole('main')
     // 수정 폼은 등록과 같은 칸을 지금 값으로 채운다. 판매 중이라 옵션 · 판매가 · 실측은 잠긴다
     await mine.getByRole('button', { name: '수정' }).click()
@@ -223,17 +226,29 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(mine.getByRole('button', { name: '판매 시작' })).toBeVisible()
     await mine.getByRole('button', { name: '판매 시작' }).click()
     await expect(mine.getByRole('button', { name: '판매 중지' })).toBeVisible()
-    // 재고 적은 상품만 (상품 B 재고 5): 거르기는 목록 화면에서
+    // 재고 적음 탭 (상품 B 옵션 재고 5): 서버가 판매 중 상품 가운데 재고 적은 옵션이 있는 것만 준다
     await mine.getByRole('link', { name: '상품 관리' }).click()
     await expect(page.getByRole('heading', { name: '상품 관리' })).toBeVisible()
-    // 거르기는 주소(?stock=low)에 저장돼 조금 늦게 체크되므로 click 뒤 상태를 기다린다
-    const lowOnly = page.getByRole('checkbox', { name: '재고 적은 상품만' })
-    await lowOnly.click()
-    await expect(lowOnly).toBeChecked()
-    await expect(page.getByText('밴딩 조거 팬츠 (상품 B)')).toBeVisible()
-    await expect(page.getByText(/^(재고 적음|품절)$/).first()).toBeVisible()
-    await lowOnly.click()
-    await expect(lowOnly).not.toBeChecked()
+    const lowTab = page.getByRole('tab', { name: /재고 적음/ })
+    const lowRequest = page.waitForRequest(
+      (request) =>
+        request.url().includes('/seller/products?') &&
+        new URL(request.url()).searchParams.get('lowStock') === 'true' &&
+        new URL(request.url()).searchParams.get('size') === '20',
+    )
+    await lowTab.click()
+    expect(new URL((await lowRequest).url()).searchParams.get('status')).toBe('ON_SALE')
+    await expect(lowTab).toHaveAttribute('aria-selected', 'true')
+    await expect(page).toHaveURL(/stock=low/)
+    const products = page.getByRole('table', { name: '내 상품' })
+    await expect(products.getByText('밴딩 조거 팬츠 (상품 B)')).toBeVisible()
+    // 꼬리표를 누르면 상품 상세의 옵션별 재고로 간다. 상세 위 「재고 확인」은 판매 중 옵션만 센다
+    await products
+      .getByRole('row', { name: /밴딩 조거 팬츠/ })
+      .getByRole('link', { name: '재고 적음 옵션 1개 보기' })
+      .click()
+    await expect(page).toHaveURL(/#option-stock$/)
+    await expect(page.getByText('품절 0 · 재고 적음 1')).toBeVisible()
   })
 
   await test.step('마이페이지: 자녀 · 배송지 등록', async () => {

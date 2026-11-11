@@ -71,6 +71,7 @@ import {
   registerProductResultShape,
   saleStatusResultShape,
   sellerProductDetailShape,
+  sellerProductSummaryPageShape,
 } from '@/entities/product/api/product.shape'
 import {
   toCategoryInputs,
@@ -1555,6 +1556,30 @@ it('카테고리 목록: 남아(MALE)면 여아 전용(치마)을 빼고, 여아
     '바지',
   ])
   expect((await call('GET', '/categories?gender=X', null)).status).toBe(400)
+})
+
+it('판매자 상품 목록: 상태 · 재고 적음으로 거르고 품절 · 재고 적은 옵션 수를 준다 (BE #1239)', async () => {
+  const all = await call('GET', '/seller/products?page=0&size=50', 2)
+  expect(all.status).toBe(200)
+  expectContract(all.data, sellerProductSummaryPageShape)
+
+  const onSale = await call('GET', '/seller/products?status=ON_SALE&page=0&size=1', 2)
+  expect(onSale.data.content.every((row: { status: string }) => row.status === 'ON_SALE')).toBe(
+    true,
+  )
+  expect(onSale.data.totalElements).toBe(
+    all.data.content.filter((row: { status: string }) => row.status === 'ON_SALE').length,
+  )
+
+  const low = await call('GET', '/seller/products?status=ON_SALE&lowStock=true&size=50', 2)
+  for (const row of low.data.content as {
+    soldOutOptionCount: number
+    lowStockOptionCount: number
+  }[])
+    expect(row.soldOutOptionCount + row.lowStockOptionCount).toBeGreaterThan(0)
+
+  const wrong = await call('GET', '/seller/products?status=SELLING', 2)
+  expect(wrong.status).toBe(400)
 })
 
 it('검색: 관련도순 목록은 목록 응답 모양이고, 결과 클릭 기록은 로그인 회원만 204 (BE SearchClickRequest)', async () => {

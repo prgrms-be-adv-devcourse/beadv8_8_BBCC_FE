@@ -30,7 +30,8 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     method: 'GET',
     path: '/seller/products',
     source: 'real',
-    backend: 'BE SellerProductController develop → 실제 (FE #121)',
+    backend:
+      'BE SellerProductController (FE #121), #1241 거르기 · 옵션 수 develop 머지(11/11) → 실제 (FE #298)',
     screens: '판매자 상품 · 판매자 센터',
   },
   {

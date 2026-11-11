@@ -90,7 +90,8 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
         '방금 등록한 상품이 표 맨 위에 있는지 봐요',
         '상품명을 누르면 옵션별 재고 조정 · 수정 화면으로 가요',
       ],
-      watch: 'GET /seller/products — 내 상품 요약(옵션 수 · 총 재고 · 최저가)',
+      watch:
+        'GET /seller/products?status=&lowStock= — 서버가 거른 내 상품 요약(옵션 수 · 총 재고 · 최저가 · 품절 · 재고 적은 옵션 수)',
       next: { label: '③ 사이즈 추천', to: C.products },
     },
   },

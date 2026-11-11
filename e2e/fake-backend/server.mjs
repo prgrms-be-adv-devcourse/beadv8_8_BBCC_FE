@@ -1330,7 +1330,19 @@ http
         ? send(res, 200, result.body)
         : problem(res, result.status, '요청을 처리할 수 없습니다', result.detail, req.url)
     }
-    if (r('GET', /^\/seller\/products$/)) return send(res, 200, page(sellerListOf(me)))
+    if (r('GET', /^\/seller\/products$/)) {
+      const status = url.searchParams.get('status')
+      if (status && !['SALE_PENDING', 'ON_SALE', 'STOPPED', 'DELISTED'].includes(status))
+        return problem(
+          res,
+          400,
+          '잘못된 요청입니다',
+          'status: 판매 상태는 SALE_PENDING · ON_SALE · STOPPED · DELISTED 중 하나입니다.',
+          req.url,
+        )
+      const lowStock = url.searchParams.get('lowStock') === 'true'
+      return send(res, 200, pageFrom(sellerListOf(me, { status, lowStock }), url.searchParams))
+    }
     if ((x = r('GET', /^\/seller\/products\/(\d+)$/))) {
       const detail = sellerDetailOf(me, x[1])
       return detail

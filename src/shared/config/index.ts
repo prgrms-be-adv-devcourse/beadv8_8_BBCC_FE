@@ -20,5 +20,6 @@ export {
   walletPathsOf,
   type Area,
   GARMENT_FROM,
+  OPTION_STOCK,
   REFERENCE_GARMENTS,
 } from './routes'

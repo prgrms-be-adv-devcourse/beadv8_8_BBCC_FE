@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { isOnSale, stockLevelOf, useSellerProductsQuery } from '@/entities/product'
+import {
+  toSellerProductTabSearch,
+  useSellerProductCountQuery,
+  type SellerProductTab,
+} from '@/entities/product'
 import { sumSettlementItems, useSettlementTargetsQuery } from '@/entities/settlement'
 import { SELLER_STATUS_LABEL, useMySellerQuery } from '@/entities/seller'
 import { summarizeSellerOrders, useSellerOrdersQuery } from '@/entities/seller-order'
@@ -13,19 +17,19 @@ import { StateMessage } from '@/shared/ui/StateMessage'
 /**
  * 판매자 센터 첫 화면: 상점 한 줄(읽기 전용) → 오늘 할 일.
  * 발송할 주문을 가장 크게 두고, 나머지 수치는 주문 · 상품 · 정산 묶음으로 가는 실선 사이에 둔다.
- * 누르면 그 탭 · 거르기로 바로 (주소 ?tab= · ?stock=)
+ * 누르면 그 탭 · 거르기로 바로 (주소 ?tab= · ?status= · ?stock=). 상품 숫자는 서버가 센 전체 개수
  */
 export function CenterHomePage() {
   const sellerPaths = sellerPathsOf(useArea())
   const orders = useSellerOrdersQuery()
-  const products = useSellerProductsQuery()
+  const onSaleCount = useSellerProductCountQuery('ON_SALE').data
+  const stoppedCount = useSellerProductCountQuery('STOPPED').data
+  const lowStockCount = useSellerProductCountQuery('LOW_STOCK').data
+  const productsHref = (tab: SellerProductTab) =>
+    `${sellerPaths.products}?${new URLSearchParams(toSellerProductTabSearch(tab))}`
   const seller = useMySellerQuery()
   const summary = orders.data ? summarizeSellerOrders(orders.data.content) : null
   const targets = useSettlementTargetsQuery()
-  const onSaleCount = products.data?.content.filter(isOnSale).length
-  const lowStockCount = products.data?.content.filter(
-    (product) => stockLevelOf(product.totalStock) !== 'OK',
-  ).length
   const pendingSettlement = targets.data ? sumSettlementItems(targets.data.content) : undefined
 
   return (
@@ -90,9 +94,10 @@ export function CenterHomePage() {
             />
           </MetricGroup>
           <MetricGroup title="상품">
-            <Metric to={sellerPaths.products} label="판매 중 상품" value={onSaleCount} />
+            <Metric to={productsHref('ON_SALE')} label="판매 중 상품" value={onSaleCount} />
+            <Metric to={productsHref('STOPPED')} label="판매 중지" value={stoppedCount} />
             <Metric
-              to={`${sellerPaths.products}?stock=low`}
+              to={productsHref('LOW_STOCK')}
               label="재고 적은 상품"
               value={lowStockCount}
               flag={lowStockCount ? '확인 필요' : undefined}

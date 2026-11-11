@@ -9,6 +9,8 @@ export type {
   RegisterProductResultDto,
   SaleStatusResultDto,
   ProductUpdateRequestDto,
+  SellerProductDetailDto,
+  SellerProductSummaryDto,
 } from './api/product.dto'
 export {
   PRODUCT_STATUS_LABEL,
@@ -65,10 +67,6 @@ export {
   categoryNameOf,
   isFreeSize,
   isOnSale,
-  filterSellerProducts,
-  LOW_STOCK_THRESHOLD,
-  stockLevelOf,
-  type StockLevel,
   optionCombos,
   priceGroups,
   registerPreviewOf,
@@ -88,6 +86,7 @@ export {
   useProductQuery,
   useProductsQuery,
   useSellerProductQuery,
+  useSellerProductCountQuery,
   useSellerProductsQuery,
 } from './model/queries'
 export { ProductCard } from './ui/ProductCard'
@@ -130,3 +129,17 @@ export { categoryIconOf } from './model/category-icon.rules'
 export { visibleCategoryIdOf } from './model/visible-category.rules'
 export { CategoryIcon } from './ui/CategoryIcon'
 export { HOME_HERO_PHOTO } from './config/sample-photos'
+export {
+  optionStockStateOf,
+  sellerProductStockTagsOf,
+  summarizeOptionStock,
+  type OptionStockState,
+  type StockTag,
+} from './model/seller-stock.rules'
+export {
+  SELLER_PRODUCT_TABS,
+  sellerProductTabOf,
+  toSellerProductsParams,
+  toSellerProductTabSearch,
+  type SellerProductTab,
+} from './model/seller-product-tab.rules'

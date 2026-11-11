@@ -536,13 +536,18 @@ export function adminRevertDelist(productId) {
 const createdAtOf = (p) =>
   new Date(Date.UTC(2026, 9, 1) + Number(p.productId) * 60000).toISOString().slice(0, 19)
 
-/** GET /seller/products (BE SellerProductSummaryResponse). 등록 최신순 */
-export function sellerListOf(sellerId) {
+/**
+ * GET /seller/products (BE SellerProductSummaryResponse, #1239). 등록 최신순. status로 상태를,
+ * lowStock=true면 판매 중 옵션 가운데 수량 5 이하(0 포함)가 있는 상품만 거른다 (상태는 거르지 않음).
+ * 가짜 옵션은 모두 판매 중이다
+ */
+export function sellerListOf(sellerId, { status = null, lowStock = false } = {}) {
   return Object.values(products)
-    .filter((p) => p.sellerId === sellerId)
+    .filter((p) => p.sellerId === sellerId && (!status || p.status === status))
     .sort((a, b) => Number(b.productId) - Number(a.productId))
     .map((p) => {
       const prices = p.options.map((o) => o.price)
+      const quantities = p.options.map((o) => stock[o.optionId] ?? 0)
       return {
         productId: String(p.productId),
         name: p.name,
@@ -552,8 +557,11 @@ export function sellerListOf(sellerId) {
         totalAvailableQuantity: p.options.reduce((sum, o) => sum + (stock[o.optionId] ?? 0), 0),
         minPrice: prices.length > 0 ? Math.min(...prices) : null,
         createdAt: createdAtOf(p),
+        soldOutOptionCount: quantities.filter((q) => q <= 0).length,
+        lowStockOptionCount: quantities.filter((q) => q > 0 && q <= 5).length,
       }
     })
+    .filter((row) => !lowStock || row.soldOutOptionCount + row.lowStockOptionCount > 0)
 }
 
 /** GET /seller/products/{id} (BE SellerProductDetailResponse). 남의 상품이면 404 */

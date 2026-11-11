@@ -13,6 +13,7 @@ import type {
   InventoryAdjustmentResultDto,
   SellerProductDetailDto,
   SellerProductSummaryDto,
+  SellerProductsParamsDto,
 } from './product.dto'
 import {
   categoryInputsShape,
@@ -51,10 +52,10 @@ export const productApi = {
   /** 판매 시작 전 상품은 404 */
   get: (productId: string) =>
     apiClient.get<ProductDetailDto>(`/products/${productId}`).then(expectShape(productDetailShape)),
-  /** 내 상품 요약 (등록 최신순) */
-  sellerList: () =>
+  /** 내 상품 요약 (등록 최신순). 상태 · 재고 적음으로 거르고, totalElements도 같은 조건으로 센다 */
+  sellerList: (params: SellerProductsParamsDto) =>
     apiClient
-      .get<Page<SellerProductSummaryDto>>('/seller/products', { params: { page: 0, size: 50 } })
+      .get<Page<SellerProductSummaryDto>>('/seller/products', { params })
       .then(expectShape(sellerProductSummaryPageShape)),
   /** 내 상품 하나 (옵션별 가격 · 판매 가능 수량) */
   sellerGet: (productId: string) =>
