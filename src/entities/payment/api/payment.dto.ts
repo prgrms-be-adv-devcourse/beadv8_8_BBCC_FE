@@ -19,5 +19,5 @@ export type PaymentDetailDto = PaymentSummaryDto & {
   items: { orderItemId: number; amount: number; refundedAmount: number }[]
 }
 
-/** GET /admin/payments 한 줄 (기획서 8장 보완 · BE 미구현 → 목) */
+/** GET /admin/payments 한 줄 (BE #326) */
 export type AdminPaymentDto = PaymentSummaryDto & { memberId: number }

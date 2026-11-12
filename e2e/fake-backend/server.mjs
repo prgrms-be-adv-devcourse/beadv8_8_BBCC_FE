@@ -295,6 +295,97 @@ function orderStepsOf(o) {
     ),
   ]
 }
+// BE OrderTimeline.from (#352): 저장된 시각으로 단계를 조립. 취소는 마지막 완료 단계 뒤 CANCELLED(근사 시각) + 나머지 해당 없음
+function orderTimelineOf(o) {
+  const payment = payments.find((p) => p.orderId === o.orderId)
+  const paidAt = payment?.status === 'COMPLETED' ? payment.paidAt : null
+  const cancelled = o.status === 'CANCELLED'
+  const sellerName = (sellerId) =>
+    o.items.find((it) => it.sellerId === sellerId)?.sellerName ?? null
+  const simple = (step, status, at = null, approximate = false, details = []) => ({
+    step,
+    status,
+    at,
+    approximate,
+    details,
+  })
+  const progress = (doneAts, expected) => {
+    const done = doneAts.filter(Boolean)
+    if (done.length > 0 && done.length === doneAts.length && doneAts.length >= expected)
+      return { status: 'DONE', at: done.sort().at(-1) }
+    return { status: done.length ? 'PARTIAL' : 'WAITING', at: null }
+  }
+  const deliveryDetail = (d, at, status = at ? 'DONE' : 'WAITING') => ({
+    sellerOrderId: d.sellerOrderId,
+    sellerId: d.sellerId,
+    sellerName: sellerName(d.sellerId),
+    status,
+    at,
+  })
+  const itemDetail = (it, status, at) => ({
+    orderItemId: it.orderItemId,
+    productName: it.productName,
+    status,
+    at,
+    confirmType: status === 'DONE' ? it.confirmType : null,
+  })
+  const steps = [simple('CREATED', 'DONE', o.orderedAt)]
+  steps.push(
+    payment
+      ? simple('PAYMENT_REQUESTED', 'DONE', payment.createdAt)
+      : simple('PAYMENT_REQUESTED', cancelled ? 'NOT_APPLICABLE' : 'WAITING'),
+  )
+  if (paidAt) steps.push(simple('PAID', 'DONE', paidAt))
+  else if (!cancelled) steps.push(simple('PAID', 'WAITING'))
+  if (cancelled) {
+    const notShipped = paidAt
+      ? o.deliveries.map((d) => deliveryDetail(d, null, 'NOT_APPLICABLE'))
+      : []
+    const notConfirmed = paidAt ? o.items.map((it) => itemDetail(it, 'NOT_APPLICABLE', null)) : []
+    steps.push(
+      simple('CANCELLED', 'DONE', cancelledAt.get(o) ?? o.orderedAt, true),
+      simple('SHIPPED', 'NOT_APPLICABLE', null, false, notShipped),
+      simple('DELIVERED', 'NOT_APPLICABLE', null, false, notShipped),
+      simple('CONFIRMED', 'NOT_APPLICABLE', null, false, notConfirmed),
+    )
+  } else {
+    const sellerCount = new Set(
+      o.items.filter((it) => it.status !== 'CANCELLED').map((it) => it.sellerId),
+    ).size
+    for (const [name, key] of [
+      ['SHIPPED', 'shippedAt'],
+      ['DELIVERED', 'deliveredAt'],
+    ]) {
+      const details = o.deliveries.map((d) =>
+        d.status === 'CANCELLED'
+          ? deliveryDetail(d, null, 'NOT_APPLICABLE')
+          : deliveryDetail(d, d[key] ?? null),
+      )
+      const p = progress(
+        details.filter((each) => each.status !== 'NOT_APPLICABLE').map((each) => each.at),
+        sellerCount,
+      )
+      steps.push(simple(name, p.status, p.at, false, details))
+    }
+    const items = o.items.map((it) =>
+      it.status === 'CANCELLED'
+        ? itemDetail(it, 'NOT_APPLICABLE', null)
+        : itemDetail(it, it.confirmedAt ? 'DONE' : 'WAITING', it.confirmedAt ?? null),
+    )
+    const live = items.filter((each) => each.status !== 'NOT_APPLICABLE').map((each) => each.at)
+    const p = progress(live, live.length)
+    steps.push(simple('CONFIRMED', p.status, p.at, false, items))
+  }
+  const current = steps.filter((each) => each.status === 'DONE' || each.status === 'PARTIAL').at(-1)
+  return {
+    orderId: String(o.orderId),
+    status: o.status,
+    currentStep: current.step,
+    cancelReason: o.cancelReason,
+    paymentDueAt: o.status === 'PENDING_PAYMENT' ? o.paymentDueAt : null,
+    steps,
+  }
+}
 // 주문 BE #253: 수량 1~99, 범위 밖이면 400 INVALID_QUANTITY
 const badQuantity = (q) => !Number.isInteger(q) || q < 1 || q > 99
 const invalidQuantity = (res) =>
@@ -2237,6 +2328,13 @@ http
       )
     if ((x = r('GET', /^\/orders\/(\d+)$/)))
       return send(res, 200, detailOf(orders.find((o) => o.orderId === +x[1])))
+    // BE OrderController GET /orders/{orderId}/timeline (#352): 본인 주문만, 아니면 404
+    if ((x = r('GET', /^\/orders\/(\d+)\/timeline$/))) {
+      const o = orders.find((each) => each.orderId === +x[1] && each.memberId === me)
+      return o
+        ? send(res, 200, orderTimelineOf(o))
+        : problem(res, 404, '주문을 찾을 수 없습니다', '주문을 찾을 수 없습니다.', req.url)
+    }
     // BE OrderService.cancelByBuyer (#354): 결제대기, 또는 모든 배송이 발송 전인 결제완료 주문만. 이미 취소면 그대로 200.
     // 결제완료면 남은 주문상품 금액을 돌려주고(REFUND) 재고를 되돌린다
     if ((x = r('POST', /^\/orders\/(\d+)\/cancel$/))) {

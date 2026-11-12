@@ -8,7 +8,7 @@ export const paymentApi = {
     apiClient
       .get<Page<PaymentSummaryDto>>('/payments', { params: { page: 0, size: 20 } })
       .then(expectShape(paymentPageShape)),
-  /** 관리자 전체 결제 · 환불 (기획서 8장 보완). 백엔드에 아직 없어 목 응답이다 */
+  /** 관리자 전체 결제 · 환불 (BE #326) */
   adminList: () =>
     apiClient
       .get<Page<AdminPaymentDto>>('/admin/payments', { params: { page: 0, size: 50 } })
