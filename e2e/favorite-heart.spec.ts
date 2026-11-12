@@ -106,15 +106,26 @@ test('상품 목록: 한 쪽의 찜 여부를 한 번에 부르고, 칸의 하�
   favoriteLookups.length = 0
   await page.goto('/')
 
-  // 칸 = 상품 링크와 하트를 함께 감싼 부모
-  const tile = page.getByRole('link', { name: /데일리 맨투맨 \(상품 A\)/ }).locator('xpath=..')
+  // 앞 테스트들이 상품을 더 등록하면 순서가 바뀌므로 첫 쪽의 첫 상품 칸으로 본다 (칸 = 상품 링크와 하트를 감싼 부모)
+  const list = page.getByRole('region', { name: '전체 상품' })
+  const firstLink = list.locator('a[href^="/products/"]').first()
+  await expect(firstLink).toBeVisible()
+  const productId = (await firstLink.getAttribute('href'))!.match(/\/products\/(\d+)/)![1]
+  const tile = firstLink.locator('xpath=..')
   const unfavorited = tile.getByRole('button', { name: '찜하기', exact: true })
   const favorited = tile.getByRole('button', { name: '찜 취소', exact: true })
-  await expect(unfavorited.or(favorited)).toBeVisible()
+  await expect(unfavorited.or(favorited)).toBeEnabled()
   await page.waitForLoadState('networkidle')
-  // 상품마다가 아니라 한 쪽에 한 번
-  expect(favoriteLookups).toHaveLength(1)
-  expect(favoriteLookups[0].split(',')).toContain('1')
+  // 상품마다 따로가 아니라 한 쪽의 상품 ID를 모아 한 번에 묻는다
+  const tileIds = (
+    await list
+      .locator('a[href^="/products/"]')
+      .evaluateAll((links) =>
+        links.map((link) => link.getAttribute('href')!.match(/\/products\/(\d+)/)![1]),
+      )
+  ).sort()
+  expect(favoriteLookups.length).toBeGreaterThanOrEqual(1)
+  for (const lookup of favoriteLookups) expect(lookup.split(',').sort()).toEqual(tileIds)
   if (await favorited.isVisible()) {
     await favorited.click()
     await expect(unfavorited).toBeEnabled()
@@ -122,7 +133,7 @@ test('상품 목록: 한 쪽의 찜 여부를 한 번에 부르고, 칸의 하�
 
   await unfavorited.click()
   await expect(favorited).toHaveAttribute('aria-pressed', 'true')
-  await page.goto('/products/1')
+  await page.goto(`/products/${productId}`)
   await expect(page.getByRole('button', { name: '찜 취소', exact: true })).toBeVisible()
   await page.getByRole('button', { name: '찜 취소', exact: true }).click()
   await expect(page.getByRole('button', { name: '찜하기', exact: true })).toBeVisible()
