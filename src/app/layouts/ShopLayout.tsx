@@ -1,4 +1,6 @@
 import { Link, matchPath, Outlet, useLocation } from 'react-router'
+import { useUnreadNotificationCountQuery } from '@/entities/notification'
+import { hasRole, useSessionStore } from '@/entities/session'
 import { ThemeLab } from '@/features/theme-lab'
 import { paths, shopMasksWholePage, useDemoRoleSwitch } from '@/shared/config'
 import { ShopHeader } from '@/widgets/shop-header'
@@ -13,6 +15,9 @@ import { Overlays } from './Overlays'
 export function ShopLayout() {
   const demoRoleSwitch = useDemoRoleSwitch()
   const { pathname } = useLocation()
+  const user = useSessionStore((state) => state.user)
+  // 머리말 알림 배지: 레이아웃이 API를 부르는 예외 (AGENTS.md 2절)
+  useUnreadNotificationCountQuery('member', hasRole(user, 'BUYER'))
   return (
     <div className="bg-paper flex min-h-svh flex-col">
       <DemoBarWithFlowDrawer />
