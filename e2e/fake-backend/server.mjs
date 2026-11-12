@@ -1,5 +1,5 @@
 // E2E 전용 가짜 백엔드 (실제 백엔드 코드와 무관). 구현된 API의 응답 모양(DTO)만 흉내 낸다.
-// 상품은 등록 · 판매 시작 · 상세 · 카테고리 · 이미지 업로드 주소 발급만 있다(products.mjs). 판매자 상품 목록 · 상세 · 재고 조정 · 판매 중지도 products.mjs. 상품 목록 · 사이즈 추천 · 자녀 맞춤 목록 · 관리자 전체 주문 · 결제 · 정산은 여기서 응답하고, 상품 수정은 FE 목(app/mocks)이 응답한다.
+// 상품은 등록 · 판매 시작 · 상세 · 카테고리 · 이미지 업로드 주소 발급만 있다(products.mjs). 판매자 상품 목록 · 상세 · 재고 조정 · 판매 중지도 products.mjs. 상품 목록 · 사이즈 추천 · 자녀 맞춤 목록 · 관리자 전체 주문 · 결제 · 정산은 여기서 응답한다.
 // 응답 모양이 실제와 달라지면 FE 흐름 패널의 계약 검사로 드러난다.
 import http from 'node:http'
 import {
@@ -2203,6 +2203,25 @@ http
       const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
       if (!c) return problem(res, 404, '찾을 수 없습니다', '자녀 없음', req.url)
       return send(res, 200, c.growth)
+    }
+    if ((x = r('DELETE', /^\/children\/(\d+)\/growth-records\/(\d+)$/))) {
+      const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
+      const index = c?.growth.findIndex((record) => record.id === +x[2]) ?? -1
+      if (!c || index < 0) return problem(res, 404, '찾을 수 없습니다', '성장 기록 없음', req.url)
+      if (c.growth.length === 1)
+        return problem(
+          res,
+          409,
+          '지울 수 없는 기록입니다',
+          '성장 기록이 하나뿐이면 지울 수 없습니다.',
+          req.url,
+        )
+      const isLatest = index === c.growth.length - 1
+      c.growth.splice(index, 1)
+      const latest = c.growth.at(-1)
+      if (isLatest) Object.assign(c, { heightCm: latest.heightCm, bodyType: latest.bodyType })
+      Object.assign(c, { growthRecordCount: c.growth.length, lastRecordedAt: latest.recordedAt })
+      return send(res, 204)
     }
     if (r('PATCH', /^\/members\/me$/))
       return send(res, 200, {

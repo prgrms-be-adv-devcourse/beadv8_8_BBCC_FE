@@ -37,6 +37,3 @@ export type GrowthRecordDto = {
   bodyType: string | null
   recordedAt: string
 }
-
-/** PATCH /children/{childId}/growth-records/{recordId} (기획서 8장 보완, BE 미구현 → 목) */
-export type GrowthRecordUpdateRequestDto = { heightCm: number; bodyType: string | null }

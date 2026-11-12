@@ -109,7 +109,6 @@ function ApiCallRow({ log, selected, onSelect }: ApiCallRowProps) {
       >
         <span className="w-11 shrink-0 font-mono font-semibold">{log.method}</span>
         <span className="min-w-0 flex-1 truncate font-mono">{log.path}</span>
-        {log.mock && <span className="bg-highlight rounded px-1">목</span>}
         {log.expectedReason && (
           <span className="bg-muted text-muted-foreground rounded px-1">예상됨</span>
         )}

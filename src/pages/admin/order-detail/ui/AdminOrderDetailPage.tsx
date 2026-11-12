@@ -53,7 +53,6 @@ export function AdminOrderDetailPage() {
         전체 주문
       </Link>
       <PageHeader
-        mockEndpoints={['GET /admin/orders', 'GET /admin/payments']}
         title={`주문 ${orderId}`}
         note="GET /admin/orders/{orderId}/history (BE #442)로 상태 이력을 읽고, GET /admin/orders (BE #323)에서 요약을, GET /admin/payments (BE #326)에서 이 주문의 결제를 모은다."
       />

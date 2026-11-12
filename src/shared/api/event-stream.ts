@@ -2,11 +2,10 @@ import axios, { type AxiosResponse } from 'axios'
 import { useApiFlowLog } from './api-flow-log'
 import { apiClient } from './client'
 import { validate, type Shape } from './contract'
-import { createMockAdapter } from './mock-adapter'
 import { readSse, readSseEvents, type SseEvent } from './sse'
 
-/** 스트림은 XHR로 읽을 수 없어 fetch 어댑터를 쓴다. 목은 같은 방식으로 앞에서 가로챈다 */
-const streamAdapter = createMockAdapter(axios.getAdapter('fetch'))
+/** 스트림은 XHR로 읽을 수 없어 fetch 어댑터를 쓴다 */
+const streamAdapter = axios.getAdapter('fetch')
 
 export type StreamEvent<T> = { event: string; data: T }
 
@@ -60,7 +59,7 @@ function requestStream(path: string, params?: Record<string, string>, signal?: A
 }
 
 /**
- * text/event-stream을 공통 클라이언트로 받아 닫힐 때까지 모은다 (토큰 · 401 재발급 · 목 · 흐름 기록을 그대로 쓴다).
+ * text/event-stream을 공통 클라이언트로 받아 닫힐 때까지 모은다 (토큰 · 401 재발급 · 흐름 기록을 그대로 쓴다).
  * 이벤트 data는 JSON으로 읽어 계약 모양을 검사하고, 흐름 기록에 받은 이벤트 순서 · 마지막 data · 걸린 시간을 남긴다.
  * 스트림을 열기 전 오류(400 · 401 · 403 · 404)는 지금처럼 axios 오류로 던진다
  */
@@ -95,7 +94,7 @@ type OpenEventStreamOptions<T> = GetEventStreamOptions & {
 /**
  * 서버가 닫을 때까지 열어 두는 스트림(알림 수 등). 이벤트가 올 때마다 onEvent를 부르고, 서버가 닫으면 끝난다.
  * 연결 하나가 흐름 기록 한 건이고, 그 기록에는 마지막 이벤트만 남긴다 (이벤트마다 기록이 쌓이지 않게).
- * 토큰 · 401 재발급 · 목은 공통 클라이언트를 그대로 쓰고, 열기 전 오류는 axios 오류로 던진다
+ * 토큰 · 401 재발급은 공통 클라이언트를 그대로 쓰고, 열기 전 오류는 axios 오류로 던진다
  */
 export async function openEventStream<T>(
   path: string,

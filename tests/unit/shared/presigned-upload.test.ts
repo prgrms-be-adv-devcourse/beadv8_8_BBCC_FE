@@ -51,7 +51,6 @@ describe('putToPresignedUrl: 흐름 패널 기록', () => {
         method: 'PUT',
         path: 'https://team04-kidly-s3.s3.ap-northeast-2.amazonaws.com/dev/products/7/a.jpg',
         status: 200,
-        mock: false,
         requestBody: { contentType: 'image/jpeg', contentLength: 4 },
         responseBody: null,
       },

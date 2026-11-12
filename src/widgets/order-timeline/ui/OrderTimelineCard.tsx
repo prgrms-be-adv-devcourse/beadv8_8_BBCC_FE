@@ -10,7 +10,6 @@ import {
 import { getErrorMessage } from '@/shared/api'
 import { cn, labelOf } from '@/shared/lib'
 import { Card, CardTitle } from '@/shared/ui/card'
-import { MockBadge } from '@/shared/ui/MockBadge'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { timelineRevision } from '../model/revision'
 
@@ -47,10 +46,7 @@ export function OrderTimelineCard({ order }: OrderTimelineCardProps) {
 
   return (
     <Card className="space-y-3">
-      <CardTitle>
-        처리 과정
-        <MockBadge endpoints={['GET /orders/:orderId/timeline']} />
-      </CardTitle>
+      <CardTitle>처리 과정</CardTitle>
       {timeline.isPending && <StateMessage>불러오는 중…</StateMessage>}
       {timeline.isError && (
         <StateMessage tone="error">{getErrorMessage(timeline.error)}</StateMessage>
