@@ -29,6 +29,13 @@ describe('처리 실패 메시지 API 흐름 표시', () => {
     }
   })
 
+  it('알림 · 정산 처리 실패 메시지 API는 각 도메인이다', () => {
+    expect(domainOf('/admin/notification-dead-letters?status=OPEN')).toBe('notification')
+    expect(domainOf('/admin/notification-dead-letters/7/reprocess')).toBe('notification')
+    expect(domainOf('/admin/settlement-dead-letters?status=OPEN')).toBe('settlement')
+    expect(domainOf('/admin/settlement-dead-letters/7/reprocess')).toBe('settlement')
+  })
+
   it('상태 변화: 상세에서 본 처리 대기 → 재처리 응답의 재처리 완료', () => {
     const changes = deriveStateChanges([
       log({ path: '/admin/seller-dead-letters/7', responseBody: deadLetter('OPEN') }),
@@ -48,10 +55,14 @@ describe('처리 실패 메시지 API 흐름 표시', () => {
     const changes = deriveStateChanges([
       log({ path: '/admin/auth-dead-letters/7', responseBody: deadLetter('OPEN') }),
       log({ path: '/admin/child-profile-dead-letters/7', responseBody: deadLetter('REPROCESSED') }),
+      log({ path: '/admin/notification-dead-letters/7', responseBody: deadLetter('OPEN') }),
+      log({ path: '/admin/settlement-dead-letters/7', responseBody: deadLetter('OPEN') }),
     ])
     expect(changes.map((change) => change.resource)).toEqual([
       '인증 처리 실패 메시지 #7',
       '자녀 프로필 처리 실패 메시지 #7',
+      '알림 처리 실패 메시지 #7',
+      '정산 처리 실패 메시지 #7',
     ])
   })
 

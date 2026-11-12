@@ -45,7 +45,7 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/(reviews|favorites|admin\/community)(\/|$)/, 'community'],
   [/^\/(seller|admin)\/settlement/, 'settlement'],
   // 알림함 (자녀 알림함 /child/notifications 포함, 회원 규칙보다 먼저)
-  [/^\/(child\/)?notifications(\/|$)/, 'notification'],
+  [/^\/((child\/)?notifications(\/|$)|admin\/notification-dead-letters)/, 'notification'],
   [
     /^\/(auth|members|children|child\/|dev|admin\/(members|seller|sellers|admins)|seller\/me)/,
     'member',
