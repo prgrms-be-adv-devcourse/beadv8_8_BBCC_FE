@@ -105,6 +105,8 @@ export const paths = {
     payments: '/admin/payments',
     payment: (id: string) => `/admin/payments/${id}`,
     settlements: '/admin/settlements',
+    /** 지갑: 회원 예치금 지갑 · 탈퇴로 동결된 지갑의 잔액 돌려주기 */
+    wallets: '/admin/wallets',
     /** 설정: 시연 데이터 켜기 · 끄기 */
     settings: '/admin/settings',
     /** 처리 실패 메시지 (회원 서비스 Kafka DLT): 모듈 · 상태 · 페이지는 목록 주소의 검색 값으로 */

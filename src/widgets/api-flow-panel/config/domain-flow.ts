@@ -39,6 +39,8 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/admin\/(attributes|measurement-items|product-types|categories)/, 'product'],
   [/^\/(cart|orders|seller\/orders|wish)/, 'order'],
   [/^\/(wallets|payments)/, 'payment'],
+  // 관리자 지갑 (목록 · 잔액 돌려주기)
+  [/^\/admin\/wallets/, 'payment'],
   // 리뷰 · 찜 (리뷰 사진 업로드 주소 발급 포함)
   [/^\/(reviews|favorites)(\/|$)/, 'community'],
   [/^\/(seller|admin)\/settlement/, 'settlement'],

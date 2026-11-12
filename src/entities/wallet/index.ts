@@ -1,4 +1,14 @@
 export { walletApi } from './api/wallet-api'
+export { adminWalletApi } from './api/admin-wallet-api'
+export type { AdminWallet, AdminWalletFilter, BalanceReturn } from './model/admin-wallet'
+export {
+  toAdminWallet,
+  toAdminWalletParams,
+  toBalanceReturn,
+  toReturnBalanceRequest,
+} from './model/admin-wallet.mapper'
+export { canReturnWalletBalance } from './model/admin-wallet.rules'
+export { adminWalletKeys, useAdminWalletsQuery } from './model/admin-queries'
 export {
   type Charge,
   type ChargeCancellation,

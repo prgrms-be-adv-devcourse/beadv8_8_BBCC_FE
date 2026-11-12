@@ -35,6 +35,7 @@ const MENU: MenuGroup[] = [
       { to: paths.admin.orders, label: '전체 주문' },
       { to: paths.admin.payments, label: '전체 결제' },
       { to: paths.admin.settlements, label: '정산' },
+      { to: paths.admin.wallets, label: '지갑' },
     ],
   },
   {
