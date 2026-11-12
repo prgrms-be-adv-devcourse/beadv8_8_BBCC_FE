@@ -38,8 +38,8 @@ const childNew = page(() =>
 const childDetail = page(() =>
   import('@/pages/shop/child-detail').then((m) => ({ Component: m.ShopChildDetailPage })),
 )
-const childWishes = page(() =>
-  import('@/pages/shop/child-wishes').then((m) => ({ Component: m.ShopChildWishesPage })),
+const wishes = page(() =>
+  import('@/pages/shop/wishes').then((m) => ({ Component: m.ShopWishesPage })),
 )
 const childWishDetail = page(() =>
   import('@/pages/shop/child-wish-detail').then((m) => ({ Component: m.ShopChildWishDetailPage })),
@@ -241,7 +241,8 @@ export const router = createBrowserRouter(
         { path: rel('', paths.shop.children), ...children },
         { path: rel('', paths.shop.childNew), ...childNew },
         { path: 'my/children/:childId', ...childDetail },
-        { path: rel('', paths.shop.childWishes(':childId')), ...childWishes },
+        { path: rel('', paths.shop.wishes), ...wishes },
+        { path: rel('', paths.shop.childWishes(':childId')), ...wishes },
         { path: rel('', paths.shop.childWish(':childId', ':requestId')), ...childWishDetail },
         // 리뷰 쓰기 · 충전은 메뉴 없이 한 가지 일만 (마이페이지 묶음 밖)
         {
@@ -485,7 +486,8 @@ export const router = createBrowserRouter(
         { path: rel(paths.console.home, paths.console.children), ...children },
         { path: rel(paths.console.home, paths.console.childNew), ...childNew },
         { path: 'children/:childId', ...childDetail },
-        { path: rel(paths.console.home, paths.console.childWishes(':childId')), ...childWishes },
+        { path: rel(paths.console.home, paths.console.wishes), ...wishes },
+        { path: rel(paths.console.home, paths.console.childWishes(':childId')), ...wishes },
         {
           path: rel(paths.console.home, paths.console.childWish(':childId', ':requestId')),
           ...childWishDetail,
