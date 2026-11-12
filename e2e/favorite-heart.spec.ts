@@ -115,7 +115,8 @@ test('상품 목록: 한 쪽의 찜 여부를 한 번에 부르고, 칸의 하�
   const unfavorited = tile.getByRole('button', { name: '찜하기', exact: true })
   const favorited = tile.getByRole('button', { name: '찜 취소', exact: true })
   await expect(unfavorited.or(favorited)).toBeEnabled()
-  await page.waitForLoadState('networkidle')
+  // SSE 연결이 열려 있어 networkidle이 오지 않으므로, 찜 여부 조회 요청을 직접 기다린다
+  await expect.poll(() => favoriteLookups.length).toBeGreaterThanOrEqual(1)
   // 상품마다 따로가 아니라 한 쪽의 상품 ID를 모아 한 번에 묻는다
   const tileIds = (
     await list
