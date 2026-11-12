@@ -8,6 +8,7 @@ const DOMAIN_NAME: Record<DomainId, string> = {
   payment: '결제',
   settlement: '정산',
   community: '커뮤니티',
+  notification: '알림',
   toss: '토스',
   kakao: '카카오',
   s3: 'S3',
