@@ -39,6 +39,16 @@ describe('주문 서버 처리 단계 (주문 접수 → 재고 확보 → 예�
   })
 })
 
+const GROWTH = {
+  cmPerMonth: 0.55,
+  recentCmPerMonth: null,
+  recordCount: 0,
+  recordMonths: 0,
+  childSharePercent: 0,
+  tableCmPerMonth: 0.55,
+  tableSource: '한국아동패널',
+}
+
 describe('사이즈 추천 (BE #262)', () => {
   it('응답의 안내 · 후보를 그대로 옮긴다', async () => {
     const { toSizeRecommendation } = await import('@/entities/recommendation')
@@ -61,6 +71,8 @@ describe('사이즈 추천 (BE #262)', () => {
         referenceFit: null,
         itemJudgements: [],
         wearPreview: null,
+        growthSpeed: GROWTH,
+        wearablePeriods: [],
       }),
     ).toEqual({
       recommendedSize: '120',
@@ -78,6 +90,8 @@ describe('사이즈 추천 (BE #262)', () => {
       referenceFit: null,
       itemJudgements: [],
       wearPreview: null,
+      growthSpeed: GROWTH,
+      wearablePeriods: [],
     })
   })
 

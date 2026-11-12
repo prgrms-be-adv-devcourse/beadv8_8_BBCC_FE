@@ -34,6 +34,27 @@ const REFERENCE_FIT = {
   ),
 }
 
+/** 성장 속도 · 입을 수 있는 기간 (BE #1266) */
+const GROWTH = {
+  growthSpeed: obj({
+    cmPerMonth: num,
+    recentCmPerMonth: nullable(num),
+    recordCount: num,
+    recordMonths: num,
+    childSharePercent: num,
+    tableCmPerMonth: num,
+    tableSource: str,
+  }),
+  wearablePeriods: arr(
+    obj({
+      size: str,
+      lengthMonths: nullable(num),
+      widthMonths: nullable(num),
+      months: nullable(num),
+    }),
+  ),
+}
+
 export const sizeRecommendationShape = obj({
   productId: str,
   childId: str,
@@ -46,6 +67,7 @@ export const sizeRecommendationShape = obj({
   reasons: arr(obj({ type: SIZE_REASON_TYPE, detail: str, sourceId: nullable(str) })),
   ...REFERENCE_FIT,
   wearPreview: nullable(wearPreviewShape),
+  ...GROWTH,
 })
 
 const RECOMMENDED_CARD = {

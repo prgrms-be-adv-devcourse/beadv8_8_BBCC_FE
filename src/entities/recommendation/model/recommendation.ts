@@ -1,3 +1,4 @@
+import type { GrowthSpeed, WearablePeriod } from './growth-speed'
 import type { ItemJudgement, ReferenceFit } from './reference-fit'
 import type { SizeWearPreview } from './wear-preview'
 
@@ -31,6 +32,10 @@ export type SizeRecommendation = {
   itemJudgements: ItemJudgement[]
   /** 착용 미리보기. 사이즈 무관 상품 · 모자 · 양말이면 null → 미리보기를 숨긴다 */
   wearPreview: SizeWearPreview | null
+  // 성장 속도 · 입을 수 있는 기간 (BE #1266)
+  growthSpeed: GrowthSpeed
+  /** 사이즈별 입을 수 있는 기간. 사이즈 무관 · 모자 · 양말이면 빈 목록 */
+  wearablePeriods: WearablePeriod[]
 }
 
 export type SizeReasonType =
