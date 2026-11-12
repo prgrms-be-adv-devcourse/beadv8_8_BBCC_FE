@@ -2120,6 +2120,8 @@ http
         sellerStatus: null,
         providers: [],
       })
+    // BE MemberController.withdraw: 204, 본문 없음. 회원 상태는 바꾸지 않는다 (뒤 테스트가 같은 시연 회원을 계속 쓴다)
+    if (r('DELETE', /^\/members\/me$/)) return send(res, 204)
     if ((x = r('PATCH', /^\/members\/me\/addresses\/(\d+)$/))) {
       const a = addresses.find((a) => a.id === +x[1])
       if (!a) return problem(res, 404, '찾을 수 없습니다', '배송지 없음', req.url)

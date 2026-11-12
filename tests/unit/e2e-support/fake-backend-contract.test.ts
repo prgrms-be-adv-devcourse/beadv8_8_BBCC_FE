@@ -391,6 +391,8 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       (await call('PATCH', '/members/me', 1, { nickname: '새닉네임' })).data,
       memberShape,
     )
+    // 탈퇴 (BE MemberController.withdraw): 204, 본문 없음
+    expect((await call('DELETE', '/members/me', 1)).status).toBe(204)
     const extra = await call('POST', '/children', 1, {
       ...toChildRequest(DEMO_CHILD),
       requiredConsent: true,
