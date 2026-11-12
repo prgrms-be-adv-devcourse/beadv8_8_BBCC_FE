@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { settlementApi } from '../api/settlement-api'
-import { toSettlement, toSettlementDetail, toSettlementItem } from './settlement.mapper'
+import { toSettlement, toSettlementDetail, toSettlementTarget } from './settlement.mapper'
 
 export const settlementKeys = {
   all: ['settlement'] as const,
   targets: ['settlement', 'targets'] as const,
+  targetSummary: ['settlement', 'targets', 'summary'] as const,
   list: ['settlement', 'list'] as const,
   detail: (settlementId: string) => ['settlement', 'detail', settlementId] as const,
 }
@@ -13,7 +14,16 @@ export function useSettlementTargetsQuery() {
   return useQuery({
     queryKey: settlementKeys.targets,
     queryFn: settlementApi.targets,
-    select: (page) => ({ ...page, content: page.content.map(toSettlementItem) }),
+    select: (page) => ({ ...page, content: page.content.map(toSettlementTarget) }),
+  })
+}
+
+/** 정산 예정 금액(수수료 빼기 전) */
+export function useSettlementTargetSummaryQuery() {
+  return useQuery({
+    queryKey: settlementKeys.targetSummary,
+    queryFn: settlementApi.targetSummary,
+    select: (summary) => summary.totalSalesAmount,
   })
 }
 

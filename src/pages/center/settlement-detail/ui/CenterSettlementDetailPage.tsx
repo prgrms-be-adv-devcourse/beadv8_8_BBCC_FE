@@ -40,7 +40,7 @@ export function CenterSettlementDetailPage() {
       <PageHeader
         title={`정산서 #${settlementId}`}
         step="⑦"
-        note="정산이 실행되면 수수료 10%를 뺀 금액이 판매자 예치금으로 입금돼요(지급 완료)."
+        note="정산이 실행되면 수수료를 뺀 금액이 판매자 예치금으로 입금돼요(지급 완료)."
       />
 
       {query.isPending && <ListSkeleton rows={3} />}
