@@ -64,6 +64,36 @@ export function orderSellerGroups(order: Order): OrderSellerGroup[] {
   })
 }
 
+/** 판매자 묶음이 취소됐는지: 그 판매자 배송이 취소됐거나 상품이 모두 취소 (판매자 발송 전 취소 #655) */
+export function sellerGroupCancelled(group: {
+  delivery: Pick<OrderDelivery, 'status'> | null
+  items: Pick<OrderItem, 'status'>[]
+}): boolean {
+  if (group.delivery?.status === 'CANCELLED') return true
+  return group.items.length > 0 && group.items.every((item) => item.status === 'CANCELLED')
+}
+
+/** 취소된 주문상품 금액 합 (환불 안내용, BE가 따로 주지 않아 화면이 더한다) */
+export function cancelledRefundOf(items: Pick<OrderItem, 'status' | 'amount'>[]): number {
+  return items
+    .filter((item) => item.status === 'CANCELLED')
+    .reduce((sum, item) => sum + item.amount, 0)
+}
+
+/** 결제 뒤에 취소된 사유 (구매자 · 판매자 · 시스템 정리): 결제한 예치금이 돌아간다 */
+const REFUNDED_CANCEL_REASONS: readonly string[] = [
+  'BUYER_CANCELLED',
+  'SELLER_CANCELLED',
+  'SELLER_UNAVAILABLE',
+]
+
+/** 취소된 주문의 예치금 안내: 결제 전 취소(재고 · 결제 실패 · 마감)는 빠져나가지 않음, 결제 뒤 취소는 돌려줌 */
+export function cancelledMoneyNote(cancelReason: string | null): string {
+  return cancelReason && REFUNDED_CANCEL_REASONS.includes(cancelReason)
+    ? '결제한 예치금은 돌려드렸어요.'
+    : '예치금은 빠져나가지 않았어요.'
+}
+
 /** 잔액 부족으로 취소된 주문이면 충전으로 안내한다 */
 /** 구매할 수 없는 상품(재고 부족 · 판매 중지)으로 취소: 장바구니에 남아 있으니 다시 확인하게 한다 */
 /** 주문상품의 구매 불가 표시. 이유가 없으면 null (표시 안 함) */

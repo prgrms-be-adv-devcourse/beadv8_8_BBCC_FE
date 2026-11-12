@@ -7,6 +7,11 @@ export function nextShippingStep(order: SellerOrder): NextShippingStep {
   return null
 }
 
+/** 판매자 발송 전 취소는 발송 준비(READY)일 때만 (BE #655, 그 밖은 409) */
+export function canCancelSellerOrder(order: Pick<SellerOrder, 'status'>): boolean {
+  return order.status === 'READY'
+}
+
 export function validateTrackingNumber(trackingNumber: string): string | null {
   const value = trackingNumber.trim()
   if (!value) return '송장 번호를 입력해 주세요.'

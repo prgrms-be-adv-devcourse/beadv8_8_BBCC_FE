@@ -1,7 +1,9 @@
 export { sellerOrderApi } from './api/seller-order-api'
+export { deliveryShape } from './api/seller-order.shape'
 export type { NextShippingStep, SellerOrder } from './model/seller-order'
 export {
   bulkTargets,
+  canCancelSellerOrder,
   countSellerOrdersByTab,
   filterSellerOrdersByTab,
   nextShippingStep,

@@ -445,7 +445,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       .getByRole('link', { name: /판매 주문 #\d+/ })
       .click()
     await expect(page).toHaveURL(/\/center\/orders\/\d+$/)
-    await page.getByRole('button', { name: '발송' }).first().click()
+    await page.getByRole('button', { name: '발송', exact: true }).first().click()
     // 서버에는 택배사 코드(CJ)를 보내고, 화면에는 이름으로 보인다
     await expect(page.getByText(/CJ대한통운 \S+/).first()).toBeVisible()
     await page.getByRole('button', { name: '배송 완료 처리' }).first().click()
