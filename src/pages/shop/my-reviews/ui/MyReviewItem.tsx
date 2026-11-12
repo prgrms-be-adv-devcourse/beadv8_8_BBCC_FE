@@ -6,6 +6,7 @@ import {
   hasDraftErrors,
   ReviewCard,
   ReviewForm,
+  reviewSaveErrorMessage,
   validateReviewDraft,
   type Review,
 } from '@/entities/review'
@@ -68,7 +69,7 @@ export function MyReviewItem({ review }: MyReviewItemProps) {
           }}
         />
         {update.isError && (
-          <StateMessage tone="error">{getErrorMessage(update.error)}</StateMessage>
+          <StateMessage tone="error">{reviewSaveErrorMessage(update.error)}</StateMessage>
         )}
       </div>
     )

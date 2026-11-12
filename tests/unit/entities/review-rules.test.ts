@@ -1,3 +1,4 @@
+import { AxiosError, AxiosHeaders } from 'axios'
 import { describe, expect, it } from 'vitest'
 import {
   averageRatingLabel,
@@ -7,6 +8,7 @@ import {
   fitShares,
   hasDraftErrors,
   reviewActionOf,
+  reviewSaveErrorMessage,
   validateReviewDraft,
   type Review,
 } from '@/entities/review'
@@ -121,5 +123,46 @@ describe('draftOf', () => {
       content: '조금 커요',
       imageUrls: ['https://s3/a.jpg'],
     })
+  })
+})
+
+function problem(status: number, title: string | null, detail: string | null = null) {
+  const config = { headers: new AxiosHeaders() }
+  const data = title === null ? null : { type: 'about:blank', title, status, detail, instance: '/' }
+  const response = { status, statusText: '', headers: {}, config, data }
+  return new AxiosError('error', AxiosError.ERR_BAD_REQUEST, config, null, response)
+}
+
+describe('reviewSaveErrorMessage: 리뷰 쓰기 · 고치기 오류 문구', () => {
+  it('올리지 않은 사진(400 IMAGE_NOT_UPLOADED)은 사진을 다시 올리라고 안내한다', () => {
+    const error = problem(
+      400,
+      '올리지 않은 사진입니다',
+      '업로드 주소(uploadUrl)로 사진을 올린 뒤 그 imageUrl을 다시 보내 주세요.',
+    )
+    expect(reviewSaveErrorMessage(error)).toBe(
+      '사진이 다 올라가지 않았어요. 그 사진을 지우고 다시 올려 주세요.',
+    )
+  })
+
+  it('다른 400 · 409 · 저장소 장애 503은 서버 detail 그대로', () => {
+    expect(reviewSaveErrorMessage(problem(400, '잘못된 별점입니다', '별점은 1~5예요.'))).toBe(
+      '별점은 1~5예요.',
+    )
+    expect(
+      reviewSaveErrorMessage(
+        problem(
+          503,
+          '사진 저장소를 확인할 수 없습니다',
+          '잠시 뒤 다시 시도해 주세요. 요청은 반영되지 않았습니다.',
+        ),
+      ),
+    ).toBe('잠시 뒤 다시 시도해 주세요. 요청은 반영되지 않았습니다.')
+  })
+
+  it('ProblemDetail이 아닌 503(배포 중 등)은 잠시 뒤 다시 시도하라고 한다', () => {
+    expect(reviewSaveErrorMessage(problem(503, null))).toBe(
+      '서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요.',
+    )
   })
 })

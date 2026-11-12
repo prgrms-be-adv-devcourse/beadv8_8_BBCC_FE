@@ -22,6 +22,7 @@ export {
   REVIEW_IMAGE_MAX_COUNT,
   REVIEW_RATING_MAX,
   reviewActionOf,
+  reviewSaveErrorMessage,
   validateReviewDraft,
 } from './model/review.rules'
 export {
