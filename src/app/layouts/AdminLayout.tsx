@@ -36,6 +36,10 @@ const MENU: MenuGroup[] = [
     links: [{ to: paths.admin.reviews, label: '리뷰 검사' }],
   },
   {
+    title: '챗봇',
+    links: [{ to: paths.admin.chatbotDocuments, label: '답변 문서' }],
+  },
+  {
     title: '거래',
     links: [
       { to: paths.admin.orders, label: '전체 주문' },
