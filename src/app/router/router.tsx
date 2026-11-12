@@ -222,6 +222,14 @@ export const router = createBrowserRouter(
                 import('@/pages/shop/my-reviews').then((m) => ({ Component: m.ShopMyReviewsPage })),
               ),
             },
+            {
+              path: rel('', paths.shop.favorites),
+              ...page(() =>
+                import('@/pages/shop/my-favorites').then((m) => ({
+                  Component: m.ShopMyFavoritesPage,
+                })),
+              ),
+            },
           ],
         },
         { path: rel('', paths.shop.children), ...children },
