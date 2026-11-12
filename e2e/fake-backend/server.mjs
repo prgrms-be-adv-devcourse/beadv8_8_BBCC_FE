@@ -56,6 +56,53 @@ const wallets = { 1: 100000, 2: 0, 3: 0 }
 // 주문 멱등키 (BE #351): '회원:키' → { hash, orderId }
 const idempotency = {}
 // BE WalletLedger: 잔액이 바뀔 때마다 한 줄 (출금은 음수)
+// 관리자 처리 대기 기록 (가짜는 하나씩으로 시작)
+const opsRecoveries = [
+  {
+    recoveryId: '9001',
+    orderId: '9001',
+    paymentId: '9001',
+    memberId: '1',
+    amount: 25000,
+    items: [{ orderItemId: '9001', amount: 25000 }],
+    status: 'PENDING',
+    failureCode: 'ORDER_STATE_CONFLICT',
+    attemptCount: 1,
+    lastAttemptedAt: null,
+    createdAt: '2026-11-12T09:00:00',
+  },
+]
+const opsEventFailures = [
+  {
+    failureId: '9101',
+    eventType: 'stock.deducted',
+    orderId: '9101',
+    stockFailures: [],
+    status: 'PENDING',
+    failureCode: 'OptimisticLockException',
+    attemptCount: 1,
+    lastAttemptedAt: null,
+    createdAt: '2026-11-12T09:00:00',
+  },
+]
+const opsOutbox = [
+  {
+    outboxId: '9201',
+    eventId: '00000000-0000-4000-8000-000000009201',
+    eventType: 'order.paid',
+    topic: 'kidly.order.events',
+    messageKey: '9201',
+    status: 'QUARANTINED',
+    attemptCount: 10,
+    lastError: 'TimeoutException',
+    createdAt: '2026-11-12T09:00:00',
+    quarantinedAt: '2026-11-12T09:30:00',
+    sentAt: null,
+    lastRetriedAt: null,
+    lastRetriedBy: null,
+    retryCount: 0,
+  },
+]
 const ledgers = []
 const ledger = (memberId, type, amount, refId) =>
   ledgers.push({
@@ -612,6 +659,14 @@ function addDeadLetter(module, patch = {}) {
   return d
 }
 const deadLetterOf = ({ module: _m, failOnReplay: _f, ...d }) => d
+// 주소의 모듈 칸 → 모듈 (회원 서비스는 /admin/{모듈}-dead-letters, 커뮤니티는 /admin/community/dead-letters · BE #962 같은 칸)
+const dltModule = (segment) => segment.slice(0, -1)
+// 커뮤니티: 구매확정 이벤트를 리뷰 작성 가능으로 옮기지 못한 1건
+addDeadLetter('community', {
+  sourceTopic: 'kidly.order.events',
+  dltTopic: 'kidly.order.events.community.dlt',
+  eventType: 'order.item-confirmed',
+})
 // 시연 · 화면 확인용: 회원 모듈에 처리 대기 2건(1건은 재처리도 실패) · 재처리 완료 1건, 판매자 모듈에 헤더 없던 1건, 인증 모듈은 두 페이지
 addDeadLetter('member')
 addDeadLetter('member', {
@@ -1447,7 +1502,78 @@ http
         }))
       return sendPicks(req, res, { source, products })
     }
-    // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
+    // BE 관리자 처리 대기 (#353 결제 반영 실패 · #449 받은 이벤트 처리 실패 · #602 격리 아웃박스). 가짜는 기록 하나씩으로 시작한다
+    if (r('GET', /^\/admin\/orders\/recoveries$/)) {
+      const status = url.searchParams.get('status')
+      return send(res, 200, page(opsRecoveries.filter((x) => !status || x.status === status)))
+    }
+    if ((x = r('POST', /^\/admin\/orders\/recoveries\/(\d+)\/(retry|cancel)$/))) {
+      const rec = opsRecoveries.find((each) => each.recoveryId === x[1])
+      if (!rec)
+        return problem(
+          res,
+          404,
+          '기록을 찾을 수 없습니다',
+          '결제 반영 실패 기록을 찾을 수 없습니다.',
+          req.url,
+        )
+      if (rec.status === 'PENDING') {
+        rec.status = x[2] === 'retry' ? 'RECOVERED' : 'CANCELLED'
+        rec.attemptCount += x[2] === 'retry' ? 1 : 0
+        rec.lastAttemptedAt = now()
+      }
+      return send(res, 200, rec)
+    }
+    if (r('GET', /^\/admin\/orders\/event-failures$/)) {
+      const status = url.searchParams.get('status')
+      return send(res, 200, page(opsEventFailures.filter((x) => !status || x.status === status)))
+    }
+    if ((x = r('POST', /^\/admin\/orders\/event-failures\/(\d+)\/(retry|cancel)$/))) {
+      const rec = opsEventFailures.find((each) => each.failureId === x[1])
+      if (!rec)
+        return problem(
+          res,
+          404,
+          '기록을 찾을 수 없습니다',
+          '이벤트 처리 실패 기록을 찾을 수 없습니다.',
+          req.url,
+        )
+      if (rec.status === 'PENDING') {
+        rec.status = x[2] === 'retry' ? 'RECOVERED' : 'CANCELLED'
+        rec.attemptCount += x[2] === 'retry' ? 1 : 0
+        rec.lastAttemptedAt = now()
+      }
+      return send(res, 200, rec)
+    }
+    if (r('GET', /^\/admin\/orders\/outbox\/quarantined$/))
+      return send(res, 200, page(opsOutbox.filter((x) => x.status === 'QUARANTINED')))
+    if ((x = r('POST', /^\/admin\/orders\/outbox\/(\d+)\/retry$/))) {
+      const rec = opsOutbox.find((each) => each.outboxId === x[1])
+      if (!rec)
+        return problem(
+          res,
+          404,
+          '아웃박스를 찾을 수 없습니다',
+          '아웃박스 메시지를 찾을 수 없습니다.',
+          req.url,
+        )
+      if (rec.status === 'SENT')
+        return problem(
+          res,
+          409,
+          '이미 보낸 메시지입니다',
+          '이미 보낸 메시지라 다시 보낼 수 없습니다.',
+          req.url,
+        )
+      Object.assign(rec, {
+        status: 'PENDING',
+        quarantinedAt: null,
+        lastRetriedAt: now(),
+        lastRetriedBy: '1',
+        retryCount: rec.retryCount + 1,
+      })
+      return send(res, 200, rec)
+    }
     // BE StuckOrderController (#445 · #926): 종류별 건수(모든 종류 0 포함) · 종류별 목록(오래된 것부터).
     // 가짜는 발송 준비로 남은 배송만 발송 지연으로 보고, AI 메모는 가짜 공급자(fake)가 쓴 것처럼 붙인다
     const STUCK_KIND_ORDER = [
@@ -1510,6 +1636,7 @@ http
         return problem(res, 404, '주문을 찾을 수 없습니다', '주문을 찾을 수 없습니다.', req.url)
       return send(res, 200, o.history ?? [])
     }
+    // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
     if (r('GET', /^\/admin\/orders$/)) {
       if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
@@ -2260,31 +2387,38 @@ http
       apps.push(a)
       return send(res, 201, myAppOf(a))
     }
-    if ((x = r('GET', /^\/admin\/(auth|member|seller|child-profile)-dead-letters$/))) {
+    if (
+      (x = r('GET', /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters$/))
+    ) {
       const status = url.searchParams.get('status') ?? 'OPEN'
       // BE @Pattern(OPEN|REPROCESSED)
       if (!['OPEN', 'REPROCESSED'].includes(status))
         return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
       const rows = deadLetters
-        .filter((d) => d.module === x[1] && d.status === status)
+        .filter((d) => d.module === dltModule(x[1]) && d.status === status)
         .sort((a, b) => Number(b.deadLetterId) - Number(a.deadLetterId))
         .map(deadLetterOf)
       return send(res, 200, pageFrom(rows, url.searchParams))
     }
-    if ((x = r('GET', /^\/admin\/(auth|member|seller|child-profile)-dead-letters\/(\d+)$/))) {
-      const d = deadLetters.find((d) => d.module === x[1] && d.deadLetterId === x[2])
+    if (
+      (x = r(
+        'GET',
+        /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters\/(\d+)$/,
+      ))
+    ) {
+      const d = deadLetters.find((d) => d.module === dltModule(x[1]) && d.deadLetterId === x[2])
       return d
         ? send(res, 200, deadLetterOf(d))
         : problem(res, 404, '찾을 수 없습니다', '처리 실패 메시지를 찾을 수 없습니다.', req.url)
     }
-    // BE {모듈}DeadLetterService.reprocess: 처리기가 다시 실패해도 200(OPEN, 횟수 · 실패 예외 기록), 이미 재처리 완료면 그대로 200
+    // BE {모듈}DeadLetterService.reprocess (커뮤니티 CommunityDeadLetterService 같음): 처리기가 다시 실패해도 200(OPEN, 횟수 · 실패 예외 기록), 이미 재처리 완료면 그대로 200
     if (
       (x = r(
         'POST',
-        /^\/admin\/(auth|member|seller|child-profile)-dead-letters\/(\d+)\/reprocess$/,
+        /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters\/(\d+)\/reprocess$/,
       ))
     ) {
-      const d = deadLetters.find((d) => d.module === x[1] && d.deadLetterId === x[2])
+      const d = deadLetters.find((d) => d.module === dltModule(x[1]) && d.deadLetterId === x[2])
       if (!d)
         return problem(
           res,

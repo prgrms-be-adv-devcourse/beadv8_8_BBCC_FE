@@ -48,8 +48,8 @@ export function AdminDeadLettersPage() {
     <div className="shop-look space-y-5">
       <PageHeader
         title="처리 실패 메시지"
-        description="회원 서비스가 받았지만 처리하지 못한 메시지예요. 원인을 고친 뒤 상세에서 다시 처리해요."
-        note="GET /admin/{auth|member|seller|child-profile}-dead-letters?status= (BE #962). 재처리는 POST …/{id}/reprocess, 처리기가 다시 실패해도 200(OPEN 유지)."
+        description="서비스가 받았지만 처리하지 못한 메시지예요. 원인을 고친 뒤 상세에서 다시 처리해요."
+        note="GET /admin/{auth|member|seller|child-profile}-dead-letters?status= (BE #962) · GET /admin/community/dead-letters?status= (커뮤니티, 같은 칸). 재처리는 POST …/{id}/reprocess, 처리기가 다시 실패해도 200(OPEN 유지)."
       />
       <div
         role="tablist"
