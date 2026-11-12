@@ -21,9 +21,15 @@ export type PushClient = {
 
 let pushClient: Promise<PushClient | null> | undefined
 
-/** firebase는 처음 쓸 때 불러온다 (번들 분리). 브라우저가 웹 푸시를 지원하지 않으면 null */
+/**
+ * firebase는 처음 쓸 때 불러온다 (번들 분리). 브라우저가 웹 푸시를 지원하지 않으면 null.
+ * 불러오기에 실패하면(네트워크 등) 기억하지 않고 다음 호출에서 다시 시도한다
+ */
 export function loadPushClient(config: PushClientConfig): Promise<PushClient | null> {
-  pushClient ??= createPushClient(config).catch(() => null)
+  pushClient ??= createPushClient(config).catch(() => {
+    pushClient = undefined
+    return null
+  })
   return pushClient
 }
 

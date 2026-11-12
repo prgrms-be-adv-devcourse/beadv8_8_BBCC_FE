@@ -229,6 +229,41 @@ describe('웹 푸시 등록 · 해제', () => {
     expect(session.useSessionStore.getState().accessToken).toBeNull()
   })
 
+  it('FID 해제 · FID가 바뀌어 다시 등록하는 호출도 행동 이름으로 흐름 패널에 남긴다', async () => {
+    stubFirebaseEnv(CONFIG)
+    stubBrowser('granted', 'granted')
+    const { registerWebPush, session } = await loadWebPush()
+    const { useApiFlowLog } = await import('@/shared/api')
+    const actionOf = () => useApiFlowLog.getState().currentAction
+    await registerWebPush()
+
+    const putActions: (string | null)[] = []
+    api.put.mockImplementation(() => {
+      putActions.push(actionOf())
+      return Promise.resolve({ data: undefined })
+    })
+    firebase.registered?.('fid-2')
+    await vi.waitFor(() => expect(putActions).toEqual(['알림 기기 등록']))
+
+    let deleteAction: string | null = null
+    api.delete.mockImplementation(() => {
+      deleteAction = actionOf()
+      return Promise.resolve({ data: undefined })
+    })
+    await session.signOut()
+    expect(deleteAction).toBe('알림 기기 해제')
+  })
+
+  it('firebase를 한 번 못 불러와도(네트워크 등) 다음에 다시 시도한다', async () => {
+    stubFirebaseEnv(CONFIG)
+    stubBrowser('granted', 'granted')
+    firebase.isSupported.mockImplementationOnce(() => Promise.reject(new Error('network')))
+    const { isWebPushAvailable } = await loadWebPush()
+
+    expect(await isWebPushAvailable()).toBe(false)
+    expect(await isWebPushAvailable()).toBe(true)
+  })
+
   it('등록한 적이 없으면 로그아웃 때 지우지 않는다', async () => {
     stubFirebaseEnv(CONFIG)
     stubBrowser('denied', 'denied')
