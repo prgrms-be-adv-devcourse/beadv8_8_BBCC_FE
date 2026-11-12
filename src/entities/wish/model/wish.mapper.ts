@@ -36,7 +36,7 @@ export function toWishRequest(dto: WishRequestDto): WishRequest {
     requestedByType: dto.requestedByType,
     message: dto.message,
     requestedAt: dto.requestedAt,
-    decidedAt: dto.paidAt ?? dto.rejectedAt ?? dto.cancelledAt ?? dto.expiredAt,
+    decidedAt: dto.paidAt ?? dto.rejectedAt ?? dto.cancelledAt,
     expiresAt: dto.expiresAt,
     expiredAt: dto.expiredAt,
     rejectReason: dto.rejectReason,
