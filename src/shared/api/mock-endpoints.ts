@@ -135,7 +135,7 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     backend: 'BE #352 계약 확정(10/16), 구현 전 → 주문 상세 · 결제로 만든 목 (FE #124)',
     screens: '주문 상세(처리 과정)',
   },
-  // 정산 (BE SellerSettlementController · AdminSettlementController, FE #119). 관리자 정산서 목록 · 재처리는 BE에 없어 화면에서 뺌
+  // 정산 (BE SellerSettlementController · AdminSettlementController, FE #119)
   {
     method: 'GET',
     path: '/seller/settlement-targets',
@@ -170,6 +170,27 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     source: 'real',
     backend: 'BE develop(742516f) 머지 → 실제 (FE #119)',
     screens: '관리자 정산(실행)',
+  },
+  {
+    method: 'GET',
+    path: '/admin/settlements',
+    source: 'real',
+    backend: 'BE AdminSettlementController develop 머지 → 실제',
+    screens: '관리자 정산(정산서 목록)',
+  },
+  {
+    method: 'POST',
+    path: '/admin/settlements/:settlementId/retry',
+    source: 'real',
+    backend: 'BE AdminSettlementController develop 머지 → 실제',
+    screens: '관리자 정산(지급 재요청)',
+  },
+  {
+    method: 'GET',
+    path: '/admin/settlement-runs/:runId',
+    source: 'real',
+    backend: 'BE AdminSettlementController develop 머지 → 실제',
+    screens: '관리자 정산(실행 조회)',
   },
   // 추천 기준 옷
   {

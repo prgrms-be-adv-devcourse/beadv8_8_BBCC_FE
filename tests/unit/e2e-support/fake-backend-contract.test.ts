@@ -32,6 +32,8 @@ import { childOnboardingShape } from '@/entities/child-onboarding'
 import { guardianVerificationShape } from '@/entities/guardian-verification/api/guardian-verification.shape'
 import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
 import { deadLetterPageShape, deadLetterShape } from '@/entities/dead-letter/api/dead-letter.shape'
+import { adminSettlementPageShape } from '@/entities/settlement/api/admin-settlement.shape'
+import { settlementRunShape } from '@/entities/settlement/api/settlement.shape'
 import {
   inboxNotificationPageShape,
   unreadCountShape,
@@ -587,6 +589,30 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('DELETE', `/reviews/${review.id}`, 2)).status).toBe(403)
     expect((await call('DELETE', `/reviews/${review.id}`, 1)).status).toBe(204)
   }, 15_000)
+
+  it('관리자 정산: 실행 → 실행 조회 · 정산서 목록, 지급 재요청은 지급 결과를 못 받은 정산서만', async () => {
+    // 앞에서 구매확정한 주문상품을 하루 전 확정으로 옮겨 오늘 기준일로 정산한다
+    await call('POST', '/__fake/age-confirmations', null, { days: 1 })
+    const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10)
+    const run = await call('POST', '/admin/settlements/run', 3, { cutoffOn: today })
+    expect(run.status).toBe(201)
+    expectContract(run.data, settlementRunShape)
+    expect(run.data.skippedSellers).toEqual([])
+
+    const found = await call('GET', `/admin/settlement-runs/${run.data.runId}`, 3)
+    expectContract(found.data, settlementRunShape)
+    expect((await call('GET', '/admin/settlement-runs/99999', 3)).status).toBe(404)
+
+    const list = await call('GET', '/admin/settlements?status=PAID', 3)
+    expectContract(list.data, adminSettlementPageShape)
+    expect(list.data.content.length).toBeGreaterThan(0)
+    expect((await call('GET', '/admin/settlements?status=DONE', 3)).status).toBe(400)
+    expect((await call('GET', '/admin/settlements', 1)).status).toBe(403)
+
+    const paid = list.data.content[0].settlementId
+    expect((await call('POST', `/admin/settlements/${paid}/retry`, 3)).status).toBe(409)
+    expect((await call('POST', '/admin/settlements/99999/retry', 3)).status).toBe(404)
+  })
 
   it('관리자 회원 목록 · 이용 정지 · 판매자 자격 정지', async () => {
     expectContract(

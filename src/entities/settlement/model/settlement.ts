@@ -37,7 +37,11 @@ export type SettlementRunResult = {
   failCount: number
   periodStart: string
   periodEnd: string
+  skippedSellers: SkippedSeller[]
 }
+
+/** 정산에서 건너뛴 판매자와 사유 */
+export type SkippedSeller = { sellerId: string; phase: string; reason: string }
 
 export const SETTLEMENT_STATUS_LABEL: Record<SettlementStatus, string> = {
   COMPLETED: '정산 완료',
@@ -50,4 +54,10 @@ export const SETTLEMENT_RUN_STATUS_LABEL: Record<string, string> = {
   COMPLETED: '완료',
   PARTIAL_FAILED: '일부 실패',
   FAILED: '실패',
+}
+
+/** 건너뛴 단계 */
+export const SKIPPED_PHASE_LABEL: Record<string, string> = {
+  PROCESS: '계산',
+  WRITE: '저장',
 }
