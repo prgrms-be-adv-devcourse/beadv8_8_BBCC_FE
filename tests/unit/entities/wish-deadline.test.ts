@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { toWishRequest, wishDeadlineLabel, type MockWishRequestDto } from '@/entities/wish'
 
-// 서버 시각은 시간대 없는 KST 문자열(yyyy-MM-ddTHH:mm:ss). 화면도 같은 방식으로 읽는다
-const NOW = new Date('2026-11-12T10:00:00')
+// 서버 시각은 시간대 없는 KST 문자열(yyyy-MM-ddTHH:mm:ss). 브라우저 시간대와 상관없이 KST로 읽는다
+const NOW = new Date('2026-11-12T10:00:00+09:00')
 const pending = (expiresAt: string | null) => ({
   status: 'REQUESTED' as const,
   expiresAt,
@@ -43,32 +43,51 @@ describe('wishDeadlineLabel: 조르기 남은 기한', () => {
   })
 })
 
+describe('브라우저 시간대가 KST가 아니어도 경계가 같다', () => {
+  it('UTC 기준 같은 순간이면 같은 결과', () => {
+    const utcNow = new Date('2026-11-12T01:00:00Z') // = KST 10:00
+    expect(wishDeadlineLabel(pending('2026-11-13T10:00:00'), utcNow)).toBe('1일 남음')
+    expect(wishDeadlineLabel(pending('2026-11-13T09:59:59'), utcNow)).toBe('오늘 마감')
+  })
+})
+
+const baseDto = {
+  requestId: '1',
+  type: 'PURCHASE',
+  childId: '3',
+  status: 'REQUESTED',
+  requestedByType: 'CHILD',
+  requestedById: '9',
+  message: null,
+  requestedAt: '2026-11-12T10:00:00',
+  payerType: null,
+  payerId: null,
+  paidAt: null,
+  rejectReason: null,
+  rejectedAt: null,
+  cancelReason: null,
+  cancelledAt: null,
+  expiresAt: '2026-11-19T10:00:00',
+  expiredAt: null,
+  items: [],
+  purchases: [],
+  paidOrderItemIds: [],
+} satisfies MockWishRequestDto
+
 describe('조르기 매퍼: 기한 칸을 버리지 않는다', () => {
   it('expiresAt · expiredAt', () => {
-    const dto = {
-      requestId: '1',
-      type: 'PURCHASE',
-      childId: '3',
-      status: 'REQUESTED',
-      requestedByType: 'CHILD',
-      requestedById: '9',
-      message: null,
-      requestedAt: '2026-11-12T10:00:00',
-      payerType: null,
-      payerId: null,
-      paidAt: null,
-      rejectReason: null,
-      rejectedAt: null,
-      cancelReason: null,
-      cancelledAt: null,
-      expiresAt: '2026-11-19T10:00:00',
-      expiredAt: null,
-      items: [],
-      purchases: [],
-      paidOrderItemIds: [],
-    } satisfies MockWishRequestDto
-    const wish = toWishRequest(dto)
+    const wish = toWishRequest(baseDto)
     expect(wish.expiresAt).toBe('2026-11-19T10:00:00')
     expect(wish.expiredAt).toBeNull()
+  })
+  it('만료 시각은 답한 시각(decidedAt)에 넣지 않는다 (시스템 만료라 사람이 답한 게 아님)', () => {
+    const wish = toWishRequest({
+      ...baseDto,
+      status: 'EXPIRED',
+      expiresAt: null,
+      expiredAt: '2026-11-19T10:15:00',
+    })
+    expect(wish.decidedAt).toBeNull()
+    expect(wish.expiredAt).toBe('2026-11-19T10:15:00')
   })
 })

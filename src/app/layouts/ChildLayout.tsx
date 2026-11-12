@@ -25,6 +25,7 @@ export function ChildLayout() {
           <Link to={paths.child.products}>상품</Link>
           <Link to={paths.child.cart}>내 장바구니</Link>
           <Link to={paths.child.wishes}>내 조르기</Link>
+          <Link to={paths.child.notifications}>알림</Link>
           {accessToken && (
             <Button variant="ghost" disabled={logout.isPending} onClick={() => logout.mutate()}>
               로그아웃

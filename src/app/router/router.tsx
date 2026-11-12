@@ -297,6 +297,14 @@ export const router = createBrowserRouter(
           ),
         },
         {
+          path: rel(paths.child.home, paths.child.notifications),
+          ...page(() =>
+            import('@/pages/child/notifications').then((m) => ({
+              Component: m.ChildNotificationsPage,
+            })),
+          ),
+        },
+        {
           path: rel(paths.child.home, paths.child.cart),
           ...page(() => import('@/pages/child/cart').then((m) => ({ Component: m.ChildCartPage }))),
         },
