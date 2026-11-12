@@ -29,7 +29,7 @@ import { PaymentSummary } from './PaymentSummary'
 
 export function ShopOrderDetailPage() {
   const { orderId = '' } = useParams()
-  const { query, payments, payment, paymentCheck, delayed } = useOrderTracking(orderId)
+  const { query, paymentQuery, payment, paymentCheck, delayed } = useOrderTracking(orderId)
   // 구매확정한 주문상품이 있을 때만 리뷰 작성 가능 목록 · 내 리뷰를 불러 줄마다 리뷰 동작을 정한다
   const hasConfirmed = query.data?.items.some((item) => item.status === 'CONFIRMED') ?? false
   const reviewable = useReviewableItemsQuery({ enabled: hasConfirmed })
@@ -202,8 +202,8 @@ export function ShopOrderDetailPage() {
             totalAmount={order.totalAmount}
             payment={payment}
             check={paymentCheck}
-            pending={payments.isLoading}
-            error={payments.error}
+            pending={paymentQuery.isLoading}
+            error={paymentQuery.error}
           />
           <section
             aria-label="배송지"

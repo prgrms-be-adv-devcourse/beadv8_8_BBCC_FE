@@ -516,6 +516,13 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       (await call('GET', `/payments/${payments.data.content[0].paymentId}`, 1)).data,
       paymentDetailShape,
     )
+    // 주문 ID로 거르면 그 주문의 내 결제만 (남의 주문이면 빈 목록)
+    const ofOrder = await call('GET', `/payments?orderId=${orderId}`, 1)
+    expectContract(ofOrder.data, paymentPageShape)
+    expect(ofOrder.data.content).toHaveLength(1)
+    expect(ofOrder.data.content[0]).toMatchObject({ orderId: Number(orderId) })
+    expect((await call('GET', `/payments?orderId=${orderId}`, 2)).data.content).toEqual([])
+    expect((await call('GET', '/payments?orderId=999999', 1)).data.content).toEqual([])
 
     const sellerOrders = await call('GET', '/seller/orders', 2)
     expectContract(sellerOrders.data, sellerOrderPageShape)

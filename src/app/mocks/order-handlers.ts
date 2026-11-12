@@ -126,7 +126,10 @@ export const orderHandlers: MockHandler[] = [
           )
         throw error
       }
-      const payments = await fetchReal<Page<PaymentSummaryDto>>(request, '/payments?page=0&size=50')
+      const payments = await fetchReal<Page<PaymentSummaryDto>>(
+        request,
+        `/payments?orderId=${orderId}`,
+      )
       const payment = payments.content.find((item) => String(item.orderId) === orderId) ?? null
       return { status: 200, data: buildOrderTimeline(order, payment) }
     },

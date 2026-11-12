@@ -1655,18 +1655,21 @@ http
             .map(({ memberId: _m, ...l }) => l),
         ),
       )
-    if (r('GET', /^\/payments$/))
+    if (r('GET', /^\/payments$/)) {
+      // orderId를 주면 그 주문의 내 결제만 (0 또는 1건)
+      const orderId = url.searchParams.get('orderId')
       return send(
         res,
         200,
         page(
           payments
-            .filter((x) => x.memberId === me)
+            .filter((x) => x.memberId === me && (orderId === null || x.orderId === +orderId))
             .slice()
             .reverse()
             .map(({ memberId: _m, items: _i, ...x }) => x),
         ),
       )
+    }
     if ((x = r('GET', /^\/payments\/(\d+)$/))) {
       const pm = payments.find((x2) => x2.paymentId === +x[1] && x2.memberId === me)
       if (!pm) return problem(res, 404, '찾을 수 없습니다', '결제를 찾을 수 없습니다.', req.url)

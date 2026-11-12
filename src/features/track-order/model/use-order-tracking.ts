@@ -1,12 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { isPaymentDelayed, paymentPendingMs, useOrderQuery } from '@/entities/order'
-import {
-  checkOrderPayment,
-  findPaymentOfOrder,
-  paymentKeys,
-  usePaymentsQuery,
-} from '@/entities/payment'
+import { checkOrderPayment, paymentKeys, useOrderPaymentQuery } from '@/entities/payment'
 import { walletKeys } from '@/entities/wallet'
 
 /**
@@ -19,22 +14,23 @@ export function useOrderTracking(orderId: string) {
   const status = query.data?.status
   const awaiting = status === 'PENDING_PAYMENT'
   // 결제 결과가 나온 뒤에만 결제 도메인 기록을 조회한다 (처리 중에는 기록이 없거나 반영 전)
-  const payments = usePaymentsQuery({ enabled: query.isSuccess && !awaiting })
+  const paymentQuery = useOrderPaymentQuery(orderId, { enabled: query.isSuccess && !awaiting })
 
   // 결제 결과가 나오면 예치금 차감과 결제 기록을 화면 · 흐름 패널(상태 변화)에서 확인하도록 다시 조회한다
   useEffect(() => {
     if (status && status !== 'PENDING_PAYMENT') {
       void queryClient.invalidateQueries({ queryKey: walletKeys.me })
+      void queryClient.invalidateQueries({ queryKey: paymentKeys.ofOrder(orderId) })
       void queryClient.invalidateQueries({ queryKey: paymentKeys.list })
     }
-  }, [status, queryClient])
+  }, [status, orderId, queryClient])
 
   const order = query.data ?? null
-  const payment = order ? findPaymentOfOrder(payments.data, order.id) : null
+  const payment = order ? (paymentQuery.data ?? null) : null
   return {
     query,
     order,
-    payments,
+    paymentQuery,
     payment,
     paymentCheck: order ? checkOrderPayment(order, payment) : null,
     /** 결제 처리 중이 30초를 넘었다 (서버 이벤트가 오지 않음) */

@@ -25,7 +25,7 @@ import { OrderTimelineCard } from '@/widgets/order-timeline'
 
 export function ConsoleOrderDetailPage() {
   const { orderId = '' } = useParams()
-  const { query, payments, payment, paymentCheck, delayed } = useOrderTracking(orderId)
+  const { query, paymentQuery, payment, paymentCheck, delayed } = useOrderTracking(orderId)
   const wallet = useWalletQuery()
 
   if (query.isPending) return <StateMessage>불러오는 중…</StateMessage>
@@ -72,8 +72,8 @@ export function ConsoleOrderDetailPage() {
         <PaymentCard
           payment={payment}
           check={paymentCheck}
-          pending={payments.isLoading}
-          error={payments.error}
+          pending={paymentQuery.isLoading}
+          error={paymentQuery.error}
         />
       )}
 
