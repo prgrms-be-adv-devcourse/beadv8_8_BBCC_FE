@@ -54,6 +54,12 @@ export {
   type OrderTab,
 } from './model/order.rules'
 export {
+  currentCancelReasonOf,
+  currentOrderStatusOf,
+  toOrderHistory,
+  type OrderHistoryEntry,
+} from './model/order-history'
+export {
   doneCount,
   formatGap,
   TIMELINE_CANCEL_LABEL,
@@ -67,6 +73,7 @@ export {
 export {
   orderKeys,
   paymentPendingMs,
+  useAdminOrderHistoryQuery,
   useAdminOrdersQuery,
   useChildPurchasesQuery,
   useOrderQuery,
@@ -74,6 +81,7 @@ export {
   useOrdersQuery,
 } from './model/queries'
 export { OrderDeliveryList } from './ui/OrderDeliveryList'
+export { OrderHistoryList } from './ui/OrderHistoryList'
 export { OrderItemRow } from './ui/OrderItemRow'
 export { OrderProcessSteps } from './ui/OrderProcessSteps'
 export { OrderProgressBar } from './ui/OrderProgressBar'

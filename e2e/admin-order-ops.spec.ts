@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { signInAdmin } from './support/admin'
 
 // 관리자 주문 운영: 멈춘 주문 종류별 건수 → 목록 + AI 진단 메모 → 주문 상세로 이동 (BE #445 · #926)
+// 주문 상세는 상태 이력(BE #442)을 주문 번호로 바로 읽는다 → 전체 주문 목록에 없는 주문도 열린다
 const API = 'http://localhost:18080/api/v1'
 
 test('관리자 주문 운영: 발송 지연 주문과 AI 메모를 보고 주문 상세로 간다', async ({
@@ -49,4 +50,15 @@ test('관리자 주문 운영: 발송 지연 주문과 AI 메모를 보고 주�
   await expect(item).toContainText('판매자가 아직 송장을 등록하지 않았어요.')
   await item.getByRole('link', { name: `주문 #${placed.orderId}` }).click()
   await expect(page).toHaveURL(new RegExp(`/admin/orders/${placed.orderId}$`))
+
+  // 주문 상세: 지금 상태 + 상태 이력 (오래된 것부터, 한글로)
+  await expect(
+    page.getByRole('region', { name: '주문 상태' }).getByRole('heading', { name: '결제 완료' }),
+  ).toBeVisible()
+  const rows = page.getByRole('list', { name: '상태 이력 목록' }).getByRole('listitem')
+  await expect(rows).toHaveCount(2)
+  await expect(rows.nth(0)).toContainText('결제 처리 중')
+  await expect(rows.nth(0)).toContainText('구매자 (회원 4) · 주문하기')
+  await expect(rows.nth(1)).toContainText('결제 처리 중 → 결제 완료')
+  await expect(rows.nth(1)).toContainText('서버 이벤트 · 결제 완료 알림')
 })

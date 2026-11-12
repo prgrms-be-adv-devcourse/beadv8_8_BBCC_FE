@@ -39,7 +39,11 @@ import {
   unreadCountShape,
 } from '@/entities/notification/api/notification.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
-import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
+import {
+  orderDetailShape,
+  orderHistoryShape,
+  orderPageShape,
+} from '@/entities/order/api/order.shape'
 import {
   wishRequestShape,
   wishRequestsShape,
@@ -535,6 +539,24 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const itemId = order.data.items[0].orderItemId
     expect((await call('POST', `/orders/${orderId}/items/${itemId}/confirm`, 1)).status).toBe(200)
     expectContract((await call('GET', `/orders/${orderId}`, 1)).data, orderDetailShape)
+
+    // 관리자 상태 이력 (BE #442): 오래된 것부터, 없는 주문은 404
+    const history = await call('GET', `/admin/orders/${orderId}/history`, 3)
+    expectContract(history.data, orderHistoryShape)
+    expect(
+      history.data.map((row: { targetType: string; toStatus: string }) => [
+        row.targetType,
+        row.toStatus,
+      ]),
+    ).toEqual([
+      ['ORDER', 'PENDING_PAYMENT'],
+      ['ORDER', 'PAID'],
+      ['DELIVERY', 'SHIPPING'],
+      ['DELIVERY', 'DELIVERED'],
+      ['ORDER_ITEM', 'CONFIRMED'],
+    ])
+    expect((await call('GET', '/admin/orders/999999/history', 3)).status).toBe(404)
+    expect((await call('GET', `/admin/orders/${orderId}/history`, 1)).status).toBe(403)
 
     // 리뷰 (BE community): 구매확정한 주문상품이 작성 가능 목록에 나오고, 쓰면 빠지고 상품 리뷰 · 요약에 반영된다
     const eligible = await call('GET', '/reviews/eligible', 1)

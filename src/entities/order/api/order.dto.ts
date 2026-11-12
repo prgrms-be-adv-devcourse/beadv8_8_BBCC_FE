@@ -137,3 +137,17 @@ export type ChildPurchaseDto = {
   /** PAID · SHIPPING · DELIVERED · CONFIRMED · CANCELLED */
   status: string
 }
+
+/** GET /admin/orders/{orderId}/history 한 줄 (BE OrderStatusHistoryResponse #442). 오래된 것부터 */
+export type OrderStatusHistoryDto = {
+  historyId: string
+  targetType: string
+  targetId: string
+  fromStatus: string | null
+  toStatus: string
+  reason: string | null
+  actorType: string
+  actorId: string | null
+  source: string
+  occurredAt: string
+}
