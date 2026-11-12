@@ -58,6 +58,6 @@ export const orderApi = {
   /** 관리자 주문 상태 이력 (BE #442). 오래된 것부터, 주문이 없으면 404 */
   adminHistory: (orderId: string) =>
     apiClient
-      .get<OrderStatusHistoryDto[]>(`/admin/orders/${orderId}/history`)
+      .get<OrderStatusHistoryDto[]>(`/admin/orders/${encodeURIComponent(orderId)}/history`)
       .then(expectShape(orderHistoryShape)),
 }
