@@ -17,7 +17,6 @@ const log = (patch: Partial<ApiCallLog>): ApiCallLog => ({
   status: 200,
   durationMs: 10,
   startedAt: `2026-10-15T10:00:0${id % 10}.000Z`,
-  mock: false,
   requestBody: null,
   responseBody: null,
   contractIssues: [],
@@ -215,16 +214,6 @@ describe('흐름 확인 판정', () => {
   it('호출이 없으면 대기', () => {
     expect(evaluate(check('order-paid'), []).state).toBe('waiting')
   })
-  it('목으로 통과하면 표시한다', () => {
-    expect(
-      evaluate(check('product-register'), [
-        log({ method: 'POST', path: '/seller/products', mock: true }),
-      ]),
-    ).toMatchObject({
-      state: 'pass',
-      byMock: true,
-    })
-  })
   it('판매 시작: PUT sale-status 응답이 ON_SALE이면 통과', () => {
     expect(
       evaluate(check('product-start'), [
@@ -234,7 +223,7 @@ describe('흐름 확인 판정', () => {
           responseBody: { productId: '7', status: 'ON_SALE', version: 1 },
         }),
       ]),
-    ).toMatchObject({ state: 'pass', byMock: false })
+    ).toMatchObject({ state: 'pass' })
   })
   it('보호자 잔액 감소: 같은 회원 잔액이 줄면 통과', () => {
     const result = evaluate(check('buyer-balance'), [

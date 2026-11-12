@@ -18,7 +18,6 @@ const STATUS_LABEL: Record<CheckStatus, string> = {
   fail: '실패',
   role: '건너뜀',
   nodata: '데이터 없음',
-  mock: '목 응답',
 }
 
 const STATUS_TONE: Record<CheckStatus, string> = {
@@ -27,7 +26,6 @@ const STATUS_TONE: Record<CheckStatus, string> = {
   fail: 'text-destructive font-semibold',
   role: 'text-muted-foreground',
   nodata: 'text-muted-foreground',
-  mock: 'text-amber-700',
 }
 
 /** 실제 백엔드에 조회 API를 한 번씩 불러 상태 · 계약 · 시간을 본다 (배포 환경 통합 점검용) */
@@ -52,7 +50,7 @@ export function ConnectionCheck() {
 
   const counts = Object.values(results).reduce<Record<CheckStatus, number>>(
     (sum, result) => ({ ...sum, [result.status]: sum[result.status] + 1 }),
-    { pass: 0, contract: 0, fail: 0, role: 0, nodata: 0, mock: 0 },
+    { pass: 0, contract: 0, fail: 0, role: 0, nodata: 0 },
   )
   const done = Object.keys(results).length
 
@@ -72,8 +70,8 @@ export function ConnectionCheck() {
         </p>
         {done > 0 && (
           <p role="status" aria-label="점검 결과" className="text-sm font-medium">
-            통과 {counts.pass} · 계약 다름 {counts.contract} · 실패 {counts.fail} · 목 응답{' '}
-            {counts.mock} · 건너뜀 {counts.role + counts.nodata}
+            통과 {counts.pass} · 계약 다름 {counts.contract} · 실패 {counts.fail} · 건너뜀{' '}
+            {counts.role + counts.nodata}
           </p>
         )}
         <table className="w-full text-left text-sm">

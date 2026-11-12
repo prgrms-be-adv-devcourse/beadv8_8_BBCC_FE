@@ -12,8 +12,6 @@ export type CheckStatus =
   | 'role'
   /** 상세 조회에 쓸 ID가 앞 결과에 없어 건너뜀 */
   | 'nodata'
-  /** 목이 응답했다 (실제 서버를 거치지 않음) */
-  | 'mock'
 
 export type CheckResult = {
   id: string
@@ -34,7 +32,7 @@ function canCall(check: ConnectionCheck, viewer: Viewer): boolean {
 
 const lastLogId = () => useApiFlowLog.getState().logs.at(-1)?.id ?? 0
 
-/** 점검 하나를 부르는 동안 흐름 기록에 쌓인 마지막 호출 (상태 · 계약 · 시간 · 목 여부를 그대로 쓴다) */
+/** 점검 하나를 부르는 동안 흐름 기록에 쌓인 마지막 호출 (상태 · 계약 · 시간을 그대로 쓴다) */
 function logSince(id: number) {
   return useApiFlowLog
     .getState()
@@ -82,13 +80,8 @@ export async function runConnectionChecks(
     const log = logSince(before)
     const httpStatus = log?.status ?? null
     const contractIssues = log?.contractIssues.length ?? 0
-    const status: CheckStatus = log?.mock
-      ? 'mock'
-      : failed && !log?.expectedReason
-        ? 'fail'
-        : contractIssues > 0
-          ? 'contract'
-          : 'pass'
+    const status: CheckStatus =
+      failed && !log?.expectedReason ? 'fail' : contractIssues > 0 ? 'contract' : 'pass'
     if (!failed && check.pick) Object.assign(ids, stripEmpty(check.pick(data)))
     onResult({
       id: check.id,
