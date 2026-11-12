@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   SettlementItemList,
   useSettlementsQuery,
@@ -10,14 +10,20 @@ import { getErrorMessage } from '@/shared/api'
 import { sellerPathsOf } from '@/shared/config'
 import { formatWon, useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Pagination } from '@/shared/ui/Pagination'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { SettlementTable } from './SettlementTable'
 
-/** 정산: 예치금 잔액 · 정산 예정 금액 한 줄 → 정산 예정(구매확정분) 표 → 정산서 장부. 정산서는 따로인 화면 */
+/**
+ * 정산: 예치금 잔액 · 정산 예정 금액 한 줄 → 정산 예정(구매확정분) 표 → 정산서 장부. 정산서는 따로인 화면.
+ * 정산 예정 · 정산서는 쪽을 따로 넘긴다 (서버 페이지). 정산 예정 금액은 쪽과 상관없이 전체 합이다
+ */
 export function CenterSettlementsPage() {
-  const targets = useSettlementTargetsQuery()
+  const [targetPage, setTargetPage] = useState(0)
+  const [settlementPage, setSettlementPage] = useState(0)
+  const targets = useSettlementTargetsQuery(targetPage)
   const pendingAmount = useSettlementTargetSummaryQuery()
-  const settlements = useSettlementsQuery()
+  const settlements = useSettlementsQuery(settlementPage)
   const wallet = useWalletQuery()
   const sellerPaths = sellerPathsOf(useArea())
 
@@ -66,6 +72,13 @@ export function CenterSettlementsPage() {
         {targets.data && targets.data.content.length > 0 && (
           <SettlementItemList label="정산 예정" items={targets.data.content} isTarget />
         )}
+        {targets.data && (
+          <Pagination
+            page={targetPage}
+            totalPages={targets.data.totalPages}
+            onChange={setTargetPage}
+          />
+        )}
       </section>
 
       <section aria-label="정산서 목록" className="space-y-3">
@@ -79,6 +92,13 @@ export function CenterSettlementsPage() {
           <SettlementTable
             settlements={settlements.data.content}
             detailTo={sellerPaths.settlement}
+          />
+        )}
+        {settlements.data && (
+          <Pagination
+            page={settlementPage}
+            totalPages={settlements.data.totalPages}
+            onChange={setSettlementPage}
           />
         )}
       </section>

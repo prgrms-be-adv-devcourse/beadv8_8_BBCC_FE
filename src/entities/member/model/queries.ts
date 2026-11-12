@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { adminMemberApi } from '../api/member-api'
 import type { MemberFilter } from './member'
 import { toAdminMember } from './member.mapper'
@@ -6,17 +6,20 @@ import { findAdminMember } from './member.rules'
 
 export const memberKeys = {
   all: ['admin-members'] as const,
-  list: (filter: MemberFilter, keyword: string) => ['admin-members', filter, keyword] as const,
+  list: (filter: MemberFilter, keyword: string, page = 0) =>
+    ['admin-members', filter, keyword, page] as const,
 }
 
-export function useAdminMembersQuery(filter: MemberFilter, keyword: string) {
+/** 관리자 회원 목록 (20명씩, page는 0부터). 쪽을 넘기는 동안 앞 쪽을 보여 준다 */
+export function useAdminMembersQuery(filter: MemberFilter, keyword: string, page = 0) {
   return useQuery({
-    queryKey: memberKeys.list(filter, keyword),
-    queryFn: () => adminMemberApi.list(filter, keyword),
-    select: (page) => ({
-      ...page,
-      content: page.content.map(toAdminMember),
+    queryKey: memberKeys.list(filter, keyword, page),
+    queryFn: () => adminMemberApi.list(filter, keyword, page),
+    select: (result) => ({
+      ...result,
+      content: result.content.map(toAdminMember),
     }),
+    placeholderData: keepPreviousData,
   })
 }
 

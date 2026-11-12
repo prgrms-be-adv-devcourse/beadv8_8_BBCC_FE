@@ -11,6 +11,7 @@ import { adminPathsOf } from '@/shared/config'
 import { cn, useArea } from '@/shared/lib'
 import { Input } from '@/shared/ui/input'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Pagination } from '@/shared/ui/Pagination'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { MemberTable } from './MemberTable'
@@ -20,17 +21,20 @@ const FILTERS = Object.keys(MEMBER_FILTER_LABEL) as MemberFilter[]
 /** 회원 관리(목록): 구분 탭 → 검색 → 회원 표. 정지 · 권한 변경은 회원 상세에서 */
 export function AdminMembersPage() {
   const adminPaths = adminPathsOf(useArea())
-  // 구분 · 검색어는 주소(?filter= · ?q=)에 둔다 → 상세에서 돌아와도 그대로
+  // 구분 · 검색어 · 페이지는 주소(?filter= · ?q= · ?page=)에 둔다 → 상세에서 돌아와도 그대로
   const [params, setParams] = useSearchParams()
   const filter = memberFilterOf(params.get('filter'))
   const search = params.get('q') ?? ''
-  const members = useAdminMembersQuery(filter, search)
-  const setParam = (key: 'filter' | 'q', value: string | null) => {
+  const page = Math.max(0, Number(params.get('page') ?? 0) || 0)
+  const members = useAdminMembersQuery(filter, search, page)
+  // 구분 · 검색어가 바뀌면 첫 페이지부터
+  const setParam = (key: 'filter' | 'q' | 'page', value: string | null) => {
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev)
         if (value) next.set(key, value)
         else next.delete(key)
+        if (key !== 'page') next.delete('page')
         return next
       },
       { replace: true },
@@ -118,6 +122,13 @@ export function AdminMembersPage() {
             members={rows}
             memberHref={adminPaths.member}
             listSearch={params.toString()}
+          />
+        )}
+        {members.data && (
+          <Pagination
+            page={page}
+            totalPages={members.data.totalPages}
+            onChange={(next) => setParam('page', next > 0 ? String(next) : null)}
           />
         )}
       </section>

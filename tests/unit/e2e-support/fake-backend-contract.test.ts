@@ -1053,6 +1053,27 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       expect(second.content, path).toEqual(all.content.slice(1, 2))
     }
   })
+
+  it('정산 · 관리자 회원 · 판매자 신청 목록도 요청한 page · size로 나눈다 (BE PageResponse)', async () => {
+    for (const [path, as] of [
+      ['/seller/settlements', 2],
+      ['/seller/settlement-targets', 2],
+      ['/admin/members?filter=ALL', 3],
+      ['/admin/seller-applications?status=APPROVED', 3],
+    ] as const) {
+      const join = path.includes('?') ? '&' : '?'
+      const all = (await call('GET', `${path}${join}size=100`, as)).data
+      const second = (await call('GET', `${path}${join}page=1&size=1`, as)).data
+      expect(second, path).toMatchObject({
+        page: 1,
+        size: 1,
+        totalElements: all.totalElements,
+        totalPages: all.totalElements,
+        hasNext: all.totalElements > 2,
+      })
+      expect(second.content, path).toEqual(all.content.slice(1, 2))
+    }
+  })
 })
 
 describe('상품 이미지 업로드 주소 발급 (BE SellerProductImageController)', () => {

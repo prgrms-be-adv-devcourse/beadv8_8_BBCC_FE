@@ -10,19 +10,27 @@ import { RejectSellerForm } from '@/features/reject-seller'
 import { getErrorMessage } from '@/shared/api'
 import { cn, formatDateTime } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Pagination } from '@/shared/ui/Pagination'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 /**
  * 판매자 신청 심사: 위는 심사 대기 표(줄마다 승인 · 거절), 아래는 처리한 신청 표.
- * 거절 사유는 그 줄 아래에서 펼친다
+ * 거절 사유는 그 줄 아래에서 펼친다. 두 표는 쪽을 따로 넘긴다 (서버 페이지).
+ * BE는 status 하나로만 거르므로 처리한 신청은 전체 목록의 쪽에서 심사 대기를 뺀 것이다
+ * (그 쪽의 심사 대기는 위 표에 있다)
  */
 export function AdminSellerApplicationsPage() {
-  const applications = useSellerApplicationsQuery(null)
-  const pendingApplications = useSellerApplicationsQuery('PENDING')
-  const all = applications.data?.content ?? []
+  const [pendingPage, setPendingPage] = useState(0)
+  const [allPage, setAllPage] = useState(0)
+  const applications = useSellerApplicationsQuery(null, allPage)
+  const pendingApplications = useSellerApplicationsQuery('PENDING', pendingPage)
   const pending = pendingApplications.data?.content ?? []
-  const processed = all.filter(isDecided)
+  const processed = (applications.data?.content ?? []).filter(isDecided)
+  const processedCount = Math.max(
+    0,
+    (applications.data?.totalElements ?? 0) - (pendingApplications.data?.totalElements ?? 0),
+  )
 
   return (
     <div className="shop-look space-y-8">
@@ -54,28 +62,37 @@ export function AdminSellerApplicationsPage() {
                 ))}
               </ApplicationTable>
             )}
+            <Pagination
+              page={pendingPage}
+              totalPages={pendingApplications.data.totalPages}
+              onChange={setPendingPage}
+            />
           </section>
 
-          {processed.length > 0 && (
+          {processedCount > 0 && (
             <section aria-label="처리한 신청" className="space-y-3">
-              <SectionTitle
-                count={Math.max(
-                  0,
-                  applications.data.totalElements - pendingApplications.data.totalElements,
-                )}
-              >
-                처리한 신청
-              </SectionTitle>
-              <ApplicationTable label="처리한 신청" lastColumn="상태">
-                {processed.map((application) => (
-                  <tr key={application.id} className={ROW}>
-                    <ApplicationCells application={application} />
-                    <td className={cn(CELL, 'text-ink-2 font-semibold whitespace-nowrap')}>
-                      {APPLICATION_STATUS_LABEL[application.status]}
-                    </td>
-                  </tr>
-                ))}
-              </ApplicationTable>
+              <SectionTitle count={processedCount}>처리한 신청</SectionTitle>
+              {processed.length === 0 ? (
+                <p className="bg-paper-2 text-ink-2 rounded-lg py-10 text-center text-sm">
+                  이 쪽에는 처리한 신청이 없어요.
+                </p>
+              ) : (
+                <ApplicationTable label="처리한 신청" lastColumn="상태">
+                  {processed.map((application) => (
+                    <tr key={application.id} className={ROW}>
+                      <ApplicationCells application={application} />
+                      <td className={cn(CELL, 'text-ink-2 font-semibold whitespace-nowrap')}>
+                        {APPLICATION_STATUS_LABEL[application.status]}
+                      </td>
+                    </tr>
+                  ))}
+                </ApplicationTable>
+              )}
+              <Pagination
+                page={allPage}
+                totalPages={applications.data.totalPages}
+                onChange={setAllPage}
+              />
             </section>
           )}
         </>

@@ -24,10 +24,11 @@ export const sellerApi = {
       }),
   apply: (request: SellerApplicationRequestDto) =>
     apiClient.post<SellerApplicationDto>('/members/me/seller-application', request),
-  listApplications: (status: string | null) =>
+  /** status가 없으면 전체 (최신순 20건씩). page는 0부터 */
+  listApplications: (status: string | null, page = 0) =>
     apiClient
       .get<Page<SellerApplicationSummaryDto>>('/admin/seller-applications', {
-        params: { status: status ?? undefined, page: 0, size: 20 },
+        params: { status: status ?? undefined, page, size: 20 },
       })
       .then(expectShape(sellerApplicationPageShape)),
   approve: (applicationId: string) =>
