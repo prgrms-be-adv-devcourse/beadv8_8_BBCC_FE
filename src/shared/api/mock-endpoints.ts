@@ -231,13 +231,6 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   },
   {
     method: 'PATCH',
-    path: '/children/:childId/growth-records/:recordId',
-    source: 'mock',
-    backend: 'BE 없음',
-    screens: '자녀 상세(성장 이력 수정)',
-  },
-  {
-    method: 'PATCH',
     path: '/seller/me',
     source: 'real',
     backend: 'BE SellerController develop → 실제 (FE #388)',
