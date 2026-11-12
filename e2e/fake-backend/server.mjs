@@ -23,6 +23,7 @@ import {
 import { catalogRoute } from './catalog.mjs'
 import { garmentPartOfCategory, referenceGarmentRoute } from './reference-garments.mjs'
 import { memberReviewRoute, publicReviewRoute } from './reviews.mjs'
+import { notificationRoute } from './notifications.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
@@ -238,7 +239,7 @@ const invalidQuantity = (res) =>
     '/cart/items',
   )
 
-/** reviews.mjs 결과 { status, body } · { status, title, detail }를 응답으로 */
+/** reviews.mjs · notifications.mjs 결과 { status, body } · { status, title, detail }를 응답으로 */
 const reviewResult = (res, result, instance) =>
   result.title
     ? problem(res, result.status, result.title, result.detail, instance)
@@ -723,6 +724,9 @@ http
         account.noticeConfirmed = true
         return send(res, 204)
       }
+      // 자녀 알림함 (BE ChildInboxNotificationController, 받는 사람 = 자녀 계정)
+      const childInbox = notificationRoute(m, p, url.searchParams, `child:${account.id}`, 'child')
+      if (childInbox) return reviewResult(res, childInbox, req.url)
       if (r('GET', /^\/child\/profile$/)) {
         const child = children.find((c) => c.id === account.childProfileId && !c.deleted)
         return child
@@ -927,6 +931,9 @@ http
     }
     if (isChild) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
     const me = Number(u.sub)
+    // 회원 알림함 (BE InboxNotificationController)
+    const memberInbox = notificationRoute(m, p, url.searchParams, `member:${me}`, 'member')
+    if (memberInbox) return reviewResult(res, memberInbox, req.url)
     // 회원 리뷰 API: 내 리뷰 · 작성 가능 목록 · 쓰기 · 고치기 · 지우기 · 사진 업로드 주소 (reviews.mjs)
     const memberReview = memberReviewRoute(m, p, url.searchParams, body, {
       memberId: me,

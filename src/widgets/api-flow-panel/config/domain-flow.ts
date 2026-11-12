@@ -8,6 +8,7 @@ export type DomainId =
   | 'payment'
   | 'settlement'
   | 'community'
+  | 'notification'
   | 'toss'
   | 'kakao'
   | 's3'
@@ -20,6 +21,7 @@ export const DOMAINS: { id: DomainId; name: string; external?: boolean }[] = [
   { id: 'payment', name: '결제' },
   { id: 'settlement', name: '정산' },
   { id: 'community', name: '커뮤니티' },
+  { id: 'notification', name: '알림' },
   { id: 'kakao', name: '카카오', external: true },
   { id: 'toss', name: '토스', external: true },
   { id: 's3', name: 'S3', external: true },
@@ -40,6 +42,8 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   // 리뷰 · 찜 (리뷰 사진 업로드 주소 발급 포함)
   [/^\/(reviews|favorites)(\/|$)/, 'community'],
   [/^\/(seller\/settlement|admin\/settlements)/, 'settlement'],
+  // 알림함 (자녀 알림함 /child/notifications 포함, 회원 규칙보다 먼저)
+  [/^\/(child\/)?notifications(\/|$)/, 'notification'],
   [/^\/(auth|members|children|child\/|dev|admin\/(members|seller|sellers)|seller\/me)/, 'member'],
   // 회원 서비스의 처리 실패 메시지 (인증 · 회원 · 판매자 · 자녀 프로필 모듈)
   [/^\/admin\/(auth|member|seller|child-profile)-dead-letters/, 'member'],
