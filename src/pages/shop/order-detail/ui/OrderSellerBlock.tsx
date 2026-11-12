@@ -7,7 +7,7 @@ import {
   type OrderItem,
   type OrderSellerGroup,
 } from '@/entities/order'
-import { ProductImage } from '@/entities/product'
+import { ProductImage, useProductImageUrls } from '@/entities/product'
 import { carrierName, DELIVERY_STATUS_LABEL } from '@/shared/config'
 import { cn, formatWon, labelOf, optionLabel } from '@/shared/lib'
 
@@ -21,6 +21,8 @@ type OrderSellerBlockProps = {
 
 /** 판매자 한 곳의 주문 상품: 머리에 상호 · 배송 상태 · 송장, 아래에 상품 줄 */
 export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBlockProps) {
+  // 주문 응답에 사진이 없어 상품 상세의 대표 사진을 읽는다 (판매가 끝나 상세가 없으면 기본 이미지)
+  const images = useProductImageUrls(group.items.map((item) => item.productId))
   const { delivery } = group
   return (
     <section aria-label={`${group.sellerName} 주문 상품`} className="border-rule rounded-lg border">
@@ -61,7 +63,7 @@ export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBloc
           return (
             <li key={item.id} className="flex flex-wrap items-center gap-4 py-4 sm:flex-nowrap">
               <ProductImage
-                src={null}
+                src={images[item.productId] ?? null}
                 alt={item.productName}
                 className="rounded-card aspect-[3/4] w-16 shrink-0"
               />
