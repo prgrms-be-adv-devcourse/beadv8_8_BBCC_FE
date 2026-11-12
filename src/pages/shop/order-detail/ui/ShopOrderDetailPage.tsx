@@ -15,6 +15,7 @@ import {
   paymentDeadlineLabel,
 } from '@/entities/order'
 import { reviewActionOf, useMyReviewsQuery, useReviewableItemsQuery } from '@/entities/review'
+import { CancelOrderButton } from '@/features/cancel-order'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
 import { useOrderTracking } from '@/features/track-order'
 import { OrderTimelineCard } from '@/widgets/order-timeline'
@@ -84,6 +85,7 @@ export function ShopOrderDetailPage() {
             </p>
             <h1 className="text-page">{headline}</h1>
           </div>
+          <CancelOrderButton order={order} />
         </div>
         {/* 취소면 제목이 이미 「주문 취소」라 막대(취소 안내)는 그리지 않는다 */}
         {!progress.cancelled && <OrderProgressBar {...progress} />}
