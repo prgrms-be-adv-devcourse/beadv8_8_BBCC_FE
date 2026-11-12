@@ -47,6 +47,7 @@ import {
   orderDetailShape,
   orderHistoryShape,
   orderPageShape,
+  orderTimelineShape,
 } from '@/entities/order/api/order.shape'
 import {
   wishRequestShape,
@@ -543,6 +544,24 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const itemId = order.data.items[0].orderItemId
     expect((await call('POST', `/orders/${orderId}/items/${itemId}/confirm`, 1)).status).toBe(200)
     expectContract((await call('GET', `/orders/${orderId}`, 1)).data, orderDetailShape)
+
+    // 주문 처리 타임라인 (BE #352): 단계 순서 · 현재 단계, 남의 주문은 404
+    const timeline = await call('GET', `/orders/${orderId}/timeline`, 1)
+    expectContract(timeline.data, orderTimelineShape)
+    expect(
+      timeline.data.steps.map(
+        (step: { step: string; status: string }) => `${step.step}:${step.status}`,
+      ),
+    ).toEqual([
+      'CREATED:DONE',
+      'PAYMENT_REQUESTED:DONE',
+      'PAID:DONE',
+      'SHIPPED:DONE',
+      'DELIVERED:DONE',
+      'CONFIRMED:DONE',
+    ])
+    expect(timeline.data.currentStep).toBe('CONFIRMED')
+    expect((await call('GET', `/orders/${orderId}/timeline`, 2)).status).toBe(404)
 
     // 관리자 상태 이력 (BE #442): 오래된 것부터, 없는 주문은 404
     const history = await call('GET', `/admin/orders/${orderId}/history`, 3)

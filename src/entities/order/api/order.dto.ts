@@ -82,7 +82,6 @@ export type PlaceOrderRequestDto = {
   shippingAddress: { recipientName: string; phone: string; zipCode: string; address: string }
 }
 
-/** GET /admin/orders 한 줄 (기획서 8장 보완 · BE 미구현 → 목) */
 /** GET /admin/orders 한 줄 (BE AdminOrderSummaryResponse #323). memberId는 문자열 */
 export type AdminOrderDto = {
   orderId: string

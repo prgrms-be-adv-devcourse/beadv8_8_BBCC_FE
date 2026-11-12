@@ -131,8 +131,8 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'GET',
     path: '/orders/:orderId/timeline',
-    source: 'mock',
-    backend: 'BE #352 계약 확정(10/16), 구현 전 → 주문 상세 · 결제로 만든 목 (FE #124)',
+    source: 'real',
+    backend: 'BE #352 develop 머지 → 실제 (FE #319, 목 핸들러 제거)',
     screens: '주문 상세(처리 과정)',
   },
   // 정산 (BE SellerSettlementController · AdminSettlementController, FE #119)

@@ -458,7 +458,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.locator('[aria-current="step"]')).toHaveText('4')
     await page.getByRole('button', { name: '구매확정' }).click()
     await expect(page.locator('[aria-current="step"]')).toHaveText('5')
-    // 처리 과정 (BE #352, 지금은 목): 단계별 완료 · 직접 확정 표시
+    // 처리 과정 (BE #352 GET /orders/{id}/timeline): 단계별 완료 · 직접 확정 표시
     const timeline = page.getByRole('list', { name: '처리 과정' })
     await expect(timeline.getByRole('listitem', { name: '결제 완료 완료' })).toBeVisible()
     await expect(timeline.getByRole('listitem', { name: '배송 완료 완료' })).toBeVisible()

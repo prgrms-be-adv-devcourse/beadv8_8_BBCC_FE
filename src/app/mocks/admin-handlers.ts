@@ -3,8 +3,8 @@ import type { AdminPaymentDto } from '@/entities/payment'
 import { useApiFlowLog, type ApiCallLog, type MockHandler } from '@/shared/api'
 import { page } from './mock-utils'
 
-// 기획서 8장 관리자 "보완" 중 백엔드에 없는 전체 조회.
-// 관리자 토큰으로는 남의 주문 · 결제를 읽을 수 없으므로, 이 탭에서 각 회원이 받은 응답(흐름 기록)으로 만든다
+// 관리자 전체 주문 · 결제를 이 탭의 흐름 기록(각 회원이 받은 응답)으로 만드는 목.
+// BE #323 · #326이 머지돼 목록(mock-endpoints)에서 'real'이라 지금은 등록되지 않는다 (실제 API로 응답)
 
 type Json = Record<string, unknown>
 const isObj = (value: unknown): value is Json =>
