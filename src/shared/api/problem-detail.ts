@@ -72,3 +72,11 @@ export function isSessionRejected(error: unknown): boolean {
   const status = error.response?.status
   return status === 401 || status === 403
 }
+
+/** 요청 수 제한(429)의 Retry-After(초). 없거나 초 단위 정수가 아니면 null (Gateway가 CORS로 내보낸다, BE #816) */
+export function getRetryAfterSeconds(error: unknown): number | null {
+  if (!isAxiosError(error)) return null
+  const raw: unknown = error.response?.headers?.['retry-after']
+  if (typeof raw !== 'string' || !/^\d+$/.test(raw.trim())) return null
+  return Number(raw.trim())
+}

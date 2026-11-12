@@ -1,8 +1,9 @@
 import { Link, matchPath, Outlet, useLocation } from 'react-router'
 import { useUnreadNotificationCountQuery } from '@/entities/notification'
 import { hasRole, useSessionStore } from '@/entities/session'
+import { ChatbotWidget } from '@/features/ask-chatbot'
 import { ThemeLab } from '@/features/theme-lab'
-import { paths, shopMasksWholePage, useDemoRoleSwitch } from '@/shared/config'
+import { loginPath, paths, shopMasksWholePage, useDemoRoleSwitch } from '@/shared/config'
 import { ShopHeader } from '@/widgets/shop-header'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { TopProgressBar } from './TopProgressBar'
@@ -16,6 +17,8 @@ export function ShopLayout() {
   const demoRoleSwitch = useDemoRoleSwitch()
   const { pathname } = useLocation()
   const user = useSessionStore((state) => state.user)
+  const sessionStatus = useSessionStore((state) => state.status)
+  const isProductDetail = matchPath('/products/:productId', pathname) !== null
   // 머리말 알림 배지: 레이아웃이 API를 부르는 예외 (AGENTS.md 2절)
   useUnreadNotificationCountQuery('member', hasRole(user, 'BUYER'))
   return (
@@ -50,9 +53,18 @@ export function ShopLayout() {
             </p>
           </div>
         </footer>
+        {/* 챗봇: 회원 API라 로그인 회원이 바뀌면 대화를 새로 시작한다. 질문할 때만 API를 부른다 */}
+        <ChatbotWidget
+          key={user?.memberId ?? 'guest'}
+          isSignedIn={user !== null}
+          isRestoring={sessionStatus === 'restoring'}
+          loginHref={loginPath(pathname)}
+          productHref={(productId) => paths.shop.product(productId)}
+          raised={isProductDetail}
+        />
       </div>
       {/* 테마 바꿔 보기는 시연 기능. 상품 상세에서는 휴대폰 하단 담기 바를 가리지 않게 올린다 */}
-      {demoRoleSwitch && <ThemeLab raised={matchPath('/products/:productId', pathname) !== null} />}
+      {demoRoleSwitch && <ThemeLab raised={isProductDetail} />}
       <Overlays />
       <BehaviorRecording />
     </div>
