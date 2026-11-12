@@ -19,4 +19,9 @@ export const adminSettlementApi = {
     apiClient
       .get<SettlementRunResultDto>(`/admin/settlement-runs/${runId}`)
       .then(expectShape(settlementRunShape)),
+  /** 실행 중으로 남은 실행을 실패로 정리한다 (200 실행 결과, 실행 중이 아니면 409) */
+  recover: (runId: string) =>
+    apiClient
+      .post<SettlementRunResultDto>(`/admin/settlement-runs/${runId}/recover`)
+      .then(expectShape(settlementRunShape)),
 }

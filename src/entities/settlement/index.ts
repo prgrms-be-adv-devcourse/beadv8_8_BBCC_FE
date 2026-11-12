@@ -2,7 +2,7 @@ export { settlementApi } from './api/settlement-api'
 export { adminSettlementApi } from './api/admin-settlement-api'
 export type { AdminSettlement } from './model/admin-settlement'
 export { toAdminSettlement } from './model/admin-settlement.mapper'
-export { canRetrySettlementPayout } from './model/admin-settlement.rules'
+export { canRecoverSettlementRun, canRetrySettlementPayout } from './model/admin-settlement.rules'
 export { useAdminSettlementsQuery, useSettlementRunQuery } from './model/admin-queries'
 export {
   SETTLEMENT_RUN_STATUS_LABEL,
