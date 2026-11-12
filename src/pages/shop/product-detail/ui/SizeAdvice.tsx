@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import {
   AiSentenceNotice,
   FIT_LABEL,
+  GrowthOutlook,
   referenceFitSummaryOf,
   showsAiSizeNotice,
   SizeReasonList,
@@ -11,7 +12,6 @@ import {
   type SizeRecommendation,
 } from '@/entities/recommendation'
 import { cn } from '@/shared/lib'
-import { GrowthOutlook } from './GrowthOutlook'
 import { ReferenceFitLine } from './ReferenceFitLine'
 
 type SizeAdviceProps = {

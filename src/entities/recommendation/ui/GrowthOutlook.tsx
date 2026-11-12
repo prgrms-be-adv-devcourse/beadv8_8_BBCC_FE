@@ -2,9 +2,9 @@ import {
   growthSourceLinesOf,
   growthSpeedTextOf,
   wearablePeriodTextOf,
-  type SizeRecommendation,
-} from '@/entities/recommendation'
-import { InfoTip } from '@/shared/ui/InfoTip'
+} from '../model/growth-speed.rules'
+import type { SizeRecommendation } from '../model/recommendation'
+import { InfoTip } from './InfoTip'
 
 type GrowthOutlookProps = {
   recommendation: Pick<SizeRecommendation, 'recommendedSize' | 'wearablePeriods' | 'growthSpeed'>
