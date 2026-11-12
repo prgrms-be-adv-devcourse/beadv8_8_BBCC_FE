@@ -129,6 +129,7 @@ import { reviewVisibilityShape } from '@/features/moderate-review'
 import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
 import { toWriteReviewRequest } from '@/features/write-review'
+import { adminShape } from '@/features/manage-admin-account/api/admin-account.shape'
 import { toReview } from '@/entities/review'
 import { arr, readSseEvents, validate, type Shape } from '@/shared/api'
 
@@ -774,6 +775,31 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expectContract(await reissue.json(), tokenShape)
     expect((await call('POST', '/auth/admin/reissue', null)).status).toBe(401)
     expect((await call('POST', '/auth/admin/logout', null)).status).toBe(204)
+  })
+
+  it('관리자 추가: 201 + Location, 겹친 이메일 409, 비밀번호 규칙 400 (BE AdminAccountController)', async () => {
+    const response = await fetch(`${BASE}/admin/admins`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${tokens[3]}` },
+      body: JSON.stringify({ email: ' Contract@Kidly.Test ', password: 'password-12345' }),
+    })
+    expect(response.status).toBe(201)
+    const admin = await response.json()
+    expectContract(admin, adminShape)
+    expect(admin).toMatchObject({ email: 'contract@kidly.test', status: 'ACTIVE' })
+    expect(response.headers.get('location')).toBe(`/api/v1/admin/admins/${admin.id}`)
+
+    const taken = await call('POST', '/admin/admins', 3, {
+      email: 'CONTRACT@kidly.test',
+      password: 'password-12345',
+    })
+    expect(taken.status).toBe(409)
+    const short = { email: 'short@kidly.test', password: 'a'.repeat(11) }
+    expect((await call('POST', '/admin/admins', 3, short)).status).toBe(400)
+    const long = { email: 'long@kidly.test', password: '가'.repeat(25) }
+    expect((await call('POST', '/admin/admins', 3, long)).status).toBe(400)
+    const member = { email: 'member@kidly.test', password: 'password-12345' }
+    expect((await call('POST', '/admin/admins', 1, member)).status).toBe(403)
   })
 
   it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티, 같은 칸)', async () => {

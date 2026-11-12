@@ -123,6 +123,9 @@ const adminSettings = page(() =>
 const adminOrderOps = page(() =>
   import('@/pages/admin/order-operation').then((m) => ({ Component: m.AdminOrderOpsPage })),
 )
+const adminAccounts = page(() =>
+  import('@/pages/admin/accounts').then((m) => ({ Component: m.AdminAccountsPage })),
+)
 const adminDeadLetters = page(() =>
   import('@/pages/admin/dead-letters').then((m) => ({ Component: m.AdminDeadLettersPage })),
 )
@@ -353,6 +356,7 @@ export const router = createBrowserRouter(
           ),
         },
         { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
+        { path: rel(paths.admin.home, paths.admin.accounts), ...adminAccounts },
         { path: 'dead-letters/:module/:deadLetterId', ...adminDeadLetterDetail },
         // 상품 기준 데이터: 종류마다 목록 · 만들기 (관리자에만 있다)
         {
