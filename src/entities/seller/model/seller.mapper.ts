@@ -25,6 +25,10 @@ export function toSellerApplication(dto: SellerApplicationDto): SellerApplicatio
   }
 }
 
+// 신청한 회원이 탈퇴하면 백엔드가 닉네임 · 사업자등록번호를 비운다
+const WITHDRAWN_APPLICANT = '탈퇴한 회원'
+const WITHDRAWN_BUSINESS_REGISTRATION_NUMBER = '탈퇴로 삭제됨'
+
 export function toSellerApplicationSummary(
   dto: SellerApplicationSummaryDto,
 ): SellerApplicationSummary {
@@ -32,10 +36,13 @@ export function toSellerApplicationSummary(
     id: String(dto.id),
     businessName: dto.businessName,
     applicantId: String(dto.applicantId),
-    applicantNickname: dto.applicantNickname,
-    maskedBusinessRegistrationNumber: dto.maskedBusinessRegistrationNumber,
+    applicantNickname: dto.applicantNickname ?? WITHDRAWN_APPLICANT,
+    maskedBusinessRegistrationNumber:
+      dto.maskedBusinessRegistrationNumber ?? WITHDRAWN_BUSINESS_REGISTRATION_NUMBER,
     status: dto.status as SellerApplicationStatus,
     createdAt: dto.createdAt,
+    // 백엔드는 탈퇴(clearPersonalInfo) 때만 닉네임을 비운다
+    isApplicantWithdrawn: dto.applicantNickname === null,
   }
 }
 

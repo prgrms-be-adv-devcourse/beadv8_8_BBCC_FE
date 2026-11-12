@@ -9,6 +9,22 @@ export type {
   ReviewSummary,
 } from './model/review'
 export { toReview, toReviewableItem, toReviewSummary } from './model/review.mapper'
+export type {
+  AdminReview,
+  ModerationAction,
+  ModerationReason,
+  ModerationStatus,
+} from './model/admin-review'
+export { toAdminReview } from './model/admin-review.mapper'
+export {
+  ADMIN_REVIEW_STATUSES,
+  isModerationStatus,
+  MODERATION_ACTION_LABEL,
+  MODERATION_REASON_LABEL,
+  MODERATION_STATUS_LABEL,
+  moderationActionsOf,
+  moderationStatusOf,
+} from './model/admin-review.rules'
 export {
   averageRatingLabel,
   canChooseFit,
@@ -27,6 +43,7 @@ export {
 } from './model/review.rules'
 export {
   reviewKeys,
+  useAdminReviewsQuery,
   useMyReviewsQuery,
   useProductReviewsQuery,
   useReviewableItemQuery,

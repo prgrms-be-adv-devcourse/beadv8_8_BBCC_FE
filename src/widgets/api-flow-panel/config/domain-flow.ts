@@ -40,7 +40,7 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/(cart|orders|seller\/orders|wish)/, 'order'],
   [/^\/(wallets|payments)/, 'payment'],
   // 리뷰 · 찜 (리뷰 사진 업로드 주소 발급 포함)
-  [/^\/(reviews|favorites)(\/|$)/, 'community'],
+  [/^\/(reviews|favorites|admin\/community)(\/|$)/, 'community'],
   [/^\/(seller|admin)\/settlement/, 'settlement'],
   // 알림함 (자녀 알림함 /child/notifications 포함, 회원 규칙보다 먼저)
   [/^\/(child\/)?notifications(\/|$)/, 'notification'],

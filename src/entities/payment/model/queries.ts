@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { paymentApi } from '../api/payment-api'
-import { toAdminPayment, toPayment } from './payment.mapper'
+import { toAdminPayment, toAdminPaymentSummary, toPayment } from './payment.mapper'
 
 export const paymentKeys = {
   list: ['payments', 'list'] as const,
@@ -28,5 +28,14 @@ export function useAdminPaymentsQuery(page = 0) {
     queryFn: () => paymentApi.adminList(page),
     select: (result) => ({ ...result, content: result.content.map(toAdminPayment) }),
     placeholderData: keepPreviousData,
+  })
+}
+
+/** 관리자 결제 요약 (from · to: 한국 날짜, 양 끝 포함, 최대 31일) */
+export function useAdminPaymentSummaryQuery(from: string, to: string) {
+  return useQuery({
+    queryKey: ['payments', 'admin', 'summary', from, to] as const,
+    queryFn: () => paymentApi.adminSummary({ from, to }),
+    select: toAdminPaymentSummary,
   })
 }

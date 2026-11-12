@@ -4,6 +4,8 @@ import {
   type OrderPaymentInput,
   type Payment,
   type PaymentCheck,
+  type PaymentDay,
+  type AdminPaymentSummary,
 } from './payment'
 
 export function findPaymentOfOrder(
@@ -74,4 +76,9 @@ export function checkOrderPayment(order: OrderPaymentInput, payment: Payment | n
   return payment
     ? { result: 'MATCH', message: '결제 금액이 전액 환불됐어요.' }
     : { result: 'MATCH', message: '결제 전에 취소돼 결제 기록이 없어요.' }
+}
+
+/** 요약에서 그날(결제일, 한국 날짜 글자)의 결제 금액 · 건수. 기간 밖이면 0 */
+export function paidOn(summary: AdminPaymentSummary, date: string): PaymentDay {
+  return summary.daily.find((day) => day.date === date) ?? { date, paidAmount: 0, paidCount: 0 }
 }

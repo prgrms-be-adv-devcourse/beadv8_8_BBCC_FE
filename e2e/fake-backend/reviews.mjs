@@ -13,6 +13,19 @@ const SEOUL_OFFSET_MS = 9 * 3600e3
 const reviews = []
 let nextReviewId = 1
 
+// 리뷰 검사 (BE #1002): 저장하면 바로 공개 + 검사 대기(PENDING). BE는 스케줄러가 1분마다 금칙어 → AI로 검사하지만,
+// 가짜 백엔드는 저장 · 수정 때 바로 금칙어만 본다 (걸리면 HIDDEN, 아니면 PENDING 그대로)
+const FORBIDDEN_WORDS = ['바보', '금칙어']
+const MODERATION_STATUSES = ['PENDING', 'PASSED', 'HIDDEN', 'CONFIRMED_HIDDEN', 'RESTORED']
+const HIDDEN_STATUSES = ['HIDDEN', 'CONFIRMED_HIDDEN']
+const isPublic = (review) => !HIDDEN_STATUSES.includes(review.moderation.status)
+function moderate(review, at) {
+  const isForbidden = FORBIDDEN_WORDS.some((word) => review.content.includes(word))
+  review.moderation = isForbidden
+    ? { status: 'HIDDEN', reason: 'PROFANITY', moderatedAt: at, attempts: 0 }
+    : { status: 'PENDING', reason: null, moderatedAt: null, attempts: 0 }
+}
+
 const seoulNow = (plusMs = 0) =>
   new Date(Date.now() + SEOUL_OFFSET_MS + plusMs).toISOString().slice(0, 19)
 
@@ -57,6 +70,16 @@ const ERRORS = {
     '구매확정한 내 주문상품에만 리뷰를 쓸 수 있습니다.',
   ),
   forbidden: error(403, '내 리뷰가 아닙니다', '내가 쓴 리뷰만 고치거나 지울 수 있습니다.'),
+  moderationStatus: error(
+    400,
+    '잘못된 검사 상태입니다',
+    'status는 PENDING · PASSED · HIDDEN · CONFIRMED_HIDDEN · RESTORED 중 하나로 보내 주세요.',
+  ),
+  visibility: error(
+    400,
+    '잘못된 공개 설정입니다',
+    'visibility는 HIDDEN(숨김 확정) 또는 VISIBLE(다시 공개)로 보내 주세요.',
+  ),
   notFound: error(
     404,
     '리뷰를 찾을 수 없습니다',
@@ -82,7 +105,7 @@ function cursorPage(items, query) {
   }
 }
 
-const responseOf = ({ memberId: _m, productName: _p, ...review }) => ({
+const responseOf = ({ memberId: _m, productName: _p, moderation: _mo, ...review }) => ({
   ...review,
   imageUrls: [...review.imageUrls],
 })
@@ -91,7 +114,7 @@ const listItemOf = (review) => ({
   productName: review.productName,
   thumbnailUrl: null,
   displayStatus: 'ON_SALE',
-  visibility: 'PUBLIC',
+  visibility: isPublic(review) ? 'PUBLIC' : 'UNDER_REVIEW',
 })
 const newestFirst = (a, b) => b.createdAt.localeCompare(a.createdAt) || b.reviewId - a.reviewId
 
@@ -135,7 +158,7 @@ function invalidOptional(body, size) {
 }
 
 function summaryOf(productId) {
-  const mine = reviews.filter((review) => review.productId === productId)
+  const mine = reviews.filter((review) => review.productId === productId && isPublic(review))
   const count = (fit) => mine.filter((review) => review.fit === fit).length
   const total = mine.reduce((sum, review) => sum + review.rating, 0)
   return {
@@ -153,7 +176,7 @@ export function publicReviewRoute(m, p, query) {
   if (!/^\d+$/.test(productId ?? '')) return ERRORS.productId
   if (p === '/reviews/summary') return { status: 200, body: summaryOf(productId) }
   const items = reviews
-    .filter((review) => review.productId === productId)
+    .filter((review) => review.productId === productId && isPublic(review))
     .sort(newestFirst)
     .map(listItemOf)
   return { status: 200, body: cursorPage(items, query) }
@@ -227,6 +250,7 @@ export function memberReviewRoute(m, p, query, body, { memberId, nickname, order
       memberId,
       productName: target.item.productName,
     }
+    moderate(review, at)
     reviews.push(review)
     return { status: 201, body: responseOf(review) }
   }
@@ -248,9 +272,51 @@ export function memberReviewRoute(m, p, query, body, { memberId, nickname, order
   const invalid = invalidOptional(body, review.purchasedSize)
   if (invalid) return invalid
   if ('rating' in body) review.rating = body.rating
+  const isContentChanged =
+    ('content' in body && body.content.trim() !== review.content) ||
+    ('imageUrls' in body &&
+      JSON.stringify(body.imageUrls ?? []) !== JSON.stringify(review.imageUrls))
   if ('content' in body) review.content = body.content.trim()
   if ('fit' in body) review.fit = body.fit
   if ('imageUrls' in body) review.imageUrls = body.imageUrls
   review.updatedAt = seoulNow()
+  // 공개 상태에서 글 · 사진을 고치면 다시 검사 대기, 숨김 상태는 고쳐도 숨김 그대로
+  if (isContentChanged && isPublic(review)) moderate(review, review.updatedAt)
   return { status: 200, body: responseOf(review) }
+}
+
+const adminItemOf = (review) => ({
+  reviewId: review.reviewId,
+  productId: review.productId,
+  status: review.moderation.status,
+  reason: review.moderation.reason,
+  moderatedAt: review.moderation.moderatedAt,
+  attempts: review.moderation.attempts,
+  attemptsExhausted: false,
+  content: review.content,
+  imageUrls: [...review.imageUrls],
+  createdAt: review.createdAt,
+})
+
+/** 관리자 리뷰 검사 API (BE AdminCommunityReviewController). 관리자 확인은 server.mjs가 한다. 해당 없으면 null */
+export function adminReviewRoute(m, p, query, body) {
+  if (m === 'GET' && p === '/admin/community/reviews') {
+    const status = query.get('status')
+    if (!MODERATION_STATUSES.includes(status)) return ERRORS.moderationStatus
+    const items = reviews
+      .filter((review) => review.moderation.status === status)
+      .sort(newestFirst)
+      .map(adminItemOf)
+    return { status: 200, body: cursorPage(items, query) }
+  }
+  const matched = p.match(/^\/admin\/community\/reviews\/(\d+)\/visibility$/)
+  if (!matched || m !== 'PATCH') return null
+  const visibility = body?.visibility
+  if (visibility !== 'HIDDEN' && visibility !== 'VISIBLE') return ERRORS.visibility
+  const review = reviews.find((candidate) => candidate.reviewId === matched[1])
+  if (!review) return ERRORS.notFound
+  const next = visibility === 'HIDDEN' ? 'CONFIRMED_HIDDEN' : 'RESTORED'
+  if (review.moderation.status !== next)
+    review.moderation = { ...review.moderation, status: next, moderatedAt: seoulNow() }
+  return { status: 200, body: { reviewId: review.reviewId, status: next } }
 }

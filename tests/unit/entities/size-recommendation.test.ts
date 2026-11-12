@@ -9,6 +9,8 @@ const base = {
   notices: [],
   candidateSizes: ['110', '120'],
   lastPurchasedSize: null,
+  referenceFit: null,
+  itemJudgements: [],
 }
 
 describe('toSizeRecommendation: 사이즈 추천 출처 · 근거 (BE #1162)', () => {

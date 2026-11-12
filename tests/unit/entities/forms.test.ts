@@ -66,6 +66,21 @@ describe('판매자 신청 검증', () => {
   })
 })
 
+describe('판매자 신청 글자 수 (BE SellerPolicy.NAME_MAX_LENGTH 50)', () => {
+  const base = {
+    businessName: '테스트상점',
+    representativeName: '홍길동',
+    businessRegistrationNumber: '1234567890',
+  }
+  it('상호명 · 대표자명은 50자까지 (보내는 값은 앞뒤 공백을 뺀다)', () => {
+    for (const key of ['businessName', 'representativeName'] as const) {
+      expect(validateSellerApplicationForm({ ...base, [key]: '가'.repeat(50) })).toBeNull()
+      expect(validateSellerApplicationForm({ ...base, [key]: ` ${'가'.repeat(50)} ` })).toBeNull()
+      expect(validateSellerApplicationForm({ ...base, [key]: '가'.repeat(51) })).not.toBeNull()
+    }
+  })
+})
+
 describe('시연 판매자 신청 값 (자동 시연 · 신청 화면이 같이 씀)', () => {
   it('신청 검증(BE: 사업자등록번호 하이픈 없는 숫자 10자리)을 통과한다', () => {
     expect(validateSellerApplicationForm(DEMO_APPLICATION)).toBeNull()

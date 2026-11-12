@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { orderApi } from '../api/order-api'
 import { toAdminOrder, toOrder, toOrderSummary } from './order.mapper'
+import { toChildPurchase } from './child-purchase'
+import { toOrderHistory } from './order-history'
 import { toOrderTimeline } from './order-timeline'
 import { isAwaitingPayment, paymentPollInterval } from './order.rules'
 
@@ -9,6 +11,8 @@ export const orderKeys = {
   detail: (orderId: string) => ['orders', 'detail', orderId] as const,
   timeline: (orderId: string, revision: string) =>
     ['orders', 'timeline', orderId, revision] as const,
+  childPurchases: (page: number) => ['orders', 'child-purchases', page] as const,
+  adminHistory: (orderId: string) => ['orders', 'admin-history', orderId] as const,
 }
 
 export function useOrdersQuery() {
@@ -73,5 +77,23 @@ export function useOrderTimelineQuery(orderId: string, revision: string) {
     queryFn: () => orderApi.timeline(orderId),
     select: toOrderTimeline,
     placeholderData: (previous) => previous,
+  })
+}
+
+/** 나를 위해 산 상품 (자녀 로그인). page는 0부터 */
+export function useChildPurchasesQuery(page: number) {
+  return useQuery({
+    queryKey: orderKeys.childPurchases(page),
+    queryFn: () => orderApi.childPurchases(page),
+    select: (data) => ({ ...data, content: data.content.map(toChildPurchase) }),
+  })
+}
+
+/** 관리자 주문 상태 이력 (오래된 것부터) */
+export function useAdminOrderHistoryQuery(orderId: string) {
+  return useQuery({
+    queryKey: orderKeys.adminHistory(orderId),
+    queryFn: () => orderApi.adminHistory(orderId),
+    select: (rows) => rows.map(toOrderHistory),
   })
 }

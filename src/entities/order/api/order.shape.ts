@@ -123,3 +123,32 @@ export const orderTimelineShape = obj({
     }),
   ),
 })
+
+/** GET /orders/items/mine (BE #1000) */
+export const childPurchasePageShape = pageOf(
+  obj({
+    orderItemId: str,
+    orderedAt: str,
+    productId: nullable(str),
+    productName: nullable(str),
+    optionName: nullable(str),
+    quantity: num,
+    status: oneOf(['PAID', 'SHIPPING', 'DELIVERED', 'CONFIRMED', 'CANCELLED']),
+  }),
+)
+
+// GET /admin/orders/{orderId}/history (BE #442). 대상 · 상태 · 출처는 늘어날 수 있어 글자로 받는다
+export const orderHistoryShape = arr(
+  obj({
+    historyId: str,
+    targetType: str,
+    targetId: str,
+    fromStatus: nullable(str),
+    toStatus: str,
+    reason: nullable(str),
+    actorType: str,
+    actorId: nullable(str),
+    source: str,
+    occurredAt: str,
+  }),
+)

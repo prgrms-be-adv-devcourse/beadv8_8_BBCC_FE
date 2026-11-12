@@ -83,7 +83,7 @@ function parseKst(value: string): number {
 }
 
 /**
- * 조르기 남은 기한 (BE #1008, 기본 7일). 대기: n일 남음 · 하루 미만 오늘 마감 · 지났으면 기한 지남(만료 처리 전),
+ * 조르기 남은 기한 (BE #1008, 기본 7일). 대기: n일 남음(올림) · 하루 미만 오늘 마감 · 지났으면 기한 지남(만료 처리 전),
  * 만료: 만료된 시각(상태 라벨과 함께 보인다). 그 밖(결제 · 거절 · 철회) · 만료 꺼짐은 null
  */
 export function wishDeadlineLabel(
@@ -96,5 +96,14 @@ export function wishDeadlineLabel(
   const left = parseKst(wish.expiresAt) - now.getTime()
   if (left <= 0) return '기한 지남'
   if (left < DAY_MS) return '오늘 마감'
-  return `${Math.floor(left / DAY_MS)}일 남음`
+  return `${Math.ceil(left / DAY_MS)}일 남음`
+}
+
+/** 자녀가 보낸 조르기를 철회할 수 있는지: 대기 중이고 기한 전 (기한이 지나면 만료 처리 전이라도 BE 409, #968 · #1008) */
+export function canWithdrawWish(
+  wish: { status: WishStatus; expiresAt: string | null },
+  now: Date = new Date(),
+): boolean {
+  if (wish.status !== 'REQUESTED') return false
+  return !wish.expiresAt || parseKst(wish.expiresAt) > now.getTime()
 }

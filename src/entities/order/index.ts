@@ -1,5 +1,12 @@
 export { orderApi } from './api/order-api'
+export {
+  childPurchaseSourceOf,
+  childPurchaseStatusLabel,
+  toChildPurchase,
+  type ChildPurchase,
+} from './model/child-purchase'
 export type { AdminOrderDto, OrderDetailDto, OrderTimelineDto } from './api/order.dto'
+export { orderDetailShape } from './api/order.shape'
 export {
   CANCEL_REASON_LABEL,
   ITEM_CANCEL_REASON_LABEL,
@@ -18,6 +25,7 @@ export {
 export { orderTitle, toAdminOrder, toOrder, toPlaceOrderRequest } from './model/order.mapper'
 export {
   buildOrderTimeline,
+  canBuyerCancel,
   cancelledMoneyNote,
   cancelledRefundOf,
   canConfirmItem,
@@ -46,6 +54,12 @@ export {
   type OrderTab,
 } from './model/order.rules'
 export {
+  currentCancelReasonOf,
+  currentOrderStatusOf,
+  toOrderHistory,
+  type OrderHistoryEntry,
+} from './model/order-history'
+export {
   doneCount,
   formatGap,
   TIMELINE_CANCEL_LABEL,
@@ -59,12 +73,15 @@ export {
 export {
   orderKeys,
   paymentPendingMs,
+  useAdminOrderHistoryQuery,
   useAdminOrdersQuery,
+  useChildPurchasesQuery,
   useOrderQuery,
   useOrderTimelineQuery,
   useOrdersQuery,
 } from './model/queries'
 export { OrderDeliveryList } from './ui/OrderDeliveryList'
+export { OrderHistoryList } from './ui/OrderHistoryList'
 export { OrderItemRow } from './ui/OrderItemRow'
 export { OrderProcessSteps } from './ui/OrderProcessSteps'
 export { OrderProgressBar } from './ui/OrderProgressBar'

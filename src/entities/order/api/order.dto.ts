@@ -82,7 +82,6 @@ export type PlaceOrderRequestDto = {
   shippingAddress: { recipientName: string; phone: string; zipCode: string; address: string }
 }
 
-/** GET /admin/orders 한 줄 (기획서 8장 보완 · BE 미구현 → 목) */
 /** GET /admin/orders 한 줄 (BE AdminOrderSummaryResponse #323). memberId는 문자열 */
 export type AdminOrderDto = {
   orderId: string
@@ -124,4 +123,30 @@ export type OrderTimelineDto = {
     approximate: boolean
     details: OrderTimelineDetailDto[]
   }[]
+}
+
+/** GET /orders/items/mine 한 줄 (BE ChildPurchaseResponse #1000, 자녀 로그인만). 가격 · 판매자 · 주문 ID · 출처 없음 */
+export type ChildPurchaseDto = {
+  orderItemId: string
+  orderedAt: string
+  productId: string | null
+  productName: string | null
+  optionName: string | null
+  quantity: number
+  /** PAID · SHIPPING · DELIVERED · CONFIRMED · CANCELLED */
+  status: string
+}
+
+/** GET /admin/orders/{orderId}/history 한 줄 (BE OrderStatusHistoryResponse #442). 오래된 것부터 */
+export type OrderStatusHistoryDto = {
+  historyId: string
+  targetType: string
+  targetId: string
+  fromStatus: string | null
+  toStatus: string
+  reason: string | null
+  actorType: string
+  actorId: string | null
+  source: string
+  occurredAt: string
 }
