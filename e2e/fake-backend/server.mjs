@@ -1143,9 +1143,46 @@ http
         requestedBy: me,
         startedAt: now(),
         finishedAt: now(),
+        skippedSellers: [],
       }
       settlementRuns.push(run)
       return send(res, 201, run)
+    }
+    // 관리자 정산서 목록 (BE AdminSettlementSummaryResponse = 판매자 응답 + sellerId · failReason)
+    if (r('GET', /^\/admin\/settlements$/)) {
+      const status = url.searchParams.get('status')
+      // BE @Pattern(COMPLETED|PAID|FAILED)
+      if (status && !['COMPLETED', 'PAID', 'FAILED'].includes(status))
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      const rows = settlements
+        .filter((st) => !status || st.status === status)
+        .slice()
+        .reverse()
+        .map(({ items: _i, ...st }) => st)
+      return send(res, 200, pageFrom(rows, url.searchParams))
+    }
+    // 지급 재요청: 지급 결과를 받지 못한 정산서(COMPLETED)만 (BE SETTLEMENT_NOT_RETRYABLE 409)
+    if ((x = r('POST', /^\/admin\/settlements\/(\d+)\/retry$/))) {
+      const st = settlements.find((st) => st.settlementId === +x[1])
+      if (!st) return problem(res, 404, '찾을 수 없습니다', '정산서를 찾을 수 없습니다.', req.url)
+      if (st.status !== 'COMPLETED')
+        return problem(
+          res,
+          409,
+          '지급을 다시 요청할 수 없는 정산서입니다',
+          '지급 결과를 받지 못한 정산서(COMPLETED)만 다시 요청할 수 있습니다.',
+          req.url,
+        )
+      Object.assign(st, { status: 'PAID', paidAt: now() })
+      wallets[st.sellerId] = (wallets[st.sellerId] ?? 0) + st.settlementAmount
+      ledger(st.sellerId, 'SETTLEMENT', st.settlementAmount, String(st.settlementId))
+      return send(res, 204)
+    }
+    if ((x = r('GET', /^\/admin\/settlement-runs\/(\d+)$/))) {
+      const run = settlementRuns.find((run) => run.runId === +x[1])
+      return run
+        ? send(res, 200, run)
+        : problem(res, 404, '찾을 수 없습니다', '정산 실행을 찾을 수 없습니다.', req.url)
     }
     // 기준 옷 「산 옷에서 고르기」 (BE #1168): 이 자녀의 구매확정된 주문상품, 확정이 늦은 순서.
     // 상품 정보가 없으면 이름 · 카테고리 · 칸 · 실측이 null, 산 사이즈의 실측이 없으면 실측만 null

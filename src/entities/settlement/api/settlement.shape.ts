@@ -2,7 +2,7 @@ import { arr, nullable, num, obj, oneOf, pageOf, str } from '@/shared/api'
 
 const STATUS = oneOf(['COMPLETED', 'PAID', 'FAILED'])
 
-const settlementFields = {
+export const settlementFields = {
   settlementId: num,
   periodStartOn: str,
   periodEndOn: str,
@@ -39,4 +39,5 @@ export const settlementRunShape = obj({
   requestedBy: nullable(num),
   startedAt: str,
   finishedAt: nullable(str),
+  skippedSellers: arr(obj({ sellerId: num, phase: oneOf(['PROCESS', 'WRITE']), reason: str })),
 })

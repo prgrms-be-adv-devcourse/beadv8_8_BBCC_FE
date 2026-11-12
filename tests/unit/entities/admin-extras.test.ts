@@ -120,6 +120,7 @@ describe('관리자 전체 주문 · 결제 · 정산', () => {
         requestedBy: 3,
         startedAt: '2026-10-16T10:00:00',
         finishedAt: '2026-10-16T10:00:01',
+        skippedSellers: [],
       }),
     ).toEqual({
       runId: '7',
@@ -128,6 +129,7 @@ describe('관리자 전체 주문 · 결제 · 정산', () => {
       failCount: 0,
       periodStart: '2026-10-01',
       periodEnd: '2026-10-16',
+      skippedSellers: [],
     })
   })
 })
