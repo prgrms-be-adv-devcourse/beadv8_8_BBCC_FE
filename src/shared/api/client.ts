@@ -16,8 +16,6 @@ declare module 'axios' {
     logId?: number
     /** 정상 흐름에서도 오는 오류 응답. 흐름 패널에 "예상됨"으로 표시하고 실패로 세지 않는다 */
     expected?: ExpectedResponse
-    /** true면 목 핸들러를 건너뛰고 실제 서버로 보낸다 (연결 점검) */
-    skipMock?: boolean
     /** 붙일 토큰의 주체. 회원 · 자녀가 같이 쓰는 경로(/cart · /wish/requests)에서 자녀 화면이 'child'로 정한다 */
     principal?: Principal
   }

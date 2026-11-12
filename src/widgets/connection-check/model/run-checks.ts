@@ -1,11 +1,5 @@
 import type { Role } from '@/entities/session'
-import {
-  apiClient,
-  getErrorStatus,
-  MOCK_ENDPOINTS,
-  type MockEndpoint,
-  useApiFlowLog,
-} from '@/shared/api'
+import { getErrorStatus, useApiFlowLog } from '@/shared/api'
 import { type CheckIds, type ConnectionCheck, MissingId } from '../config/checks'
 
 export type CheckStatus =
@@ -109,53 +103,4 @@ export async function runConnectionChecks(
 
 function stripEmpty(ids: CheckIds): CheckIds {
   return Object.fromEntries(Object.entries(ids).filter(([, value]) => value)) as CheckIds
-}
-
-export type ProbeStatus =
-  /** 실제 서버가 2xx → BE에 생김, mock-endpoints에서 real로 바꿀 후보 */
-  | 'ready'
-  /** 404 · 405 → BE에 아직 없음 */
-  | 'missing'
-  /** 401 · 403 → 있을 수 있음, 역할을 바꿔 다시 */
-  | 'forbidden'
-  /** 그 밖의 오류 · 응답 없음 */
-  | 'error'
-  /** 경로 변수가 있거나 바꾸는 요청이라 부르지 않음 */
-  | 'skipped'
-
-export type ProbeResult = { endpoint: MockEndpoint; status: ProbeStatus; httpStatus: number | null }
-
-/** 목 조회 API가 실제 BE에 생겼는지: 목을 건너뛰고 실제 서버에 묻는다 (GET · 경로 변수 없는 것만) */
-export async function probeMockEndpoints(
-  onResult: (result: ProbeResult) => void,
-  endpoints: MockEndpoint[] = MOCK_ENDPOINTS.filter((item) => item.source === 'mock'),
-): Promise<void> {
-  for (const endpoint of endpoints) {
-    if (endpoint.method !== 'GET' || endpoint.path.includes(':')) {
-      onResult({ endpoint, status: 'skipped', httpStatus: null })
-      continue
-    }
-    try {
-      const response = await apiClient.get(endpoint.path, {
-        skipMock: true,
-        expected: {
-          statuses: [401, 403, 404, 405],
-          reason: '연결 점검: 목 API가 백엔드에 생겼는지 확인',
-        },
-      })
-      onResult({ endpoint, status: 'ready', httpStatus: response.status })
-    } catch (error) {
-      const httpStatus = getErrorStatus(error)
-      onResult({
-        endpoint,
-        httpStatus,
-        status:
-          httpStatus === 404 || httpStatus === 405
-            ? 'missing'
-            : httpStatus === 401 || httpStatus === 403
-              ? 'forbidden'
-              : 'error',
-      })
-    }
-  }
 }
