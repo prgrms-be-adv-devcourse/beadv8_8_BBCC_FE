@@ -194,7 +194,7 @@ export function createMockAdapter(realAdapter: AxiosAdapter): AxiosAdapter {
     const method = (config.method ?? 'get').toUpperCase()
     const enabled = currentDomains()
     for (const handler of handlers) {
-      if (config.skipMock || !enabled[handler.domain]) {
+      if (!enabled[handler.domain]) {
         continue
       }
       const match = handler.method === method ? handler.pattern.exec(pathname) : null
