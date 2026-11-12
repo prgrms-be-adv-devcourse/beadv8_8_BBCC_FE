@@ -258,6 +258,13 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     backend: 'BE #326 develop 머지(10/16) → 실제 (FE #117)',
     screens: '관리자 결제',
   },
+  {
+    method: 'GET',
+    path: '/admin/payments/summary',
+    source: 'real',
+    backend: 'BE #1220 develop 머지(11/12) → 실제 (FE #352)',
+    screens: '관리자 대시보드',
+  },
 ]
 
 export function endpointOf(method: string, path: string): MockEndpoint | undefined {
