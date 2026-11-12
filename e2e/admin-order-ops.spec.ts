@@ -50,3 +50,32 @@ test('관리자 주문 운영: 발송 지연 주문과 AI 메모를 보고 주�
   await item.getByRole('link', { name: `주문 #${placed.orderId}` }).click()
   await expect(page).toHaveURL(new RegExp(`/admin/orders/${placed.orderId}$`))
 })
+
+test('관리자 주문 운영: 결제 반영 실패 · 이벤트 처리 실패 · 격리된 이벤트를 처리한다', async ({
+  page,
+}) => {
+  await page.addLocatorHandler(page.getByRole('alertdialog'), async (dialog) => {
+    await dialog.locator('[data-confirm]').click()
+  })
+  await signInAdmin(page)
+  await page.goto('/admin/order-ops')
+
+  await page.getByRole('tab', { name: '결제 반영 실패' }).click()
+  const recovery = page.getByRole('listitem').filter({ hasText: '주문 #9001' })
+  await expect(recovery).toContainText('ORDER_STATE_CONFLICT')
+  await recovery.getByRole('button', { name: '다시 처리' }).click()
+  await expect(page.getByRole('listitem').filter({ hasText: '주문 #9001' })).toHaveCount(0)
+  await page.getByRole('button', { name: '전체' }).click()
+  await expect(page.getByRole('listitem').filter({ hasText: '주문 #9001' })).toContainText('복구됨')
+
+  await page.getByRole('tab', { name: '이벤트 처리 실패' }).click()
+  const failure = page.getByRole('listitem').filter({ hasText: '주문 #9101' })
+  await failure.getByRole('button', { name: '기록 끝내기' }).click()
+  await expect(page.getByRole('listitem').filter({ hasText: '주문 #9101' })).toHaveCount(0)
+
+  await page.getByRole('tab', { name: '격리된 이벤트' }).click()
+  const outbox = page.getByRole('listitem').filter({ hasText: '주문 결제 완료' })
+  await expect(outbox).toContainText('오류 TimeoutException')
+  await outbox.getByRole('button', { name: '다시 보내기' }).click()
+  await expect(page.getByText('격리된 이벤트가 없어요.')).toBeVisible()
+})
