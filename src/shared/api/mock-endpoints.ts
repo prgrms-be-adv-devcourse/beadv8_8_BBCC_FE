@@ -239,8 +239,8 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'PATCH',
     path: '/seller/me',
-    source: 'mock',
-    backend: 'BE 없음',
+    source: 'real',
+    backend: 'BE SellerController develop → 실제 (FE #388)',
     screens: '판매자 센터(상호명 수정)',
   },
   // 관리자 전체 조회

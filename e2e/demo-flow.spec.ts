@@ -271,21 +271,18 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByRole('button', { name: /^계약 0/ })).toBeVisible()
   })
 
-  await test.step('목 끄기 → 실제 서버로 감', async () => {
+  await test.step('회원 목을 꺼도 상호명은 실제 서버에 저장', async () => {
     await page.getByRole('button', { name: '목 설정' }).click()
     await page.locator('label', { hasText: '회원 보완' }).locator('input').uncheck()
-    // 판매자 상호명 수정은 아직 목 → 끄면 가짜 백엔드의 없는 API 응답
     await switchRole(page, '판매자')
     await page.goto('/center')
-    // 상호명 수정은 상점 정보 화면에서
     await page.getByRole('main').getByRole('link', { name: '상점 정보' }).click()
     await page.getByRole('button', { name: '상호명 수정' }).click()
     await page.getByRole('textbox', { name: '상호명' }).fill('목 끈 상점')
     await page.getByRole('button', { name: '상호명 저장' }).click()
-    await expect(page.getByRole('main').getByText(/없는 API PATCH \/seller\/me/)).toBeVisible()
-    // 방금 호출 카드에도 실패로 크게 (판매자 센터에서는 흐름 패널을 서랍으로 연다)
+    await expect(page.getByRole('main').getByText('목 끈 상점')).toBeVisible()
     await page.getByRole('button', { name: /^API 흐름 \d+/ }).click()
-    await expect(page.getByRole('region', { name: '방금 호출' })).toContainText('404')
+    await expect(page.getByRole('region', { name: '방금 호출' })).toContainText('200')
   })
 
   expect(consoleErrors).toEqual([])
