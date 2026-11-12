@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router'
 import { groupBySeller, orderableLines, sellerGroupLabel, sumLineAmount } from '@/entities/cart'
 import { findChild, useChildrenQuery } from '@/entities/child'
-import { ProductImage } from '@/entities/product'
+import { ProductImage, useProductImageUrls } from '@/entities/product'
 import { CartItemControls, RemoveSelectedButton } from '@/features/edit-cart-item'
 import { PlaceOrderButton, useCheckout } from '@/features/place-order'
 import { getErrorMessage } from '@/shared/api'
@@ -30,6 +30,8 @@ export function ShopCartPage() {
     allSelected,
     toggleAll,
   } = useCheckout()
+  // 장바구니 응답에 사진이 없어 상품 상세의 대표 사진을 읽는다 (판매가 끝난 줄은 기본 이미지)
+  const images = useProductImageUrls(cart.data?.lines.map((line) => line.productId) ?? [])
   const children = useChildrenQuery()
   const orderableIds = new Set(cart.data ? orderableLines(cart.data).map((line) => line.id) : [])
   const chargeHref =
@@ -98,7 +100,7 @@ export function ShopCartPage() {
                         onChange={() => toggleLine(line.id)}
                       />
                       <ProductImage
-                        src={null}
+                        src={line.productId ? (images[line.productId] ?? null) : null}
                         alt={line.productName}
                         className="rounded-card aspect-[3/4] w-16 shrink-0"
                       />

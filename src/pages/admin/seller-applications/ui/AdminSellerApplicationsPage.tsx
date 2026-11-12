@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
 import {
   APPLICATION_STATUS_LABEL,
   isDecided,
@@ -7,19 +8,34 @@ import {
 } from '@/entities/seller'
 import { ApproveSellerButton } from '@/features/approve-seller'
 import { RejectSellerForm } from '@/features/reject-seller'
-import { getErrorMessage } from '@/shared/api'
+import { getErrorMessage, pageFromSearch } from '@/shared/api'
 import { cn, formatDateTime } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Pagination } from '@/shared/ui/Pagination'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 /**
  * 판매자 신청 심사: 위는 심사 대기 표(줄마다 승인 · 거절), 아래는 처리한 신청 표.
- * 거절 사유는 그 줄 아래에서 펼친다
+ * 거절 사유는 그 줄 아래에서 펼친다. 두 표의 페이지(0부터)는 주소의 ?page= · ?processedPage=에 둔다
  */
 export function AdminSellerApplicationsPage() {
-  const applications = useSellerApplicationsQuery(null)
-  const pendingApplications = useSellerApplicationsQuery('PENDING')
+  const [params, setParams] = useSearchParams()
+  const pendingPage = pageFromSearch(params.get('page'))
+  const processedPage = pageFromSearch(params.get('processedPage'))
+  const setPage = (key: 'page' | 'processedPage', page: number) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (page > 0) next.set(key, String(page))
+        else next.delete(key)
+        return next
+      },
+      { replace: true },
+    )
+  // 처리한 신청은 상태를 나눠 부를 수 없어(승인 · 거절) 전체 목록 한 페이지에서 처리한 것만 고른다
+  const applications = useSellerApplicationsQuery(null, processedPage)
+  const pendingApplications = useSellerApplicationsQuery('PENDING', pendingPage)
   const all = applications.data?.content ?? []
   const pending = pendingApplications.data?.content ?? []
   const processed = all.filter(isDecided)
@@ -54,9 +70,14 @@ export function AdminSellerApplicationsPage() {
                 ))}
               </ApplicationTable>
             )}
+            <Pagination
+              page={pendingPage}
+              totalPages={pendingApplications.data.totalPages}
+              onChange={(page) => setPage('page', page)}
+            />
           </section>
 
-          {processed.length > 0 && (
+          {(processed.length > 0 || applications.data.totalPages > 1) && (
             <section aria-label="처리한 신청" className="space-y-3">
               <SectionTitle
                 count={Math.max(
@@ -66,16 +87,28 @@ export function AdminSellerApplicationsPage() {
               >
                 처리한 신청
               </SectionTitle>
-              <ApplicationTable label="처리한 신청" lastColumn="상태">
-                {processed.map((application) => (
-                  <tr key={application.id} className={ROW}>
-                    <ApplicationCells application={application} />
-                    <td className={cn(CELL, 'text-ink-2 font-semibold whitespace-nowrap')}>
-                      {APPLICATION_STATUS_LABEL[application.status]}
-                    </td>
-                  </tr>
-                ))}
-              </ApplicationTable>
+              {processed.length === 0 ? (
+                // 전체 목록 한 페이지에서 처리한 것만 고르므로 대기 건만 있는 페이지는 비어 있다
+                <p className="bg-paper-2 text-ink-2 rounded-lg py-10 text-center text-sm">
+                  이 페이지에는 처리한 신청이 없어요. 다른 페이지를 눌러 보세요.
+                </p>
+              ) : (
+                <ApplicationTable label="처리한 신청" lastColumn="상태">
+                  {processed.map((application) => (
+                    <tr key={application.id} className={ROW}>
+                      <ApplicationCells application={application} />
+                      <td className={cn(CELL, 'text-ink-2 font-semibold whitespace-nowrap')}>
+                        {APPLICATION_STATUS_LABEL[application.status]}
+                      </td>
+                    </tr>
+                  ))}
+                </ApplicationTable>
+              )}
+              <Pagination
+                page={processedPage}
+                totalPages={applications.data.totalPages}
+                onChange={(page) => setPage('processedPage', page)}
+              />
             </section>
           )}
         </>

@@ -1,19 +1,21 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { settlementApi } from '../api/settlement-api'
 import { toSettlement, toSettlementDetail, toSettlementTarget } from './settlement.mapper'
 
 export const settlementKeys = {
   all: ['settlement'] as const,
-  targets: ['settlement', 'targets'] as const,
+  targets: (page: number) => ['settlement', 'targets', page] as const,
   targetSummary: ['settlement', 'targets', 'summary'] as const,
-  list: ['settlement', 'list'] as const,
+  list: (page: number) => ['settlement', 'list', page] as const,
   detail: (settlementId: string) => ['settlement', 'detail', settlementId] as const,
 }
 
-export function useSettlementTargetsQuery() {
+/** 정산 예정 한 페이지 (page는 0부터, 50건씩) */
+export function useSettlementTargetsQuery(page = 0) {
   return useQuery({
-    queryKey: settlementKeys.targets,
-    queryFn: settlementApi.targets,
+    queryKey: settlementKeys.targets(page),
+    queryFn: () => settlementApi.targets(page),
+    placeholderData: keepPreviousData,
     select: (page) => ({ ...page, content: page.content.map(toSettlementTarget) }),
   })
 }
@@ -27,10 +29,12 @@ export function useSettlementTargetSummaryQuery() {
   })
 }
 
-export function useSettlementsQuery() {
+/** 정산서 한 페이지 (page는 0부터, 20건씩) */
+export function useSettlementsQuery(page = 0) {
   return useQuery({
-    queryKey: settlementKeys.list,
-    queryFn: settlementApi.list,
+    queryKey: settlementKeys.list(page),
+    queryFn: () => settlementApi.list(page),
+    placeholderData: keepPreviousData,
     select: (page) => ({ ...page, content: page.content.map(toSettlement) }),
   })
 }
