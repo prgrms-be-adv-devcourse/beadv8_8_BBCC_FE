@@ -86,3 +86,8 @@ export function childProfileLine(
     .filter(Boolean)
     .join(' · ')
 }
+
+/** 서버는 마지막 성장 기록 삭제를 허용하지 않는다. */
+export function canDeleteGrowthRecord(records: GrowthRecord[]): boolean {
+  return records.length >= 2
+}
