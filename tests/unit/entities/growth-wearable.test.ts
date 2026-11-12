@@ -26,6 +26,7 @@ const base: SizeRecommendationDto = {
   reasons: [],
   referenceFit: null,
   itemJudgements: [],
+  wearPreview: null,
   growthSpeed,
   wearablePeriods: [],
 }
