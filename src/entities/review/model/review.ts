@@ -20,7 +20,6 @@ export type Review = {
   /** 검토 중(내 리뷰에만 보인다) */
   isUnderReview: boolean
   createdAt: string
-  isEdited: boolean
 }
 
 /** 핏별 리뷰 수 (핏을 남긴 리뷰만) */
