@@ -37,6 +37,8 @@ import {
   orderDeadLetterShape,
 } from '@/entities/dead-letter/api/order-dead-letter.shape'
 import { adminSettlementPageShape } from '@/entities/settlement/api/admin-settlement.shape'
+import { adminWalletPageShape, balanceReturnShape } from '@/entities/wallet/api/admin-wallet.shape'
+import { toAdminWallet, toAdminWalletParams, toReturnBalanceRequest } from '@/entities/wallet'
 import { settlementRunShape } from '@/entities/settlement/api/settlement.shape'
 import {
   inboxNotificationPageShape,
@@ -726,6 +728,47 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const paid = list.data.content[0].settlementId
     expect((await call('POST', `/admin/settlements/${paid}/retry`, 3)).status).toBe(409)
     expect((await call('POST', '/admin/settlements/99999/retry', 3)).status).toBe(404)
+  })
+
+  it('관리자 지갑: 동결 · 잔액으로 거르기, 잔액 돌려주기는 동결 지갑 + 지금 잔액만', async () => {
+    const frozen = await call('POST', '/__fake/frozen-wallets', null, { balance: 25000 })
+    const emptyFrozen = await call('POST', '/__fake/frozen-wallets', null, { balance: 0 })
+    const query = (frozenOnly: boolean, withBalanceOnly: boolean) =>
+      new URLSearchParams(
+        Object.entries(toAdminWalletParams({ frozenOnly, withBalanceOnly }, 0)).map(([k, v]) => [
+          k,
+          String(v),
+        ]),
+      ).toString()
+
+    const all = await call('GET', `/admin/wallets?${query(false, false)}`, 3)
+    expectContract(all.data, adminWalletPageShape)
+    expect(all.data.content.some((w: { frozenAt: unknown }) => w.frozenAt === null)).toBe(true)
+    const frozenOnly = await call('GET', `/admin/wallets?${query(true, true)}`, 3)
+    expectContract(frozenOnly.data, adminWalletPageShape)
+    const ids = frozenOnly.data.content.map((w: { walletId: number }) => w.walletId)
+    expect(ids).toContain(frozen.data.walletId)
+    expect(ids).not.toContain(emptyFrozen.data.walletId)
+    expect((await call('GET', '/admin/wallets?size=101', 3)).status).toBe(400)
+    expect((await call('GET', '/admin/wallets', 1)).status).toBe(403)
+
+    const wallet = toAdminWallet(frozen.data)
+    const returnPath = `/admin/wallets/${wallet.id}/return-balance`
+    expect((await call('POST', returnPath, 3, { amount: 1 })).status).toBe(409)
+    const returned = await call('POST', returnPath, 3, toReturnBalanceRequest(wallet))
+    expect(returned.status).toBe(200)
+    expectContract(returned.data, balanceReturnShape)
+    expect(returned.data).toMatchObject({ amount: 25000, balance: 0 })
+    expect((await call('POST', returnPath, 3, { amount: 25000 })).status).toBe(409)
+
+    const active = all.data.content.find((w: { frozenAt: unknown }) => w.frozenAt === null)
+    expect(
+      (await call('POST', `/admin/wallets/${active.walletId}/return-balance`, 3, { amount: 1 }))
+        .status,
+    ).toBe(409)
+    expect(
+      (await call('POST', '/admin/wallets/99999/return-balance', 3, { amount: 1 })).status,
+    ).toBe(404)
   })
 
   it('관리자 회원 목록 · 이용 정지 · 판매자 자격 정지', async () => {

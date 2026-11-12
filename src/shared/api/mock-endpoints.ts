@@ -265,6 +265,20 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     backend: 'BE #1220 develop 머지(11/12) → 실제 (FE #352)',
     screens: '관리자 대시보드',
   },
+  {
+    method: 'GET',
+    path: '/admin/wallets',
+    source: 'real',
+    backend: 'BE #670 AdminWalletController develop 머지 → 실제 (FE #354)',
+    screens: '관리자 지갑',
+  },
+  {
+    method: 'POST',
+    path: '/admin/wallets/:walletId/return-balance',
+    source: 'real',
+    backend: 'BE #731 AdminWalletController develop 머지 → 실제 (FE #354)',
+    screens: '관리자 지갑(잔액 돌려주기)',
+  },
 ]
 
 export function endpointOf(method: string, path: string): MockEndpoint | undefined {

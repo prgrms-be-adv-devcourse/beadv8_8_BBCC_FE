@@ -53,6 +53,12 @@ const verifications = {
   3: '2026-01-01T00:00:00',
 }
 const wallets = { 1: 100000, 2: 0, 3: 0 }
+// 지갑 ID = 회원 ID + 100 (회원 ID와 섞어 쓰면 드러나게 다르게 둔다). 탈퇴로 동결한 지갑은 회원 ID → 동결 시각
+const WALLET_ID_OFFSET = 100
+const frozenWallets = {}
+let nextWithdrawnMemberId = 1000
+// BE BalanceReturn: 동결 지갑의 남은 잔액을 돌려줬다는 기록
+const balanceReturns = []
 // 주문 멱등키 (BE #351): '회원:키' → { hash, orderId }
 const idempotency = {}
 // BE WalletLedger: 잔액이 바뀔 때마다 한 줄 (출금은 음수)
@@ -751,6 +757,12 @@ function addDeadLetter(module, patch = {}) {
   deadLetters.push(d)
   return d
 }
+const adminWalletOf = (memberId) => ({
+  walletId: memberId + WALLET_ID_OFFSET,
+  memberId,
+  balance: wallets[memberId],
+  frozenAt: frozenWallets[memberId] ?? null,
+})
 const deadLetterOf = ({ module: _m, failOnReplay: _f, ...d }) => d
 // 주문 처리 실패 메시지 (BE AdminOrderDeadLetterController #601): 칸 · 상태(CLOSED 있음)가 회원 서비스 모듈과 다르다
 const orderDeadLetters = []
@@ -904,6 +916,19 @@ http
           .toISOString()
           .slice(0, 19)
       }
+      return send(res, 204)
+    }
+    // POST /__fake/frozen-wallets { balance } — 탈퇴로 동결된 지갑 하나 만들기 (가짜 백엔드 전용).
+    // 잔액을 돌려주면 0이 되므로 E2E는 실행마다 새 지갑을 만든다
+    if (r('POST', /^\/__fake\/frozen-wallets$/)) {
+      const memberId = nextWithdrawnMemberId++
+      wallets[memberId] = Number(body?.balance ?? 0)
+      frozenWallets[memberId] = now()
+      return send(res, 201, adminWalletOf(memberId))
+    }
+    // POST /__fake/wallet-balances { walletId, balance } — 그사이 잔액이 바뀐 상황 (가짜 백엔드 전용)
+    if (r('POST', /^\/__fake\/wallet-balances$/)) {
+      wallets[body.walletId - WALLET_ID_OFFSET] = Number(body.balance)
       return send(res, 204)
     }
     if (r('POST', /^\/dev\/tokens$/)) {
@@ -1530,6 +1555,63 @@ http
       wallets[st.sellerId] = (wallets[st.sellerId] ?? 0) + st.settlementAmount
       ledger(st.sellerId, 'SETTLEMENT', st.settlementAmount, String(st.settlementId))
       return send(res, 204)
+    }
+    // 관리자 지갑 목록 (BE AdminWalletController): 최신순(ID 내림차순), frozen · hasBalance가 true일 때만 거른다
+    if (r('GET', /^\/admin\/wallets$/)) {
+      const flag = (key) => url.searchParams.get(key) === 'true'
+      const size = Number(url.searchParams.get('size') ?? 20)
+      if (size < 1 || size > 100)
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      const rows = Object.keys(wallets)
+        .map(Number)
+        .filter((memberId) => !flag('frozen') || frozenWallets[memberId])
+        .filter((memberId) => !flag('hasBalance') || wallets[memberId] > 0)
+        .sort((a, b) => b - a)
+        .map(adminWalletOf)
+      return send(res, 200, pageFrom(rows, url.searchParams))
+    }
+    // 잔액 돌려주기 (BE #731): 동결 지갑만(WALLET_NOT_FROZEN 409), 요청 금액 = 지금 잔액(BALANCE_CHANGED 409)
+    if ((x = r('POST', /^\/admin\/wallets\/(\d+)\/return-balance$/))) {
+      const memberId = +x[1] - WALLET_ID_OFFSET
+      if (!(memberId in wallets))
+        return problem(
+          res,
+          404,
+          '지갑을 찾을 수 없습니다',
+          '회원의 예치금 지갑이 없습니다.',
+          req.url,
+        )
+      if (!Number.isInteger(body?.amount) || body.amount <= 0)
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      if (!frozenWallets[memberId])
+        return problem(
+          res,
+          409,
+          '동결되지 않은 지갑입니다',
+          '잔액 환급은 탈퇴로 동결된 지갑만 할 수 있습니다.',
+          req.url,
+        )
+      if (wallets[memberId] !== body.amount)
+        return problem(
+          res,
+          409,
+          '잔액이 바뀌었습니다',
+          '지갑 목록을 다시 불러와 지금 잔액으로 다시 요청해 주세요.',
+          req.url,
+        )
+      const balanceReturnId = balanceReturns.length + 1
+      balanceReturns.push({ balanceReturnId, memberId, amount: body.amount })
+      wallets[memberId] -= body.amount
+      ledger(memberId, 'BALANCE_RETURN', -body.amount, balanceReturnId)
+      return send(res, 200, {
+        balanceReturnId,
+        walletId: +x[1],
+        memberId,
+        amount: body.amount,
+        balance: wallets[memberId],
+        ledgerId: ledgers.length,
+        returnedAt: now(),
+      })
     }
     if ((x = r('GET', /^\/admin\/settlement-runs\/(\d+)$/))) {
       const run = settlementRuns.find((run) => run.runId === +x[1])
