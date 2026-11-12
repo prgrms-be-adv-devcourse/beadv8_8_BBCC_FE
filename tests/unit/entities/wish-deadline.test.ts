@@ -16,6 +16,12 @@ describe('wishDeadlineLabel: 조르기 남은 기한', () => {
   it('정확히 1일 남으면 1일 남음', () => {
     expect(wishDeadlineLabel(pending('2026-11-13T10:00:00'), NOW)).toBe('1일 남음')
   })
+  it('보낸 직후(7일에서 몇 초 지남)에도 7일 남음 — 남은 날은 올림', () => {
+    expect(wishDeadlineLabel(pending('2026-11-19T09:59:30'), NOW)).toBe('7일 남음')
+  })
+  it('1일하고 1초 남으면 2일 남음', () => {
+    expect(wishDeadlineLabel(pending('2026-11-13T10:00:01'), NOW)).toBe('2일 남음')
+  })
   it('1일보다 1초 적으면 오늘 마감', () => {
     expect(wishDeadlineLabel(pending('2026-11-13T09:59:59'), NOW)).toBe('오늘 마감')
   })

@@ -195,6 +195,7 @@ export function ShopProductDetailPage() {
                   <FavoriteButton
                     productId={detail.id}
                     isFavorited={favoritedIds.data?.has(detail.id) ?? false}
+                    isLoading={Boolean(user) && favoritedIds.isPending}
                     count={favoriteSummary.data?.count}
                     isSelling={isSelling}
                     loginHref={user ? null : loginPath(returnPath())}

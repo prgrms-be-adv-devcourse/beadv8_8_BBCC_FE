@@ -18,6 +18,7 @@ const MENU: MenuGroup[] = [
     title: '운영',
     links: [
       { to: paths.admin.home, label: '대시보드', end: true },
+      { to: paths.admin.orderOps, label: '주문 운영' },
       { to: paths.admin.deadLetters, label: '처리 실패 메시지' },
       { to: paths.admin.settings, label: '설정' },
     ],
@@ -28,6 +29,10 @@ const MENU: MenuGroup[] = [
       { to: paths.admin.members, label: '회원 관리' },
       { to: paths.admin.sellerApplications, label: '판매자 신청 심사' },
     ],
+  },
+  {
+    title: '커뮤니티',
+    links: [{ to: paths.admin.reviews, label: '리뷰 검사' }],
   },
   {
     title: '거래',

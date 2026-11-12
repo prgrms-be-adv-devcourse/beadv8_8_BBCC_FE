@@ -25,7 +25,8 @@ export function ManageChildAccount({ childId, account }: ManageChildAccountProps
     event.preventDefault()
     if (!account && !isValidChildLoginId(loginId))
       return setInvalid('아이디는 영문 소문자와 숫자 4~20자로 입력해 주세요.')
-    if (!isValidChildPassword(password)) return setInvalid('비밀번호는 8자 이상 입력해 주세요.')
+    if (!isValidChildPassword(password))
+      return setInvalid('비밀번호는 8자 이상, 영문 · 숫자 72자(한글 24자) 이하로 입력해 주세요.')
     setInvalid(null)
     if (account) {
       if (

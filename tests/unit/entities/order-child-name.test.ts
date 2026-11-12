@@ -74,16 +74,17 @@ describe('주문 계약: 자녀 이름 null · 판매 주문 상품 필드', () 
     expect(toOrder(blank as never).items[0].child?.name).toBeNull()
   })
 
-  it('판매 주문: unavailableReason · sellerName이 계약에 있고 자녀 이름 null도 통과', () => {
+  it('판매 주문: unavailableReason · sellerName이 계약에 있다', () => {
     const issues = validate(page([sellerOrder]), sellerOrderPageShape)
     expect(issues.filter((issue) => issue.type !== 'extra')).toEqual([])
     expect(issues.map((issue) => issue.path)).not.toContain('content[0].items[0].unavailableReason')
     expect(issues.map((issue) => issue.path)).not.toContain('content[0].items[0].sellerName')
   })
 
-  it('판매 주문: 자녀 이름이 없으면 "자녀(키)"로 표시', () => {
-    expect(toSellerOrder(sellerOrder as never).items[0].childLabel).toBe('자녀(115cm)')
-    const named = { ...sellerOrder, items: [{ ...item, child: { ...item.child, name: '하나' } }] }
-    expect(toSellerOrder(named as never).items[0].childLabel).toBe('하나(115cm)')
+  it('판매 주문에는 자녀 칸이 없다 (BE #997, 개인정보): 와도 화면 모델에 옮기지 않는다', () => {
+    const withoutChild = Object.fromEntries(Object.entries(item).filter(([key]) => key !== 'child'))
+    const issues = validate(page([{ ...sellerOrder, items: [withoutChild] }]), sellerOrderPageShape)
+    expect(issues.filter((issue) => issue.type !== 'extra')).toEqual([])
+    expect(toSellerOrder(sellerOrder as never).items[0]).not.toHaveProperty('childLabel')
   })
 })

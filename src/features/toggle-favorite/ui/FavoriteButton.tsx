@@ -12,11 +12,17 @@ type FavoriteButtonProps = {
   isSelling: boolean
   /** 로그인 전이면 로그인 주소. 누르면 그리로 간다 */
   loginHref?: string | null
+  /** 찜 여부를 아직 모르면 true. 누르지 못하게 막는다 (이미 찜한 상품에 찜하기가 나가지 않게) */
+  isLoading?: boolean
+  /** 상품 목록 칸 위에 겹쳐 둘 작은 원형 하트 (찜 수 없음) */
+  isCompact?: boolean
   className?: string
 }
 
 const BOX =
   'border-rule text-ink-2 inline-flex min-h-12 min-w-12 flex-none flex-col items-center justify-center gap-0.5 rounded-md border bg-transparent px-1.5 py-1 transition-colors'
+const COMPACT_BOX =
+  'bg-paper/90 text-ink-2 inline-flex size-10 items-center justify-center rounded-full shadow-sm backdrop-blur transition-colors'
 
 function Heart({ isFilled }: { isFilled: boolean }) {
   return (
@@ -41,18 +47,23 @@ export function FavoriteButton({
   count,
   isSelling,
   loginHref,
+  isLoading = false,
+  isCompact = false,
   className,
 }: FavoriteButtonProps) {
   const toggle = useToggleFavorite(productId)
+  const box = isCompact ? COMPACT_BOX : BOX
   const countLabel =
-    count === undefined ? null : <span className="figure text-[11px] font-semibold">{count}</span>
+    count === undefined || isCompact ? null : (
+      <span className="figure text-[11px] font-semibold">{count}</span>
+    )
 
   if (loginHref)
     return (
       <Link
         to={loginHref}
         aria-label={`로그인하고 찜하기${count === undefined ? '' : `, 찜 ${count}`}`}
-        className={cn(BOX, 'hover:text-ink', className)}
+        className={cn(box, 'hover:text-ink', className)}
       >
         <Heart isFilled={false} />
         {countLabel}
@@ -68,10 +79,10 @@ export function FavoriteButton({
       aria-pressed={isShownFavorited}
       aria-label={isFavorited ? '찜 취소' : '찜하기'}
       title={canToggle ? undefined : '판매가 끝난 상품은 찜할 수 없어요'}
-      disabled={!canToggle || toggle.isPending}
+      disabled={!canToggle || isLoading || toggle.isPending}
       onClick={() => toggle.mutate(!isFavorited)}
       className={cn(
-        BOX,
+        box,
         isShownFavorited ? 'text-primary' : 'hover:text-ink',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className,

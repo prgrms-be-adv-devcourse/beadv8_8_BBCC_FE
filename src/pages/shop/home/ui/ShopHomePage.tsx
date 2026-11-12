@@ -16,9 +16,11 @@ import {
   useProductsQuery,
   type ProductSearch,
 } from '@/entities/product'
+import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { QuickHeightForm } from '@/features/edit-child'
 import { useRecordSearchClick } from '@/features/record-search-click'
+import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn, useArea } from '@/shared/lib'
@@ -76,6 +78,10 @@ export function ShopHomePage() {
     })
   const all = useProductsQuery(search, page, {
     enabled: !(searchesAsBuyer && children.isPending),
+  })
+  // 보이는 쪽의 상품 중 내가 찜한 것: 한 쪽에 한 번 (GET /favorites?productIds=)
+  const favoritedIds = useFavoritedIdsQuery(all.data?.content.map((product) => product.id) ?? [], {
+    enabled: isBuyer,
   })
   // 보호자가 고른(보이는) 자녀의 성별에 맞는 카테고리만 (남아면 원피스 · 치마가 빠진다)
   const categories = useCategoriesQuery(isBuyer ? (child?.gender ?? null) : null)
@@ -198,6 +204,17 @@ export function ShopHomePage() {
                 imageUrl={product.imageUrl}
                 isSoldOut={product.soldOut}
                 tag={product.sizeFree ? { text: '사이즈 무관' } : undefined}
+                action={
+                  isBuyer ? (
+                    <FavoriteButton
+                      productId={product.id}
+                      isFavorited={favoritedIds.data?.has(product.id) ?? false}
+                      isLoading={favoritedIds.isPending}
+                      isSelling
+                      isCompact
+                    />
+                  ) : undefined
+                }
                 onClick={
                   keyword && !isChild
                     ? () =>

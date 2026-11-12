@@ -19,5 +19,13 @@ export type PaymentDetailDto = PaymentSummaryDto & {
   items: { orderItemId: number; amount: number; refundedAmount: number }[]
 }
 
-/** GET /admin/payments 한 줄 (기획서 8장 보완 · BE 미구현 → 목) */
+/** GET /admin/payments 한 줄 (BE #326) */
 export type AdminPaymentDto = PaymentSummaryDto & { memberId: number }
+
+/** GET /admin/payments/summary (BE AdminPaymentSummaryResponse). 날짜는 한국 시간 yyyy-MM-dd */
+export type AdminPaymentSummaryDto = {
+  /** 조회 기간의 날마다 한 줄(오름차순). 결제일 기준, 실패 결제 제외, 환불 전 금액. 결제 없는 날은 0 */
+  daily: { date: string; paidAmount: number; paidCount: number }[]
+  /** 환불 이력이 있는 결제(부분 · 전액 환불) 전체 건수. 기간과 상관없다 */
+  refundedPaymentCount: number
+}

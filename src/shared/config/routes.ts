@@ -40,6 +40,8 @@ export const paths = {
     product: (id: string) => `/child/products/${id}`,
     cart: '/child/cart',
     wishes: '/child/wishes',
+    /** 나를 위해 산 것 (BE #1000) */
+    purchases: '/child/purchases',
     notifications: '/child/notifications',
   },
   kakaoCallback: '/oauth/kakao/callback',
@@ -73,6 +75,8 @@ export const paths = {
     walletHistory: '/my/wallet/history',
     /** 내 리뷰 (쓴 리뷰 · 리뷰를 기다리는 상품) */
     reviews: '/my/reviews',
+    /** 내 찜 (최신순, 판매 상태) */
+    favorites: '/my/favorites',
     /** 리뷰 쓰기 (메뉴 없이 한 가지 일만). 구매확정한 주문상품 하나 */
     reviewWrite: (orderItemId: string) => `/my/reviews/new?orderItemId=${orderItemId}`,
     /** 예치금 충전 (예치금과 따로, 메뉴 없이 한 가지 일만) */
@@ -107,9 +111,13 @@ export const paths = {
     settlements: '/admin/settlements',
     /** 설정: 시연 데이터 켜기 · 끄기 */
     settings: '/admin/settings',
+    /** 주문 운영: 멈춘 주문 · 처리 대기 (종류 · 페이지는 검색 값) */
+    orderOps: '/admin/order-ops',
     /** 처리 실패 메시지 (회원 서비스 Kafka DLT): 모듈 · 상태 · 페이지는 목록 주소의 검색 값으로 */
     deadLetters: '/admin/dead-letters',
     deadLetter: (module: string, id: string) => `/admin/dead-letters/${module}/${id}`,
+    /** 리뷰 검사 (숨김 판단 · 숨김 확정 · 다시 공개): 상태는 주소의 ?status= */
+    reviews: '/admin/community/reviews',
     /** 상품 기준 데이터: 종류마다 목록 · 만들기(목록과 따로) */
     attributes: '/admin/catalog/attributes',
     attributeNew: '/admin/catalog/attributes/new',

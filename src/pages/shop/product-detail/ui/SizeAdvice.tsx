@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import {
   AiSentenceNotice,
   FIT_LABEL,
+  referenceFitSummaryOf,
   showsAiSizeNotice,
   SizeReasonList,
   sizeScaleOf,
@@ -10,6 +11,7 @@ import {
   type SizeRecommendation,
 } from '@/entities/recommendation'
 import { cn } from '@/shared/lib'
+import { ReferenceFitLine } from './ReferenceFitLine'
 
 type SizeAdviceProps = {
   /** 고른 자녀 */
@@ -26,7 +28,7 @@ type SizeAdviceProps = {
 /**
  * 사이즈 칩 바로 위 추천 한 줄: 「추천 사이즈 120 · 여유 있음 · 김들희 115cm 기준」 + 「사이즈 자세히」.
  * 그 아래 AI 근거(있으면) · AI 안내 · 기준 옷 등록 안내. 펼치면 백엔드 안내 · 이 상품 사이즈 눈금 · 착용 미리보기.
- * 기준 핏(기준 옷과의 cm 차이) · 입을 수 있는 기간이 BE 응답에 생기면 추천 한 줄 아래, 근거 위에 둔다
+ * 추천 한 줄 바로 아래(근거 위)에 기준 핏(기준 옷과의 cm 차이)을 둔다. 입을 수 있는 기간도 이 자리에 온다
  */
 export function SizeAdvice({
   child,
@@ -38,6 +40,7 @@ export function SizeAdvice({
   const [isOpen, setIsOpen] = useState(false)
   const detailsId = useId()
   const { recommendedSize, fit, notices, reasons } = recommendation
+  const fitSummary = referenceFitSummaryOf(recommendation)
 
   return (
     <div className="bg-paper-2 rounded-md">
@@ -86,6 +89,11 @@ export function SizeAdvice({
           </svg>
         </button>
       </div>
+      {fitSummary && recommendedSize && (
+        <div className="px-3.5 pb-2.5">
+          <ReferenceFitLine summary={fitSummary} size={recommendedSize} />
+        </div>
+      )}
       {/* AI가 고른 근거는 추천 한 줄 바로 아래에 늘 보인다 (규칙 추천이면 없음) */}
       <SizeReasonList reasons={reasons} className="px-3.5 pb-2.5" />
       {showsAiSizeNotice(recommendation) && <AiSentenceNotice className="px-3.5 pb-2.5" />}

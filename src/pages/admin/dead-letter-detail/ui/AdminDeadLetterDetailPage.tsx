@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
 import {
   DEAD_LETTER_MODULES,
@@ -14,10 +13,16 @@ import { cn, formatDateTime } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { InfoRow } from './InfoRow'
+import { None } from './None'
+import { NotFound } from './NotFound'
+import { Position } from './Position'
+import { OrderDeadLetterDetail } from './OrderDeadLetterDetail'
 
 /** 처리 실패 메시지 상세: 지금 상태 + 재처리 → 메시지 정보 → 재처리 기록 */
 export function AdminDeadLetterDetailPage() {
   const { module, deadLetterId = '' } = useParams()
+  if (module === 'order') return <OrderDeadLetterDetail deadLetterId={deadLetterId} />
   if (!isDeadLetterModule(module)) return <NotFound />
   return <DeadLetterDetail module={module} deadLetterId={deadLetterId} />
 }
@@ -80,19 +85,23 @@ function DeadLetterDetail({ module, deadLetterId }: DeadLetterDetailProps) {
               <InfoRow label="받은 시각">
                 <span className="figure">{formatDateTime(deadLetter.createdAt)}</span>
               </InfoRow>
-              <InfoRow label="이벤트 종류">{orNone(deadLetter.eventType)}</InfoRow>
-              <InfoRow label="이벤트 ID">{orNone(deadLetter.eventId)}</InfoRow>
-              <InfoRow label="메시지 키">{orNone(deadLetter.messageKey)}</InfoRow>
-              <InfoRow label="실패 예외">{orNone(deadLetter.failureType)}</InfoRow>
+              <InfoRow label="이벤트 종류">{deadLetter.eventType ?? <None />}</InfoRow>
+              <InfoRow label="이벤트 ID">{deadLetter.eventId ?? <None />}</InfoRow>
+              <InfoRow label="메시지 키">{deadLetter.messageKey ?? <None />}</InfoRow>
+              <InfoRow label="실패 예외">{deadLetter.failureType ?? <None />}</InfoRow>
               <InfoRow label="원래 위치">
-                {position(
-                  deadLetter.sourceTopic,
-                  deadLetter.sourcePartition,
-                  deadLetter.sourceOffset,
-                )}
+                <Position
+                  topic={deadLetter.sourceTopic}
+                  partition={deadLetter.sourcePartition}
+                  offset={deadLetter.sourceOffset}
+                />
               </InfoRow>
               <InfoRow label="보관 위치">
-                {position(deadLetter.dltTopic, deadLetter.dltPartition, deadLetter.dltOffset)}
+                <Position
+                  topic={deadLetter.dltTopic}
+                  partition={deadLetter.dltPartition}
+                  offset={deadLetter.dltOffset}
+                />
               </InfoRow>
             </dl>
           </section>
@@ -107,51 +116,21 @@ function DeadLetterDetail({ module, deadLetterId }: DeadLetterDetailProps) {
                 {deadLetter.lastReplayedAt ? (
                   <span className="figure">{formatDateTime(deadLetter.lastReplayedAt)}</span>
                 ) : (
-                  orNone(null)
+                  <None />
                 )}
               </InfoRow>
               <InfoRow label="재처리 관리자">
                 {deadLetter.lastReplayedBy ? (
                   <span className="figure">{`관리자 ${deadLetter.lastReplayedBy}`}</span>
                 ) : (
-                  orNone(null)
+                  <None />
                 )}
               </InfoRow>
-              <InfoRow label="재처리 실패">{orNone(deadLetter.lastReplayFailureType)}</InfoRow>
+              <InfoRow label="재처리 실패">{deadLetter.lastReplayFailureType ?? <None />}</InfoRow>
             </dl>
           </section>
         </>
       )}
-    </div>
-  )
-}
-
-function NotFound() {
-  return (
-    <p className="bg-paper-2 text-ink-2 rounded-lg py-12 text-center text-sm">없는 메시지예요.</p>
-  )
-}
-
-function orNone(value: string | null): ReactNode {
-  return value ?? <span className="text-ink-3 font-normal">없음</span>
-}
-
-/** 토픽 · 파티션 · 오프셋 한 줄 (원래 위치 헤더가 없던 메시지는 파티션 · 오프셋이 없다) */
-function position(topic: string, partition: number | null, offset: number | null): ReactNode {
-  return (
-    <span className="figure">
-      {topic} · 파티션 {partition ?? '-'} · 오프셋 {offset ?? '-'}
-    </span>
-  )
-}
-
-type InfoRowProps = { label: string; children: ReactNode }
-
-function InfoRow({ label, children }: InfoRowProps) {
-  return (
-    <div className="flex min-h-14 items-center gap-4 px-5 py-3">
-      <dt className="text-ink-3 w-24 shrink-0 text-sm">{label}</dt>
-      <dd className="text-ink min-w-0 flex-1 text-sm font-semibold break-all">{children}</dd>
     </div>
   )
 }

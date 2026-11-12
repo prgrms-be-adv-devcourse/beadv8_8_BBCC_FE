@@ -41,6 +41,7 @@ export function toWishRequest(dto: WishRequestDto): WishRequest {
     expiredAt: dto.expiredAt,
     rejectReason: dto.rejectReason,
     orderIds: [...new Set(dto.purchases.map((purchase) => purchase.orderId))],
+    paidOrderItemIds: [...dto.paidOrderItemIds],
     items: dto.items.map((item) => toLine(item, dto)),
   }
 }

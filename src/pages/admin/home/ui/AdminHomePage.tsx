@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useAdminMembersQuery } from '@/entities/member'
 import { summarizeOrdersOn, useAdminOrdersQuery } from '@/entities/order'
-import { useAdminPaymentsQuery } from '@/entities/payment'
+import { paidOn, useAdminPaymentSummaryQuery } from '@/entities/payment'
 import { useSellerApplicationsQuery } from '@/entities/seller'
 import { paths } from '@/shared/config'
 import { cn, formatWon, kstDateString } from '@/shared/lib'
@@ -10,19 +10,21 @@ import { PageHeader } from '@/shared/ui/PageHeader'
 
 /**
  * 관리자 첫 화면: 처리할 일(심사 대기 판매자 신청)을 가장 크게 두고,
- * 나머지 수치는 거래 · 회원 묶음으로 실선 사이에 둔다 (이미 있는 목록 API로 계산).
+ * 나머지 수치는 거래 · 회원 묶음으로 실선 사이에 둔다 (주문 수치는 주문 목록 API로 계산,
+ * 결제 수치는 결제 요약 API: 결제일 기준 금액 · 환불 있는 결제 수).
  * 누르면 그 목록으로 (주소 ?status=)
  */
 export function AdminHomePage() {
   const orders = useAdminOrdersQuery(null)
-  const payments = useAdminPaymentsQuery()
   const applications = useSellerApplicationsQuery('PENDING')
   const members = useAdminMembersQuery('SUSPENDED', '')
   const today = kstDateString()
+  const payments = useAdminPaymentSummaryQuery(today, today)
   const summary = orders.data ? summarizeOrdersOn(orders.data.content, today) : null
   const pending = applications.data?.totalElements
   const suspended = members.data?.totalElements
-  const refunds = payments.data?.content.filter((payment) => payment.refundedAmount > 0).length
+  const paidToday = payments.data ? paidOn(payments.data, today) : null
+  const refunds = payments.data?.refundedPaymentCount
 
   return (
     <div className="shop-look space-y-8">
@@ -54,9 +56,9 @@ export function AdminHomePage() {
           <MetricGroup title="거래" aside={today}>
             <Metric to={paths.admin.orders} label="오늘 주문" value={summary?.count} />
             <Metric
-              to={`${paths.admin.orders}?status=PAID`}
+              to={paths.admin.payments}
               label="오늘 결제된 금액"
-              value={summary ? formatWon(summary.paidAmount) : undefined}
+              value={paidToday ? formatWon(paidToday.paidAmount) : undefined}
             />
             <Metric
               to={`${paths.admin.orders}?status=CANCELLED`}
