@@ -27,19 +27,10 @@ export const sellerOrderPageShape = pageOf(
         deliveredAt: nullable(str),
         confirmedAt: nullable(str),
         confirmType: nullable(oneOf(['DIRECT', 'AUTO'])),
-        // 주문 상세의 주문상품과 같은 모양: 품절 사유(기본 null) · 판매자 상호(판매 주문 목록에서는 null)
+        // 주문 상세의 주문상품과 같은 모양: 품절 사유(기본 null) · 판매자 상호(판매 주문 목록에서는 null).
+        // 자녀(child) 칸은 없다 (BE #997, 판매자에게 자녀 정보를 넘기지 않음)
         unavailableReason: nullable(str),
         sellerName: nullable(str),
-        child: nullable(
-          obj({
-            childId: str,
-            // 주문 당시 자녀 이름: 회원의 자녀 변경 이벤트에 이름이 없어 null일 수 있다
-            name: nullable(str),
-            heightCm: num,
-            weightKg: num,
-            bodyType: nullable(str),
-          }),
-        ),
       }),
     ),
   }),

@@ -32,6 +32,10 @@ import { childOnboardingShape } from '@/entities/child-onboarding'
 import { guardianVerificationShape } from '@/entities/guardian-verification/api/guardian-verification.shape'
 import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
 import { deadLetterPageShape, deadLetterShape } from '@/entities/dead-letter/api/dead-letter.shape'
+import {
+  orderDeadLetterPageShape,
+  orderDeadLetterShape,
+} from '@/entities/dead-letter/api/order-dead-letter.shape'
 import { adminSettlementPageShape } from '@/entities/settlement/api/admin-settlement.shape'
 import { settlementRunShape } from '@/entities/settlement/api/settlement.shape'
 import {
@@ -778,6 +782,36 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       404,
     )
     expect((await call('POST', '/admin/auth-dead-letters/99999/reprocess', 3)).status).toBe(404)
+  })
+
+  it('주문 처리 실패 메시지: 목록(결제 먼저) · 상세 · 재처리 · 확인 후 종료 (BE #601)', async () => {
+    for (const status of ['OPEN', 'REPROCESSED', 'CLOSED']) {
+      const list = await call('GET', `/admin/orders/dead-letters?status=${status}`, 3)
+      expectContract(list.data, orderDeadLetterPageShape)
+    }
+    expect((await call('GET', '/admin/orders/dead-letters?status=DONE', 3)).status).toBe(400)
+    const open = (await call('GET', '/admin/orders/dead-letters', 3)).data.content
+    expect(open[0].paymentEvent).toBe(true)
+
+    const fixable = await call('POST', '/__fake/order-dead-letters', null, {})
+    const base = `/admin/orders/dead-letters/${fixable.data.deadLetterId}`
+    expectContract((await call('GET', base, 3)).data, orderDeadLetterShape)
+    const done = await call('POST', `${base}/reprocess`, 3)
+    expectContract(done.data, orderDeadLetterShape)
+    expect(done.data).toMatchObject({ status: 'REPROCESSED', reprocessCount: 1, handledBy: '1' })
+    expect((await call('POST', `${base}/reprocess`, 3)).data.reprocessCount).toBe(1)
+    expect((await call('POST', `${base}/close`, 3, { memo: '확인' })).status).toBe(409)
+
+    const broken = await call('POST', '/__fake/order-dead-letters', null, { failOnReplay: true })
+    const brokenBase = `/admin/orders/dead-letters/${broken.data.deadLetterId}`
+    const failed = await call('POST', `${brokenBase}/reprocess`, 3)
+    expect(failed.data).toMatchObject({ status: 'OPEN', reprocessCount: 1 })
+    expect((await call('POST', `${brokenBase}/close`, 3, { memo: ' ' })).status).toBe(400)
+    const closed = await call('POST', `${brokenBase}/close`, 3, { memo: '결제 반영 확인' })
+    expectContract(closed.data, orderDeadLetterShape)
+    expect(closed.data).toMatchObject({ status: 'CLOSED', memo: '결제 반영 확인' })
+    expect((await call('POST', `${brokenBase}/reprocess`, 3)).status).toBe(409)
+    expect((await call('GET', '/admin/orders/dead-letters/999999', 3)).status).toBe(404)
   })
 
   it('관리자 API는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 403)', async () => {
