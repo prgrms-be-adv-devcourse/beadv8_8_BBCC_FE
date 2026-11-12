@@ -70,6 +70,38 @@ function invalid(part, body) {
 }
 
 /**
+ * 사이즈 추천의 기준 핏 (BE #1261): 상품 칸의 기준 옷과 사이즈별 실측 차이(상품 − 기준 옷, 소수 둘째 자리).
+ * 가짜는 같은 칸끼리만 비교한다. 기준 옷이 없거나 겹치는 실측이 없으면 null
+ */
+export function referenceFitOf(childId, categoryId, sizeSpecs) {
+  const part = garmentPartOfCategory(categoryId)
+  const garment = part ? garments.get(String(childId))?.[part] : undefined
+  if (!garment) return null
+  const round = (cm) => Math.round(cm * 100) / 100
+  const items = Object.entries(garment.measurements).flatMap(([code, garmentCm]) => {
+    const sizes = sizeSpecs.flatMap((spec) => {
+      const productCm = spec.measurements?.[code]
+      return productCm == null
+        ? []
+        : [{ size: spec.size, productCm, diffCm: round(productCm - garmentCm) }]
+    })
+    return sizes.length > 0 ? [{ code, garmentCm, sizes }] : []
+  })
+  return items.length > 0 ? { productPart: part, comparedPart: part, items } : null
+}
+
+/** 추천 사이즈의 항목별 AI 판단 흉내: 차이가 0 미만이면 TIGHT, 4 넘으면 ROOMY, 그 사이는 PROPER */
+export function itemJudgementsOf(referenceFit, size) {
+  if (!referenceFit || size === null) return []
+  return referenceFit.items.flatMap(({ code, sizes }) => {
+    const diffCm = sizes.find((s) => s.size === size)?.diffCm
+    if (diffCm === undefined) return []
+    const fit = diffCm < 0 ? 'TIGHT' : diffCm > 4 ? 'ROOMY' : 'PROPER'
+    return [{ code, diffCm, fit, allowanceMinCm: 0, allowanceMaxCm: 4 }]
+  })
+}
+
+/**
  * 기준 옷 경로면 처리 함수를, 아니면 null. childOf(childId)는 로그인 회원 기준으로
  * 'ok' · 'forbidden' · 'missing' 중 하나 (자녀 확인은 server.mjs가 안다)
  */

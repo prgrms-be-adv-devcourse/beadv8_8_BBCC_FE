@@ -1,3 +1,5 @@
+import type { ItemJudgement, ReferenceFit } from './reference-fit'
+
 export type Fit = 'ROOMY' | 'PROPER' | 'TIGHT'
 
 /** 사이즈 하나의 권장 키 범위 (상품 상세 실측) */
@@ -21,6 +23,11 @@ export type SizeRecommendation = {
   source: RecommendationSource
   /** 사이즈를 고른 근거 (규칙이면 빈 목록) */
   reasons: SizeReason[]
+  // 기준 핏 (BE #1261)
+  /** 기준 옷과 사이즈별로 비교한 값. 기준 옷이 없거나 비교할 항목이 없으면 null */
+  referenceFit: ReferenceFit | null
+  /** AI가 추천 사이즈를 항목별로 판단한 값. 규칙 추천이면 빈 목록 */
+  itemJudgements: ItemJudgement[]
 }
 
 export type SizeReasonType =

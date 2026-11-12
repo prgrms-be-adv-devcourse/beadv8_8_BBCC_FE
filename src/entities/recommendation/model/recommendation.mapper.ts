@@ -17,6 +17,7 @@ import type {
   SizeRecommendation,
 } from './recommendation'
 import type { RecommendedProductsParamsDto } from '../api/recommendation.dto'
+import { toItemJudgement, toReferenceFit } from './reference-fit.mapper'
 
 export function toSizeRecommendation(dto: SizeRecommendationDto): SizeRecommendation {
   return {
@@ -27,6 +28,8 @@ export function toSizeRecommendation(dto: SizeRecommendationDto): SizeRecommenda
     lastPurchasedSize: dto.lastPurchasedSize,
     source: dto.source,
     reasons: dto.reasons.map(({ type, detail }) => ({ type: type as SizeReasonType, detail })),
+    referenceFit: toReferenceFit(dto.referenceFit),
+    itemJudgements: dto.itemJudgements.map(toItemJudgement),
   }
 }
 

@@ -106,11 +106,18 @@ describe('판매 주문 매퍼: 취소된 주문상품', () => {
 
 describe('구매자 화면: 취소된 주문의 예치금 안내', () => {
   it('결제 전에 취소된 주문은 빠져나가지 않았다', () => {
-    for (const reason of ['OUT_OF_STOCK', 'PAYMENT_FAILED', 'PAYMENT_EXPIRED', null] as const)
+    for (const reason of ['OUT_OF_STOCK', 'PAYMENT_FAILED', 'PAYMENT_EXPIRED'] as const)
       expect(cancelledMoneyNote(reason)).toBe('예치금은 빠져나가지 않았어요.')
   })
   it('결제 뒤 취소(구매자 · 판매자 · 시스템)는 돌려받는다', () => {
     for (const reason of ['BUYER_CANCELLED', 'SELLER_CANCELLED', 'SELLER_UNAVAILABLE'] as const)
       expect(cancelledMoneyNote(reason)).toBe('결제한 예치금은 돌려드렸어요.')
+  })
+})
+
+describe('예치금 안내: 사유를 모를 때는 단정하지 않는다', () => {
+  it('사유가 없거나 모르는 값이면 예치금 내역을 보게 한다', () => {
+    expect(cancelledMoneyNote(null)).toBe('예치금 변동은 예치금 내역에서 확인해 주세요.')
+    expect(cancelledMoneyNote('NEW_REASON')).toBe('예치금 변동은 예치금 내역에서 확인해 주세요.')
   })
 })

@@ -42,7 +42,7 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   // 관리자 지갑 (목록 · 잔액 돌려주기)
   [/^\/admin\/wallets/, 'payment'],
   // 리뷰 · 찜 (리뷰 사진 업로드 주소 발급 포함)
-  [/^\/(reviews|favorites)(\/|$)/, 'community'],
+  [/^\/(reviews|favorites|admin\/community)(\/|$)/, 'community'],
   [/^\/(seller|admin)\/settlement/, 'settlement'],
   // 알림함 (자녀 알림함 /child/notifications 포함, 회원 규칙보다 먼저)
   [/^\/(child\/)?notifications(\/|$)/, 'notification'],

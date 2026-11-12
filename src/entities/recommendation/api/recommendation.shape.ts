@@ -11,6 +11,28 @@ const SIZE_REASON_TYPE = oneOf([
   'GROWTH',
 ])
 
+const GARMENT_PART = oneOf(['TOP', 'BOTTOM', 'OUTER', 'DRESS', 'SKIRT'])
+
+/** 기준 핏 (BE #1261) */
+const REFERENCE_FIT = {
+  referenceFit: nullable(
+    obj({
+      productPart: GARMENT_PART,
+      comparedPart: GARMENT_PART,
+      items: arr(
+        obj({
+          code: str,
+          garmentCm: num,
+          sizes: arr(obj({ size: str, productCm: num, diffCm: num })),
+        }),
+      ),
+    }),
+  ),
+  itemJudgements: arr(
+    obj({ code: str, diffCm: num, fit: FIT, allowanceMinCm: num, allowanceMaxCm: num }),
+  ),
+}
+
 export const sizeRecommendationShape = obj({
   productId: str,
   childId: str,
@@ -21,6 +43,7 @@ export const sizeRecommendationShape = obj({
   lastPurchasedSize: nullable(str),
   source: SOURCE,
   reasons: arr(obj({ type: SIZE_REASON_TYPE, detail: str, sourceId: nullable(str) })),
+  ...REFERENCE_FIT,
 })
 
 const RECOMMENDED_CARD = {

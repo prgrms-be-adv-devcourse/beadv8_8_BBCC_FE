@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { cn, formatWon } from '@/shared/lib'
 import { ProductImage } from './ProductImage'
@@ -16,6 +17,8 @@ type ProductTileProps = {
   tag?: { text: string; fit?: boolean }
   /** 누를 때 (예: 검색 결과 클릭 기록). 상세로 가는 이동은 그대로 */
   onClick?: () => void
+  /** 사진 오른쪽 위에 겹쳐 두는 동작 (예: 찜 하트). 링크 밖에 그린다 */
+  action?: ReactNode
 }
 
 /**
@@ -31,8 +34,9 @@ export function ProductTile({
   isSoldOut = false,
   tag,
   onClick,
+  action,
 }: ProductTileProps) {
-  return (
+  const tile = (
     <Link to={to} className="group rounded-card block" onClick={onClick}>
       {/* 확정 시안: 홈(브랜드 퍼플)은 둥근 사진, 나머지 화면은 각진 사진 */}
       <div className="rounded-card bg-paper-2 relative overflow-hidden [[data-shop-home]_&]:rounded-[20px]">
@@ -66,5 +70,12 @@ export function ProductTile({
         </p>
       </div>
     </Link>
+  )
+  if (!action) return tile
+  return (
+    <div className="relative">
+      {tile}
+      <div className="absolute top-2 right-2">{action}</div>
+    </div>
   )
 }

@@ -106,7 +106,7 @@ export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBloc
       </ul>
       {!isCancelled && sellerGroupCancelled(group) && (
         <p className="text-destructive border-rule border-t px-4 py-3 text-[13px]">
-          판매자가 발송 전에 취소했어요 ·{' '}
+          발송 전에 취소됐어요 ·{' '}
           <span className="figure">{formatWon(cancelledRefundOf(group.items))}</span> 환불
         </p>
       )}

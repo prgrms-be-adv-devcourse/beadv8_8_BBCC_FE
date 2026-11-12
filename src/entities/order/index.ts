@@ -1,5 +1,12 @@
 export { orderApi } from './api/order-api'
+export {
+  childPurchaseSourceOf,
+  childPurchaseStatusLabel,
+  toChildPurchase,
+  type ChildPurchase,
+} from './model/child-purchase'
 export type { AdminOrderDto, OrderDetailDto, OrderTimelineDto } from './api/order.dto'
+export { orderDetailShape } from './api/order.shape'
 export {
   CANCEL_REASON_LABEL,
   ITEM_CANCEL_REASON_LABEL,
@@ -18,6 +25,7 @@ export {
 export { orderTitle, toAdminOrder, toOrder, toPlaceOrderRequest } from './model/order.mapper'
 export {
   buildOrderTimeline,
+  canBuyerCancel,
   cancelledMoneyNote,
   cancelledRefundOf,
   canConfirmItem,
@@ -60,6 +68,7 @@ export {
   orderKeys,
   paymentPendingMs,
   useAdminOrdersQuery,
+  useChildPurchasesQuery,
   useOrderQuery,
   useOrderTimelineQuery,
   useOrdersQuery,

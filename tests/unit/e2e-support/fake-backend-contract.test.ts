@@ -113,6 +113,8 @@ import {
   reviewSummaryShape,
 } from '@/entities/review/api/review.shape'
 import { favoriteListShape, favoriteSummaryShape } from '@/entities/favorite/api/favorite.shape'
+import { adminReviewListShape } from '@/entities/review/api/admin-review.shape'
+import { reviewVisibilityShape } from '@/features/moderate-review'
 import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
 import { toWriteReviewRequest } from '@/features/write-review'
@@ -588,6 +590,34 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expectContract(patched.data, reviewShape)
     expect(patched.data).toMatchObject({ rating: 3, imageUrls: [] })
     expect((await call('PATCH', `/reviews/${review.id}`, 1, {})).status).toBe(400)
+    // 관리자 리뷰 검사 (BE AdminCommunityReviewController): 금칙어로 고치면 숨김 → 관리자 다시 공개 · 숨김 확정
+    const isListed = async () =>
+      (await call('GET', `/reviews?productId=${productId}&size=50`, null)).data.items.some(
+        (item: { reviewId: string }) => item.reviewId === review.id,
+      )
+    await call('PATCH', `/reviews/${review.id}`, 1, { content: '바보 같은 옷' })
+    expect(await isListed()).toBe(false)
+    expect((await call('GET', '/admin/community/reviews?status=HIDDEN', 1)).status).toBe(403)
+    expect((await call('GET', '/admin/community/reviews?status=NOPE', 3)).status).toBe(400)
+    const hidden = await call('GET', '/admin/community/reviews?status=HIDDEN', 3)
+    expectContract(hidden.data, adminReviewListShape)
+    expect(hidden.data.items[0]).toMatchObject({ reviewId: review.id, reason: 'PROFANITY' })
+    const visibilityPath = `/admin/community/reviews/${review.id}/visibility`
+    expect((await call('PATCH', visibilityPath, 3, { visibility: 'NOPE' })).status).toBe(400)
+    const restored = await call('PATCH', visibilityPath, 3, { visibility: 'VISIBLE' })
+    expectContract(restored.data, reviewVisibilityShape)
+    expect(restored.data).toEqual({ reviewId: review.id, status: 'RESTORED' })
+    expect(await isListed()).toBe(true)
+    const confirmedHidden = await call('PATCH', visibilityPath, 3, { visibility: 'HIDDEN' })
+    expect(confirmedHidden.data.status).toBe('CONFIRMED_HIDDEN')
+    expect(await isListed()).toBe(false)
+    const mineAfter = await call('GET', '/reviews/me', 1)
+    expect(
+      mineAfter.data.items.find((item: { reviewId: string }) => item.reviewId === review.id)
+        ?.visibility,
+    ).toBe('UNDER_REVIEW')
+    const unknown = '/admin/community/reviews/99999/visibility'
+    expect((await call('PATCH', unknown, 3, { visibility: 'VISIBLE' })).status).toBe(404)
     expect((await call('DELETE', `/reviews/${review.id}`, 2)).status).toBe(403)
     expect((await call('DELETE', `/reviews/${review.id}`, 1)).status).toBe(204)
   }, 15_000)
@@ -1654,6 +1684,19 @@ it('홈 맛보기 · 사이즈 추천: AI · RULE 응답 모두 계약 모양이
     if (size.data.source === 'RULE') expect(size.data.reasons).toEqual([])
   }
   expect(sizeSources).toEqual(['AI', 'RULE'])
+
+  // 기준 핏 (BE #1261): 기준 옷이 없으면 null, 상의 기준 옷을 두면 상의 상품(1)과 사이즈별 차이 · AI 판단이 온다
+  const sizeOf = (productId: string) =>
+    call('GET', `/recommendations/size?productId=${productId}&childId=${childId}`, 1)
+  expect((await sizeOf('1')).data.referenceFit).toBeNull()
+  await call('PUT', `/recommendations/children/${childId}/reference-garments/TOP`, 1, {
+    categoryId: '11',
+    measurements: { TOTAL_LENGTH: 44, CHEST_WIDTH: 35 },
+  })
+  const withGarment = await sizeOf('1')
+  expectContract(withGarment.data, sizeRecommendationShape)
+  expect(withGarment.data.referenceFit).toMatchObject({ productPart: 'TOP', comparedPart: 'TOP' })
+  expect(withGarment.data.itemJudgements.length).toBeGreaterThan(0)
 })
 
 it('카테고리 목록: 남아(MALE)면 여아 전용(치마)을 빼고, 여아 · 없음이면 모두, 그 밖의 값은 400 (BE #1219)', async () => {
