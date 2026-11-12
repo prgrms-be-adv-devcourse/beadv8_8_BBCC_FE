@@ -120,6 +120,33 @@ describe('getEventStream: 공통 클라이언트로 text/event-stream 받기', (
     expect(lastLog()?.contractIssues).toEqual([])
   })
 
+  it('이벤트가 올 때마다 onEvent로 먼저 넘기고, 그 순간 흐름 기록에 지금까지 받은 이벤트를 남긴다', async () => {
+    const seen: { event: string; at: number; logged: unknown }[] = []
+
+    await getEventStream(PATH, {
+      params: { case: 'live' },
+      shape,
+      onEvent: (item) =>
+        seen.push({ event: item.event, at: performance.now(), logged: lastLog()?.responseBody }),
+    })
+    const closedAt = performance.now()
+
+    expect(seen).toEqual([
+      {
+        event: 'rule',
+        at: expect.any(Number),
+        logged: { events: ['rule'], data: { source: 'RULE', note: '첫째' } },
+      },
+      {
+        event: 'ai',
+        at: expect.any(Number),
+        logged: { events: ['rule', 'ai'], data: { source: 'AI', note: '둘째' } },
+      },
+    ])
+    // 규칙 결과는 AI 답(30ms 뒤)을 기다리지 않고 넘어온다
+    expect(closedAt - seen[0]!.at).toBeGreaterThanOrEqual(20)
+  })
+
   it('스트림을 열기 전 오류(ProblemDetail)는 상태 코드와 detail을 그대로 읽을 수 있다', async () => {
     const failed = await getEventStream(PATH, { params: { case: 'missing' }, shape }).catch(
       (error: unknown) => error,

@@ -57,13 +57,19 @@ export async function readSse(
 }
 
 /**
- * 스트림을 끝까지 읽어 이벤트 목록을 돌려준다.
+ * 스트림을 끝까지 읽어 이벤트 목록을 돌려준다. onEvent를 주면 이벤트가 올 때마다 부른다.
  * 읽다가 끊기면 그때까지 다 받은 이벤트를 돌려주고, 하나도 받지 못했으면 오류를 그대로 던진다
  */
-export async function readSseEvents(stream: ReadableStream<Uint8Array>): Promise<SseEvent[]> {
+export async function readSseEvents(
+  stream: ReadableStream<Uint8Array>,
+  onEvent?: (event: SseEvent) => void,
+): Promise<SseEvent[]> {
   const events: SseEvent[] = []
   try {
-    await readSse(stream, (event) => events.push(event))
+    await readSse(stream, (event) => {
+      events.push(event)
+      onEvent?.(event)
+    })
   } catch (error) {
     if (events.length === 0) throw error
   }
