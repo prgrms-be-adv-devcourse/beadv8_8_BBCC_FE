@@ -942,13 +942,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('POST', disablePath, 1)).status).toBe(403)
   })
 
-  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티, 같은 칸)', async () => {
+  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티 · 알림 · 정산, 같은 칸)', async () => {
     for (const base of [
       'auth-dead-letters',
       'member-dead-letters',
       'seller-dead-letters',
       'child-profile-dead-letters',
       'community/dead-letters',
+      'notification-dead-letters',
+      'settlement-dead-letters',
     ]) {
       for (const status of ['OPEN', 'REPROCESSED']) {
         const list = await call('GET', `/admin/${base}?status=${status}`, 3)
@@ -992,6 +994,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       replayCount: 1,
       lastReplayFailureType: 'java.lang.IllegalStateException',
     })
+
+    for (const module of ['notification', 'settlement']) {
+      const one = await call('POST', '/__fake/dead-letters', null, { module })
+      const base = `/admin/${module}-dead-letters/${one.data.deadLetterId}`
+      expectContract((await call('GET', base, 3)).data, deadLetterShape)
+      expect((await call('POST', `${base}/reprocess`, 3)).data).toMatchObject({
+        status: 'REPROCESSED',
+      })
+    }
 
     // 다른 모듈의 번호로는 찾지 못한다
     expect((await call('GET', `/admin/auth-dead-letters/${ok.data.deadLetterId}`, 3)).status).toBe(

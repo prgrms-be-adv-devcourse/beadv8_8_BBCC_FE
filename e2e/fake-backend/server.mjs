@@ -2816,7 +2816,10 @@ http
       return send(res, 201, myAppOf(a))
     }
     if (
-      (x = r('GET', /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters$/))
+      (x = r(
+        'GET',
+        /^\/admin\/(auth-|member-|seller-|child-profile-|notification-|settlement-|community\/)dead-letters$/,
+      ))
     ) {
       const status = url.searchParams.get('status') ?? 'OPEN'
       // BE @Pattern(OPEN|REPROCESSED)
@@ -2831,7 +2834,7 @@ http
     if (
       (x = r(
         'GET',
-        /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters\/(\d+)$/,
+        /^\/admin\/(auth-|member-|seller-|child-profile-|notification-|settlement-|community\/)dead-letters\/(\d+)$/,
       ))
     ) {
       const d = deadLetters.find((d) => d.module === dltModule(x[1]) && d.deadLetterId === x[2])
@@ -2843,7 +2846,7 @@ http
     if (
       (x = r(
         'POST',
-        /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters\/(\d+)\/reprocess$/,
+        /^\/admin\/(auth-|member-|seller-|child-profile-|notification-|settlement-|community\/)dead-letters\/(\d+)\/reprocess$/,
       ))
     ) {
       const d = deadLetters.find((d) => d.module === dltModule(x[1]) && d.deadLetterId === x[2])
