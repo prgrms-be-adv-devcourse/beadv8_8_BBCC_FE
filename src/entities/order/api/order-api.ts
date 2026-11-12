@@ -3,6 +3,7 @@ import type {
   AdminOrderDto,
   ChildPurchaseDto,
   OrderDetailDto,
+  OrderStatusHistoryDto,
   OrderSummaryDto,
   OrderTimelineDto,
   PlaceOrderRequestDto,
@@ -11,6 +12,7 @@ import {
   adminOrderPageShape,
   childPurchasePageShape,
   orderDetailShape,
+  orderHistoryShape,
   orderPageShape,
   orderTimelineShape,
 } from './order.shape'
@@ -48,10 +50,14 @@ export const orderApi = {
   /** 이미 확정이어도 200, 배송 완료 전이면 409 */
   confirmItem: (orderId: string, orderItemId: string) =>
     apiClient.post(`/orders/${orderId}/items/${orderItemId}/confirm`),
-  /** 관리자 전체 주문 (기획서 8장 보완). 백엔드에 아직 없어 목 응답이다 */
   /** 최근 주문부터 (BE는 상태로 거르지 않는다 → 화면에서 거른다) */
   adminList: () =>
     apiClient
       .get<Page<AdminOrderDto>>('/admin/orders', { params: { page: 0, size: 100 } })
       .then(expectShape(adminOrderPageShape)),
+  /** 관리자 주문 상태 이력 (BE #442). 오래된 것부터, 주문이 없으면 404 */
+  adminHistory: (orderId: string) =>
+    apiClient
+      .get<OrderStatusHistoryDto[]>(`/admin/orders/${encodeURIComponent(orderId)}/history`)
+      .then(expectShape(orderHistoryShape)),
 }
