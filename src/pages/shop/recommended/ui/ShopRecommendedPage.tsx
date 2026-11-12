@@ -7,7 +7,6 @@ import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
-import { MockBadge } from '@/shared/ui/MockBadge'
 import { CardGridSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
@@ -52,10 +51,7 @@ export function ShopRecommendedPage() {
       </Link>
       <header className="border-rule grid gap-x-10 gap-y-4 rounded-lg border p-5 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:items-end md:p-6">
         <div className="space-y-1">
-          <h1 className="text-page">
-            {child.data ? `${child.data.name}에게 맞는 옷` : '맞는 옷'}
-            <MockBadge endpoints={['GET /recommendations/products']} />
-          </h1>
+          <h1 className="text-page">{child.data ? `${child.data.name}에게 맞는 옷` : '맞는 옷'}</h1>
           {child.data && (
             <p className="text-ink text-sm font-semibold">{childProfileLine(child.data)}</p>
           )}

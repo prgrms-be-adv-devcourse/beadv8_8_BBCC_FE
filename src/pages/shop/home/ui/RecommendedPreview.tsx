@@ -11,7 +11,6 @@ import {
 } from '@/entities/recommendation'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { MockBadge } from '@/shared/ui/MockBadge'
 
 type RecommendedPreviewProps = {
   kids: Child[]
@@ -35,10 +34,7 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
     <section aria-label="맞춤 상품" className="border-rule space-y-5 rounded-lg border p-4 md:p-6">
       <div className="flex items-start justify-between gap-4">
         <div data-clarity-mask="true" className="space-y-1">
-          <h2 className="text-section">
-            {child.name}에게 맞는 옷
-            <MockBadge endpoints={['GET /recommendations/products/preview']} />
-          </h2>
+          <h2 className="text-section">{child.name}에게 맞는 옷</h2>
           <p className="text-ink-2 text-[13px]">
             키 <span className="figure">{child.heightCm}cm</span>에는{' '}
             <strong className="text-fit-ink figure font-bold">{ruler.band.size}</strong> 사이즈가
