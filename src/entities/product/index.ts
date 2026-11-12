@@ -44,6 +44,7 @@ export {
   toCategories,
   toCategoryGroups,
   toCategoryInputs,
+  productImageUrlOf,
   toProductDetail,
   toProductSearchParams,
   toProductListItem,
@@ -83,6 +84,7 @@ export {
   useCategoriesQuery,
   useCategoryGroupsQuery,
   useCategoryInputsQuery,
+  useProductImageUrls,
   useProductQuery,
   useProductsQuery,
   useSellerProductQuery,
@@ -98,8 +100,6 @@ export { ProductFormFields } from './ui/ProductFormFields'
 export { ProductSellerLine } from './ui/ProductSellerLine'
 export { ProductSpecs } from './ui/ProductSpecs'
 export { ProductTile } from './ui/ProductTile'
-export { garmentKindOf, wearFitOf, type WearFit } from './model/wear-preview'
-export { WearPreview } from './ui/WearPreview'
 export {
   productListTitle,
   effectiveSort,

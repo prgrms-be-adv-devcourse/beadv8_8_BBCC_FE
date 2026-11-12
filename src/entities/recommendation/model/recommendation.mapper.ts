@@ -18,6 +18,7 @@ import type {
 } from './recommendation'
 import type { RecommendedProductsParamsDto } from '../api/recommendation.dto'
 import { toItemJudgement, toReferenceFit } from './reference-fit.mapper'
+import { toWearPreview } from './wear-preview.mapper'
 
 export function toSizeRecommendation(dto: SizeRecommendationDto): SizeRecommendation {
   return {
@@ -30,6 +31,7 @@ export function toSizeRecommendation(dto: SizeRecommendationDto): SizeRecommenda
     reasons: dto.reasons.map(({ type, detail }) => ({ type: type as SizeReasonType, detail })),
     referenceFit: toReferenceFit(dto.referenceFit),
     itemJudgements: dto.itemJudgements.map(toItemJudgement),
+    wearPreview: toWearPreview(dto.wearPreview),
   }
 }
 

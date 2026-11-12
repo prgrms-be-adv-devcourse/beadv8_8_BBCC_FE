@@ -24,6 +24,7 @@ export function useChildQuery(childId: string) {
     queryKey: childKeys.detail(childId),
     queryFn: () => childApi.get(childId),
     select: toChild,
+    enabled: !!childId,
   })
 }
 

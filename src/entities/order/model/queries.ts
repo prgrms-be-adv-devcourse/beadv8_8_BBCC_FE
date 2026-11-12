@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { deliveryTrackingApi } from '../api/delivery-tracking-api'
 import { orderApi } from '../api/order-api'
 import { toDeliveryTracking } from './delivery-tracking.mapper'
@@ -10,6 +10,7 @@ import { isAwaitingPayment, paymentPollInterval } from './order.rules'
 
 export const orderKeys = {
   list: ['orders', 'list'] as const,
+  listPage: (page: number) => ['orders', 'list', page] as const,
   detail: (orderId: string) => ['orders', 'detail', orderId] as const,
   timeline: (orderId: string, revision: string) =>
     ['orders', 'timeline', orderId, revision] as const,
@@ -19,10 +20,12 @@ export const orderKeys = {
     ['orders', 'tracking', orderId, deliveryId] as const,
 }
 
-export function useOrdersQuery() {
+/** 내 주문 한 페이지 (page는 0부터, 기본 첫 페이지) */
+export function useOrdersQuery(page = 0) {
   return useQuery({
-    queryKey: orderKeys.list,
-    queryFn: orderApi.list,
+    queryKey: orderKeys.listPage(page),
+    queryFn: () => orderApi.list(page),
+    placeholderData: keepPreviousData,
     select: (page) => ({ ...page, content: page.content.map(toOrderSummary) }),
   })
 }

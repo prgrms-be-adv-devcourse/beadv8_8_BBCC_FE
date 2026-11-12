@@ -368,10 +368,12 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     })
     await expect(page.getByText('추천 사이즈')).toBeVisible()
     // 착용 미리보기는 사이즈 칩 위 추천 한 줄의 「사이즈 자세히」를 펼치면 보인다.
-    // 추천 사이즈로 시작, 사이즈를 바꾸면 그림 · 문구가 바뀐다
+    // 추천 사이즈로 시작, 사이즈를 바꾸면 그림 · 문구가 바뀐다. 문구는 서버의 밑단 · 소매 위치로 정한다
     await page.getByRole('button', { name: '사이즈 자세히' }).click()
     await expect(
-      page.getByRole('img', { name: /키 118cm에 120 사이즈: 엉덩이를 덮어요/ }),
+      page.getByRole('img', {
+        name: /키 118cm에 120 사이즈: 허벅지까지 내려와요, 소매는 손목까지 와요/,
+      }),
     ).toBeVisible()
     await page
       .getByRole('group', { name: '미리볼 사이즈' })

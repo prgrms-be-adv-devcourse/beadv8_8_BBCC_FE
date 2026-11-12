@@ -62,6 +62,14 @@ function sizeAttributeOf(dto: ProductDetailDto) {
   return dto.optionAttributes.find((attribute) => attribute.sizeRole)
 }
 
+/** 상품 대표 사진: 대표가 없으면 상세 사진 첫 장, 둘 다 없으면 null (조르기 · 장바구니 줄 사진) */
+export function productImageUrlOf(dto: {
+  thumbnailUrl: string | null
+  imageUrls: string[]
+}): string | null {
+  return toImageUrl(dto.thumbnailUrl) ?? toImageUrl(dto.imageUrls[0])
+}
+
 export function toProductDetail(dto: ProductDetailDto, categories: Category[] = []): ProductDetail {
   const sizeAttribute = sizeAttributeOf(dto)
   const sizeNameById = new Map(sizeAttribute?.values.map((value) => [value.valueId, value.value]))

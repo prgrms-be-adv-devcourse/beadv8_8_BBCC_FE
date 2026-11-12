@@ -31,6 +31,7 @@ const size = (overrides: object) => ({
   reasons: [],
   referenceFit: null,
   itemJudgements: [],
+  wearPreview: null,
   ...overrides,
 })
 

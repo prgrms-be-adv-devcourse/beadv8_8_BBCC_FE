@@ -1,4 +1,5 @@
 import { arr, bool, nullable, num, obj, oneOf, str } from '@/shared/api'
+import { wearPreviewShape } from './wear-preview.shape'
 
 const FIT = oneOf(['ROOMY', 'PROPER', 'TIGHT'])
 const SOURCE = oneOf(['AI', 'RULE'])
@@ -44,6 +45,7 @@ export const sizeRecommendationShape = obj({
   source: SOURCE,
   reasons: arr(obj({ type: SIZE_REASON_TYPE, detail: str, sourceId: nullable(str) })),
   ...REFERENCE_FIT,
+  wearPreview: nullable(wearPreviewShape),
 })
 
 const RECOMMENDED_CARD = {

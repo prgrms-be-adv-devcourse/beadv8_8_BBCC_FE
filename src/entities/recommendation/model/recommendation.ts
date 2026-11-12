@@ -1,4 +1,5 @@
 import type { ItemJudgement, ReferenceFit } from './reference-fit'
+import type { SizeWearPreview } from './wear-preview'
 
 export type Fit = 'ROOMY' | 'PROPER' | 'TIGHT'
 
@@ -28,6 +29,8 @@ export type SizeRecommendation = {
   referenceFit: ReferenceFit | null
   /** AI가 추천 사이즈를 항목별로 판단한 값. 규칙 추천이면 빈 목록 */
   itemJudgements: ItemJudgement[]
+  /** 착용 미리보기. 사이즈 무관 상품 · 모자 · 양말이면 null → 미리보기를 숨긴다 */
+  wearPreview: SizeWearPreview | null
 }
 
 export type SizeReasonType =

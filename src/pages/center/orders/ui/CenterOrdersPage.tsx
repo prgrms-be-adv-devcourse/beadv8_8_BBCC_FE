@@ -11,10 +11,11 @@ import {
   type SellerOrderTab,
 } from '@/entities/seller-order'
 import { BulkShippingBar } from '@/features/ship-order'
-import { getErrorMessage } from '@/shared/api'
+import { getErrorMessage, pageFromSearch } from '@/shared/api'
 import { sellerPathsOf } from '@/shared/config'
 import { cn, useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Pagination } from '@/shared/ui/Pagination'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { SellerOrderTable } from './SellerOrderTable'
@@ -22,10 +23,18 @@ import { SellerOrderTable } from './SellerOrderTable'
 /** 주문 · 배송: 배송 상태 탭 → 고르기 · 일괄 처리 → 판매 주문 표 (발송은 상세에서) */
 export function CenterOrdersPage() {
   const sellerPaths = sellerPathsOf(useArea())
-  const orders = useSellerOrdersQuery()
-  // 탭은 주소(?tab=)에 둔다 → 홈 할 일에서 바로 열린다
+  // 탭 · 페이지는 주소(?tab= · ?page=)에 둔다 → 홈 할 일에서 바로 열리고, 상세에서 돌아와도 그대로
   const [params, setParams] = useSearchParams()
   const tab = sellerOrderTabOf(params.get('tab'))
+  const page = pageFromSearch(params.get('page'))
+  const orders = useSellerOrdersQuery(page)
+  const setPage = (next: number) => {
+    const search = new URLSearchParams(params)
+    if (next > 0) search.set('page', String(next))
+    else search.delete('page')
+    setParams(search, { replace: true })
+    setSelected(new Set())
+  }
   const setTab = (next: SellerOrderTab) =>
     setParams(next === 'ALL' ? {} : { tab: next }, { replace: true })
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -115,6 +124,13 @@ export function CenterOrdersPage() {
           onToggle={toggle}
           orderHref={sellerPaths.order}
           listSearch={params.toString()}
+        />
+      )}
+      {orders.data && (
+        <Pagination
+          page={orders.data.page}
+          totalPages={orders.data.totalPages}
+          onChange={setPage}
         />
       )}
     </div>

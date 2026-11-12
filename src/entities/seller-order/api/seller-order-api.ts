@@ -3,9 +3,10 @@ import type { DeliveryDto, SellerOrderDto, ShipRequestDto } from './seller-order
 import { deliveryShape, sellerOrderPageShape } from './seller-order.shape'
 
 export const sellerOrderApi = {
-  list: () =>
+  /** 판매 주문(배송 단위) 20건씩 (page는 0부터) */
+  list: (page = 0) =>
     apiClient
-      .get<Page<SellerOrderDto>>('/seller/orders', { params: { page: 0, size: 20 } })
+      .get<Page<SellerOrderDto>>('/seller/orders', { params: { page, size: 20 } })
       .then(expectShape(sellerOrderPageShape)),
   ship: (sellerOrderId: string, request: ShipRequestDto) =>
     apiClient
