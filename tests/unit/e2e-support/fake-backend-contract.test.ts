@@ -1585,6 +1585,19 @@ it('홈 맛보기 · 사이즈 추천: AI · RULE 응답 모두 계약 모양이
     if (size.data.source === 'RULE') expect(size.data.reasons).toEqual([])
   }
   expect(sizeSources).toEqual(['AI', 'RULE'])
+
+  // 기준 핏 (BE #1261): 기준 옷이 없으면 null, 상의 기준 옷을 두면 상의 상품(1)과 사이즈별 차이 · AI 판단이 온다
+  const sizeOf = (productId: string) =>
+    call('GET', `/recommendations/size?productId=${productId}&childId=${childId}`, 1)
+  expect((await sizeOf('1')).data.referenceFit).toBeNull()
+  await call('PUT', `/recommendations/children/${childId}/reference-garments/TOP`, 1, {
+    categoryId: '11',
+    measurements: { TOTAL_LENGTH: 44, CHEST_WIDTH: 35 },
+  })
+  const withGarment = await sizeOf('1')
+  expectContract(withGarment.data, sizeRecommendationShape)
+  expect(withGarment.data.referenceFit).toMatchObject({ productPart: 'TOP', comparedPart: 'TOP' })
+  expect(withGarment.data.itemJudgements.length).toBeGreaterThan(0)
 })
 
 it('카테고리 목록: 남아(MALE)면 여아 전용(치마)을 빼고, 여아 · 없음이면 모두, 그 밖의 값은 400 (BE #1219)', async () => {
