@@ -42,6 +42,14 @@ describe('toDeliveryTracking: 택배 진행 이력 (BE #1320, 최신이 먼저)'
     })
   })
 
+  it('운송장 없음 · 조회 못 하는 택배사는 200 + 빈 이력 (BE #1320 계약 확인), 택배사 · 운송장이 비어도 그대로', () => {
+    expect(toDeliveryTracking({ carrier: null, trackingNumber: null, events: [] })).toEqual({
+      carrier: null,
+      trackingNumber: null,
+      events: [],
+    })
+  })
+
   it('상태 코드는 한국어로, 모르는 값은 그대로', () => {
     expect(trackingStatusLabel('IN_TRANSIT')).toBe('이동 중')
     expect(trackingStatusLabel('OUT_FOR_DELIVERY')).toBe('배송 출발')
@@ -50,7 +58,7 @@ describe('toDeliveryTracking: 택배 진행 이력 (BE #1320, 최신이 먼저)'
   })
 })
 
-describe('canTrackDelivery: 운송장이 있는 발송 이후 배송만 조회한다 (발송 전은 BE 409)', () => {
+describe('canTrackDelivery: 운송장이 있는 발송 이후 배송만 버튼을 둔다 (발송 전은 조회할 것이 없다)', () => {
   it.each([
     [{ status: 'SHIPPING' }, true],
     [{ status: 'DELIVERED' }, true],
@@ -75,13 +83,12 @@ function problem(status: number, detail: string | null) {
   })
 }
 
-describe('trackingErrorOf: 404 · 409는 서버 문구, 503은 정한 문구와 다시 시도', () => {
-  it('404 · 409', () => {
-    expect(trackingErrorOf(problem(409, '아직 발송 전이에요.'))).toEqual({
-      message: '아직 발송 전이에요.',
+describe('trackingErrorOf: 404는 서버 문구, 503은 정한 문구와 다시 시도', () => {
+  it('404', () => {
+    expect(trackingErrorOf(problem(404, '배송을 찾을 수 없어요.'))).toEqual({
+      message: '배송을 찾을 수 없어요.',
       canRetry: false,
     })
-    expect(trackingErrorOf(problem(404, '배송을 찾을 수 없어요.')).canRetry).toBe(false)
   })
 
   it('503은 서버 문구와 상관없이 정한 문구 + 다시 시도', () => {

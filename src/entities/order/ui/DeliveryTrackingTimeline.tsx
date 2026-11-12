@@ -8,12 +8,14 @@ type DeliveryTrackingTimelineProps = { tracking: DeliveryTracking }
 export function DeliveryTrackingTimeline({ tracking }: DeliveryTrackingTimelineProps) {
   return (
     <div className="space-y-3">
-      <p className="text-[13px]">
-        <span className="font-semibold">{carrierName(tracking.carrier)}</span>{' '}
-        <span className="text-ink-3 figure">{tracking.trackingNumber}</span>
-      </p>
+      {tracking.trackingNumber && (
+        <p className="text-[13px]">
+          <span className="font-semibold">{carrierName(tracking.carrier)}</span>{' '}
+          <span className="text-ink-3 figure">{tracking.trackingNumber}</span>
+        </p>
+      )}
       {tracking.events.length === 0 ? (
-        <p className="text-ink-3 text-[13px]">아직 택배사에 등록된 이력이 없어요.</p>
+        <p className="text-ink-3 text-[13px]">아직 조회할 이력이 없어요.</p>
       ) : (
         <ol aria-label="배송 이력" className="space-y-0">
           {tracking.events.map((event, index) => (

@@ -588,6 +588,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const sellerOrders = await call('GET', '/seller/orders', 2)
     expectContract(sellerOrders.data, sellerOrderPageShape)
     const sellerOrderId = sellerOrders.data.content[0].sellerOrderId
+    // 발송 전(운송장 없음) 배송 조회는 200 + 빈 이력 (BE #1320)
+    const beforeShip = await call(
+      'GET',
+      `/orders/${orderId}/deliveries/${sellerOrderId}/tracking`,
+      1,
+    )
+    expect(beforeShip.status).toBe(200)
+    expectContract(beforeShip.data, deliveryTrackingShape)
+    expect(beforeShip.data).toEqual({ carrier: null, trackingNumber: null, events: [] })
     const shipped = await call('POST', `/seller/orders/${sellerOrderId}/ship`, 2, {
       carrier: 'CJ',
       trackingNumber: '1234',
@@ -603,6 +612,7 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect(tracking.data).toMatchObject({ carrier: 'CJ', trackingNumber: '1234' })
     expect(tracking.data.events[0].status).toBe('DELIVERED')
     expect((await call('GET', trackingPath, 2)).status).toBe(404)
+    expect((await call('GET', `/orders/${orderId}/deliveries/99999/tracking`, 1)).status).toBe(404)
     expectContract((await call('GET', '/seller/orders', 2)).data, sellerOrderPageShape)
 
     const itemId = order.data.items[0].orderItemId

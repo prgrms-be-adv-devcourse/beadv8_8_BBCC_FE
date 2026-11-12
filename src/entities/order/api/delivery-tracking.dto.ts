@@ -1,9 +1,13 @@
-/** GET /orders/{orderId}/deliveries/{deliveryId}/tracking 응답 (BE #1320). events는 최신이 먼저 */
+/**
+ * GET /orders/{orderId}/deliveries/{sellerOrderId}/tracking 응답 (BE #1320). events는 최신이 먼저.
+ * 운송장 없음 · 조회 못 하는 택배사(DUMMY)도 200 + 빈 events
+ */
 export type DeliveryTrackingDto = {
-  /** 택배사 코드 */
-  carrier: string
-  trackingNumber: string
+  /** 주문 택배사 코드 (HANJIN · CJ · EPOST · LOTTE · LOGEN) */
+  carrier: string | null
+  trackingNumber: string | null
   events: {
+    /** 한국 시각, 오프셋 없음 (LocalDateTime) */
     time: string
     /** 장소 이름 */
     location: string | null

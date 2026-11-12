@@ -7,8 +7,9 @@ export type DeliveryTrackingEvent = {
 }
 
 export type DeliveryTracking = {
-  carrier: string
-  trackingNumber: string
+  /** 택배사 코드. 운송장이 없으면 null일 수 있다 */
+  carrier: string | null
+  trackingNumber: string | null
   /** 최신이 먼저 */
   events: DeliveryTrackingEvent[]
 }

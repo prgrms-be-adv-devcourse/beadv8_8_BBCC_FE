@@ -18,7 +18,7 @@ export function trackingStatusLabel(status: string): string {
   return TRACKING_STATUS_LABEL[status] ?? status
 }
 
-/** 운송장이 있는 발송 이후 배송만 조회한다 (발송 전은 BE 409) */
+/** 운송장이 있는 발송 이후 배송만 버튼을 둔다 (발송 전은 조회할 것이 없다) */
 export function canTrackDelivery(delivery: OrderDelivery): boolean {
   return (
     delivery.trackingNumber !== null &&
@@ -29,7 +29,7 @@ export function canTrackDelivery(delivery: OrderDelivery): boolean {
 export const TRACKING_UNAVAILABLE_MESSAGE =
   '지금 택배 조회를 할 수 없어요. 잠시 후 다시 시도해 주세요'
 
-/** 404 · 409는 서버 문구 그대로, 503(택배 조회 꺼짐 · 외부 실패 · 서킷 열림)은 정한 문구와 다시 시도 */
+/** 404(남의 주문 · 없는 배송)는 서버 문구 그대로, 503(택배 조회 꺼짐 · 외부 실패 · 서킷 열림)은 정한 문구와 다시 시도 */
 export function trackingErrorOf(error: unknown): { message: string; canRetry: boolean } {
   if (getErrorStatus(error) === 503)
     return { message: TRACKING_UNAVAILABLE_MESSAGE, canRetry: true }

@@ -3,7 +3,7 @@ import type { DeliveryTracking } from './delivery-tracking'
 
 const KST_OFFSET_MS = 9 * 3600e3
 
-/** 시각을 한국 시간 「yyyy-mm-dd hh:mm」으로. 오프셋(Z · +09:00)이 있으면 바꾸고, 없으면 한국 시간으로 본다 */
+/** 시각을 한국 시간 「yyyy-mm-dd hh:mm」으로. BE는 오프셋 없는 한국 시각을 주고, 오프셋(Z · +09:00)이 붙어 오면 바꾼다 */
 function toKstMinute(value: string): string {
   if (/(Z|[+-]\d{2}:?\d{2})$/.test(value)) {
     const time = Date.parse(value)
