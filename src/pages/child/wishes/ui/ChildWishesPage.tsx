@@ -7,6 +7,7 @@ import {
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime } from '@/shared/lib'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { WithdrawChildWishButton } from '@/features/withdraw-child-wish'
 
 export function ChildWishesPage() {
   const wishes = useChildWishRequestsQuery()
@@ -31,6 +32,7 @@ export function ChildWishesPage() {
             ))}
             {wish.message && <p>{wish.message}</p>}
             {wish.rejectReason && <p>이유: {wishRejectReasonLabel(wish.rejectReason)}</p>}
+            <WithdrawChildWishButton wish={wish} />
           </article>
         )
       })}

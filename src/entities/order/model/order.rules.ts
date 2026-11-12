@@ -80,6 +80,12 @@ export function cancelledRefundOf(items: Pick<OrderItem, 'status' | 'amount'>[])
     .reduce((sum, item) => sum + item.amount, 0)
 }
 
+/** 결제 전에 취소된 사유 (재고 · 결제 실패 · 결제 마감): 예치금이 빠져나가지 않았다 */
+const UNPAID_CANCEL_REASONS: readonly string[] = [
+  'OUT_OF_STOCK',
+  'PAYMENT_FAILED',
+  'PAYMENT_EXPIRED',
+]
 /** 결제 뒤에 취소된 사유 (구매자 · 판매자 · 시스템 정리): 결제한 예치금이 돌아간다 */
 const REFUNDED_CANCEL_REASONS: readonly string[] = [
   'BUYER_CANCELLED',
@@ -87,11 +93,13 @@ const REFUNDED_CANCEL_REASONS: readonly string[] = [
   'SELLER_UNAVAILABLE',
 ]
 
-/** 취소된 주문의 예치금 안내: 결제 전 취소(재고 · 결제 실패 · 마감)는 빠져나가지 않음, 결제 뒤 취소는 돌려줌 */
+/** 취소된 주문의 예치금 안내. 사유가 없거나 모르는 값이면 단정하지 않고 내역을 보게 한다 */
 export function cancelledMoneyNote(cancelReason: string | null): string {
-  return cancelReason && REFUNDED_CANCEL_REASONS.includes(cancelReason)
-    ? '결제한 예치금은 돌려드렸어요.'
-    : '예치금은 빠져나가지 않았어요.'
+  if (cancelReason && UNPAID_CANCEL_REASONS.includes(cancelReason))
+    return '예치금은 빠져나가지 않았어요.'
+  if (cancelReason && REFUNDED_CANCEL_REASONS.includes(cancelReason))
+    return '결제한 예치금은 돌려드렸어요.'
+  return '예치금 변동은 예치금 내역에서 확인해 주세요.'
 }
 
 /** 잔액 부족으로 취소된 주문이면 충전으로 안내한다 */

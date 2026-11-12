@@ -108,7 +108,7 @@ export function ShopOrderDetailPage() {
         )}
         {order.status === 'PAID' && cancelledRefundOf(order.items) > 0 && (
           <p className="text-ink-2 text-sm">
-            판매자가 발송 전에 취소한 상품이 있어요. 취소된 상품 값{' '}
+            발송 전에 취소된 상품이 있어요. 취소된 상품 값{' '}
             <span className="figure">{formatWon(cancelledRefundOf(order.items))}</span>은 예치금으로
             돌아가요.
           </p>

@@ -286,3 +286,29 @@ test('자녀가 조르고 보호자가 일부 승인하거나 거절한다', asy
   await child.getByRole('button', { name: '조르기 보내기' }).click()
   await expect(child.getByText('보냈어요.', { exact: false })).toBeVisible()
 })
+
+test('자녀가 대기 중인 조르기를 철회하면 예약이 풀리고 보호자도 철회됨으로 본다', async ({
+  page,
+  context,
+  request,
+}) => {
+  const { childId, loginId } = await registerChildWithAccount(page)
+  const { child } = await apiActors(request, loginId)
+  const requestId = await sendWish(request, child, [{ optionId: 3, quantity: 1 }], '철회할 조르기')
+  const childPage = await context.newPage()
+  await loginChild(childPage, loginId)
+  await childPage.goto('/child/wishes')
+  const card = childPage.getByRole('article').filter({ hasText: '철회할 조르기' })
+  await expect(card).toContainText('7일 남음')
+  await card.getByRole('button', { name: '철회' }).click()
+  await childPage.getByRole('alertdialog').getByRole('button', { name: '철회하기' }).click()
+  await expect(card).toContainText('철회됨')
+  await expect(card.getByRole('button', { name: '철회' })).toHaveCount(0)
+  // 예약이 풀려 장바구니에서 뺄 수 있다
+  await childPage.goto('/child/cart')
+  await expect(childPage.getByRole('button', { name: '빼기' })).toBeEnabled()
+  // 보호자 화면도 철회됨
+  await page.goto(`/my/children/${childId}/wishes/${requestId}`)
+  await expect(page.getByRole('main')).toContainText('철회됨')
+  await expect(page.getByRole('heading', { name: '조르기 답하기' })).toHaveCount(0)
+})
