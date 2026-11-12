@@ -50,6 +50,6 @@ export {
   type EndpointSource,
   type MockEndpoint,
 } from './mock-endpoints'
-export { nextPageOf, pageNumbersOf } from './paging'
+export { nextPageOf, pageFromSearch, pageNumbersOf } from './paging'
 export { getEventStream, openEventStream, type StreamEvent } from './event-stream'
 export { readSse, readSseEvents, type SseEvent } from './sse'
