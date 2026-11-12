@@ -5,6 +5,7 @@ import {
   canDecideWish,
   wishLineDecisionLabel,
   wishRejectReasonLabel,
+  wishDeadlineLabel,
   wishStatusLabel,
   wishTimelineLabel,
   wishTimelineStatusLabel,
@@ -24,6 +25,7 @@ export function ShopChildWishDetailPage() {
   const timeline = useWishTimelineQuery(requestId)
   if (wish.isPending) return <StateMessage>불러오는 중…</StateMessage>
   if (wish.isError) return <StateMessage tone="error">{getErrorMessage(wish.error)}</StateMessage>
+  const deadline = wishDeadlineLabel(wish.data)
   return (
     <div className="shop-look space-y-6">
       <Link
@@ -37,6 +39,7 @@ export function ShopChildWishDetailPage() {
         <p>
           {wishStatusLabel(wish.data)} · {formatDateTime(wish.data.requestedAt)}
         </p>
+        {deadline && <p className="text-ink-2 text-sm">{deadline}</p>}
         {wish.data.message && <p>{wish.data.message}</p>}
         {wish.data.items.map((item) => {
           const decision = wishLineDecisionLabel(wish.data, item)

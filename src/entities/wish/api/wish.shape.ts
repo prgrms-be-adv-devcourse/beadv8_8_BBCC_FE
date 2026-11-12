@@ -16,6 +16,8 @@ export const wishRequestShape = obj({
   rejectedAt: nullable(str),
   cancelReason: nullable(str),
   cancelledAt: nullable(str),
+  expiresAt: nullable(str),
+  expiredAt: nullable(str),
   items: arr(
     obj({
       cartItemId: nullable(str),

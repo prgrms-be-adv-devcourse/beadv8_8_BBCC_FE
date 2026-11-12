@@ -3,6 +3,7 @@ export {
   canRemoveChildCartLine,
   canSendWishLine,
   countPendingWishes,
+  wishDeadlineLabel,
   wishLineDecisionLabel,
   WISH_REJECT_REASONS,
   wishRejectReasonLabel,
