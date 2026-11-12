@@ -1,4 +1,4 @@
-import { num, obj, oneOf, str } from '@/shared/api'
+import { num, obj, oneOf, pageOf, str } from '@/shared/api'
 
 export const adminShape = obj({
   id: num,
@@ -6,3 +6,5 @@ export const adminShape = obj({
   status: oneOf(['ACTIVE', 'DISABLED']),
   createdAt: str,
 })
+
+export const adminPageShape = pageOf(adminShape)

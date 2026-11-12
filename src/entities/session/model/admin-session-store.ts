@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { toAdminId } from './session.mapper'
 
 /** idle: 관리자 화면에 들어오기 전 (재발급을 아직 안 해 봄) */
 type AdminSessionStatus = 'idle' | 'restoring' | 'ready'
@@ -6,7 +7,7 @@ type AdminSessionStatus = 'idle' | 'restoring' | 'ready'
 type AdminSessionState = {
   /**
    * 관리자 Access Token (BE #736). 회원 토큰과 따로 두어 같은 탭에서 회원 · 관리자 로그인이 서로 덮지 않는다.
-   * 클레임은 sub("admin:7") · iat · exp뿐이라 읽지 않는다. 메모리에만 두고 새로고침하면 재발급으로 다시 받는다
+   * 클레임은 sub("admin:7") · iat · exp뿐이고 sub만 읽는다(useMyAdminId). 메모리에만 두고 새로고침하면 재발급으로 다시 받는다
    */
   accessToken: string | null
   status: AdminSessionStatus
@@ -22,3 +23,6 @@ export const useAdminSessionStore = create<AdminSessionState>()((set) => ({
   setStatus: (status) => set({ status }),
   clear: () => set({ accessToken: null }),
 }))
+
+/** 지금 로그인한 관리자 ID (토큰 sub). 모르면 null */
+export const useMyAdminId = () => useAdminSessionStore((state) => toAdminId(state.accessToken))

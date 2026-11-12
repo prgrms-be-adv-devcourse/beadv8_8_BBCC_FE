@@ -1,8 +1,8 @@
+import { adminShape } from '@/entities/admin-account'
 import { apiClient, expectShape } from '@/shared/api'
 import type { AdminCreateRequestDto, AdminDto } from './admin-account.dto'
-import { adminShape } from './admin-account.shape'
 
-/** 관리자 계정 (BE AdminAccountController). 관리자 목록 조회 API는 없다 */
+/** 관리자 계정 추가 · 비활성화 (BE AdminAccountController). 목록은 entities/admin-account */
 export const manageAdminAccountApi = {
   /** 201 + Location. 이미 있는 이메일(대소문자 · 앞뒤 공백 무시)이면 409, 비밀번호 규칙에 어긋나면 400 */
   create: (request: AdminCreateRequestDto) =>

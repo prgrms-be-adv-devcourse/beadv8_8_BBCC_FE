@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   ADMIN_PASSWORD_MAX_BYTES,
   ADMIN_PASSWORD_MIN_LENGTH,
-  toAdminAccount,
   validateAdminPassword,
 } from '@/features/manage-admin-account'
 import { domainOf } from '@/widgets/api-flow-panel/config/domain-flow'
@@ -24,19 +23,6 @@ describe('관리자 비밀번호 규칙 (BE AdminPassword: 12자 이상, UTF-8 7
     ['가'.repeat(25), '비밀번호가 너무 길어요. 영문 기준 72자까지예요.'],
   ])('%j → %j', (password, expected) => {
     expect(validateAdminPassword(password)).toBe(expected)
-  })
-})
-
-describe('관리자 계정 매퍼 (BE AdminResponse)', () => {
-  it('ID는 문자열로 바꾸고 이메일 · 만든 시각은 그대로 둔다', () => {
-    expect(
-      toAdminAccount({
-        id: 7,
-        email: 'new@kidly.test',
-        status: 'ACTIVE',
-        createdAt: '2026-11-12T10:00:00',
-      }),
-    ).toEqual({ id: '7', email: 'new@kidly.test', createdAt: '2026-11-12T10:00:00' })
   })
 })
 
