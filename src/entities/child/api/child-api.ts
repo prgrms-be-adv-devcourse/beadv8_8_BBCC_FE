@@ -4,7 +4,6 @@ import type {
   ChildProfileRequestDto,
   ChildRegistrationRequestDto,
   GrowthRecordDto,
-  GrowthRecordUpdateRequestDto,
 } from './child.dto'
 import { childShape, growthRecordShape } from './child.shape'
 
@@ -26,9 +25,4 @@ export const childApi = {
     apiClient
       .get<GrowthRecordDto[]>(`/children/${childId}/growth-records`)
       .then(expectShape(arr(growthRecordShape))),
-  /** 기획서 8장 보완. 백엔드에 아직 없어 목 응답이다 */
-  updateGrowthRecord: (childId: string, recordId: string, request: GrowthRecordUpdateRequestDto) =>
-    apiClient
-      .patch<GrowthRecordDto>(`/children/${childId}/growth-records/${recordId}`, request)
-      .then(expectShape(growthRecordShape)),
 }

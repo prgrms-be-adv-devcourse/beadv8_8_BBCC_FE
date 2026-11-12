@@ -404,6 +404,35 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('DELETE', `/children/${extra.data.id}`, 1)).status).toBe(204)
     expect((await call('GET', `/children/${extra.data.id}`, 1)).status).toBe(404)
   })
+  it('성장 기록 삭제는 마지막 기록을 보호하고 현재 프로필을 복원한다', async () => {
+    const form = toChildRequest(DEMO_CHILD)
+    const child = (
+      await call('POST', '/children', 1, {
+        ...form,
+        requiredConsent: true,
+        optionalConsent: true,
+      })
+    ).data
+    await call('PATCH', `/children/${child.id}`, 1, { ...form, heightCm: 118 })
+    const records = (await call('GET', `/children/${child.id}/growth-records`, 1)).data
+    expect(records).toHaveLength(2)
+    const deleted = await call('DELETE', `/children/${child.id}/growth-records/${records[1].id}`, 1)
+    expect(deleted).toEqual({ status: 204, data: null })
+    expect((await call('GET', `/children/${child.id}`, 1)).data).toMatchObject({
+      heightCm: records[0].heightCm,
+      bodyType: records[0].bodyType,
+      growthRecordCount: 1,
+    })
+    const last = await call('DELETE', `/children/${child.id}/growth-records/${records[0].id}`, 1)
+    expect(last.status).toBe(409)
+    expect(last.data).toMatchObject({
+      title: '지울 수 없는 기록입니다',
+      detail: '성장 기록이 하나뿐이면 지울 수 없습니다.',
+    })
+    expect((await call('GET', `/children/${child.id}/growth-records`, 1)).data).toEqual([
+      records[0],
+    ])
+  })
   it('자녀 등록과 수정에서 동의와 나이를 검사한다', async () => {
     const form = toChildRequest(DEMO_CHILD)
     expect((await call('POST', '/children', 1, form)).status).toBe(400)

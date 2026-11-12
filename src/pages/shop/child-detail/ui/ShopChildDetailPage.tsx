@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ChildCard,
+  canDeleteGrowthRecord,
   GrowthChart,
   GrowthRecordList,
   summarizeGrowth,
@@ -11,7 +12,7 @@ import { accountOfChild, useChildAccountsQuery } from '@/entities/child-account'
 import { countPendingWishes, useWishRequestsQuery } from '@/entities/wish'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { ManageChildAccount } from '@/features/manage-child-account'
-import { DeleteChildButton, EditChildForm, EditGrowthRecord } from '@/features/edit-child'
+import { DeleteChildButton, EditChildForm, DeleteGrowthRecordButton } from '@/features/edit-child'
 import { getErrorMessage } from '@/shared/api'
 import { memberPathsOf } from '@/shared/config'
 import { useArea } from '@/shared/lib'
@@ -107,7 +108,13 @@ export function ShopChildDetailPage() {
               <GrowthRecordList
                 records={growth.data}
                 summary={summarizeGrowth(growth.data)}
-                action={(record) => <EditGrowthRecord childId={child.data.id} record={record} />}
+                action={(record) => (
+                  <DeleteGrowthRecordButton
+                    childId={child.data.id}
+                    record={record}
+                    deletable={canDeleteGrowthRecord(growth.data)}
+                  />
+                )}
               />
             )}
           </section>

@@ -280,7 +280,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('기본', { exact: true }).first()).toBeVisible()
   })
 
-  await test.step('마이페이지: 자녀 수정 → 성장 이력 · 이력 수정(목) · 배송지 수정', async () => {
+  await test.step('마이페이지: 자녀 수정 → 성장 이력 삭제 · 배송지 수정', async () => {
     await page.goto('/my/children')
     await page
       .getByRole('link', { name: /테스트 상세/ })
@@ -296,10 +296,23 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       page.getByRole('img', { name: /키 기록 \d+개, 지금 118cm는 120 사이즈 구간/ }),
     ).toBeVisible()
     await expect(page.getByText(/한 달에 한 번 키를 기록해 주세요/)).toBeVisible()
-    await page.getByRole('listitem').getByRole('button', { name: '수정' }).first().click()
-    await page.getByLabel('기록 키').fill('117')
-    await page.getByRole('button', { name: '저장', exact: true }).click()
-    await expect(page.getByText(/117\.0cm/)).toBeVisible()
+    await page.removeLocatorHandler(page.getByRole('alertdialog'))
+    const growth = page.getByRole('region', { name: '성장 이력' })
+    const latest = growth.getByRole('listitem').first()
+    await latest.getByRole('button', { name: '삭제' }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: '취소' }).click()
+    await expect(latest).toContainText('118.0cm')
+    await latest.getByRole('button', { name: '삭제' }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: '삭제' }).click()
+    await expect(growth.getByText('118.0cm')).toHaveCount(0)
+    await expect(page.getByRole('img', { name: /지금 115cm/ })).toBeVisible()
+    await expect(growth.getByRole('button', { name: '삭제' })).toBeDisabled()
+    await expect(growth.getByText('기록이 하나뿐이면 지울 수 없어요.')).toBeVisible()
+    await acceptConfirms(page)
+    // 삭제로 자녀 현재 키가 115로 돌아갔으니, 뒤 단계가 쓰는 118로 다시 저장한다
+    await page.getByLabel('키 (cm)').fill('118')
+    await page.getByRole('button', { name: '저장하기' }).click()
+    await expect(page.getByText(/저장했어요/)).toBeVisible()
 
     await page.goto('/my/addresses')
     await page.getByRole('button', { name: '수정' }).first().click()
