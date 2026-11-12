@@ -35,7 +35,6 @@ export function toReview(dto: ReviewDto | ReviewListItemDto): Review {
     imageUrls: dto.imageUrls,
     isUnderReview: listed?.visibility === 'UNDER_REVIEW',
     createdAt: dto.createdAt,
-    isEdited: dto.updatedAt !== dto.createdAt,
   }
 }
 
