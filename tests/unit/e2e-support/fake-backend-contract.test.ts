@@ -519,14 +519,20 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       paymentDetailShape,
     )
 
-    // 관리자 결제 요약 (BE #1220): 비우면 오늘 하루, 결제일 기준으로 방금 결제가 들어간다
+    // 관리자 결제 요약 (BE #1220): 결제일(paidAt의 한국 날짜) 하루를 물으면 방금 결제가 들어간다.
+    // 시계와 비교하지 않으려고 날짜는 응답의 paidAt에서 꺼낸다
     const paidDate = payments.data.content[0].paidAt.slice(0, 10)
+    const paidDay = await call('GET', `/admin/payments/summary?from=${paidDate}&to=${paidDate}`, 3)
+    expectContract(paidDay.data, adminPaymentSummaryShape)
+    expect(paidDay.data.daily).toHaveLength(1)
+    expect(paidDay.data.daily[0].date).toBe(paidDate)
+    expect(paidDay.data.daily[0].paidCount).toBeGreaterThanOrEqual(1)
+    expect(paidDay.data.daily[0].paidAmount).toBeGreaterThanOrEqual(payments.data.content[0].amount)
+    // 비우면 하루(오늘)만 준다 (날짜 값은 시계에 달려 있어 비교하지 않는다)
     const today = await call('GET', '/admin/payments/summary', 3)
     expectContract(today.data, adminPaymentSummaryShape)
     expect(today.data.daily).toHaveLength(1)
-    expect(today.data.daily[0].date).toBe(paidDate)
-    expect(today.data.daily[0].paidCount).toBeGreaterThanOrEqual(1)
-    expect(today.data.daily[0].paidAmount).toBeGreaterThanOrEqual(payments.data.content[0].amount)
+    expect(today.data.daily[0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     const range = await call('GET', '/admin/payments/summary?from=2026-01-30&to=2026-03-01', 3)
     expect(range.data.daily.map((day: { date: string }) => day.date)).toHaveLength(31)
     expect(range.data.daily[0]).toEqual({ date: '2026-01-30', paidAmount: 0, paidCount: 0 })
