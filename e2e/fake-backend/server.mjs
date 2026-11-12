@@ -483,8 +483,8 @@ const ADMIN = {
 const adminCookie = (value, maxAge = 1209600) =>
   `admin_refresh_token=${value}; Path=/api/v1/auth/admin; Max-Age=${maxAge}; HttpOnly; SameSite=Lax`
 const isAdmin = (u) => String(u.sub).startsWith('admin:')
-/** 관리자 추가로 만든 계정 (BE AdminResponse). 로그인은 기본 계정(ADMIN)만 된다 */
-const createdAdmins = []
+/** 관리자 계정 (BE AdminResponse). 1번은 부트스트랩 계정(ADMIN), 로그인은 이 계정만 된다 */
+const admins = [{ id: 1, email: ADMIN.email, status: 'ACTIVE', createdAt: '2026-10-01T10:00:00' }]
 function who(req) {
   const t = (req.headers.authorization || '').split(' ')[1]
   if (!t) return null
@@ -2729,7 +2729,37 @@ http
       }
       return send(res, 200, deadLetterOf(d))
     }
-    // 관리자 추가 (BE AdminAccountController · AdminPassword). 이메일이 겹치면 DB 유니크 충돌이라 공통 CONFLICT(409)
+    // 관리자 목록 (BE AdminAccountController.list): status 없으면 전체, ACTIVE · DISABLED 밖이면 400, ID 내림차순
+    if (r('GET', /^\/admin\/admins$/)) {
+      const status = url.searchParams.get('status')
+      if (status !== null && !['ACTIVE', 'DISABLED'].includes(status))
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      const rows = admins.filter((a) => !status || a.status === status).sort((a, b) => b.id - a.id)
+      return send(res, 200, pageFrom(rows, url.searchParams))
+    }
+    // 관리자 비활성화 (BE AdminAccount.disable): 없으면 404, 자기 자신이면 409, 이미 비활성이면 그대로 204
+    if ((x = r('POST', /^\/admin\/admins\/(\d+)\/disable$/))) {
+      const admin = admins.find((a) => a.id === Number(x[1]))
+      if (!admin)
+        return problem(
+          res,
+          404,
+          '관리자를 찾을 수 없습니다',
+          '관리자 ID를 다시 확인해 주세요.',
+          req.url,
+        )
+      if (String(u.sub) === `admin:${admin.id}`)
+        return problem(
+          res,
+          409,
+          '자기 자신은 비활성화할 수 없습니다',
+          '다른 관리자에게 요청해 주세요.',
+          req.url,
+        )
+      admin.status = 'DISABLED'
+      return send(res, 204)
+    }
+    // 관리자 추가 (BE AdminAccountController · AdminPassword). 이메일이 겹치면 409 ADMIN_EMAIL_ALREADY_USED
     if (r('POST', /^\/admin\/admins$/)) {
       const email = String(body?.email ?? '')
         .trim()
@@ -2753,10 +2783,16 @@ http
           '관리자 비밀번호는 UTF-8 72바이트 이하여야 합니다',
           req.url,
         )
-      if (email === ADMIN.email || createdAdmins.some((a) => a.email === email))
-        return problem(res, 409, '다른 요청과 겹쳤습니다', '잠시 후 다시 시도해 주세요.', req.url)
-      const admin = { id: createdAdmins.length + 2, email, status: 'ACTIVE', createdAt: now() }
-      createdAdmins.push(admin)
+      if (admins.some((a) => a.email === email))
+        return problem(
+          res,
+          409,
+          '이미 등록된 이메일입니다',
+          '다른 이메일을 입력해 주세요.',
+          req.url,
+        )
+      const admin = { id: admins.length + 1, email, status: 'ACTIVE', createdAt: now() }
+      admins.push(admin)
       return send(res, 201, admin, { location: `/api/v1/admin/admins/${admin.id}` })
     }
     if (r('GET', /^\/admin\/members$/)) {

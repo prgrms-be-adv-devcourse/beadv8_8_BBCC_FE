@@ -129,7 +129,7 @@ import { reviewVisibilityShape } from '@/features/moderate-review'
 import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
 import { toWriteReviewRequest } from '@/features/write-review'
-import { adminShape } from '@/features/manage-admin-account/api/admin-account.shape'
+import { adminPageShape, adminShape } from '@/entities/admin-account/api/admin-account.shape'
 import { toReview } from '@/entities/review'
 import { arr, readSseEvents, validate, type Shape } from '@/shared/api'
 
@@ -794,12 +794,53 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       password: 'password-12345',
     })
     expect(taken.status).toBe(409)
+    expect(taken.data.detail).toBe('다른 이메일을 입력해 주세요.')
     const short = { email: 'short@kidly.test', password: 'a'.repeat(11) }
     expect((await call('POST', '/admin/admins', 3, short)).status).toBe(400)
     const long = { email: 'long@kidly.test', password: '가'.repeat(25) }
     expect((await call('POST', '/admin/admins', 3, long)).status).toBe(400)
     const member = { email: 'member@kidly.test', password: 'password-12345' }
     expect((await call('POST', '/admin/admins', 1, member)).status).toBe(403)
+  })
+
+  it('관리자 목록 · 비활성화: ID 내림차순 · 상태 거르기, 204 · 자기 자신 409 · 없으면 404 (BE AdminAccountController)', async () => {
+    const created = await call('POST', '/admin/admins', 3, {
+      email: 'disable-me@kidly.test',
+      password: 'password-12345',
+    })
+    expect(created.status).toBe(201)
+
+    const all = await call('GET', '/admin/admins?page=0&size=20', 3)
+    expect(all.status).toBe(200)
+    expectContract(all.data, adminPageShape)
+    const ids = all.data.content.map((admin: { id: number }) => admin.id)
+    expect(ids).toEqual([...ids].sort((a, b) => b - a))
+    expect(ids[0]).toBe(created.data.id)
+    expect(ids).toContain(1)
+    const firstPage = await call('GET', '/admin/admins?page=0&size=1', 3)
+    expect(firstPage.data).toMatchObject({ page: 0, size: 1, hasNext: true })
+    expect(firstPage.data.content).toHaveLength(1)
+
+    const disablePath = `/admin/admins/${created.data.id}/disable`
+    expect((await call('POST', disablePath, 3)).status).toBe(204)
+    expect((await call('POST', disablePath, 3)).status).toBe(204)
+    const disabled = await call('GET', '/admin/admins?status=DISABLED', 3)
+    expectContract(disabled.data, adminPageShape)
+    expect(disabled.data.content).toContainEqual(
+      expect.objectContaining({ id: created.data.id, status: 'DISABLED' }),
+    )
+    const active = await call('GET', '/admin/admins?status=ACTIVE', 3)
+    expect(
+      active.data.content.every((admin: { status: string }) => admin.status === 'ACTIVE'),
+    ).toBe(true)
+    expect((await call('GET', '/admin/admins?status=NOPE', 3)).status).toBe(400)
+
+    const self = await call('POST', '/admin/admins/1/disable', 3)
+    expect(self.status).toBe(409)
+    expect(self.data.detail).toBe('다른 관리자에게 요청해 주세요.')
+    expect((await call('POST', '/admin/admins/999999/disable', 3)).status).toBe(404)
+    expect((await call('GET', '/admin/admins', 1)).status).toBe(403)
+    expect((await call('POST', disablePath, 1)).status).toBe(403)
   })
 
   it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티, 같은 칸)', async () => {
