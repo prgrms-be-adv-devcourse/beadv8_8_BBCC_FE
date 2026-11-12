@@ -2,6 +2,7 @@ export {
   canDecideWish,
   canRemoveChildCartLine,
   canSendWishLine,
+  canWithdrawWish,
   countPendingWishes,
   wishDeadlineLabel,
   wishLineDecisionLabel,

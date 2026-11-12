@@ -133,12 +133,22 @@ const WISH_ERROR = {
   WISH_REQUEST_ALREADY_DECIDED: [
     409,
     '이미 처리한 조르기입니다',
-    '이미 처리(결제 · 거절 · 철회)한 조르기입니다. 목록을 새로고침해 주세요.',
+    '이미 처리(결제 · 거절 · 철회 · 만료)한 조르기입니다. 목록을 새로고침해 주세요.',
   ],
   WISH_REQUEST_SEND_FORBIDDEN: [
     403,
     '조르기를 보낼 수 없습니다',
     '조르기는 자녀 계정으로만 보낼 수 있습니다.',
+  ],
+  WISH_REQUEST_CANCEL_FORBIDDEN: [
+    403,
+    '조르기를 철회할 수 없습니다',
+    '조르기는 보낸 사람만 철회할 수 있습니다.',
+  ],
+  WISH_REQUEST_EXPIRED: [
+    409,
+    '기한이 지난 조르기입니다',
+    '응답 기한이 지나 만료된 조르기입니다. 필요하면 다시 조르기를 보내 주세요.',
   ],
   WISH_REQUEST_DECIDE_FORBIDDEN: [
     403,
@@ -909,6 +919,22 @@ http
         wish.expiresAt = null
         wish.rejectReason = body.reason
         wish.rejectedAt = now()
+        return send(res, 200, wish)
+      }
+      // BE #968: 보낸 사람만, 처리 전 · 기한 전에만. 예약이 풀리고 칸은 장바구니에 남는다
+      if ((x = r('POST', /^\/wish\/requests\/(\d+)\/cancellation$/))) {
+        const wish = findWish(x[1])
+        if (!wish) return wishProblem(res, 'WISH_REQUEST_NOT_FOUND', req.url)
+        if (wish.requestedByType !== actor.type || wish.requestedById !== actor.id)
+          return wishProblem(res, 'WISH_REQUEST_CANCEL_FORBIDDEN', req.url)
+        if (wish.status === 'REQUESTED' && wish.expiresAt && wish.expiresAt <= now())
+          return wishProblem(res, 'WISH_REQUEST_EXPIRED', req.url)
+        if (wish.status !== 'REQUESTED')
+          return wishProblem(res, 'WISH_REQUEST_ALREADY_DECIDED', req.url)
+        wish.status = 'CANCELLED'
+        wish.cancelReason = 'DIRECT'
+        wish.cancelledAt = now()
+        wish.expiresAt = null
         return send(res, 200, wish)
       }
       if ((x = r('GET', /^\/wish\/requests\/(\d+)(\/timeline)?$/))) {
