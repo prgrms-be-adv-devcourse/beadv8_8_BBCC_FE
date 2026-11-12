@@ -18,6 +18,7 @@ export type {
 export { toAdminReview } from './model/admin-review.mapper'
 export {
   ADMIN_REVIEW_STATUSES,
+  isModerationStatus,
   MODERATION_ACTION_LABEL,
   MODERATION_REASON_LABEL,
   MODERATION_STATUS_LABEL,

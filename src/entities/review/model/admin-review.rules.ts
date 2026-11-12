@@ -32,9 +32,13 @@ export const MODERATION_ACTION_LABEL: Record<ModerationAction, string> = {
   VISIBLE: '다시 공개',
 }
 
-/** 주소 ?status= → 상태. 없거나 모르는 값이면 숨김(판단 대기) */
+export function isModerationStatus(value: string | null): value is ModerationStatus {
+  return ADMIN_REVIEW_STATUSES.some((status) => status === value)
+}
+
+/** 주소 ?status= → 상태. 없거나 모르는 값이면 관리자가 먼저 볼 숨김(판단 대기) */
 export function moderationStatusOf(value: string | null): ModerationStatus {
-  return ADMIN_REVIEW_STATUSES.find((status) => status === value) ?? 'HIDDEN'
+  return isModerationStatus(value) ? value : 'HIDDEN'
 }
 
 /** 누를 수 있는 조치. 숨김 확정 → CONFIRMED_HIDDEN, 다시 공개 → RESTORED라 결과가 지금과 같은 조치는 뺀다 */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ADMIN_REVIEW_STATUSES,
+  isModerationStatus,
   MODERATION_REASON_LABEL,
   MODERATION_STATUS_LABEL,
   moderationActionsOf,
@@ -69,5 +70,14 @@ describe('moderationActionsOf: 상태별로 누를 수 있는 조치 (BE는 어�
     ['PASSED', ['HIDDEN']],
   ] as const)('%s → %o', (status, actions) => {
     expect(moderationActionsOf(status)).toEqual(actions)
+  })
+})
+
+describe('isModerationStatus · 모르는 상태', () => {
+  it('아는 다섯 값만 true, 매퍼는 모르는 상태를 검사 대기로', () => {
+    expect(isModerationStatus('CONFIRMED_HIDDEN')).toBe(true)
+    expect(isModerationStatus('PENDING_EXHAUSTED')).toBe(false)
+    expect(isModerationStatus(null)).toBe(false)
+    expect(toAdminReview({ ...dto, status: 'NEW_STATUS' }).status).toBe('PENDING')
   })
 })
