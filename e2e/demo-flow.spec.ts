@@ -182,7 +182,7 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
       .getByRole('link', { name: /판매 주문 #\d+/ })
       .click()
     await expect(page).toHaveURL(/\/console\/seller\/orders\/\d+$/)
-    await page.getByRole('button', { name: '발송' }).click()
+    await page.getByRole('button', { name: '발송', exact: true }).click()
     await page.getByRole('button', { name: '배송 완료 처리' }).click()
     await expect(page.getByText('배송 완료', { exact: true }).first()).toBeVisible()
   })

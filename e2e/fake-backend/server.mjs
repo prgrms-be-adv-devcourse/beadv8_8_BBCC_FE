@@ -1819,6 +1819,58 @@ http
       })
       return send(res, 200, { ...d, orderId: String(o.orderId) })
     }
+    // BE DeliveryService.cancel (#655): 발송 준비일 때만 내 몫 주문상품을 모두 취소하고 결제가 그 금액을 돌려준다.
+    // 모든 주문상품이 취소되면 주문도 취소(SELLER_CANCELLED). 사유는 판매자 사유 3가지만
+    if ((x = r('POST', /^\/seller\/orders\/(\d+)\/cancel$/))) {
+      const found = sellerOrders().find(({ d }) => d.sellerOrderId === x[1])
+      if (!found)
+        return problem(
+          res,
+          404,
+          '판매 주문을 찾을 수 없습니다',
+          '판매 주문을 찾을 수 없습니다.',
+          req.url,
+        )
+      const { d, o } = found
+      if (!['OUT_OF_STOCK', 'WRONG_PRODUCT_INFO', 'OTHER'].includes(body?.reason))
+        return problem(
+          res,
+          400,
+          '지원하지 않는 취소 사유입니다',
+          '취소 사유는 OUT_OF_STOCK · WRONG_PRODUCT_INFO · OTHER 중 하나입니다.',
+          req.url,
+        )
+      if (d.status === 'CANCELLED')
+        return problem(
+          res,
+          409,
+          '이미 취소된 판매 주문입니다',
+          '이미 취소된 판매 주문입니다. 판매 주문 목록을 새로고침해 주세요.',
+          req.url,
+        )
+      if (d.status !== 'READY')
+        return problem(
+          res,
+          409,
+          '이미 발송된 주문입니다',
+          '이미 발송된 주문입니다. 판매 주문 목록을 새로고침해 주세요.',
+          req.url,
+        )
+      d.status = 'CANCELLED'
+      const mine = o.items.filter((it) => it.sellerId === d.sellerId && it.status === 'ORDERED')
+      mine.forEach((it) => (it.status = 'CANCELLED'))
+      const refund = mine.reduce((sum, it) => sum + it.amount, 0)
+      if (refund > 0) {
+        wallets[o.memberId] = (wallets[o.memberId] ?? 0) + refund
+        ledger(o.memberId, 'REFUND', refund, nid())
+      }
+      if (o.items.every((it) => it.status === 'CANCELLED')) {
+        o.status = 'CANCELLED'
+        o.cancelReason = 'SELLER_CANCELLED'
+        cancelledAt.set(o, now())
+      }
+      return send(res, 200, { ...d, orderId: String(o.orderId) })
+    }
     if ((x = r('POST', /^\/seller\/orders\/(\d+)\/deliver$/))) {
       const { d, o } = sellerOrders().find(({ d }) => d.sellerOrderId === x[1])
       Object.assign(d, { status: 'DELIVERED', deliveredAt: now() })

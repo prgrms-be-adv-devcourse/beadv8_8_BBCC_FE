@@ -1,6 +1,8 @@
 import { Link, useParams } from 'react-router'
 import {
   CANCEL_REASON_LABEL,
+  cancelledMoneyNote,
+  cancelledRefundOf,
   canConfirmItem,
   canUseAsReferenceGarment,
   needsCartReview,
@@ -18,7 +20,7 @@ import { useOrderTracking } from '@/features/track-order'
 import { OrderTimelineCard } from '@/widgets/order-timeline'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { formatDateTime, labelOf } from '@/shared/lib'
+import { formatDateTime, formatWon, labelOf } from '@/shared/lib'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { OrderItemReviewAction } from './OrderItemReviewAction'
@@ -104,13 +106,20 @@ export function ShopOrderDetailPage() {
             주문이 자동으로 취소되고 예치금은 빠져나가지 않아요.
           </p>
         )}
+        {order.status === 'PAID' && cancelledRefundOf(order.items) > 0 && (
+          <p className="text-ink-2 text-sm">
+            판매자가 발송 전에 취소한 상품이 있어요. 취소된 상품 값{' '}
+            <span className="figure">{formatWon(cancelledRefundOf(order.items))}</span>은 예치금으로
+            돌아가요.
+          </p>
+        )}
         {order.status === 'CANCELLED' && (
           <div className="space-y-2">
             <p>
               {order.cancelReason
                 ? labelOf(CANCEL_REASON_LABEL, order.cancelReason)
                 : '주문이 취소됐어요.'}{' '}
-              예치금은 빠져나가지 않았어요.
+              {cancelledMoneyNote(order.cancelReason)}
             </p>
             {expired && (
               <p className="text-ink-2 text-sm">

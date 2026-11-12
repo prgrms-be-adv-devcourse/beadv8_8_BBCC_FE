@@ -5,6 +5,7 @@ import {
   useSellerOrdersQuery,
   type NextShippingStep,
 } from '@/entities/seller-order'
+import { CancelSellerOrderPanel } from '@/features/cancel-seller-order'
 import { ShipOrderControls } from '@/features/ship-order'
 import { getErrorMessage } from '@/shared/api'
 import { carrierName, DELIVERY_STATUS_LABEL, sellerPathsOf } from '@/shared/config'
@@ -67,8 +68,14 @@ export function CenterOrderDetailPage() {
             <div className="space-y-1">
               <h2 className="text-page">{labelOf(DELIVERY_STATUS_LABEL, order.status)}</h2>
               {step && <p className="text-ink-2 text-sm">{NEXT_STEP_GUIDE[step]}</p>}
+              {order.status === 'CANCELLED' && (
+                <p className="text-ink-2 text-sm">
+                  발송 전에 취소했어요. 구매자에게 이 상품 값이 돌아가요.
+                </p>
+              )}
             </div>
             <ShipOrderControls sellerOrder={order} />
+            <CancelSellerOrderPanel sellerOrder={order} />
           </section>
 
           {/* 넓은 화면: 왼쪽 상품 줄, 오른쪽 받는 분 · 송장 · 주문 정보 */}
