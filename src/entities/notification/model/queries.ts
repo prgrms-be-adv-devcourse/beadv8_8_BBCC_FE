@@ -97,7 +97,8 @@ export function useUnreadCountStream(recipient: NotificationRecipient, accessTok
     return () => {
       controller.abort()
       clearTimeout(timer)
-      streaming.delete(recipient)
+      // 이전 연결이 수를 넣어 주기 조회가 꺼져 있었다면 다시 조회해 켠다 (새 연결이 4xx로 실패해도 멈추지 않게)
+      if (streaming.delete(recipient)) void queryClient.invalidateQueries({ queryKey })
     }
   }, [queryClient, recipient, accessToken])
 }
