@@ -1,4 +1,10 @@
 export { orderApi } from './api/order-api'
+export {
+  childPurchaseSourceOf,
+  childPurchaseStatusLabel,
+  toChildPurchase,
+  type ChildPurchase,
+} from './model/child-purchase'
 export type { AdminOrderDto, OrderDetailDto, OrderTimelineDto } from './api/order.dto'
 export { orderDetailShape } from './api/order.shape'
 export {
@@ -62,6 +68,7 @@ export {
   orderKeys,
   paymentPendingMs,
   useAdminOrdersQuery,
+  useChildPurchasesQuery,
   useOrderQuery,
   useOrderTimelineQuery,
   useOrdersQuery,
