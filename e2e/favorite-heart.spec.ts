@@ -106,9 +106,8 @@ test('상품 목록: 한 쪽의 찜 여부를 한 번에 부르고, 칸의 하�
   favoriteLookups.length = 0
   await page.goto('/')
 
-  const tile = page.locator('div.relative').filter({
-    has: page.getByRole('link', { name: /데일리 맨투맨 \(상품 A\)/ }),
-  })
+  // 칸 = 상품 링크와 하트를 함께 감싼 부모
+  const tile = page.getByRole('link', { name: /데일리 맨투맨 \(상품 A\)/ }).locator('xpath=..')
   const unfavorited = tile.getByRole('button', { name: '찜하기', exact: true })
   const favorited = tile.getByRole('button', { name: '찜 취소', exact: true })
   await expect(unfavorited.or(favorited)).toBeVisible()

@@ -209,6 +209,7 @@ export function ShopHomePage() {
                     <FavoriteButton
                       productId={product.id}
                       isFavorited={favoritedIds.data?.has(product.id) ?? false}
+                      isLoading={favoritedIds.isPending}
                       isSelling
                       isCompact
                     />

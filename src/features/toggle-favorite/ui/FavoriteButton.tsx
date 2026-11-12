@@ -12,6 +12,8 @@ type FavoriteButtonProps = {
   isSelling: boolean
   /** 로그인 전이면 로그인 주소. 누르면 그리로 간다 */
   loginHref?: string | null
+  /** 찜 여부를 아직 모르면 true. 누르지 못하게 막는다 (이미 찜한 상품에 찜하기가 나가지 않게) */
+  isLoading?: boolean
   /** 상품 목록 칸 위에 겹쳐 둘 작은 원형 하트 (찜 수 없음) */
   isCompact?: boolean
   className?: string
@@ -45,6 +47,7 @@ export function FavoriteButton({
   count,
   isSelling,
   loginHref,
+  isLoading = false,
   isCompact = false,
   className,
 }: FavoriteButtonProps) {
@@ -76,7 +79,7 @@ export function FavoriteButton({
       aria-pressed={isShownFavorited}
       aria-label={isFavorited ? '찜 취소' : '찜하기'}
       title={canToggle ? undefined : '판매가 끝난 상품은 찜할 수 없어요'}
-      disabled={!canToggle || toggle.isPending}
+      disabled={!canToggle || isLoading || toggle.isPending}
       onClick={() => toggle.mutate(!isFavorited)}
       className={cn(
         box,
