@@ -17,7 +17,8 @@ export type Payment = {
 export type OrderPaymentInput = {
   id: string
   status: 'PENDING_PAYMENT' | 'PAID' | 'CANCELLED'
-  cancelReason: 'OUT_OF_STOCK' | 'PAYMENT_FAILED' | 'PAYMENT_EXPIRED' | null
+  /** 주문 취소 사유 (주문 코드표 그대로, 여기서는 PAYMENT_FAILED만 따로 본다) */
+  cancelReason: string | null
   totalAmount: number
 }
 

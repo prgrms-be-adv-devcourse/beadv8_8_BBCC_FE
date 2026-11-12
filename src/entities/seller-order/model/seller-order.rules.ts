@@ -1,6 +1,6 @@
 import type { NextShippingStep, SellerOrder } from './seller-order'
 
-/** 발송 준비 → 발송(송장 등록), 배송 중 → 배송 완료, 배송 완료 → 할 일 없음 */
+/** 발송 준비 → 발송(송장 등록), 배송 중 → 배송 완료, 배송 완료 · 취소 → 할 일 없음 */
 export function nextShippingStep(order: SellerOrder): NextShippingStep {
   if (order.status === 'READY') return 'SHIP'
   if (order.status === 'SHIPPING') return 'DELIVER'
@@ -23,13 +23,15 @@ export function summarizeSellerOrders(orders: SellerOrder[]) {
   }
 }
 
-export type SellerOrderTab = 'READY' | 'SHIPPING' | 'DELIVERED' | 'ALL'
+export type SellerOrderTab = 'READY' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED' | 'ALL'
 
 /** 주문 · 배송 탭 (할 일 먼저) */
 export const SELLER_ORDER_TABS: { value: SellerOrderTab; label: string }[] = [
   { value: 'READY', label: '발송할 주문' },
   { value: 'SHIPPING', label: '배송 중' },
   { value: 'DELIVERED', label: '배송 완료' },
+  /** 발송 전 취소로 그 판매자 몫이 모두 취소된 배송 */
+  { value: 'CANCELLED', label: '취소' },
   { value: 'ALL', label: '전체' },
 ]
 
@@ -52,6 +54,7 @@ export function countSellerOrdersByTab(
     READY: summary.toShip,
     SHIPPING: summary.shipping,
     DELIVERED: summary.delivered,
+    CANCELLED: orders.filter((order) => order.status === 'CANCELLED').length,
     ALL: totalElements,
   }
 }

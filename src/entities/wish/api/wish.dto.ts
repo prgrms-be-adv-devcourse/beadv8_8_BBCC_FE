@@ -32,7 +32,7 @@ export type WishRequestDto = {
   requestId: string
   type: string
   childId: string
-  status: 'REQUESTED' | 'PAID' | 'REJECTED' | 'CANCELLED'
+  status: 'REQUESTED' | 'PAID' | 'REJECTED' | 'CANCELLED' | 'EXPIRED'
   requestedByType: 'MEMBER' | 'CHILD'
   requestedById: string
   message: string | null

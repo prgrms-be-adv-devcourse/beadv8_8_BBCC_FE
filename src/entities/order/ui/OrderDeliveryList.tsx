@@ -2,6 +2,7 @@ import { carrierName, DELIVERY_STATUS_LABEL } from '@/shared/config'
 import { Badge } from '@/shared/ui/badge'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import type { Order } from '../model/order'
+import { labelOf } from '@/shared/lib'
 
 type OrderDeliveryListProps = { order: Order }
 
@@ -17,7 +18,7 @@ export function OrderDeliveryList({ order }: OrderDeliveryListProps) {
             {delivery.sellerName ?? `판매자 ${delivery.sellerId}`} · 판매 주문 #{delivery.id}
           </span>
           <span>
-            <Badge>{DELIVERY_STATUS_LABEL[delivery.status]}</Badge>{' '}
+            <Badge>{labelOf(DELIVERY_STATUS_LABEL, delivery.status)}</Badge>{' '}
             {delivery.trackingNumber &&
               `${carrierName(delivery.carrier)} ${delivery.trackingNumber}`}
           </span>

@@ -4,7 +4,7 @@ export const wishRequestShape = obj({
   requestId: str,
   type: str,
   childId: str,
-  status: oneOf(['REQUESTED', 'PAID', 'REJECTED', 'CANCELLED']),
+  status: oneOf(['REQUESTED', 'PAID', 'REJECTED', 'CANCELLED', 'EXPIRED']),
   requestedByType: oneOf(['MEMBER', 'CHILD']),
   requestedById: str,
   message: nullable(str),

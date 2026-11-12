@@ -2,7 +2,9 @@ export { orderApi } from './api/order-api'
 export type { AdminOrderDto, OrderDetailDto, OrderTimelineDto } from './api/order.dto'
 export {
   CANCEL_REASON_LABEL,
+  ITEM_CANCEL_REASON_LABEL,
   ITEM_STATUS_LABEL,
+  type ItemCancelReason,
   type AdminOrder,
   ORDER_STATUS_LABEL,
   type CancelReason,

@@ -1,3 +1,4 @@
+import { labelOf } from '@/shared/lib'
 import type { WishRequest, WishStatus } from './wish'
 
 const TIMELINE_LABEL: Record<string, string> = {
@@ -5,6 +6,7 @@ const TIMELINE_LABEL: Record<string, string> = {
   PAID: '결제 완료',
   REJECTED: '거절',
   CANCELLED: '철회',
+  EXPIRED: '기한 지나 만료',
 }
 export function wishTimelineLabel(step: string): string {
   return TIMELINE_LABEL[step] ?? '진행 중'
@@ -34,9 +36,10 @@ const STATUS_LABEL: Record<WishStatus, string> = {
   PAID: '결제 완료',
   REJECTED: '거절',
   CANCELLED: '철회됨',
+  EXPIRED: '기한 지나 만료',
 }
 export function wishStatusLabel(wish: { status: WishStatus }): string {
-  return STATUS_LABEL[wish.status]
+  return labelOf(STATUS_LABEL, wish.status)
 }
 
 /** 목록에서 조르기를 구분하는 제목: 첫 상품 이름, 여러 개면 'OO 외 N개' */

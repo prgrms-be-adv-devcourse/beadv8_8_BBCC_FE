@@ -8,6 +8,7 @@ import {
   type OrderStatus,
   type OrderTimelineEvent,
 } from './order'
+import { labelOf } from '@/shared/lib'
 
 /** 결제 처리 중이면 서버 이벤트(재고 차감 → 예치금 결제)가 끝나기를 기다리며 다시 조회한다 */
 export function isAwaitingPayment(order: Order): boolean {
@@ -135,7 +136,7 @@ export function buildOrderTimeline(order: Order): OrderTimelineEvent[] {
     events.push({
       at: null,
       label: '주문 취소',
-      note: order.cancelReason ? CANCEL_REASON_LABEL[order.cancelReason] : undefined,
+      note: order.cancelReason ? labelOf(CANCEL_REASON_LABEL, order.cancelReason) : undefined,
     })
   }
   for (const delivery of order.deliveries) {
