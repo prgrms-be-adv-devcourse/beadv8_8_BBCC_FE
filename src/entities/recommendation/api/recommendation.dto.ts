@@ -1,6 +1,7 @@
 // 사이즈 추천(BE #262) · 자녀 맞춤 목록(BE #316) 모두 실제 API. 값 이름은 백엔드 recommend 도메인(Fit · SizeNotice)을 따른다
 
 import type { Page } from '@/shared/api'
+import type { WearPreviewDto } from './wear-preview.dto'
 
 /** GET /recommendations/size?productId=&childId= */
 export type SizeRecommendationDto = {
@@ -25,6 +26,8 @@ export type SizeRecommendationDto = {
   referenceFit: ReferenceFitDto | null
   /** AI가 추천 사이즈를 항목별로 판단한 값. RULE이거나 판단이 없으면 [] */
   itemJudgements: ItemJudgementDto[]
+  /** 착용 미리보기 (BE #1265). 사이즈 무관 상품 · 모자 · 양말이면 null */
+  wearPreview: WearPreviewDto | null
 }
 
 /**

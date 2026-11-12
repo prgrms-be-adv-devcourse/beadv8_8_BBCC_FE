@@ -1887,6 +1887,8 @@ it('홈 맛보기 · 사이즈 추천: AI · RULE 응답 모두 계약 모양이
       1,
     )
     expectContract(size.data, sizeRecommendationShape)
+    // 착용 미리보기 (BE #1265): 상품 A는 상의, 상품 B는 바지
+    expect(size.data.wearPreview.garment).toBe(productId === '1' ? 'TOP' : 'BOTTOM')
     sizeSources.push(size.data.source)
     if (size.data.source === 'RULE') expect(size.data.reasons).toEqual([])
   }

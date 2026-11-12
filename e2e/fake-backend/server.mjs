@@ -30,6 +30,7 @@ import {
 import { memberFavoriteRoute, publicFavoriteRoute } from './favorites.mjs'
 import { adminReviewRoute, memberReviewRoute, publicReviewRoute } from './reviews.mjs'
 import { notificationRoute } from './notifications.mjs'
+import { wearPreviewOf } from './wear-preview.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
@@ -2061,6 +2062,7 @@ http
         ...rec,
         referenceFit,
         itemJudgements: isAi ? itemJudgementsOf(referenceFit, rec.recommendedSize) : [],
+        wearPreview: wearPreviewOf(detail, c.heightCm),
         source: isAi ? 'AI' : 'RULE',
         reasons: isAi
           ? [

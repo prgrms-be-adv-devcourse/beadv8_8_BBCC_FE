@@ -7,6 +7,7 @@ export type {
 } from './api/recommendation.dto'
 export type { ReferenceGarmentDto, ReferenceGarmentRequestDto } from './api/reference-garment.dto'
 export type { PurchasedGarmentDto } from './api/purchased-garment.dto'
+export type { WearPreviewDto } from './api/wear-preview.dto'
 export {
   type Fit,
   type RecommendationSource,
@@ -52,6 +53,7 @@ export { RecommendedPicksLoading } from './ui/RecommendedPicksLoading'
 export { RecommendedPicksNotice } from './ui/RecommendedPicksNotice'
 export { SizeReasonList } from './ui/SizeReasonList'
 export { SizeRecommendationSummary } from './ui/SizeRecommendationSummary'
+export { WearPreview } from './ui/WearPreview'
 export {
   GARMENT_PART_SPEC,
   GARMENT_PARTS,
@@ -81,3 +83,12 @@ export {
 } from './model/reference-garment.rules'
 export { type PurchasedGarment } from './model/purchased-garment'
 export { toPurchasedGarment } from './model/purchased-garment.mapper'
+export {
+  type HemPosition,
+  type SizeWearPreview,
+  type SleevePosition,
+  type WearBody,
+  type WearSize,
+} from './model/wear-preview'
+export { toWearPreview } from './model/wear-preview.mapper'
+export { hemTextOf, pickWearSize, sleeveTextOf, wearSizesOf } from './model/wear-preview.rules'
