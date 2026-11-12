@@ -102,6 +102,19 @@ export function cancelledMoneyNote(cancelReason: string | null): string {
   return '예치금 변동은 예치금 내역에서 확인해 주세요.'
 }
 
+/**
+ * 구매자가 주문 전체를 취소할 수 있는지 (BE #354): 결제 처리 중, 또는 결제 완료이고 아직 발송한 판매자가 없을 때.
+ * 상품이 모두 취소됐으면 취소할 것이 없다
+ */
+export function canBuyerCancel(order: Pick<Order, 'status' | 'deliveries' | 'items'>): boolean {
+  if (order.status === 'PENDING_PAYMENT') return true
+  if (order.status !== 'PAID') return false
+  const shipped = order.deliveries.some(
+    (delivery) => delivery.status === 'SHIPPING' || delivery.status === 'DELIVERED',
+  )
+  return !shipped && order.items.some((item) => item.status !== 'CANCELLED')
+}
+
 /** 잔액 부족으로 취소된 주문이면 충전으로 안내한다 */
 /** 구매할 수 없는 상품(재고 부족 · 판매 중지)으로 취소: 장바구니에 남아 있으니 다시 확인하게 한다 */
 /** 주문상품의 구매 불가 표시. 이유가 없으면 null (표시 안 함) */

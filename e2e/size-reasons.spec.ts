@@ -2,7 +2,8 @@ import { expect, test, type Page } from '@playwright/test'
 
 // 사이즈 추천 근거 (BE #1162): AI가 고르면 추천 한 줄 바로 아래에 근거(종류 라벨 + 문구)를 보이고, 규칙이면 숨긴다.
 // AI는 규칙 후보 밖의 실제 사이즈를 고를 수 있다 (recommendedSize가 candidateSizes에 없음).
-// AI 근거 아래에는 AI 안내를 달고, 이 상품 구분(상품 A = 상의)의 기준 옷이 없으면 등록 안내와 기준 옷 칸 링크를 둔다
+// AI 근거 아래에는 AI 안내를 달고, 이 상품 구분(상품 A = 상의)의 기준 옷이 없으면 등록 안내와 기준 옷 칸 링크를 둔다.
+// 기준 옷이 있으면 추천 한 줄 아래에 추천 사이즈의 기준 핏(기준 옷과 cm 차이 · AI 항목 판단)을 보인다 (BE #1261)
 
 const CHILD = {
   id: 501,
@@ -28,6 +29,8 @@ const size = (overrides: object) => ({
   lastPurchasedSize: null,
   source: 'RULE',
   reasons: [],
+  referenceFit: null,
+  itemJudgements: [],
   ...overrides,
 })
 
@@ -94,4 +97,43 @@ test('규칙 추천이면 근거 목록 · AI 안내를 그리지 않고, 상의
   await expect(page.getByRole('list', { name: '추천 근거' })).toHaveCount(0)
   await expect(page.getByText(AI_NOTICE)).toHaveCount(0)
   await expect(page.getByText(GARMENT_HINT)).toHaveCount(0)
+})
+
+test('기준 옷이 있으면 추천 사이즈의 기준 핏을 추천 한 줄 아래에 보이고, 모르는 실측 코드는 숨긴다', async ({
+  page,
+}) => {
+  const diff = (code: string, diffCm: number) => ({
+    code,
+    garmentCm: 35,
+    sizes: [
+      { size: '110', productCm: 33, diffCm: -2 },
+      { size: '120', productCm: 35 + diffCm, diffCm },
+    ],
+  })
+  await openDetail(
+    page,
+    size({
+      source: 'AI',
+      reasons: [
+        { type: 'MEASUREMENT', detail: '가슴이 지금 옷보다 조금 넉넉해요.', sourceId: null },
+      ],
+      referenceFit: {
+        productPart: 'TOP',
+        comparedPart: 'TOP',
+        items: [diff('TOTAL_LENGTH', 2), diff('CHEST_WIDTH', 1.5), diff('MYSTERY_CODE', 3)],
+      },
+      itemJudgements: [
+        { code: 'CHEST_WIDTH', diffCm: 1.5, fit: 'PROPER', allowanceMinCm: 1, allowanceMaxCm: 4 },
+      ],
+    }),
+    [{ part: 'TOP', categoryId: '11', measurements: { TOTAL_LENGTH: 44, CHEST_WIDTH: 35 } }],
+  )
+
+  await expect(page.getByText('지금 입는 상의보다')).toBeVisible()
+  const compared = page.getByRole('list', { name: '기준 옷과 비교' })
+  await expect(compared.getByRole('listitem')).toHaveText([
+    '총장 +2.0cm',
+    '가슴단면 +1.5cm · 여유 적당',
+  ])
+  await expect(page.getByText('MYSTERY_CODE')).toHaveCount(0)
 })

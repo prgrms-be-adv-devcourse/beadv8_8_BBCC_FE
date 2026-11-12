@@ -123,3 +123,16 @@ export const orderTimelineShape = obj({
     }),
   ),
 })
+
+/** GET /orders/items/mine (BE #1000) */
+export const childPurchasePageShape = pageOf(
+  obj({
+    orderItemId: str,
+    orderedAt: str,
+    productId: nullable(str),
+    productName: nullable(str),
+    optionName: nullable(str),
+    quantity: num,
+    status: oneOf(['PAID', 'SHIPPING', 'DELIVERED', 'CONFIRMED', 'CANCELLED']),
+  }),
+)

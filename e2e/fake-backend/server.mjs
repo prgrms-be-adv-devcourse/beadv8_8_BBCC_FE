@@ -21,7 +21,12 @@ import {
   updateProduct,
 } from './products.mjs'
 import { catalogRoute } from './catalog.mjs'
-import { garmentPartOfCategory, referenceGarmentRoute } from './reference-garments.mjs'
+import {
+  garmentPartOfCategory,
+  itemJudgementsOf,
+  referenceFitOf,
+  referenceGarmentRoute,
+} from './reference-garments.mjs'
 import { memberFavoriteRoute, publicFavoriteRoute } from './favorites.mjs'
 import { adminReviewRoute, memberReviewRoute, publicReviewRoute } from './reviews.mjs'
 import { notificationRoute } from './notifications.mjs'
@@ -355,6 +360,8 @@ function scheduleOrder(o, me, stall, clearCart = true) {
   }, stall?.timeoutMs ?? PAYMENT_TIMEOUT_MS).unref()
   if (!stall)
     setTimeout(() => {
+      // 구매자가 결제 전에 취소했으면 재고 · 결제를 처리하지 않는다
+      if (o.status !== 'PENDING_PAYMENT') return
       // 상품: 하나라도 부족하면 아무것도 차감하지 않고 주문 취소 (기획서 4장).
       // 장바구니는 그대로 남는다 (BE: 결제 완료 뒤 주문한 줄만 빠진다)
       const short = o.items.filter((it) => (stock[it.optionId] ?? 0) < it.quantity)
@@ -768,6 +775,42 @@ http
           ? send(res, 200, childOf(child))
           : problem(res, 404, '찾을 수 없습니다', '프로필을 찾을 수 없습니다.', req.url)
       }
+    }
+    // BE ChildPurchaseController (#1000): 자녀만(회원 403). 결제된 적 있는 주문에서 내가 입을 아이인 주문상품, 주문 일시 최신순
+    if (r('GET', /^\/orders\/items\/mine$/)) {
+      if (!isChild) return problem(res, 403, '권한이 없습니다', '자녀만 볼 수 있습니다.', req.url)
+      const account = childAccounts.find(
+        (a) => `child:${a.id}` === u.sub && a.version === u.version,
+      )
+      if (!account)
+        return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
+      const childId = String(account.childProfileId)
+      const paidBefore = (o) =>
+        o.status === 'PAID' ||
+        ['BUYER_CANCELLED', 'SELLER_CANCELLED', 'SELLER_UNAVAILABLE'].includes(o.cancelReason)
+      const statusOf = (o, it) => {
+        if (o.status === 'CANCELLED' || it.status === 'CANCELLED') return 'CANCELLED'
+        if (it.status === 'CONFIRMED') return 'CONFIRMED'
+        const d = o.deliveries.find((each) => each.sellerId === it.sellerId)
+        return d && (d.status === 'SHIPPING' || d.status === 'DELIVERED') ? d.status : 'PAID'
+      }
+      const rows = orders
+        .filter(paidBefore)
+        .flatMap((o) =>
+          o.items
+            .filter((it) => it.child?.childId === childId)
+            .map((it) => ({
+              orderItemId: it.orderItemId,
+              orderedAt: o.orderedAt,
+              productId: it.productId,
+              productName: it.productName,
+              optionName: it.optionName,
+              quantity: it.quantity,
+              status: statusOf(o, it),
+            })),
+        )
+        .sort((a, b) => b.orderedAt.localeCompare(a.orderedAt))
+      return send(res, 200, page(rows))
     }
     // 장바구니 · 조르기는 회원과 자녀(자녀 토큰)를 함께 받는다 (BE @CartCaller · @WishCaller, #998 · #999)
     if (/^\/(cart|wish\/requests)(\/|$)/.test(p)) {
@@ -1354,6 +1397,61 @@ http
       return sendPicks(req, res, { source, products })
     }
     // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
+    // BE StuckOrderController (#445 · #926): 종류별 건수(모든 종류 0 포함) · 종류별 목록(오래된 것부터).
+    // 가짜는 발송 준비로 남은 배송만 발송 지연으로 보고, AI 메모는 가짜 공급자(fake)가 쓴 것처럼 붙인다
+    const STUCK_KIND_ORDER = [
+      'STOCK_CHECK_STALE',
+      'PAYMENT_EXPIRY_MISSED',
+      'PAID_WITHOUT_DELIVERY',
+      'RECOVERY_PENDING_STALE',
+      'SHIPPING_DELAYED',
+      'AUTO_CONFIRM_MISSED',
+      'OUTBOX_STUCK',
+    ]
+    const shippingDelayed = () =>
+      orders
+        .filter((o) => o.status === 'PAID')
+        .flatMap((o) => o.deliveries.filter((d) => d.status === 'READY').map((d) => ({ o, d })))
+        .map(({ o, d }) => ({
+          kind: 'SHIPPING_DELAYED',
+          orderId: String(o.orderId),
+          targetType: 'DELIVERY',
+          targetId: d.sellerOrderId,
+          status: 'READY',
+          since: o.orderedAt,
+          outbox: null,
+          aiMemo: {
+            summary: '판매자가 아직 송장을 등록하지 않았어요.',
+            recommendedAction: '판매자에게 발송을 요청하고, 어려우면 판매자 취소를 안내하세요.',
+            confidence: 'MEDIUM',
+            provider: 'fake',
+            model: 'fake',
+            createdAt: o.orderedAt,
+          },
+        }))
+    if (r('GET', /^\/admin\/orders\/stuck\/summary$/))
+      return send(
+        res,
+        200,
+        Object.fromEntries(
+          STUCK_KIND_ORDER.map((kind) => [
+            kind,
+            kind === 'SHIPPING_DELAYED' ? shippingDelayed().length : 0,
+          ]),
+        ),
+      )
+    if (r('GET', /^\/admin\/orders\/stuck$/)) {
+      const kind = url.searchParams.get('kind')
+      if (!STUCK_KIND_ORDER.includes(kind))
+        return problem(
+          res,
+          400,
+          '잘못된 멈춘 주문 종류입니다',
+          `kind는 ${STUCK_KIND_ORDER.join(' · ')} 중 하나입니다.`,
+          req.url,
+        )
+      return send(res, 200, page(kind === 'SHIPPING_DELAYED' ? shippingDelayed() : []))
+    }
     if (r('GET', /^\/admin\/orders$/)) {
       if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
@@ -1405,8 +1503,14 @@ http
       // AI 흉내: 상품 ID가 홀수이고 추천 사이즈가 있으면 AI 근거 두 개, 아니면 RULE(근거 [])
       const rec = sizeRecommendationOf(detail, c)
       const isAi = Number(productId) % 2 === 1 && rec.recommendedSize !== null
+      // 기준 핏 (BE #1261): 자녀의 같은 칸 기준 옷과 비교. AI 답이면 추천 사이즈의 항목별 판단도
+      const referenceFit = detail.sizeFree
+        ? null
+        : referenceFitOf(c.id, detail.categoryId, detail.sizeSpecs)
       return send(res, 200, {
         ...rec,
+        referenceFit,
+        itemJudgements: isAi ? itemJudgementsOf(referenceFit, rec.recommendedSize) : [],
         source: isAi ? 'AI' : 'RULE',
         reasons: isAi
           ? [
@@ -1846,6 +1950,39 @@ http
       )
     if ((x = r('GET', /^\/orders\/(\d+)$/)))
       return send(res, 200, detailOf(orders.find((o) => o.orderId === +x[1])))
+    // BE OrderService.cancelByBuyer (#354): 결제대기, 또는 모든 배송이 발송 전인 결제완료 주문만. 이미 취소면 그대로 200.
+    // 결제완료면 남은 주문상품 금액을 돌려주고(REFUND) 재고를 되돌린다
+    if ((x = r('POST', /^\/orders\/(\d+)\/cancel$/))) {
+      const o = orders.find((each) => each.orderId === +x[1] && each.memberId === me)
+      if (!o)
+        return problem(res, 404, '주문을 찾을 수 없습니다', '주문을 찾을 수 없습니다.', req.url)
+      if (o.status === 'CANCELLED') return send(res, 200, detailOf(o))
+      if (o.deliveries.some((d) => d.status === 'SHIPPING' || d.status === 'DELIVERED'))
+        return problem(
+          res,
+          409,
+          '이미 발송된 상품이 있습니다',
+          '판매자가 발송을 시작해 취소할 수 없습니다. 판매자에게 문의해 주세요.',
+          req.url,
+        )
+      if (o.status === 'PAID') {
+        const open = o.items.filter((it) => it.status === 'ORDERED')
+        const refund = open.reduce((sum, it) => sum + it.amount, 0)
+        open.forEach((it) => {
+          it.status = 'CANCELLED'
+          stock[it.optionId] = (stock[it.optionId] ?? 0) + it.quantity
+        })
+        o.deliveries.forEach((d) => (d.status = 'CANCELLED'))
+        if (refund > 0) {
+          wallets[me] = (wallets[me] ?? 0) + refund
+          ledger(me, 'REFUND', refund, nid())
+        }
+      }
+      o.status = 'CANCELLED'
+      o.cancelReason = 'BUYER_CANCELLED'
+      cancelledAt.set(o, now())
+      return send(res, 200, detailOf(o))
+    }
     if ((x = r('POST', /^\/orders\/(\d+)\/items\/(\d+)\/confirm$/))) {
       const it = orders.find((o) => o.orderId === +x[1]).items.find((i) => i.orderItemId === x[2])
       if (!it.deliveredAt)

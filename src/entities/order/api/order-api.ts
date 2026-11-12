@@ -1,6 +1,7 @@
 import { apiClient, expectShape, type Page } from '@/shared/api'
 import type {
   AdminOrderDto,
+  ChildPurchaseDto,
   OrderDetailDto,
   OrderSummaryDto,
   OrderTimelineDto,
@@ -8,12 +9,21 @@ import type {
 } from './order.dto'
 import {
   adminOrderPageShape,
+  childPurchasePageShape,
   orderDetailShape,
   orderPageShape,
   orderTimelineShape,
 } from './order.shape'
 
 export const orderApi = {
+  /** 나를 위해 산 상품 (자녀 토큰만, 주문 일시 최신순 · 팀 목록 형식, BE #1000) */
+  childPurchases: (page: number, size = 20) =>
+    apiClient
+      .get<Page<ChildPurchaseDto>>('/orders/items/mine', {
+        params: { page, size },
+        principal: 'child',
+      })
+      .then(expectShape(childPurchasePageShape)),
   list: () =>
     apiClient
       .get<Page<OrderSummaryDto>>('/orders', { params: { page: 0, size: 20 } })

@@ -18,6 +18,7 @@ const MENU: MenuGroup[] = [
     title: '운영',
     links: [
       { to: paths.admin.home, label: '대시보드', end: true },
+      { to: paths.admin.orderOps, label: '주문 운영' },
       { to: paths.admin.deadLetters, label: '처리 실패 메시지' },
       { to: paths.admin.settings, label: '설정' },
     ],
