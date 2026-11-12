@@ -41,3 +41,9 @@ export const PAYMENT_FAILURE_LABEL: Record<PaymentFailureCode, string> = {
 
 /** 관리자 전체 결제 한 줄 */
 export type AdminPayment = Payment & { memberId: string }
+
+/** 결제일 하루의 결제 금액(환불 전) · 건수 */
+export type PaymentDay = { date: string; paidAmount: number; paidCount: number }
+
+/** 관리자 결제 요약: 기간의 날마다 한 줄 + 환불 있는 결제 수(기간과 상관없음) */
+export type AdminPaymentSummary = { daily: PaymentDay[]; refundedPaymentCount: number }

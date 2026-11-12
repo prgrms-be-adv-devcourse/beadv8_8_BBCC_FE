@@ -1310,6 +1310,35 @@ http
         ),
       )
     }
+    // 결제 요약 (BE AdminPaymentController.getSummary #1220): 한국 날짜, 양 끝 포함, 비우면 오늘, 31일까지
+    if (r('GET', /^\/admin\/payments\/summary$/)) {
+      if (!isAdmin(u))
+        return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
+      const to = url.searchParams.get('to') || now().slice(0, 10)
+      const from = url.searchParams.get('from') || to
+      const days = (Date.parse(to) - Date.parse(from)) / 86400e3 + 1
+      if (!(days >= 1 && days <= 31))
+        return problem(
+          res,
+          400,
+          '조회할 수 없는 기간입니다',
+          '시작일은 종료일보다 늦을 수 없고, 한 번에 31일까지 조회할 수 있습니다.',
+          req.url,
+        )
+      const daily = Array.from({ length: days }, (_, i) => {
+        const date = new Date(Date.parse(from) + i * 86400e3).toISOString().slice(0, 10)
+        const paid = payments.filter((p) => p.status !== 'FAILED' && p.paidAt?.startsWith(date))
+        return {
+          date,
+          paidAmount: paid.reduce((sum, p) => sum + p.amount, 0),
+          paidCount: paid.length,
+        }
+      })
+      const refundedPaymentCount = payments.filter((p) =>
+        ['PARTIALLY_REFUNDED', 'REFUNDED'].includes(p.status),
+      ).length
+      return send(res, 200, { daily, refundedPaymentCount })
+    }
     if (r('GET', /^\/admin\/payments$/)) {
       if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)

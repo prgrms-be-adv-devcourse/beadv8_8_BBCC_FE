@@ -645,6 +645,11 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     // 대시보드: 오늘 숫자 · 처리할 일
     await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible()
     await expect(page.getByText('오늘 주문', { exact: true })).toBeVisible()
+    // 결제 숫자는 결제 요약 API(결제일 기준): 앞 단계에서 결제한 금액이 들어간다
+    await expect(page.getByRole('link', { name: /오늘 결제된 금액/ })).toContainText(
+      /[1-9][\d,]*원/,
+    )
+    await expect(page.getByRole('link', { name: /환불 있는 결제/ })).toContainText(/\d/)
     await page.getByRole('link', { name: '회원 관리' }).click()
     await expect(page.getByRole('heading', { name: '회원 관리' })).toBeVisible()
     // 목록은 찾기만, 정지는 회원 상세에서 (닉네임 링크는 표 안에서 찾는다: 탭 · 메뉴에 같은 이름이 있다)
