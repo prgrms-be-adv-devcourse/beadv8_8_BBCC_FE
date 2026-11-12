@@ -11,6 +11,7 @@ const base = {
   lastPurchasedSize: null,
   referenceFit: null,
   itemJudgements: [],
+  wearPreview: null,
 }
 
 describe('toSizeRecommendation: 사이즈 추천 출처 · 근거 (BE #1162)', () => {
