@@ -58,6 +58,8 @@ describe('사이즈 추천 (BE #262)', () => {
         lastPurchasedSize: null,
         source: 'RULE',
         reasons: [],
+        referenceFit: null,
+        itemJudgements: [],
       }),
     ).toEqual({
       recommendedSize: '120',
@@ -72,6 +74,8 @@ describe('사이즈 추천 (BE #262)', () => {
       lastPurchasedSize: null,
       source: 'RULE',
       reasons: [],
+      referenceFit: null,
+      itemJudgements: [],
     })
   })
 

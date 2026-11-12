@@ -21,7 +21,12 @@ import {
   updateProduct,
 } from './products.mjs'
 import { catalogRoute } from './catalog.mjs'
-import { garmentPartOfCategory, referenceGarmentRoute } from './reference-garments.mjs'
+import {
+  garmentPartOfCategory,
+  itemJudgementsOf,
+  referenceFitOf,
+  referenceGarmentRoute,
+} from './reference-garments.mjs'
 import { memberFavoriteRoute, publicFavoriteRoute } from './favorites.mjs'
 import { memberReviewRoute, publicReviewRoute } from './reviews.mjs'
 import { notificationRoute } from './notifications.mjs'
@@ -1404,8 +1409,14 @@ http
       // AI 흉내: 상품 ID가 홀수이고 추천 사이즈가 있으면 AI 근거 두 개, 아니면 RULE(근거 [])
       const rec = sizeRecommendationOf(detail, c)
       const isAi = Number(productId) % 2 === 1 && rec.recommendedSize !== null
+      // 기준 핏 (BE #1261): 자녀의 같은 칸 기준 옷과 비교. AI 답이면 추천 사이즈의 항목별 판단도
+      const referenceFit = detail.sizeFree
+        ? null
+        : referenceFitOf(c.id, detail.categoryId, detail.sizeSpecs)
       return send(res, 200, {
         ...rec,
+        referenceFit,
+        itemJudgements: isAi ? itemJudgementsOf(referenceFit, rec.recommendedSize) : [],
         source: isAi ? 'AI' : 'RULE',
         reasons: isAi
           ? [

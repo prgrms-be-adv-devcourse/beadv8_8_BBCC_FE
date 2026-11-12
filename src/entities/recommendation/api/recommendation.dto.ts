@@ -20,6 +20,35 @@ export type SizeRecommendationDto = {
   source: RecommendationSourceDto
   /** 사이즈를 고른 근거 (RULE이면 []) */
   reasons: SizeReasonDto[]
+  // 기준 핏 (BE #1261)
+  /** 기준 옷과 이 상품을 사이즈별로 비교한 값. 기준 옷이 없거나 비교할 항목이 없으면 null */
+  referenceFit: ReferenceFitDto | null
+  /** AI가 추천 사이즈를 항목별로 판단한 값. RULE이거나 판단이 없으면 [] */
+  itemJudgements: ItemJudgementDto[]
+}
+
+/**
+ * 기준 핏. part는 TOP · BOTTOM · OUTER · DRESS · SKIRT. comparedPart가 productPart와 다르면
+ * 다른 칸의 기준 옷으로 대신 비교한 것이고, 이때는 너비 항목만 있다
+ */
+export type ReferenceFitDto = {
+  productPart: string
+  comparedPart: string
+  /** 실측 항목마다 기준 옷 실측과 사이즈별 상품 실측 · 차이(상품 − 기준 옷, cm) */
+  items: {
+    code: string
+    garmentCm: number
+    sizes: { size: string; productCm: number; diffCm: number }[]
+  }[]
+}
+
+/** 추천 사이즈의 항목별 AI 판단. fit은 응답의 fit과 같은 값, allowance는 AI가 맞다고 본 여유 범위(cm) */
+export type ItemJudgementDto = {
+  code: string
+  diffCm: number
+  fit: string
+  allowanceMinCm: number
+  allowanceMaxCm: number
 }
 
 /** 사이즈 추천 근거. type은 HEIGHT · BODY_TYPE · PREFERRED_FIT · MEASUREMENT · RULE_RESULT · GROWTH */
