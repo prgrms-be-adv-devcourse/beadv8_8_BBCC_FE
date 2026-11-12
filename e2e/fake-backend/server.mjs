@@ -1353,6 +1353,61 @@ http
       return sendPicks(req, res, { source, products })
     }
     // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
+    // BE StuckOrderController (#445 · #926): 종류별 건수(모든 종류 0 포함) · 종류별 목록(오래된 것부터).
+    // 가짜는 발송 준비로 남은 배송만 발송 지연으로 보고, AI 메모는 가짜 공급자(fake)가 쓴 것처럼 붙인다
+    const STUCK_KIND_ORDER = [
+      'STOCK_CHECK_STALE',
+      'PAYMENT_EXPIRY_MISSED',
+      'PAID_WITHOUT_DELIVERY',
+      'RECOVERY_PENDING_STALE',
+      'SHIPPING_DELAYED',
+      'AUTO_CONFIRM_MISSED',
+      'OUTBOX_STUCK',
+    ]
+    const shippingDelayed = () =>
+      orders
+        .filter((o) => o.status === 'PAID')
+        .flatMap((o) => o.deliveries.filter((d) => d.status === 'READY').map((d) => ({ o, d })))
+        .map(({ o, d }) => ({
+          kind: 'SHIPPING_DELAYED',
+          orderId: String(o.orderId),
+          targetType: 'DELIVERY',
+          targetId: d.sellerOrderId,
+          status: 'READY',
+          since: o.orderedAt,
+          outbox: null,
+          aiMemo: {
+            summary: '판매자가 아직 송장을 등록하지 않았어요.',
+            recommendedAction: '판매자에게 발송을 요청하고, 어려우면 판매자 취소를 안내하세요.',
+            confidence: 'MEDIUM',
+            provider: 'fake',
+            model: 'fake',
+            createdAt: o.orderedAt,
+          },
+        }))
+    if (r('GET', /^\/admin\/orders\/stuck\/summary$/))
+      return send(
+        res,
+        200,
+        Object.fromEntries(
+          STUCK_KIND_ORDER.map((kind) => [
+            kind,
+            kind === 'SHIPPING_DELAYED' ? shippingDelayed().length : 0,
+          ]),
+        ),
+      )
+    if (r('GET', /^\/admin\/orders\/stuck$/)) {
+      const kind = url.searchParams.get('kind')
+      if (!STUCK_KIND_ORDER.includes(kind))
+        return problem(
+          res,
+          400,
+          '잘못된 멈춘 주문 종류입니다',
+          `kind는 ${STUCK_KIND_ORDER.join(' · ')} 중 하나입니다.`,
+          req.url,
+        )
+      return send(res, 200, page(kind === 'SHIPPING_DELAYED' ? shippingDelayed() : []))
+    }
     if (r('GET', /^\/admin\/orders$/)) {
       if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
