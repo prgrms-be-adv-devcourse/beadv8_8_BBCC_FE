@@ -6,7 +6,6 @@ import {
   sellerOrderTabOf,
   type SellerOrder,
 } from '@/entities/seller-order'
-import { sumSettlementItems } from '@/entities/settlement'
 
 const order = (id: string, status: SellerOrder['status']): SellerOrder => ({
   id,
@@ -28,11 +27,18 @@ const orders = [
 
 describe('판매자 주문 탭', () => {
   it('탭별 건수 · 거르기', () => {
-    expect(countSellerOrdersByTab(orders)).toEqual({ READY: 2, SHIPPING: 1, DELIVERED: 1, ALL: 4 })
+    expect(countSellerOrdersByTab(orders)).toEqual({
+      READY: 2,
+      SHIPPING: 1,
+      DELIVERED: 1,
+      CANCELLED: 0,
+      ALL: 4,
+    })
     expect(countSellerOrdersByTab(orders, 107)).toEqual({
       READY: 2,
       SHIPPING: 1,
       DELIVERED: 1,
+      CANCELLED: 0,
       ALL: 107,
     })
     expect(filterSellerOrdersByTab(orders, 'READY').map((o) => o.id)).toEqual(['1', '2'])
@@ -47,17 +53,5 @@ describe('판매자 주문 탭', () => {
     const targets = bulkTargets(orders, new Set(['1', '3', '4']))
     expect(targets.toShip.map((o) => o.id)).toEqual(['1'])
     expect(targets.toDeliver.map((o) => o.id)).toEqual(['3'])
-  })
-})
-
-describe('정산 예정 금액', () => {
-  it('구매확정분 판매 금액 합', () => {
-    expect(sumSettlementItems([])).toBe(0)
-    expect(
-      sumSettlementItems([
-        { orderItemId: '1', orderId: '1', amount: 25000, confirmedAt: '' },
-        { orderItemId: '2', orderId: '1', amount: 30000, confirmedAt: '' },
-      ]),
-    ).toBe(55000)
   })
 })

@@ -5,7 +5,7 @@ import {
   useSellerProductCountQuery,
   type SellerProductTab,
 } from '@/entities/product'
-import { sumSettlementItems, useSettlementTargetsQuery } from '@/entities/settlement'
+import { useSettlementTargetSummaryQuery } from '@/entities/settlement'
 import { SELLER_STATUS_LABEL, useMySellerQuery } from '@/entities/seller'
 import { summarizeSellerOrders, useSellerOrdersQuery } from '@/entities/seller-order'
 import { getErrorMessage } from '@/shared/api'
@@ -29,8 +29,7 @@ export function CenterHomePage() {
     `${sellerPaths.products}?${new URLSearchParams(toSellerProductTabSearch(tab))}`
   const seller = useMySellerQuery()
   const summary = orders.data ? summarizeSellerOrders(orders.data.content) : null
-  const targets = useSettlementTargetsQuery()
-  const pendingSettlement = targets.data ? sumSettlementItems(targets.data.content) : undefined
+  const pendingSettlement = useSettlementTargetSummaryQuery().data
 
   return (
     <div className="shop-look space-y-8">
@@ -110,7 +109,7 @@ export function CenterHomePage() {
               value={pendingSettlement === undefined ? undefined : formatWon(pendingSettlement)}
             />
             <p className="text-ink-3 col-span-2 text-[13px]">
-              구매확정된 판매 금액은 월 정산 때 수수료를 빼고 지갑에 적립돼요.{' '}
+              구매확정된 판매 금액은 영업일 오전 10시 자동 정산 때 수수료를 빼고 지갑에 적립돼요.{' '}
               <Link to={sellerPaths.settlements} className="shop-link">
                 정산 보기
               </Link>

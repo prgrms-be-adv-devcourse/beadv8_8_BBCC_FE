@@ -6,6 +6,7 @@ import {
   hasDraftErrors,
   ReviewCard,
   ReviewForm,
+  reviewSaveErrorMessage,
   useReviewableItemQuery,
   validateReviewDraft,
   type Review,
@@ -100,7 +101,7 @@ export function ShopReviewWritePage() {
       />
       {write.isError && (
         <p role="alert" className="text-destructive text-sm">
-          {getErrorMessage(write.error)}
+          {reviewSaveErrorMessage(write.error)}
         </p>
       )}
     </div>

@@ -58,6 +58,10 @@ import {
 } from '@/entities/recommendation/api/recommendation.shape'
 import { memberShape, tokenShape } from '@/entities/session/api/session.shape'
 import {
+  settlementTargetPageShape,
+  settlementTargetSummaryShape,
+} from '@/entities/settlement/api/settlement.shape'
+import {
   chargeCancelShape,
   chargeConfirmShape,
   chargePageShape,
@@ -1638,4 +1642,18 @@ it('검색: 관련도순 목록은 목록 응답 모양이고, 결과 클릭 기
   const tooFar = await call('POST', '/search/clicks', 1, { ...click, rank: 10001 })
   expect(tooFar.status).toBe(400)
   expect(tooFar.data.detail).toBe('순위는 1 이상 10000 이하여야 합니다.')
+})
+
+it('판매자 정산 예정: 목록은 예정일을 싣고, 합계는 목록 전체 판매 금액 합이다 (BE ea5393fff)', async () => {
+  const targets = await call('GET', '/seller/settlement-targets', 2)
+  expectContract(targets.data, settlementTargetPageShape)
+  const summary = await call('GET', '/seller/settlement-targets/summary', 2)
+  expect(summary.status).toBe(200)
+  expectContract(summary.data, settlementTargetSummaryShape)
+  expect(summary.data.totalSalesAmount).toBe(
+    targets.data.content.reduce(
+      (sum: number, target: { salesAmount: number }) => sum + target.salesAmount,
+      0,
+    ),
+  )
 })

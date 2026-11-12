@@ -4,7 +4,7 @@ export const wishRequestShape = obj({
   requestId: str,
   type: str,
   childId: str,
-  status: oneOf(['REQUESTED', 'PAID', 'REJECTED', 'CANCELLED']),
+  status: oneOf(['REQUESTED', 'PAID', 'REJECTED', 'CANCELLED', 'EXPIRED']),
   requestedByType: oneOf(['MEMBER', 'CHILD']),
   requestedById: str,
   message: nullable(str),
@@ -16,6 +16,8 @@ export const wishRequestShape = obj({
   rejectedAt: nullable(str),
   cancelReason: nullable(str),
   cancelledAt: nullable(str),
+  expiresAt: nullable(str),
+  expiredAt: nullable(str),
   items: arr(
     obj({
       cartItemId: nullable(str),

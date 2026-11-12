@@ -1,5 +1,10 @@
 import { Link, useParams } from 'react-router'
-import { useWishRequestsQuery, wishStatusLabel, wishTitle } from '@/entities/wish'
+import {
+  useWishRequestsQuery,
+  wishDeadlineLabel,
+  wishStatusLabel,
+  wishTitle,
+} from '@/entities/wish'
 import { getErrorMessage } from '@/shared/api'
 import { memberPathsOf } from '@/shared/config'
 import { formatDateTime, useArea } from '@/shared/lib'
@@ -29,7 +34,11 @@ export function ShopChildWishesPage() {
           to={paths.childWish(childId, wish.requestId)}
         >
           {wishTitle(wish)} · {wishStatusLabel(wish)}
-          <p>{formatDateTime(wish.requestedAt)}</p>
+          <p>
+            {[formatDateTime(wish.requestedAt), wishDeadlineLabel(wish)]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
         </Link>
       ))}
     </div>

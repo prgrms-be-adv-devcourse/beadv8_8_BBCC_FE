@@ -85,6 +85,10 @@ const members = {
   },
 }
 const now = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19)
+// BE kidly.order.wish.expiry.ttl 기본 7일: 대기 중인 조르기의 expiresAt = 보낸 시각 + 7일
+const WISH_TTL_MS = 7 * 24 * 3600e3
+const wishExpiresAt = (requestedAt) =>
+  new Date(new Date(`${requestedAt}Z`).getTime() + WISH_TTL_MS).toISOString().slice(0, 19)
 const later = (ms) => new Date(Date.now() + 9 * 3600e3 + ms).toISOString().slice(0, 19)
 // 결제 마감 (BE kidly.order.payment-timeout, 기본 10분)
 const PAYMENT_TIMEOUT_MS = 10 * 60e3
@@ -389,6 +393,7 @@ function scheduleOrder(o, me, stall, clearCart = true) {
         if (!wish) continue
         if (wish.status === 'REQUESTED') {
           wish.status = 'PAID'
+          wish.expiresAt = null
           wish.payerType = 'MEMBER'
           wish.payerId = String(me)
           wish.paidAt = now()
@@ -852,6 +857,8 @@ http
           rejectedAt: null,
           cancelReason: null,
           cancelledAt: null,
+          expiresAt: null,
+          expiredAt: null,
           items: lines.map((l) => ({
             cartItemId: l.cartItemId,
             optionId: l.optionId,
@@ -870,6 +877,7 @@ http
           purchases: [],
           paidOrderItemIds: [],
         }
+        wish.expiresAt = wishExpiresAt(wish.requestedAt)
         wishRequests.push(wish)
         return send(res, 201, wish, { location: `/api/v1/wish/requests/${wish.requestId}` })
       }
@@ -894,6 +902,7 @@ http
         if (wish.status !== 'REQUESTED')
           return wishProblem(res, 'WISH_REQUEST_ALREADY_DECIDED', req.url)
         wish.status = 'REJECTED'
+        wish.expiresAt = null
         wish.rejectReason = body.reason
         wish.rejectedAt = now()
         return send(res, 200, wish)
@@ -1000,16 +1009,30 @@ http
       confirmedAt: item.confirmedAt,
     })
     const summaryOf = ({ sellerId: _s, items: _i, failReason: _f, ...st }) => st
+    // BE: 정산 예정일 = 확정일 다음 영업일 (가짜 백엔드는 주말만 건너뛴다)
+    const nextBusinessDay = (dateTime) => {
+      const day = new Date(`${dateTime.slice(0, 10)}T00:00:00Z`)
+      do day.setUTCDate(day.getUTCDate() + 1)
+      while (day.getUTCDay() === 0 || day.getUTCDay() === 6)
+      return day.toISOString().slice(0, 10)
+    }
+    const myTargets = () =>
+      confirmedItems().filter((x) => String(x.item.sellerId) === String(me) && !x.item.settled)
     if (r('GET', /^\/seller\/settlement-targets$/))
       return send(
         res,
         200,
         page(
-          confirmedItems()
-            .filter((x) => String(x.item.sellerId) === String(me) && !x.item.settled)
-            .map(itemOf),
+          myTargets().map((x) => ({
+            ...itemOf(x),
+            expectedPayoutOn: nextBusinessDay(x.item.confirmedAt),
+          })),
         ),
       )
+    if (r('GET', /^\/seller\/settlement-targets\/summary$/))
+      return send(res, 200, {
+        totalSalesAmount: myTargets().reduce((sum, x) => sum + x.item.amount, 0),
+      })
     if (r('GET', /^\/seller\/settlements$/))
       return send(
         res,

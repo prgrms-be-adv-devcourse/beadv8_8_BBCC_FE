@@ -17,7 +17,10 @@ export const settlementFields = {
 
 const itemFields = { orderItemId: num, orderId: num, salesAmount: num, confirmedAt: str }
 
-export const settlementTargetPageShape = pageOf(obj(itemFields))
+export const settlementTargetPageShape = pageOf(
+  obj({ ...itemFields, expectedPayoutOn: nullable(str) }),
+)
+export const settlementTargetSummaryShape = obj({ totalSalesAmount: num })
 export const settlementPageShape = pageOf(obj(settlementFields))
 export const settlementDetailShape = obj({
   ...settlementFields,

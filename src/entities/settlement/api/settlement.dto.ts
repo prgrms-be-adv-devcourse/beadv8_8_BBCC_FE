@@ -6,7 +6,12 @@ export type SettlementTargetDto = {
   orderId: number
   salesAmount: number
   confirmedAt: string
+  /** 정산 예정일(확정일 다음 영업일). 공휴일을 조회하지 못해 알 수 없으면 null */
+  expectedPayoutOn: string | null
 }
+
+/** GET /seller/settlement-targets/summary. 아직 정산 안 된 구매확정분 전체의 판매 금액 합(수수료 전) */
+export type SettlementTargetSummaryDto = { totalSalesAmount: number }
 
 /** GET /seller/settlements 한 줄 (BE SettlementSummaryResponse) */
 export type SettlementDto = {
@@ -14,7 +19,7 @@ export type SettlementDto = {
   periodStartOn: string
   periodEndOn: string
   totalSalesAmount: number
-  /** 예: 0.10 */
+  /** 0~1 소수, 소수점 넷째 자리까지 (예: 0.1000) */
   feeRate: number
   feeAmount: number
   settlementAmount: number

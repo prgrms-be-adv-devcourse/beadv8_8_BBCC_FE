@@ -8,7 +8,15 @@ import {
 } from '@/entities/order'
 import { getErrorMessage } from '@/shared/api'
 import { adminPathsOf } from '@/shared/config'
-import { cn, downloadCsv, formatDateTime, toCsv, useArea, type CsvColumn } from '@/shared/lib'
+import {
+  cn,
+  downloadCsv,
+  formatDateTime,
+  labelOf,
+  toCsv,
+  useArea,
+  type CsvColumn,
+} from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -17,7 +25,7 @@ import { AdminOrderTable } from './AdminOrderTable'
 const STATUSES = Object.keys(ORDER_STATUS_LABEL) as OrderStatus[]
 const TABS: { value: OrderStatus | null; label: string }[] = [
   { value: null, label: '전체' },
-  ...STATUSES.map((status) => ({ value: status, label: ORDER_STATUS_LABEL[status] })),
+  ...STATUSES.map((status) => ({ value: status, label: labelOf(ORDER_STATUS_LABEL, status) })),
 ]
 
 const CSV_COLUMNS: CsvColumn<AdminOrder>[] = [
@@ -26,10 +34,10 @@ const CSV_COLUMNS: CsvColumn<AdminOrder>[] = [
   { header: '주문 일시', value: (o) => formatDateTime(o.orderedAt) },
   { header: '상품 수', value: (o) => o.itemCount },
   { header: '금액', value: (o) => o.totalAmount },
-  { header: '상태', value: (o) => ORDER_STATUS_LABEL[o.status] },
+  { header: '상태', value: (o) => labelOf(ORDER_STATUS_LABEL, o.status) },
   {
     header: '취소 사유',
-    value: (o) => (o.cancelReason ? CANCEL_REASON_LABEL[o.cancelReason] : ''),
+    value: (o) => labelOf(CANCEL_REASON_LABEL, o.cancelReason),
   },
 ]
 

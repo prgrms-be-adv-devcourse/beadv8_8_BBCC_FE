@@ -18,7 +18,7 @@ import { useOrderTracking } from '@/features/track-order'
 import { OrderTimelineCard } from '@/widgets/order-timeline'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { formatDateTime } from '@/shared/lib'
+import { formatDateTime, labelOf } from '@/shared/lib'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { OrderItemReviewAction } from './OrderItemReviewAction'
@@ -107,7 +107,9 @@ export function ShopOrderDetailPage() {
         {order.status === 'CANCELLED' && (
           <div className="space-y-2">
             <p>
-              {order.cancelReason ? CANCEL_REASON_LABEL[order.cancelReason] : '주문이 취소됐어요.'}{' '}
+              {order.cancelReason
+                ? labelOf(CANCEL_REASON_LABEL, order.cancelReason)
+                : '주문이 취소됐어요.'}{' '}
               예치금은 빠져나가지 않았어요.
             </p>
             {expired && (

@@ -1,5 +1,5 @@
-/** REQUESTED 대기 · PAID 결제 완료(승인 = 결제) · REJECTED 거절 · CANCELLED 철회 */
-export type WishStatus = 'REQUESTED' | 'PAID' | 'REJECTED' | 'CANCELLED'
+/** REQUESTED 대기 · PAID 결제 완료(승인 = 결제) · REJECTED 거절 · CANCELLED 철회 · EXPIRED 기한 지나 만료(BE #1008) */
+export type WishStatus = 'REQUESTED' | 'PAID' | 'REJECTED' | 'CANCELLED' | 'EXPIRED'
 export type WishRequestLine = {
   /** 예약된 장바구니 칸. 승인은 이 칸으로 주문한다. #999 전 조르기는 null */
   cartItemId: string | null
@@ -27,6 +27,10 @@ export type WishRequest = {
   requestedAt: string
   /** 결제 · 거절 · 철회 시각. 대기면 null */
   decidedAt: string | null
+  /** 만료 예정 시각. 대기 중이고 만료가 켜져 있을 때만 */
+  expiresAt: string | null
+  /** 만료된 시각. 만료가 아니면 null */
+  expiredAt: string | null
   rejectReason: 'TOO_EXPENSIVE' | 'ALREADY_HAVE' | 'NEXT_TIME' | 'OTHER' | null
   /** 조르기로 산 주문 (먼저 산 것부터, 겹치지 않게) */
   orderIds: string[]

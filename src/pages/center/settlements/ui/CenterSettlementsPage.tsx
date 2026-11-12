@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import {
   SettlementItemList,
-  sumSettlementItems,
   useSettlementsQuery,
+  useSettlementTargetSummaryQuery,
   useSettlementTargetsQuery,
 } from '@/entities/settlement'
 import { useWalletQuery } from '@/entities/wallet'
@@ -16,6 +16,7 @@ import { SettlementTable } from './SettlementTable'
 /** 정산: 예치금 잔액 · 정산 예정 금액 한 줄 → 정산 예정(구매확정분) 표 → 정산서 장부. 정산서는 따로인 화면 */
 export function CenterSettlementsPage() {
   const targets = useSettlementTargetsQuery()
+  const pendingAmount = useSettlementTargetSummaryQuery()
   const settlements = useSettlementsQuery()
   const wallet = useWalletQuery()
   const sellerPaths = sellerPathsOf(useArea())
@@ -25,8 +26,8 @@ export function CenterSettlementsPage() {
       <PageHeader
         title="정산"
         step="⑦"
-        description="구매확정된 판매 금액에서 수수료를 빼고 예치금으로 입금돼요."
-        note="구매확정된 주문상품이 정산 대상으로 쌓이고, 정산이 실행되면 수수료 10%를 뺀 금액이 판매자 예치금으로 입금돼요(지급 완료)."
+        description="구매확정된 판매 금액은 영업일 오전 10시에 자동 정산돼요. 수수료를 빼고 예치금으로 입금돼요."
+        note="구매확정된 주문상품이 정산 대상으로 쌓이고, 정산이 실행되면 수수료를 뺀 금액이 판매자 예치금으로 입금돼요(지급 완료)."
       />
 
       {/* 판매자가 가장 먼저 보는 두 수치 */}
@@ -40,10 +41,10 @@ export function CenterSettlementsPage() {
         <Figure
           label="정산 예정 금액"
           hint="수수료 빼기 전"
-          pending={targets.isPending}
-          error={targets.error}
+          pending={pendingAmount.isPending}
+          error={pendingAmount.error}
         >
-          {targets.data && formatWon(sumSettlementItems(targets.data.content))}
+          {pendingAmount.data !== undefined && formatWon(pendingAmount.data)}
         </Figure>
       </section>
 
@@ -63,7 +64,7 @@ export function CenterSettlementsPage() {
         )}
         {targets.data?.content.length === 0 && <StateMessage>정산 대상이 없어요.</StateMessage>}
         {targets.data && targets.data.content.length > 0 && (
-          <SettlementItemList label="정산 예정" items={targets.data.content} isAmountLast />
+          <SettlementItemList label="정산 예정" items={targets.data.content} isTarget />
         )}
       </section>
 

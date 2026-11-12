@@ -4,7 +4,7 @@ export const sellerOrderPageShape = pageOf(
   obj({
     sellerOrderId: str,
     orderId: str,
-    status: oneOf(['READY', 'SHIPPING', 'DELIVERED']),
+    status: oneOf(['READY', 'SHIPPING', 'DELIVERED', 'CANCELLED']),
     carrier: nullable(str),
     trackingNumber: nullable(str),
     shippedAt: nullable(str),
@@ -23,7 +23,7 @@ export const sellerOrderPageShape = pageOf(
         unitPrice: num,
         quantity: num,
         amount: num,
-        status: oneOf(['ORDERED', 'CONFIRMED']),
+        status: oneOf(['ORDERED', 'CONFIRMED', 'CANCELLED']),
         deliveredAt: nullable(str),
         confirmedAt: nullable(str),
         confirmType: nullable(oneOf(['DIRECT', 'AUTO'])),
@@ -49,7 +49,7 @@ export const sellerOrderPageShape = pageOf(
 export const deliveryShape = obj({
   sellerOrderId: str,
   orderId: str,
-  status: oneOf(['READY', 'SHIPPING', 'DELIVERED']),
+  status: oneOf(['READY', 'SHIPPING', 'DELIVERED', 'CANCELLED']),
   carrier: nullable(str),
   trackingNumber: nullable(str),
   shippedAt: nullable(str),

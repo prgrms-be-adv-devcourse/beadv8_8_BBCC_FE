@@ -7,7 +7,7 @@ import {
 } from '@/entities/order'
 import { ProductImage } from '@/entities/product'
 import { carrierName, DELIVERY_STATUS_LABEL } from '@/shared/config'
-import { cn, formatWon, optionLabel } from '@/shared/lib'
+import { cn, formatWon, labelOf, optionLabel } from '@/shared/lib'
 
 type OrderSellerBlockProps = {
   group: OrderSellerGroup
@@ -42,7 +42,7 @@ export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBloc
         {delivery && (
           <p className="flex flex-wrap items-center gap-x-2 text-[13px]">
             <span className="bg-signal-soft text-signal inline-flex h-6 items-center rounded-sm px-2 text-xs font-semibold">
-              {DELIVERY_STATUS_LABEL[delivery.status]}
+              {labelOf(DELIVERY_STATUS_LABEL, delivery.status)}
             </span>
             {delivery.trackingNumber && (
               <span className="text-ink-3 figure">
@@ -86,7 +86,7 @@ export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBloc
                           : 'bg-paper-2 text-ink-2',
                       )}
                     >
-                      {ITEM_STATUS_LABEL[item.status]}
+                      {labelOf(ITEM_STATUS_LABEL, item.status)}
                       {item.confirmType === 'AUTO' && ' (자동)'}
                     </span>
                   )}
