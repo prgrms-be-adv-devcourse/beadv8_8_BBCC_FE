@@ -120,6 +120,9 @@ const adminSettlements = page(() =>
 const adminSettings = page(() =>
   import('@/pages/admin/settings').then((m) => ({ Component: m.AdminSettingsPage })),
 )
+const adminOrderOps = page(() =>
+  import('@/pages/admin/order-operation').then((m) => ({ Component: m.AdminOrderOpsPage })),
+)
 const adminDeadLetters = page(() =>
   import('@/pages/admin/dead-letters').then((m) => ({ Component: m.AdminDeadLettersPage })),
 )
@@ -331,6 +334,7 @@ export const router = createBrowserRouter(
         { path: 'payments/:paymentId', ...adminPaymentDetail },
         { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
         { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
+        { path: rel(paths.admin.home, paths.admin.orderOps), ...adminOrderOps },
         { path: rel(paths.admin.home, paths.admin.deadLetters), ...adminDeadLetters },
         { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
         { path: 'dead-letters/:module/:deadLetterId', ...adminDeadLetterDetail },

@@ -109,6 +109,8 @@ export const paths = {
     settlements: '/admin/settlements',
     /** 설정: 시연 데이터 켜기 · 끄기 */
     settings: '/admin/settings',
+    /** 주문 운영: 멈춘 주문 · 처리 대기 (종류 · 페이지는 검색 값) */
+    orderOps: '/admin/order-ops',
     /** 처리 실패 메시지 (회원 서비스 Kafka DLT): 모듈 · 상태 · 페이지는 목록 주소의 검색 값으로 */
     deadLetters: '/admin/dead-letters',
     deadLetter: (module: string, id: string) => `/admin/dead-letters/${module}/${id}`,
