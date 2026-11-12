@@ -32,7 +32,7 @@ export function ShopProfilePage() {
         title="내 정보"
         step="①"
         description="닉네임을 바꾸면 토큰을 다시 받아 바로 반영돼요."
-        note="PATCH /members/me → 토큰 재발급(시연 계정은 개발용 토큰 다시 발급). 탈퇴 안내는 GET /wallets/me 잔액으로 보여 주고, 탈퇴 요청(DELETE /members/me)은 목이에요. 서버는 탈퇴하면 예치금 지갑을 동결해요."
+        note="PATCH /members/me → 토큰 재발급(시연 계정은 개발용 토큰 다시 발급). 탈퇴 안내는 GET /wallets/me 잔액으로 보여 주고, 탈퇴 요청은 DELETE /members/me예요. 서버는 탈퇴하면 예치금 지갑을 동결해요."
       />
 
       <section aria-label="프로필" className="flex items-center gap-4">
