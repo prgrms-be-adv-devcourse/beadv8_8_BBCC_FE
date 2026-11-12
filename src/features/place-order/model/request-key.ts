@@ -1,7 +1,11 @@
 import { newRequestKey } from '@/shared/lib'
 
-/** BE #351: 같은 키에 다른 내용을 보냈을 때의 409 title (응답에 오류 코드가 없어 title로 구분) */
-export const KEY_REUSED_TITLE = '이미 다른 주문에 쓴 요청입니다'
+/** BE #351: 같은 키에 다른 내용을 보냈을 때의 409 (BE OrderErrorCode.IDEMPOTENCY_KEY_REUSED) */
+export const KEY_REUSED = {
+  code: 'IDEMPOTENCY_KEY_REUSED',
+  /** code가 없는 응답(BE #1326 배포 전)에서만 쓴다 */
+  legacyTitle: '이미 다른 주문에 쓴 요청입니다',
+} as const
 
 /**
  * 주문 요청 멱등키를 보내는 내용에 묶는다.

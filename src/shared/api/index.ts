@@ -27,6 +27,7 @@ export {
   getErrorMessage,
   getErrorStatus,
   getErrorTitle,
+  isErrorCode,
   isSessionRejected,
   isTimeoutError,
   type ProblemDetail,
