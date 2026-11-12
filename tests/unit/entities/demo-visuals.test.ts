@@ -60,6 +60,7 @@ describe('사이즈 추천 (BE #262)', () => {
         reasons: [],
         referenceFit: null,
         itemJudgements: [],
+        wearPreview: null,
       }),
     ).toEqual({
       recommendedSize: '120',
@@ -76,6 +77,7 @@ describe('사이즈 추천 (BE #262)', () => {
       reasons: [],
       referenceFit: null,
       itemJudgements: [],
+      wearPreview: null,
     })
   })
 

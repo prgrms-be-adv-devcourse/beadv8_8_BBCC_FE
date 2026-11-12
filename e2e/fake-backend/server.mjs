@@ -30,6 +30,7 @@ import {
 import { memberFavoriteRoute, publicFavoriteRoute } from './favorites.mjs'
 import { adminReviewRoute, memberReviewRoute, publicReviewRoute } from './reviews.mjs'
 import { notificationRoute } from './notifications.mjs'
+import { wearPreviewOf } from './wear-preview.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
@@ -416,11 +417,13 @@ function favoriteProductView(productId) {
   return { name: detail.name, thumbnailUrl: detail.thumbnailUrl, displayStatus }
 }
 
-/** reviews.mjs · notifications.mjs · favorites.mjs 결과 { status, body } · { status, title, detail }를 응답으로 */
+/** reviews.mjs · notifications.mjs · favorites.mjs 결과 { status, body } · { status, title, detail } · { stream }을 응답으로 */
 const reviewResult = (res, result, instance) =>
-  result.title
-    ? problem(res, result.status, result.title, result.detail, instance)
-    : send(res, result.status, result.body)
+  result.stream
+    ? result.stream(res)
+    : result.title
+      ? problem(res, result.status, result.title, result.detail, instance)
+      : send(res, result.status, result.body)
 function send(res, status, body, headers = {}) {
   res.writeHead(status, {
     'content-type': status >= 400 ? 'application/problem+json' : 'application/json',
@@ -2061,6 +2064,7 @@ http
         ...rec,
         referenceFit,
         itemJudgements: isAi ? itemJudgementsOf(referenceFit, rec.recommendedSize) : [],
+        wearPreview: wearPreviewOf(detail, c.heightCm),
         source: isAi ? 'AI' : 'RULE',
         reasons: isAi
           ? [
@@ -2953,13 +2957,22 @@ http
       Object.assign(a, { status: 'REJECTED', rejectReason: body.reason, decidedAt: now() })
       return send(res, 200, appSummaryOf(a))
     }
-    if (r('GET', /^\/seller\/me$/)) {
+    if (r('GET', /^\/seller\/me$/) || r('PATCH', /^\/seller\/me$/)) {
       if (!(u.roles || []).includes('SELLER'))
         return problem(res, 403, '권한이 없습니다', '판매자만 볼 수 있습니다.', req.url)
+      if (m === 'PATCH') {
+        if (
+          typeof body?.businessName !== 'string' ||
+          !body.businessName.trim() ||
+          body.businessName.length > 50
+        )
+          return problem(res, 400, '잘못된 요청입니다', '상호명을 확인해 주세요.', req.url)
+        members[me].businessName = body.businessName
+      }
       return send(res, 200, {
         sellerId: me,
-        businessName: u.nickname || '테스트상점',
-        status: 'ACTIVE',
+        businessName: members[me].businessName || u.nickname || '테스트상점',
+        status: members[me].sellerStatus || 'ACTIVE',
       })
     }
     if ((x = r('POST', /^\/admin\/seller-applications\/(\d+)\/approve$/))) {

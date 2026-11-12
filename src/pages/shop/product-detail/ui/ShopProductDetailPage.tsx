@@ -19,7 +19,6 @@ import {
   ProductSpecs,
   useCategoriesQuery,
   useProductQuery,
-  WearPreview,
 } from '@/entities/product'
 import {
   GARMENT_PART_SPEC,
@@ -28,6 +27,7 @@ import {
   useCompanionProductsQuery,
   useReferenceGarmentsQuery,
   useSizeRecommendationQuery,
+  WearPreview,
 } from '@/entities/recommendation'
 import { useFavoritedIdsQuery, useFavoriteSummaryQuery } from '@/entities/favorite'
 import { useSessionStore } from '@/entities/session'
@@ -122,13 +122,14 @@ export function ShopProductDetailPage() {
             }
           }
           preview={
-            <WearPreview
-              specs={detail.sizeSpecs}
-              categoryName={detail.categoryName}
-              child={pickedChild}
-              initialSize={recommendation.data.recommendedSize}
-              isCompact
-            />
+            recommendation.data.wearPreview && (
+              <WearPreview
+                preview={recommendation.data.wearPreview}
+                child={pickedChild}
+                initialSize={recommendation.data.recommendedSize}
+                isCompact
+              />
+            )
           }
         />
       )}

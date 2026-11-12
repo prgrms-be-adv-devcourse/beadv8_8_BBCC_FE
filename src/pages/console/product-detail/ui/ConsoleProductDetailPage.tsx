@@ -17,7 +17,6 @@ import {
   type OptionPicks,
   ProductSpecs,
   useProductQuery,
-  WearPreview,
 } from '@/entities/product'
 import {
   type RecommendedPicks,
@@ -25,6 +24,7 @@ import {
   sizeRangesOf,
   useCompanionProductsQuery,
   useSizeRecommendationQuery,
+  WearPreview,
 } from '@/entities/recommendation'
 import { useSessionStore } from '@/entities/session'
 import { AddToCartButton } from '@/features/add-to-cart'
@@ -91,12 +91,11 @@ export function ConsoleProductDetailPage() {
             child={pickedChild}
           />
         )}
-        {pickedChild && (
+        {pickedChild && recommendation.data?.wearPreview && (
           <WearPreview
-            specs={detail.sizeSpecs}
-            categoryName={detail.categoryName}
+            preview={recommendation.data.wearPreview}
             child={pickedChild}
-            initialSize={recommendation.data?.recommendedSize}
+            initialSize={recommendation.data.recommendedSize}
           />
         )}
       </Card>
