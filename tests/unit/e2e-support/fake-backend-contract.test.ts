@@ -1024,6 +1024,27 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       { type: 'CHARGE', amount: 50000, refId: 77 },
     ])
   })
+
+  it('결제 · 예치금 목록은 요청한 page · size로 나눈다 (BE PageResponse)', async () => {
+    for (const [path, as] of [
+      ['/payments', 1],
+      ['/admin/payments', 3],
+      ['/wallets/me/charges', 1],
+      ['/wallets/me/ledgers', 1],
+    ] as const) {
+      const all = (await call('GET', `${path}?size=100`, as)).data
+      expect(all.totalElements, path).toBeGreaterThan(0)
+      const second = (await call('GET', `${path}?page=1&size=1`, as)).data
+      expect(second, path).toMatchObject({
+        page: 1,
+        size: 1,
+        totalElements: all.totalElements,
+        totalPages: all.totalElements,
+        hasNext: all.totalElements > 2,
+      })
+      expect(second.content, path).toEqual(all.content.slice(1, 2))
+    }
+  })
 })
 
 describe('상품 이미지 업로드 주소 발급 (BE SellerProductImageController)', () => {
