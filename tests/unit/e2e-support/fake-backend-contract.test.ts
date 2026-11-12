@@ -127,6 +127,7 @@ import {
 } from '@/entities/review/api/review.shape'
 import { favoriteListShape, favoriteSummaryShape } from '@/entities/favorite/api/favorite.shape'
 import { adminReviewListShape } from '@/entities/review/api/admin-review.shape'
+import { deliveryTrackingShape } from '@/entities/order/api/delivery-tracking.shape'
 import { reviewVisibilityShape } from '@/features/moderate-review'
 import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
@@ -588,6 +589,13 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const delivered = await call('POST', `/seller/orders/${sellerOrderId}/deliver`, 2)
     expectContract(delivered.data, deliveryShape)
     expect(delivered.data.status).toBe('DELIVERED')
+    // 배송 조회 (BE #1320): 구매자만, 최신이 먼저
+    const trackingPath = `/orders/${orderId}/deliveries/${sellerOrderId}/tracking`
+    const tracking = await call('GET', trackingPath, 1)
+    expectContract(tracking.data, deliveryTrackingShape)
+    expect(tracking.data).toMatchObject({ carrier: 'CJ', trackingNumber: '1234' })
+    expect(tracking.data.events[0].status).toBe('DELIVERED')
+    expect((await call('GET', trackingPath, 2)).status).toBe(404)
     expectContract((await call('GET', '/seller/orders', 2)).data, sellerOrderPageShape)
 
     const itemId = order.data.items[0].orderItemId

@@ -14,6 +14,7 @@ import {
   paymentDeadline,
   paymentDeadlineLabel,
 } from '@/entities/order'
+import { useChildrenQuery } from '@/entities/child'
 import { reviewActionOf, useMyReviewsQuery, useReviewableItemsQuery } from '@/entities/review'
 import { CancelOrderButton } from '@/features/cancel-order'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
@@ -35,6 +36,9 @@ export function ShopOrderDetailPage() {
   const hasConfirmed = query.data?.items.some((item) => item.status === 'CONFIRMED') ?? false
   const reviewable = useReviewableItemsQuery({ enabled: hasConfirmed })
   const myReviews = useMyReviewsQuery({ enabled: hasConfirmed })
+  // 주문에 입을 아이 이름이 비어 있을 때만 내 자녀 목록에서 이름을 찾는다
+  const hasNamelessChild = query.data?.items.some((item) => item.child && !item.child.name) ?? false
+  const children = useChildrenQuery({ enabled: hasNamelessChild })
 
   if (query.isPending) return <ListSkeleton rows={4} />
   if (query.isError) return <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>
@@ -45,6 +49,9 @@ export function ShopOrderDetailPage() {
   const reviewableIds = new Set(reviewable.data?.map((item) => item.orderItemId))
   const reviewedIds = new Set(myReviews.data?.map((review) => review.orderItemId))
   const isReviewStateReady = reviewable.isSuccess && myReviews.isSuccess
+  const childNames = Object.fromEntries(
+    (children.data ?? []).map((child) => [child.id, child.name]),
+  )
   const recheckReviews = () => void Promise.all([reviewable.refetch(), myReviews.refetch()])
   const expired = order.status === 'CANCELLED' && order.cancelReason === 'PAYMENT_EXPIRED'
   // 제목: 지금 단계 (취소면 「주문 취소」, 결제 전이면 「결제 처리 중」)
@@ -158,7 +165,9 @@ export function ShopOrderDetailPage() {
             {orderSellerGroups(order).map((group) => (
               <OrderSellerBlock
                 key={group.sellerId}
+                orderId={order.id}
                 group={group}
+                childNames={childNames}
                 isCancelled={order.status === 'CANCELLED'}
                 action={(item) => {
                   const reviewAction = isReviewStateReady
