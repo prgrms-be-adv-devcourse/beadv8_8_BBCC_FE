@@ -44,7 +44,10 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/(seller|admin)\/settlement/, 'settlement'],
   // 알림함 (자녀 알림함 /child/notifications 포함, 회원 규칙보다 먼저)
   [/^\/(child\/)?notifications(\/|$)/, 'notification'],
-  [/^\/(auth|members|children|child\/|dev|admin\/(members|seller|sellers)|seller\/me)/, 'member'],
+  [
+    /^\/(auth|members|children|child\/|dev|admin\/(members|seller|sellers|admins)|seller\/me)/,
+    'member',
+  ],
   // 회원 서비스의 처리 실패 메시지 (인증 · 회원 · 판매자 · 자녀 프로필 모듈)
   [/^\/admin\/(auth|member|seller|child-profile)-dead-letters/, 'member'],
 ]

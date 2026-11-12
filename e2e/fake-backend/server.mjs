@@ -483,6 +483,8 @@ const ADMIN = {
 const adminCookie = (value, maxAge = 1209600) =>
   `admin_refresh_token=${value}; Path=/api/v1/auth/admin; Max-Age=${maxAge}; HttpOnly; SameSite=Lax`
 const isAdmin = (u) => String(u.sub).startsWith('admin:')
+/** 관리자 추가로 만든 계정 (BE AdminResponse). 로그인은 기본 계정(ADMIN)만 된다 */
+const createdAdmins = []
 function who(req) {
   const t = (req.headers.authorization || '').split(' ')[1]
   if (!t) return null
@@ -2695,6 +2697,36 @@ http
         })
       }
       return send(res, 200, deadLetterOf(d))
+    }
+    // 관리자 추가 (BE AdminAccountController · AdminPassword). 이메일이 겹치면 DB 유니크 충돌이라 공통 CONFLICT(409)
+    if (r('POST', /^\/admin\/admins$/)) {
+      const email = String(body?.email ?? '')
+        .trim()
+        .toLowerCase()
+      const password = String(body?.password ?? '')
+      if (!/^[^@\s]+@[^@\s]+$/.test(email) || !password)
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      if (password.length < 12)
+        return problem(
+          res,
+          400,
+          '관리자 비밀번호가 올바르지 않습니다',
+          '관리자 비밀번호는 12자 이상이어야 합니다',
+          req.url,
+        )
+      if (Buffer.byteLength(password, 'utf8') > 72)
+        return problem(
+          res,
+          400,
+          '관리자 비밀번호가 올바르지 않습니다',
+          '관리자 비밀번호는 UTF-8 72바이트 이하여야 합니다',
+          req.url,
+        )
+      if (email === ADMIN.email || createdAdmins.some((a) => a.email === email))
+        return problem(res, 409, '다른 요청과 겹쳤습니다', '잠시 후 다시 시도해 주세요.', req.url)
+      const admin = { id: createdAdmins.length + 2, email, status: 'ACTIVE', createdAt: now() }
+      createdAdmins.push(admin)
+      return send(res, 201, admin, { location: `/api/v1/admin/admins/${admin.id}` })
     }
     if (r('GET', /^\/admin\/members$/)) {
       const filter = url.searchParams.get('filter') || 'ALL'
