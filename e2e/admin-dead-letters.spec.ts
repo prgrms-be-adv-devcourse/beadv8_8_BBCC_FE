@@ -100,3 +100,49 @@ test('커뮤니티 처리 실패 메시지도 같은 화면에서 보고 재처�
   await state.getByRole('button', { name: '재처리' }).click()
   await expect(state.getByRole('status')).toHaveText('재처리했어요.')
 })
+
+test('주문 처리 실패 메시지: 결제 표시 → 상세 재처리 · 메모 남기고 확인 후 종료', async ({
+  page,
+  request,
+}) => {
+  const create = async (failOnReplay: boolean) =>
+    (
+      (await (
+        await request.post('http://localhost:18080/api/v1/__fake/order-dead-letters', {
+          data: { failOnReplay },
+        })
+      ).json()) as { deadLetterId: string }
+    ).deadLetterId
+  const fixableId = await create(false)
+  const brokenId = await create(true)
+  await acceptConfirms(page)
+  await signInAdmin(page)
+  await page.goto('/admin/dead-letters')
+  await page.getByRole('tab', { name: '주문' }).click()
+  await expect(page).toHaveURL(/module=order/)
+  const table = page.getByRole('table', { name: '주문 처리 실패 메시지' })
+  const row = table.getByRole('row').filter({ hasText: `메시지 ${fixableId}` })
+  await expect(row).toContainText('결제')
+  await expect(row).toContainText('처리 실패')
+
+  await row.getByRole('link', { name: `메시지 ${fixableId}`, exact: true }).click()
+  await expect(page).toHaveURL(new RegExp(`/admin/dead-letters/order/${fixableId}$`))
+  const state = page.getByRole('region', { name: '처리 상태' })
+  await expect(state).toContainText('권장 조치')
+  await state.getByRole('button', { name: '재처리' }).click()
+  await expect(state.getByRole('status')).toHaveText('재처리했어요.')
+  await expect(state.getByRole('heading', { name: '재처리 완료' })).toBeVisible()
+  await expect(state.getByRole('button', { name: '확인 후 종료' })).toHaveCount(0)
+
+  await page.goto(`/admin/dead-letters/order/${brokenId}`)
+  const brokenState = page.getByRole('region', { name: '처리 상태' })
+  await brokenState.getByRole('button', { name: '확인 후 종료' }).click()
+  await expect(brokenState.getByText('확인한 내용이나 종료 이유를 적어 주세요.')).toBeVisible()
+  await brokenState.getByLabel('확인 후 종료 메모').fill('결제 반영을 확인했어요')
+  await brokenState.getByRole('button', { name: '확인 후 종료' }).click()
+  await expect(brokenState.getByRole('status')).toHaveText('확인 후 종료했어요.')
+  await expect(brokenState.getByRole('heading', { name: '확인 후 종료' })).toBeVisible()
+  await expect(page.getByRole('region', { name: '처리 기록' })).toContainText(
+    '결제 반영을 확인했어요',
+  )
+})

@@ -608,6 +608,83 @@ function addDeadLetter(module, patch = {}) {
   return d
 }
 const deadLetterOf = ({ module: _m, failOnReplay: _f, ...d }) => d
+// 주문 처리 실패 메시지 (BE AdminOrderDeadLetterController #601): 칸 · 상태(CLOSED 있음)가 회원 서비스 모듈과 다르다
+const orderDeadLetters = []
+function addOrderDeadLetter(patch = {}) {
+  const deadLetterId = String(deadLetterSeq++)
+  const d = {
+    failOnReplay: false,
+    deadLetterId,
+    sourceTopic: 'kidly.payment.events',
+    sourcePartition: 0,
+    sourceOffset: Number(deadLetterId) * 10,
+    messageKey: '1',
+    eventType: 'payment.completed',
+    eventId: `00000000-0000-4000-9000-${deadLetterId.padStart(12, '0')}`,
+    payload: '{"eventType":"payment.completed","orderId":1}',
+    producer: 'payment',
+    occurredAt: now(),
+    aggregateId: '1',
+    correlationId: null,
+    orderId: '1',
+    orderStatus: 'PENDING_PAYMENT',
+    failureType: 'PROCESS_FAILED',
+    exceptionClass: 'java.lang.IllegalStateException',
+    exceptionMessage: '처리 중 오류',
+    stackTraceHead:
+      'java.lang.IllegalStateException: 처리 중 오류\n\tat com.bbcc.kidly.Order.pay(Order.java:1)',
+    firstReceivedAt: now(),
+    lastReceivedAt: now(),
+    receivedCount: 1,
+    status: 'OPEN',
+    handledBy: null,
+    handledAt: null,
+    memo: null,
+    reprocessCount: 0,
+    lastReprocessedAt: null,
+    lastReprocessResult: null,
+    recommendedAction: '원인을 고친 뒤 재처리하세요. 결제가 이미 반영됐다면 확인 후 종료하세요.',
+    paymentEvent: true,
+    ...patch,
+  }
+  orderDeadLetters.push(d)
+  return d
+}
+const orderDeadLetterOf = ({ failOnReplay: _f, ...d }) => d
+const orderDeadLetterNotFound = (res, req) =>
+  problem(
+    res,
+    404,
+    'DLT 메시지를 찾을 수 없습니다',
+    '없는 DLT 메시지입니다. DLT 메시지 목록을 새로고침해 주세요.',
+    req.url,
+  )
+const orderDeadLetterSummaryOf = (d) => ({
+  deadLetterId: d.deadLetterId,
+  lastReceivedAt: d.lastReceivedAt,
+  failureType: d.failureType,
+  eventType: d.eventType,
+  orderId: d.orderId,
+  receivedCount: d.receivedCount,
+  status: d.status,
+  paymentEvent: d.paymentEvent,
+})
+// 시드: 결제 이벤트 처리 대기 1건, 재고 이벤트 읽기 실패 1건(관련 주문 없음)
+addOrderDeadLetter()
+addOrderDeadLetter({
+  sourceTopic: 'kidly.product.events',
+  eventType: null,
+  eventId: null,
+  payload: 'not-json',
+  producer: null,
+  aggregateId: null,
+  orderId: null,
+  orderStatus: null,
+  failureType: 'READ_FAILED',
+  exceptionClass: 'org.springframework.kafka.support.serializer.DeserializationException',
+  recommendedAction: '본문을 읽지 못했어요. 보낸 쪽 형식을 확인하세요.',
+  paymentEvent: false,
+})
 // 주소의 모듈 칸 → 모듈 (회원 서비스는 /admin/{모듈}-dead-letters, 커뮤니티는 /admin/community/dead-letters · BE #962 같은 칸)
 const dltModule = (segment) => segment.slice(0, -1)
 // 커뮤니티: 구매확정 이벤트를 리뷰 작성 가능으로 옮기지 못한 1건
@@ -660,6 +737,11 @@ http
     }
     // POST /__fake/dead-letters { module, failOnReplay } — 처리 실패 메시지 하나 만들기 (가짜 백엔드 전용).
     // 재처리하면 상태가 바뀌므로 E2E는 실행마다 새 메시지를 만든다
+    // POST /__fake/order-dead-letters { failOnReplay } — 주문 처리 실패 메시지 하나 만들기 (가짜 백엔드 전용)
+    if (r('POST', /^\/__fake\/order-dead-letters$/)) {
+      const d = addOrderDeadLetter({ failOnReplay: Boolean(body.failOnReplay) })
+      return send(res, 201, orderDeadLetterOf(d))
+    }
     if (r('POST', /^\/__fake\/dead-letters$/)) {
       const d = addDeadLetter(body.module, { failOnReplay: Boolean(body.failOnReplay) })
       return send(res, 201, deadLetterOf(d))
@@ -1577,6 +1659,84 @@ http
           req.url,
         )
       return send(res, 200, page(kind === 'SHIPPING_DELAYED' ? shippingDelayed() : []))
+    }
+    // BE OrderDeadLetterService (#601): 기본 OPEN, 결제 토픽이 먼저 · 그 안은 최근 받은 것부터
+    if (r('GET', /^\/admin\/orders\/dead-letters$/)) {
+      const status = url.searchParams.get('status') ?? 'OPEN'
+      if (!['OPEN', 'REPROCESSED', 'CLOSED'].includes(status))
+        return problem(
+          res,
+          400,
+          '지원하지 않는 DLT 메시지 상태입니다',
+          '상태는 OPEN · REPROCESSED · CLOSED 중 하나로 보내 주세요.',
+          req.url,
+        )
+      const rows = orderDeadLetters
+        .filter((d) => d.status === status)
+        .sort(
+          (a, b) =>
+            Number(b.paymentEvent) - Number(a.paymentEvent) ||
+            Number(b.deadLetterId) - Number(a.deadLetterId),
+        )
+        .map(orderDeadLetterSummaryOf)
+      return send(res, 200, pageFrom(rows, url.searchParams))
+    }
+    if ((x = r('GET', /^\/admin\/orders\/dead-letters\/(\d+)$/))) {
+      const d = orderDeadLetters.find((d) => d.deadLetterId === x[1])
+      return d ? send(res, 200, orderDeadLetterOf(d)) : orderDeadLetterNotFound(res, req)
+    }
+    if ((x = r('POST', /^\/admin\/orders\/dead-letters\/(\d+)\/reprocess$/))) {
+      const d = orderDeadLetters.find((d) => d.deadLetterId === x[1])
+      if (!d) return orderDeadLetterNotFound(res, req)
+      if (d.status === 'CLOSED')
+        return problem(
+          res,
+          409,
+          '이미 종료된 DLT 메시지입니다',
+          '확인 후 종료된 메시지라 재처리할 수 없습니다. DLT 메시지 목록을 새로고침해 주세요.',
+          req.url,
+        )
+      if (d.status === 'OPEN') {
+        const adminId = String(u.sub).slice('admin:'.length)
+        Object.assign(d, {
+          reprocessCount: d.reprocessCount + 1,
+          lastReprocessedAt: now(),
+          lastReprocessResult: d.failOnReplay ? 'IllegalStateException' : null,
+          ...(d.failOnReplay
+            ? {}
+            : {
+                status: 'REPROCESSED',
+                handledBy: adminId,
+                handledAt: now(),
+                recommendedAction: null,
+              }),
+        })
+      }
+      return send(res, 200, orderDeadLetterOf(d))
+    }
+    if ((x = r('POST', /^\/admin\/orders\/dead-letters\/(\d+)\/close$/))) {
+      const d = orderDeadLetters.find((d) => d.deadLetterId === x[1])
+      if (!d) return orderDeadLetterNotFound(res, req)
+      const memo = typeof body?.memo === 'string' ? body.memo : ''
+      if (memo.trim() === '' || memo.length > 500)
+        return problem(res, 400, '잘못된 요청입니다', 'memo: 1~500자로 입력해 주세요.', req.url)
+      if (d.status === 'REPROCESSED')
+        return problem(
+          res,
+          409,
+          '이미 재처리된 DLT 메시지입니다',
+          '재처리로 처리를 마친 메시지라 종료할 수 없습니다. DLT 메시지 목록을 새로고침해 주세요.',
+          req.url,
+        )
+      if (d.status === 'OPEN')
+        Object.assign(d, {
+          status: 'CLOSED',
+          handledBy: String(u.sub).slice('admin:'.length),
+          handledAt: now(),
+          memo,
+          recommendedAction: null,
+        })
+      return send(res, 200, orderDeadLetterOf(d))
     }
     // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
     if (r('GET', /^\/admin\/orders$/)) {
