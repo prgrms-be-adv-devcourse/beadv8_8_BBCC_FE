@@ -70,7 +70,6 @@ describe('getEventStream: 공통 클라이언트로 text/event-stream 받기', (
       method: 'GET',
       path: PATH,
       status: 200,
-      mock: true,
       responseBody: { events: ['rule', 'ai'], data: { source: 'AI', note: 7 } },
     })
   })

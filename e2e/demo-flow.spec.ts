@@ -271,16 +271,14 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByRole('button', { name: /^계약 0/ })).toBeVisible()
   })
 
-  await test.step('회원 목 없이 상호명은 실제 서버에 저장', async () => {
-    await page.getByRole('button', { name: '목 설정' }).click()
-    await expect(page.locator('label', { hasText: '회원 보완' })).toHaveCount(0)
+  await test.step('상호명은 실제 서버에 저장', async () => {
     await switchRole(page, '판매자')
     await page.goto('/center')
     await page.getByRole('main').getByRole('link', { name: '상점 정보' }).click()
     await page.getByRole('button', { name: '상호명 수정' }).click()
-    await page.getByRole('textbox', { name: '상호명' }).fill('목 끈 상점')
+    await page.getByRole('textbox', { name: '상호명' }).fill('새 상호 상점')
     await page.getByRole('button', { name: '상호명 저장' }).click()
-    await expect(page.getByRole('main').getByText('목 끈 상점')).toBeVisible()
+    await expect(page.getByRole('main').getByText('새 상호 상점')).toBeVisible()
     await page.getByRole('button', { name: /^API 흐름 \d+/ }).click()
     await expect(page.getByRole('region', { name: '방금 호출' })).toContainText('200')
   })

@@ -15,9 +15,8 @@ import { ContractList } from './ContractList'
 import { EventFlowDiagram } from './EventFlowDiagram'
 import { CallDetail } from './CallDetail'
 import { LatestCallCard } from './LatestCallCard'
-import { MockSettings } from './MockSettings'
 
-type Tab = 'calls' | 'changes' | 'contract' | 'mock'
+type Tab = 'calls' | 'changes' | 'contract'
 
 type ApiFlowPanelProps = {
   /** 쇼핑 화면 흐름 서랍 안: 폭 버튼 없이 위아래로만 */
@@ -145,9 +144,6 @@ export function ApiFlowPanel({ inDrawer = false }: ApiFlowPanelProps) {
             ` (+추가 ${contractLogs.length - contractErrorCount})`}
         </span>
       </TabButton>
-      <TabButton active={tab === 'mock'} onClick={() => setTab('mock')}>
-        목 설정
-      </TabButton>
       <div className="ml-auto flex gap-1">
         <Button
           size="xs"
@@ -174,7 +170,6 @@ export function ApiFlowPanel({ inDrawer = false }: ApiFlowPanelProps) {
       )}
       {tab === 'changes' && <ChangeList changes={changes} />}
       {tab === 'contract' && <ContractList logs={contractLogs} />}
-      {tab === 'mock' && <MockSettings />}
     </div>
   )
 
