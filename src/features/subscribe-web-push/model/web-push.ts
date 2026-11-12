@@ -44,7 +44,7 @@ function listenRegistered(push: PushClient) {
     const isChanged = currentFid !== null && currentFid !== fid
     currentFid = fid
     if (isChanged && useSessionStore.getState().accessToken) {
-      void pushTokenApi.register(fid).catch(() => undefined)
+      void runWithAction('알림 기기 등록', () => pushTokenApi.register(fid)).catch(() => undefined)
     }
   })
 }
@@ -68,7 +68,8 @@ export async function enableWebPush(): Promise<PushPermission> {
 /** 로그아웃 직전: 이 기기를 서버에서 지운다. 실패해도 로그아웃은 이어 간다 */
 export async function unregisterWebPush(): Promise<void> {
   if (!currentFid) return
-  await pushTokenApi.remove(currentFid).catch(() => undefined)
+  const fid = currentFid
+  await runWithAction('알림 기기 해제', () => pushTokenApi.remove(fid)).catch(() => undefined)
 }
 
 /**
