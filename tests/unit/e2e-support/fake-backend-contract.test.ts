@@ -700,10 +700,16 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('POST', '/auth/admin/logout', null)).status).toBe(204)
   })
 
-  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962, 네 모듈 같은 칸)', async () => {
-    for (const module of ['auth', 'member', 'seller', 'child-profile']) {
+  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티, 같은 칸)', async () => {
+    for (const base of [
+      'auth-dead-letters',
+      'member-dead-letters',
+      'seller-dead-letters',
+      'child-profile-dead-letters',
+      'community/dead-letters',
+    ]) {
       for (const status of ['OPEN', 'REPROCESSED']) {
-        const list = await call('GET', `/admin/${module}-dead-letters?status=${status}`, 3)
+        const list = await call('GET', `/admin/${base}?status=${status}`, 3)
         expect(list.status).toBe(200)
         expectContract(list.data, deadLetterPageShape)
       }

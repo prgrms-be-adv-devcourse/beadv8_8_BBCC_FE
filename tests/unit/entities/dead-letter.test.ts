@@ -155,6 +155,7 @@ describe('exceptionShortName: 예외 클래스 이름에서 패키지를 뗀다 
 describe('주소의 검색 값 → 목록 조건 (모르는 값은 기본값)', () => {
   it('모듈: 아는 키만, 없으면 인증', () => {
     expect(deadLetterModuleOf('child-profile')).toBe('child-profile')
+    expect(deadLetterModuleOf('community')).toBe('community')
     expect(deadLetterModuleOf(null)).toBe('auth')
     expect(deadLetterModuleOf('payment')).toBe('auth')
     expect(deadLetterModuleOf('toString')).toBe('auth')
