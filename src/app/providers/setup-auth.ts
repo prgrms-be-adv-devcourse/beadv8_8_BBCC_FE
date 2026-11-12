@@ -1,4 +1,10 @@
-import { useAdminSessionStore, useChildSessionStore, useSessionStore } from '@/entities/session'
+import {
+  configureSignOut,
+  useAdminSessionStore,
+  useChildSessionStore,
+  useSessionStore,
+} from '@/entities/session'
+import { unregisterWebPush } from '@/features/subscribe-web-push'
 import { configureAuth } from '@/shared/api'
 import { queryClient } from './query-client'
 
@@ -14,6 +20,8 @@ export function setupAuth() {
       if (hadSession) queryClient.clear()
     },
   })
+  // 회원 로그아웃 직전에 이 기기의 웹 푸시 등록을 서버에서 지운다
+  configureSignOut(unregisterWebPush)
   configureAuth('child', {
     getAccessToken: () => useChildSessionStore.getState().accessToken,
     onTokenReissued: (accessToken) => useChildSessionStore.getState().setAccessToken(accessToken),

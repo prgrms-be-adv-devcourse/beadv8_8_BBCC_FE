@@ -37,8 +37,17 @@ export async function issueDemoToken(account: DemoAccount): Promise<string> {
   return accessToken
 }
 
+let beforeSignOut: () => Promise<void> = () => Promise.resolve()
+
+/** 로그아웃 직전에 할 일 (app에서 연결: 웹 푸시 기기 해제). 아직 로그인한 토큰으로 부른다 */
+export function configureSignOut(task: () => Promise<void>) {
+  beforeSignOut = task
+}
+
 /** 서버의 Refresh Token을 폐기하고 화면의 로그인 상태를 지운다 (Access Token은 만료까지 서버에서 유효) */
 export async function signOut() {
+  // 실패해도 로그아웃은 막지 않는다
+  await beforeSignOut().catch(() => undefined)
   try {
     await sessionApi.logout()
   } finally {
