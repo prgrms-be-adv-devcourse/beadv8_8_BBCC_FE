@@ -344,6 +344,14 @@ export const router = createBrowserRouter(
         { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
         { path: rel(paths.admin.home, paths.admin.orderOps), ...adminOrderOps },
         { path: rel(paths.admin.home, paths.admin.deadLetters), ...adminDeadLetters },
+        {
+          path: rel(paths.admin.home, paths.admin.reviews),
+          ...page(() =>
+            import('@/pages/admin/community-reviews').then((m) => ({
+              Component: m.AdminCommunityReviewsPage,
+            })),
+          ),
+        },
         { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
         { path: 'dead-letters/:module/:deadLetterId', ...adminDeadLetterDetail },
         // 상품 기준 데이터: 종류마다 목록 · 만들기 (관리자에만 있다)

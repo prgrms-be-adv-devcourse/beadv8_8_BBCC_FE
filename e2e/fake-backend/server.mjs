@@ -28,7 +28,7 @@ import {
   referenceGarmentRoute,
 } from './reference-garments.mjs'
 import { memberFavoriteRoute, publicFavoriteRoute } from './favorites.mjs'
-import { memberReviewRoute, publicReviewRoute } from './reviews.mjs'
+import { adminReviewRoute, memberReviewRoute, publicReviewRoute } from './reviews.mjs'
 import { notificationRoute } from './notifications.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
@@ -742,6 +742,9 @@ http
     // BE #755 Gateway: 관리자 API는 관리자 토큰만, 회원 토큰은 ADMIN 역할이 있어도 403
     if (p.startsWith('/admin/') && !isAdmin(u))
       return problem(res, 403, '권한이 없습니다', '관리자만 할 수 있습니다.', req.url)
+    // 관리자 리뷰 검사 (reviews.mjs)
+    const adminReview = adminReviewRoute(m, p, url.searchParams, body)
+    if (adminReview) return reviewResult(res, adminReview, req.url)
     const isChild = String(u.sub).startsWith('child:')
     if (p.startsWith('/child/')) {
       if (!isChild) return problem(res, 403, '권한이 없습니다', '자녀만 볼 수 있습니다.', req.url)
