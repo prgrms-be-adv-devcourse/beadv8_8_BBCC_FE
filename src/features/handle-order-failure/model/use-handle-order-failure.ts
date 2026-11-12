@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { orderOpsKeys } from '@/entities/order-operation'
-import { runWithAction } from '@/shared/api'
+import { getErrorMessage, runWithAction } from '@/shared/api'
 import { toast } from '@/shared/lib'
 import { handleOrderFailureApi } from '../api/handle-order-failure-api'
 
@@ -33,7 +33,11 @@ export function useHandleOrderFailure(action: OrderFailureAction, id: string) {
       toast(DONE_TOAST[action])
       return refresh()
     },
-    onError: () => refresh(),
+    // 실패 뒤 다시 받은 목록에서 그 줄이 빠질 수 있어(이미 처리됨 등) detail을 알림으로도 띄운다
+    onError: (error) => {
+      toast(getErrorMessage(error), { tone: 'error' })
+      return refresh()
+    },
   })
   return { run: () => mutation.mutate(), pending: mutation.isPending, error: mutation.error }
 }
