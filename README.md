@@ -13,6 +13,7 @@
    | `VITE_API_BASE_URL`                                | 백엔드 주소 (기본 `http://localhost:8080`)                                                                           |
    | `VITE_TOSS_CLIENT_KEY`                             | 토스페이먼츠 테스트 클라이언트 키 (결제 담당)                                                                        |
    | `VITE_KAKAO_CLIENT_ID` · `VITE_KAKAO_REDIRECT_URI` | 카카오 로그인 (백엔드 설정과 같아야 함)                                                                              |
+   | `VITE_FIREBASE_*` (6개)                            | Firebase 웹 앱 설정 · VAPID 공개 키 (웹 푸시, 비우면 끔)                                                             |
    | `VITE_USE_MOCK` · `VITE_DEMO_ROLE_SWITCH`          | 시연 데이터(쇼핑 목록 예시 사진) · 시연 기능(역할 전환 · 시연 콘솔 · API 흐름)을 켜고 끈다 (`false`면 끔, 없으면 켬) |
 
 3. `npm ci` → `npm run dev` → http://localhost:5173

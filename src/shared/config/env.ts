@@ -16,6 +16,15 @@ export const env = {
   tossClientKey: import.meta.env.VITE_TOSS_CLIENT_KEY ?? '',
   /** Clarity 프로젝트 ID. 비어 있으면 행동 분석 스크립트를 넣지 않는다 (운영 배포에만 넣는다) */
   clarityProjectId: import.meta.env.VITE_CLARITY_PROJECT_ID ?? '',
+  /** Firebase 웹 앱 설정 · VAPID 공개 키 (웹 푸시). 하나라도 비어 있으면 웹 푸시를 모두 끈다 */
+  firebase: {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? '',
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? '',
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ?? '',
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '',
+    appId: import.meta.env.VITE_FIREBASE_APP_ID ?? '',
+    vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY ?? '',
+  },
   kakaoClientId: import.meta.env.VITE_KAKAO_CLIENT_ID ?? '',
   kakaoRedirectUri:
     import.meta.env.VITE_KAKAO_REDIRECT_URI || `${window.location.origin}/oauth/kakao/callback`,

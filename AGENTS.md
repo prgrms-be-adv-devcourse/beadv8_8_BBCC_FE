@@ -138,6 +138,7 @@ React 커뮤니티에서 가장 흔한 관례(컴포넌트 PascalCase · 그 밖
 - 쇼핑 머리말 · 영역 레이아웃은 API를 부르지 않는다 (흐름 기록에 화면 동작만 남기려고).
   - 예외(사용자 승인): 쇼핑 · 자녀 레이아웃은 로그인한 보호자 · 자녀의 안 읽은 알림 수만 받는다 (머리말 배지용). 알림 SSE(`/notifications/stream`)로 받고, 끊겼거나 열리지 않으면 60초마다 조회한다.
   - 예외(사용자 승인, #386): 마이페이지 메뉴는 「받은 조르기」 답을 기다리는 건수만 조회한다 (메뉴 배지용).
+- 웹 푸시(사용자 승인): 알림 권한은 회원 알림함의 「알림 받기」를 눌렀을 때만 묻는다. 권한이 허용된 채 회원이 로그인하면 앱(`AppProviders`)이 FID 등록(`PUT /notifications/push-tokens`)을 갱신하고, 로그아웃 직전에 지운다(`DELETE`, 실패해도 로그아웃은 이어 감). 자녀 화면에는 붙이지 않는다. `VITE_FIREBASE_*`가 하나라도 비면 모두 끈다.
 - FSD 구조는 Steiger(`npm run lint:fsd`, 설정 `steiger.config.ts`)로 검사한다: 레이어 방향 · 같은 레이어 import · 공개 API 우회 · 슬라이스 이름 등. 구조와 무관한 스타일 제안 3개(`insignificant-slice` · `excessive-slicing` · `segments-by-purpose`)만 끈다. 다른 규칙을 끄는 것은 승인 필요.
 
 ## 3. API 규칙
