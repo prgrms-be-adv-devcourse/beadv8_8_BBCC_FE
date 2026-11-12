@@ -40,6 +40,19 @@ async function switchRole(page: Page, role: keyof typeof NICKNAME) {
   await expect(page.getByText(NICKNAME[role])).toBeVisible()
 }
 
+test('판매자 상호명 수정은 새로고침 뒤에도 유지된다', async ({ page }) => {
+  await page.goto('/center')
+  await switchRole(page, '판매자')
+  await page.goto('/center/store')
+  await page.getByRole('button', { name: '상호명 수정' }).click()
+  const name = `새 상호명 ${Date.now()}`
+  await page.getByRole('textbox', { name: '상호명' }).fill(name)
+  await page.getByRole('button', { name: '상호명 저장' }).click()
+  await expect(page.getByRole('region', { name: '상점' })).toContainText(name)
+  await page.reload()
+  await expect(page.getByRole('region', { name: '상점' })).toContainText(name)
+})
+
 test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확정', async ({ page }) => {
   const pageErrors: string[] = []
   const warnings: string[] = []

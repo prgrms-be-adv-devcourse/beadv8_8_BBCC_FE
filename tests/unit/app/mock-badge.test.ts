@@ -3,18 +3,32 @@ import { isMockActive, registerMockHandlers } from '@/shared/api'
 
 describe('목 배지 출처 isMockActive (mock-endpoints · 도메인 켜짐)', () => {
   registerMockHandlers('배지 테스트', [
-    { method: 'PATCH', path: '/seller/me', handle: () => ({ status: 200 }) },
+    {
+      method: 'PATCH',
+      path: '/children/:childId/growth-records/:recordId',
+      handle: () => ({ status: 200 }),
+    },
     // 목록에 없는 경로는 등록하지 않는다
     { method: 'GET', path: '/없는-경로', handle: () => ({ status: 200 }) },
   ])
   it('목록에서 목이고 도메인이 켜져 있으면 true', () => {
-    expect(isMockActive('PATCH', '/seller/me', { '배지 테스트': true })).toBe(true)
+    expect(
+      isMockActive('PATCH', '/children/:childId/growth-records/:recordId', { '배지 테스트': true }),
+    ).toBe(true)
   })
   it('도메인을 끄면 false (흐름 패널)', () => {
-    expect(isMockActive('PATCH', '/seller/me', { '배지 테스트': false })).toBe(false)
+    expect(
+      isMockActive('PATCH', '/children/:childId/growth-records/:recordId', {
+        '배지 테스트': false,
+      }),
+    ).toBe(false)
   })
   it('목록에 없거나 메서드가 다르면 false', () => {
     expect(isMockActive('GET', '/없는-경로', { '배지 테스트': true })).toBe(false)
-    expect(isMockActive('DELETE', '/seller/me', { '배지 테스트': true })).toBe(false)
+    expect(
+      isMockActive('DELETE', '/children/:childId/growth-records/:recordId', {
+        '배지 테스트': true,
+      }),
+    ).toBe(false)
   })
 })

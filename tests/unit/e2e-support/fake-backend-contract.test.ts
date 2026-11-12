@@ -494,6 +494,14 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       size: 1,
     })
     expectContract((await call('GET', '/seller/me', 2)).data, sellerShape)
+    const updated = await call('PATCH', '/seller/me', 2, { businessName: '새 상호명' })
+    expect(updated.status).toBe(200)
+    expectContract(updated.data, sellerShape)
+    expect((await call('GET', '/seller/me', 2)).data.businessName).toBe('새 상호명')
+    expect((await call('PATCH', '/seller/me', 2, { businessName: '   ' })).status).toBe(400)
+    expect((await call('PATCH', '/seller/me', 2, { businessName: '가'.repeat(51) })).status).toBe(
+      400,
+    )
   })
 
   it('장바구니 → 주문 → 결제 완료 → 발송 · 배송 완료 → 구매확정', async () => {

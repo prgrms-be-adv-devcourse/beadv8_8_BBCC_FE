@@ -2953,13 +2953,22 @@ http
       Object.assign(a, { status: 'REJECTED', rejectReason: body.reason, decidedAt: now() })
       return send(res, 200, appSummaryOf(a))
     }
-    if (r('GET', /^\/seller\/me$/)) {
+    if (r('GET', /^\/seller\/me$/) || r('PATCH', /^\/seller\/me$/)) {
       if (!(u.roles || []).includes('SELLER'))
         return problem(res, 403, '권한이 없습니다', '판매자만 볼 수 있습니다.', req.url)
+      if (m === 'PATCH') {
+        if (
+          typeof body?.businessName !== 'string' ||
+          !body.businessName.trim() ||
+          body.businessName.length > 50
+        )
+          return problem(res, 400, '잘못된 요청입니다', '상호명을 확인해 주세요.', req.url)
+        members[me].businessName = body.businessName
+      }
       return send(res, 200, {
         sellerId: me,
-        businessName: u.nickname || '테스트상점',
-        status: 'ACTIVE',
+        businessName: members[me].businessName || u.nickname || '테스트상점',
+        status: members[me].sellerStatus || 'ACTIVE',
       })
     }
     if ((x = r('POST', /^\/admin\/seller-applications\/(\d+)\/approve$/))) {
