@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { hasRole, ROLE_LABEL, useSessionStore } from '@/entities/session'
+import { useLogout } from '@/features/logout'
 import { paths, useDemoRoleSwitch } from '@/shared/config'
 import { cn } from '@/shared/lib'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
@@ -66,6 +67,23 @@ function CenterMenu({ className }: { className?: string }) {
   )
 }
 
+/** 머리말 로그아웃 (로그인했을 때만) */
+function CenterLogout() {
+  const user = useSessionStore((state) => state.user)
+  const logout = useLogout()
+  if (!user) return null
+  return (
+    <button
+      type="button"
+      disabled={logout.isPending}
+      onClick={() => logout.mutate()}
+      className="text-ink-2 hover:text-ink flex min-h-11 items-center text-[13px] font-semibold transition-colors disabled:opacity-50"
+    >
+      로그아웃
+    </button>
+  )
+}
+
 /** 판매자 센터: 쇼핑과 같은 흰 바탕 · 머리말, 왼쪽 묶음 메뉴(휴대폰은 위) + 업무 화면 */
 export function CenterLayout() {
   const user = useSessionStore((state) => state.user)
@@ -97,6 +115,7 @@ export function CenterLayout() {
             >
               쇼핑 홈
             </Link>
+            <CenterLogout />
           </div>
         </header>
         {/* 휴대폰 한 칸도 minmax(0, 1fr): 가로 메뉴 줄의 폭만큼 칸이 늘어나 본문이 잘리지 않게.
