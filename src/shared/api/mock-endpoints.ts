@@ -225,8 +225,8 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   {
     method: 'DELETE',
     path: '/members/me',
-    source: 'mock',
-    backend: 'BE 없음',
+    source: 'real',
+    backend: 'BE MemberController develop(판매자 탈퇴 조건 포함) → 실제 (FE #331)',
     screens: '내 정보(탈퇴)',
   },
   {
@@ -264,6 +264,20 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
     source: 'real',
     backend: 'BE #1220 develop 머지(11/12) → 실제 (FE #352)',
     screens: '관리자 대시보드',
+  },
+  {
+    method: 'GET',
+    path: '/admin/wallets',
+    source: 'real',
+    backend: 'BE #670 AdminWalletController develop 머지 → 실제 (FE #354)',
+    screens: '관리자 지갑',
+  },
+  {
+    method: 'POST',
+    path: '/admin/wallets/:walletId/return-balance',
+    source: 'real',
+    backend: 'BE #731 AdminWalletController develop 머지 → 실제 (FE #354)',
+    screens: '관리자 지갑(잔액 돌려주기)',
   },
 ]
 

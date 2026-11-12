@@ -29,7 +29,7 @@ export {
 export { isDemoSession } from './model/demo-storage'
 export { useSessionStore } from './model/session-store'
 export { restoreAdminSession, signInAdmin, signOutAdmin } from './model/admin-session-actions'
-export { useAdminSessionStore } from './model/admin-session-store'
+export { useAdminSessionStore, useMyAdminId } from './model/admin-session-store'
 
 export { restoreChildSession, signInChild, signOutChild } from './model/child-session-actions'
 export { useChildSessionStore } from './model/child-session-store'

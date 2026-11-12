@@ -37,6 +37,8 @@ import {
   orderDeadLetterShape,
 } from '@/entities/dead-letter/api/order-dead-letter.shape'
 import { adminSettlementPageShape } from '@/entities/settlement/api/admin-settlement.shape'
+import { adminWalletPageShape, balanceReturnShape } from '@/entities/wallet/api/admin-wallet.shape'
+import { toAdminWallet, toAdminWalletParams, toReturnBalanceRequest } from '@/entities/wallet'
 import { settlementRunShape } from '@/entities/settlement/api/settlement.shape'
 import {
   inboxNotificationPageShape,
@@ -129,6 +131,7 @@ import { reviewVisibilityShape } from '@/features/moderate-review'
 import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
 import { toWriteReviewRequest } from '@/features/write-review'
+import { adminPageShape, adminShape } from '@/entities/admin-account/api/admin-account.shape'
 import { toReview } from '@/entities/review'
 import { arr, readSseEvents, validate, type Shape } from '@/shared/api'
 
@@ -391,6 +394,8 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       (await call('PATCH', '/members/me', 1, { nickname: '새닉네임' })).data,
       memberShape,
     )
+    // 탈퇴 (BE MemberController.withdraw): 204, 본문 없음
+    expect((await call('DELETE', '/members/me', 1)).status).toBe(204)
     const extra = await call('POST', '/children', 1, {
       ...toChildRequest(DEMO_CHILD),
       requiredConsent: true,
@@ -531,6 +536,13 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       (await call('GET', `/payments/${payments.data.content[0].paymentId}`, 1)).data,
       paymentDetailShape,
     )
+    // 주문 ID로 거르면 그 주문의 내 결제만 (남의 주문이면 빈 목록)
+    const ofOrder = await call('GET', `/payments?orderId=${orderId}`, 1)
+    expectContract(ofOrder.data, paymentPageShape)
+    expect(ofOrder.data.content).toHaveLength(1)
+    expect(ofOrder.data.content[0]).toMatchObject({ orderId: Number(orderId) })
+    expect((await call('GET', `/payments?orderId=${orderId}`, 2)).data.content).toEqual([])
+    expect((await call('GET', '/payments?orderId=999999', 1)).data.content).toEqual([])
 
     // 관리자 결제 요약 (BE #1220): 결제일(paidAt의 한국 날짜) 하루를 물으면 방금 결제가 들어간다.
     // 시계와 비교하지 않으려고 날짜는 응답의 paidAt에서 꺼낸다
@@ -718,6 +730,47 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('POST', '/admin/settlements/99999/retry', 3)).status).toBe(404)
   })
 
+  it('관리자 지갑: 동결 · 잔액으로 거르기, 잔액 돌려주기는 동결 지갑 + 지금 잔액만', async () => {
+    const frozen = await call('POST', '/__fake/frozen-wallets', null, { balance: 25000 })
+    const emptyFrozen = await call('POST', '/__fake/frozen-wallets', null, { balance: 0 })
+    const query = (frozenOnly: boolean, withBalanceOnly: boolean) =>
+      new URLSearchParams(
+        Object.entries(toAdminWalletParams({ frozenOnly, withBalanceOnly }, 0)).map(([k, v]) => [
+          k,
+          String(v),
+        ]),
+      ).toString()
+
+    const all = await call('GET', `/admin/wallets?${query(false, false)}`, 3)
+    expectContract(all.data, adminWalletPageShape)
+    expect(all.data.content.some((w: { frozenAt: unknown }) => w.frozenAt === null)).toBe(true)
+    const frozenOnly = await call('GET', `/admin/wallets?${query(true, true)}`, 3)
+    expectContract(frozenOnly.data, adminWalletPageShape)
+    const ids = frozenOnly.data.content.map((w: { walletId: number }) => w.walletId)
+    expect(ids).toContain(frozen.data.walletId)
+    expect(ids).not.toContain(emptyFrozen.data.walletId)
+    expect((await call('GET', '/admin/wallets?size=101', 3)).status).toBe(400)
+    expect((await call('GET', '/admin/wallets', 1)).status).toBe(403)
+
+    const wallet = toAdminWallet(frozen.data)
+    const returnPath = `/admin/wallets/${wallet.id}/return-balance`
+    expect((await call('POST', returnPath, 3, { amount: 1 })).status).toBe(409)
+    const returned = await call('POST', returnPath, 3, toReturnBalanceRequest(wallet))
+    expect(returned.status).toBe(200)
+    expectContract(returned.data, balanceReturnShape)
+    expect(returned.data).toMatchObject({ amount: 25000, balance: 0 })
+    expect((await call('POST', returnPath, 3, { amount: 25000 })).status).toBe(409)
+
+    const active = all.data.content.find((w: { frozenAt: unknown }) => w.frozenAt === null)
+    expect(
+      (await call('POST', `/admin/wallets/${active.walletId}/return-balance`, 3, { amount: 1 }))
+        .status,
+    ).toBe(409)
+    expect(
+      (await call('POST', '/admin/wallets/99999/return-balance', 3, { amount: 1 })).status,
+    ).toBe(404)
+  })
+
   it('관리자 회원 목록 · 이용 정지 · 판매자 자격 정지', async () => {
     expectContract(
       (await call('GET', '/admin/members?filter=SELLER', 3)).data,
@@ -772,6 +825,72 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expectContract(await reissue.json(), tokenShape)
     expect((await call('POST', '/auth/admin/reissue', null)).status).toBe(401)
     expect((await call('POST', '/auth/admin/logout', null)).status).toBe(204)
+  })
+
+  it('관리자 추가: 201 + Location, 겹친 이메일 409, 비밀번호 규칙 400 (BE AdminAccountController)', async () => {
+    const response = await fetch(`${BASE}/admin/admins`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${tokens[3]}` },
+      body: JSON.stringify({ email: ' Contract@Kidly.Test ', password: 'password-12345' }),
+    })
+    expect(response.status).toBe(201)
+    const admin = await response.json()
+    expectContract(admin, adminShape)
+    expect(admin).toMatchObject({ email: 'contract@kidly.test', status: 'ACTIVE' })
+    expect(response.headers.get('location')).toBe(`/api/v1/admin/admins/${admin.id}`)
+
+    const taken = await call('POST', '/admin/admins', 3, {
+      email: 'CONTRACT@kidly.test',
+      password: 'password-12345',
+    })
+    expect(taken.status).toBe(409)
+    expect(taken.data.detail).toBe('다른 이메일을 입력해 주세요.')
+    const short = { email: 'short@kidly.test', password: 'a'.repeat(11) }
+    expect((await call('POST', '/admin/admins', 3, short)).status).toBe(400)
+    const long = { email: 'long@kidly.test', password: '가'.repeat(25) }
+    expect((await call('POST', '/admin/admins', 3, long)).status).toBe(400)
+    const member = { email: 'member@kidly.test', password: 'password-12345' }
+    expect((await call('POST', '/admin/admins', 1, member)).status).toBe(403)
+  })
+
+  it('관리자 목록 · 비활성화: ID 내림차순 · 상태 거르기, 204 · 자기 자신 409 · 없으면 404 (BE AdminAccountController)', async () => {
+    const created = await call('POST', '/admin/admins', 3, {
+      email: 'disable-me@kidly.test',
+      password: 'password-12345',
+    })
+    expect(created.status).toBe(201)
+
+    const all = await call('GET', '/admin/admins?page=0&size=20', 3)
+    expect(all.status).toBe(200)
+    expectContract(all.data, adminPageShape)
+    const ids = all.data.content.map((admin: { id: number }) => admin.id)
+    expect(ids).toEqual([...ids].sort((a, b) => b - a))
+    expect(ids[0]).toBe(created.data.id)
+    expect(ids).toContain(1)
+    const firstPage = await call('GET', '/admin/admins?page=0&size=1', 3)
+    expect(firstPage.data).toMatchObject({ page: 0, size: 1, hasNext: true })
+    expect(firstPage.data.content).toHaveLength(1)
+
+    const disablePath = `/admin/admins/${created.data.id}/disable`
+    expect((await call('POST', disablePath, 3)).status).toBe(204)
+    expect((await call('POST', disablePath, 3)).status).toBe(204)
+    const disabled = await call('GET', '/admin/admins?status=DISABLED', 3)
+    expectContract(disabled.data, adminPageShape)
+    expect(disabled.data.content).toContainEqual(
+      expect.objectContaining({ id: created.data.id, status: 'DISABLED' }),
+    )
+    const active = await call('GET', '/admin/admins?status=ACTIVE', 3)
+    expect(
+      active.data.content.every((admin: { status: string }) => admin.status === 'ACTIVE'),
+    ).toBe(true)
+    expect((await call('GET', '/admin/admins?status=NOPE', 3)).status).toBe(400)
+
+    const self = await call('POST', '/admin/admins/1/disable', 3)
+    expect(self.status).toBe(409)
+    expect(self.data.detail).toBe('다른 관리자에게 요청해 주세요.')
+    expect((await call('POST', '/admin/admins/999999/disable', 3)).status).toBe(404)
+    expect((await call('GET', '/admin/admins', 1)).status).toBe(403)
+    expect((await call('POST', disablePath, 1)).status).toBe(403)
   })
 
   it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티, 같은 칸)', async () => {

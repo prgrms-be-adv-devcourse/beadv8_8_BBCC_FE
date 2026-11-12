@@ -96,6 +96,16 @@ describe('흐름 확인: 결제 도메인 결제 기록', () => {
     expect(result.state).toBe('pass')
   })
 
+  it('주문마다 주문 ID로 조회한 결제를 모아서 판단한다 (나중에 다른 주문의 결제를 조회해도 앞 결과를 잃지 않음)', () => {
+    const failed = { paymentId: 4, orderId: 9, amount: 200000, status: 'FAILED' }
+    const result = evaluate(check, [
+      log({ path: '/orders/6', responseBody: paidOrder }),
+      log({ path: '/payments', responseBody: paymentPage(completed) }),
+      log({ path: '/payments', responseBody: paymentPage(failed) }),
+    ])
+    expect(result.state).toBe('pass')
+  })
+
   it('결제 완료 주문이나 결제 목록 조회가 없으면 대기', () => {
     expect(evaluate(check, [log({ path: '/orders/6', responseBody: paidOrder })]).state).toBe(
       'waiting',

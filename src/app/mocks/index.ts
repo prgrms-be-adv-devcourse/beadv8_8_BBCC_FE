@@ -7,6 +7,6 @@ import { memberHandlers } from './member-handlers'
  * 실제 API가 생기면 패널에서 끄고 확인한 뒤 핸들러를 뺀다. 목록(mock-endpoints)에서 'real'인 핸들러는 등록되지 않는다
  */
 export function setupMocks() {
-  registerMockHandlers('회원 보완 (탈퇴 · 이력 · 판매자 정보)', memberHandlers)
+  registerMockHandlers('회원 보완 (이력 · 판매자 정보)', memberHandlers)
   registerMockHandlers('관리자 전체 조회', adminHandlers)
 }

@@ -20,6 +20,7 @@ const MENU: MenuGroup[] = [
       { to: paths.admin.home, label: '대시보드', end: true },
       { to: paths.admin.orderOps, label: '주문 운영' },
       { to: paths.admin.deadLetters, label: '처리 실패 메시지' },
+      { to: paths.admin.accounts, label: '관리자 계정' },
       { to: paths.admin.settings, label: '설정' },
     ],
   },
@@ -40,6 +41,7 @@ const MENU: MenuGroup[] = [
       { to: paths.admin.orders, label: '전체 주문' },
       { to: paths.admin.payments, label: '전체 결제' },
       { to: paths.admin.settlements, label: '정산' },
+      { to: paths.admin.wallets, label: '지갑' },
     ],
   },
   {
