@@ -47,15 +47,22 @@ function balanceChange(actor: string, direction: 'down' | 'up'): LogsCheck {
   }
 }
 
-/** 회원마다 마지막 결제 목록(GET /payments). 역할 전환 뒤 다른 회원이 조회한 목록과 섞이지 않게 */
+/**
+ * 회원마다 결제 조회(GET /payments) 결과를 결제 ID별 마지막 값으로 모은다. 주문 상세는 주문 ID로 한 건씩
+ * 조회하므로 여러 응답을 합친다. 역할 전환 뒤 다른 회원이 조회한 결과와 섞이지 않게 회원별로 둔다
+ */
 function latestPaymentsByActor(logs: ApiCallLog[]): Map<string | null, Body[]> {
-  const latest = new Map<string | null, Body[]>()
+  const byActor = new Map<string | null, Map<string, Body>>()
   for (const log of logs) {
     if (log.method === 'GET' && log.path.split('?')[0] === '/payments' && ok2xx(log)) {
-      latest.set(log.actor, (body(log).content as Body[] | undefined) ?? [])
+      const payments = byActor.get(log.actor) ?? new Map<string, Body>()
+      for (const item of (body(log).content as Body[] | undefined) ?? []) {
+        payments.set(String(item.paymentId), item)
+      }
+      byActor.set(log.actor, payments)
     }
   }
-  return latest
+  return new Map([...byActor].map(([actor, payments]) => [actor, [...payments.values()]]))
 }
 
 /** 결제 완료(PAID)로 본 주문이 결제 도메인 목록(GET /payments)에 같은 금액의 COMPLETED로 있는지 */

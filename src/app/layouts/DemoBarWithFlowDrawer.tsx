@@ -6,7 +6,8 @@ import { ApiFlowPanel, usePresentationMode } from '@/widgets/api-flow-panel'
 import { DemoBar } from '@/widgets/demo-bar'
 
 /**
- * 쇼핑 · 판매자 센터 · 관리자용: 시연 막대 + 오른쪽에서 여는 API 흐름 패널.
+ * 쇼핑 · 판매자 센터 · 관리자 · 아이용: 시연 막대 + 오른쪽에서 여는 API 흐름 패널.
+ * 시연 기능을 끈 배포에서는 막대를 그리지 않는다 (로그아웃은 각 영역 머리말에 있다).
  * 패널을 닫아도 기록은 계속 쌓인다 (콘솔과 같은 기록)
  */
 export function DemoBarWithFlowDrawer() {
@@ -15,8 +16,7 @@ export function DemoBarWithFlowDrawer() {
   const presentation = usePresentationMode((state) => state.on)
   const demoRoleSwitch = useDemoRoleSwitch()
 
-  // 시연 기능을 끈 배포에서는 API 흐름 패널 없이 막대만 둔다
-  if (!demoRoleSwitch) return <DemoBar />
+  if (!demoRoleSwitch) return null
 
   return (
     <>

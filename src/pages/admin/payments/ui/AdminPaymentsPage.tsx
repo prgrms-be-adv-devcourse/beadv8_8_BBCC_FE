@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   PAYMENT_STATUS_LABEL,
   paymentIssueNote,
@@ -8,6 +9,7 @@ import { getErrorMessage } from '@/shared/api'
 import { adminPathsOf } from '@/shared/config'
 import { downloadCsv, formatDateTime, toCsv, useArea, type CsvColumn } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Pagination } from '@/shared/ui/Pagination'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { AdminPaymentTable } from './AdminPaymentTable'
@@ -22,10 +24,11 @@ const CSV_COLUMNS: CsvColumn<AdminPayment>[] = [
   { header: '실패 · 환불', value: paymentIssueNote },
 ]
 
-/** 관리자 전체 결제 · 환불 (기획서 8장 보완): 결제 표 → 결제를 누르면 결제 상세 */
+/** 관리자 전체 결제 · 환불 (기획서 8장 보완): 결제 표(서버 페이지) → 결제를 누르면 결제 상세 */
 export function AdminPaymentsPage() {
   const adminPaths = adminPathsOf(useArea())
-  const payments = useAdminPaymentsQuery()
+  const [page, setPage] = useState(0)
+  const payments = useAdminPaymentsQuery(page)
   const rows = payments.data?.content ?? []
 
   return (
@@ -66,6 +69,7 @@ export function AdminPaymentsPage() {
               memberHref={adminPaths.member}
             />
           )}
+          <Pagination page={page} totalPages={payments.data.totalPages} onChange={setPage} />
         </section>
       )}
     </div>

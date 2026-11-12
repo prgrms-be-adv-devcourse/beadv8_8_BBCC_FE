@@ -7,6 +7,7 @@ import {
   useSessionStore,
   viewerRoles,
 } from '@/entities/session'
+import { toAdminId } from '@/entities/session/model/session.mapper'
 import { apiClient } from '@/shared/api'
 
 const ADMIN_TOKEN = 'header.admin.signature'
@@ -92,5 +93,25 @@ describe('관리자 로그인 상태', () => {
     expect(post).toHaveBeenCalledWith('/auth/admin/logout', undefined, { skipAuth: true })
     expect(useAdminSessionStore.getState().accessToken).toBeNull()
     expect(useSessionStore.getState().accessToken).toBe(MEMBER_TOKEN)
+  })
+})
+
+describe('관리자 토큰 → 내 관리자 ID (BE PrincipalId: 관리자 sub는 "admin:7")', () => {
+  const token = (claims: object) =>
+    `h.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.s`
+
+  it('sub의 admin: 뒤 숫자를 읽는다', () => {
+    expect(toAdminId(token({ sub: 'admin:7' }))).toBe('7')
+  })
+
+  it('관리자 주체가 아니면 모른다 (회원 sub는 숫자 그대로, 자녀는 child:)', () => {
+    expect(toAdminId(token({ sub: '42' }))).toBeNull()
+    expect(toAdminId(token({ sub: 'child:3' }))).toBeNull()
+    expect(toAdminId(token({ sub: 'admin:' }))).toBeNull()
+  })
+
+  it('로그인 전이거나 읽을 수 없는 토큰이면 모른다 (그때는 서버의 409 안내에 맡긴다)', () => {
+    expect(toAdminId(null)).toBeNull()
+    expect(toAdminId(ADMIN_TOKEN)).toBeNull()
   })
 })

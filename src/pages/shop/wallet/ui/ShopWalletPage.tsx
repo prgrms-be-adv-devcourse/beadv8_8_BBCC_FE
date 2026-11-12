@@ -25,7 +25,7 @@ export function ShopWalletPage() {
   const location = useLocation()
   // 결제창에서 돌아오지 않은 충전 (예: 간편결제 앱에서 잔액을 충전하다 결제가 끝나지 않음)
   const now = new Date()
-  const awaiting = charges.data?.filter((charge) => isAwaitingPayment(charge, now)) ?? []
+  const awaiting = charges.data?.content.filter((charge) => isAwaitingPayment(charge, now)) ?? []
 
   // 주문서 「충전하고 돌아오기」(?amount=&return=)는 충전 화면으로 그대로 넘긴다
   if (location.search.includes('amount=') || location.search.includes('return=')) {
@@ -139,9 +139,9 @@ export function ShopWalletPage() {
         {transactions.isError && (
           <StateMessage tone="error">{getErrorMessage(transactions.error)}</StateMessage>
         )}
-        {transactions.data?.length === 0 && <StateMessage>거래가 없어요.</StateMessage>}
-        {transactions.data && transactions.data.length > 0 && (
-          <WalletTransactionList transactions={transactions.data.slice(0, RECENT_COUNT)} />
+        {transactions.data?.content.length === 0 && <StateMessage>거래가 없어요.</StateMessage>}
+        {transactions.data && transactions.data.content.length > 0 && (
+          <WalletTransactionList transactions={transactions.data.content.slice(0, RECENT_COUNT)} />
         )}
       </section>
     </div>

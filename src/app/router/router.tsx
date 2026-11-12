@@ -117,11 +117,17 @@ const adminPaymentDetail = page(() =>
 const adminSettlements = page(() =>
   import('@/pages/admin/settlements').then((m) => ({ Component: m.AdminSettlementsPage })),
 )
+const adminWallets = page(() =>
+  import('@/pages/admin/wallets').then((m) => ({ Component: m.AdminWalletsPage })),
+)
 const adminSettings = page(() =>
   import('@/pages/admin/settings').then((m) => ({ Component: m.AdminSettingsPage })),
 )
 const adminOrderOps = page(() =>
   import('@/pages/admin/order-operation').then((m) => ({ Component: m.AdminOrderOpsPage })),
+)
+const adminAccounts = page(() =>
+  import('@/pages/admin/accounts').then((m) => ({ Component: m.AdminAccountsPage })),
 )
 const adminDeadLetters = page(() =>
   import('@/pages/admin/dead-letters').then((m) => ({ Component: m.AdminDeadLettersPage })),
@@ -342,6 +348,7 @@ export const router = createBrowserRouter(
         { path: 'payments/:paymentId', ...adminPaymentDetail },
         { path: rel(paths.admin.home, paths.admin.sellerApplications), ...adminSellerApplications },
         { path: rel(paths.admin.home, paths.admin.settlements), ...adminSettlements },
+        { path: rel(paths.admin.home, paths.admin.wallets), ...adminWallets },
         { path: rel(paths.admin.home, paths.admin.orderOps), ...adminOrderOps },
         { path: rel(paths.admin.home, paths.admin.deadLetters), ...adminDeadLetters },
         {
@@ -353,6 +360,7 @@ export const router = createBrowserRouter(
           ),
         },
         { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
+        { path: rel(paths.admin.home, paths.admin.accounts), ...adminAccounts },
         { path: 'dead-letters/:module/:deadLetterId', ...adminDeadLetterDetail },
         // 상품 기준 데이터: 종류마다 목록 · 만들기 (관리자에만 있다)
         {

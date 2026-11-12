@@ -30,6 +30,7 @@ export {
   paymentKeys,
   useAdminPaymentSummaryQuery,
   useAdminPaymentsQuery,
+  useOrderPaymentQuery,
   usePaymentsQuery,
 } from './model/queries'
 export { PaymentCard } from './ui/PaymentCard'

@@ -53,6 +53,12 @@ const verifications = {
   3: '2026-01-01T00:00:00',
 }
 const wallets = { 1: 100000, 2: 0, 3: 0 }
+// 지갑 ID = 회원 ID + 100 (회원 ID와 섞어 쓰면 드러나게 다르게 둔다). 탈퇴로 동결한 지갑은 회원 ID → 동결 시각
+const WALLET_ID_OFFSET = 100
+const frozenWallets = {}
+let nextWithdrawnMemberId = 1000
+// BE BalanceReturn: 동결 지갑의 남은 잔액을 돌려줬다는 기록
+const balanceReturns = []
 // 주문 멱등키 (BE #351): '회원:키' → { hash, orderId }
 const idempotency = {}
 // BE WalletLedger: 잔액이 바뀔 때마다 한 줄 (출금은 음수)
@@ -485,6 +491,8 @@ const ADMIN = {
 const adminCookie = (value, maxAge = 1209600) =>
   `admin_refresh_token=${value}; Path=/api/v1/auth/admin; Max-Age=${maxAge}; HttpOnly; SameSite=Lax`
 const isAdmin = (u) => String(u.sub).startsWith('admin:')
+/** 관리자 계정 (BE AdminResponse). 1번은 부트스트랩 계정(ADMIN), 로그인은 이 계정만 된다 */
+const admins = [{ id: 1, email: ADMIN.email, status: 'ACTIVE', createdAt: '2026-10-01T10:00:00' }]
 function who(req) {
   const t = (req.headers.authorization || '').split(' ')[1]
   if (!t) return null
@@ -751,6 +759,12 @@ function addDeadLetter(module, patch = {}) {
   deadLetters.push(d)
   return d
 }
+const adminWalletOf = (memberId) => ({
+  walletId: memberId + WALLET_ID_OFFSET,
+  memberId,
+  balance: wallets[memberId],
+  frozenAt: frozenWallets[memberId] ?? null,
+})
 const deadLetterOf = ({ module: _m, failOnReplay: _f, ...d }) => d
 // 주문 처리 실패 메시지 (BE AdminOrderDeadLetterController #601): 칸 · 상태(CLOSED 있음)가 회원 서비스 모듈과 다르다
 const orderDeadLetters = []
@@ -904,6 +918,19 @@ http
           .toISOString()
           .slice(0, 19)
       }
+      return send(res, 204)
+    }
+    // POST /__fake/frozen-wallets { balance } — 탈퇴로 동결된 지갑 하나 만들기 (가짜 백엔드 전용).
+    // 잔액을 돌려주면 0이 되므로 E2E는 실행마다 새 지갑을 만든다
+    if (r('POST', /^\/__fake\/frozen-wallets$/)) {
+      const memberId = nextWithdrawnMemberId++
+      wallets[memberId] = Number(body?.balance ?? 0)
+      frozenWallets[memberId] = now()
+      return send(res, 201, adminWalletOf(memberId))
+    }
+    // POST /__fake/wallet-balances { walletId, balance } — 그사이 잔액이 바뀐 상황 (가짜 백엔드 전용)
+    if (r('POST', /^\/__fake\/wallet-balances$/)) {
+      wallets[body.walletId - WALLET_ID_OFFSET] = Number(body.balance)
       return send(res, 204)
     }
     if (r('POST', /^\/dev\/tokens$/)) {
@@ -1531,6 +1558,63 @@ http
       ledger(st.sellerId, 'SETTLEMENT', st.settlementAmount, String(st.settlementId))
       return send(res, 204)
     }
+    // 관리자 지갑 목록 (BE AdminWalletController): 최신순(ID 내림차순), frozen · hasBalance가 true일 때만 거른다
+    if (r('GET', /^\/admin\/wallets$/)) {
+      const flag = (key) => url.searchParams.get(key) === 'true'
+      const size = Number(url.searchParams.get('size') ?? 20)
+      if (size < 1 || size > 100)
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      const rows = Object.keys(wallets)
+        .map(Number)
+        .filter((memberId) => !flag('frozen') || frozenWallets[memberId])
+        .filter((memberId) => !flag('hasBalance') || wallets[memberId] > 0)
+        .sort((a, b) => b - a)
+        .map(adminWalletOf)
+      return send(res, 200, pageFrom(rows, url.searchParams))
+    }
+    // 잔액 돌려주기 (BE #731): 동결 지갑만(WALLET_NOT_FROZEN 409), 요청 금액 = 지금 잔액(BALANCE_CHANGED 409)
+    if ((x = r('POST', /^\/admin\/wallets\/(\d+)\/return-balance$/))) {
+      const memberId = +x[1] - WALLET_ID_OFFSET
+      if (!(memberId in wallets))
+        return problem(
+          res,
+          404,
+          '지갑을 찾을 수 없습니다',
+          '회원의 예치금 지갑이 없습니다.',
+          req.url,
+        )
+      if (!Number.isInteger(body?.amount) || body.amount <= 0)
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      if (!frozenWallets[memberId])
+        return problem(
+          res,
+          409,
+          '동결되지 않은 지갑입니다',
+          '잔액 환급은 탈퇴로 동결된 지갑만 할 수 있습니다.',
+          req.url,
+        )
+      if (wallets[memberId] !== body.amount)
+        return problem(
+          res,
+          409,
+          '잔액이 바뀌었습니다',
+          '지갑 목록을 다시 불러와 지금 잔액으로 다시 요청해 주세요.',
+          req.url,
+        )
+      const balanceReturnId = balanceReturns.length + 1
+      balanceReturns.push({ balanceReturnId, memberId, amount: body.amount })
+      wallets[memberId] -= body.amount
+      ledger(memberId, 'BALANCE_RETURN', -body.amount, balanceReturnId)
+      return send(res, 200, {
+        balanceReturnId,
+        walletId: +x[1],
+        memberId,
+        amount: body.amount,
+        balance: wallets[memberId],
+        ledgerId: ledgers.length,
+        returnedAt: now(),
+      })
+    }
     if ((x = r('GET', /^\/admin\/settlement-runs\/(\d+)$/))) {
       const run = settlementRuns.find((run) => run.runId === +x[1])
       return run
@@ -1947,11 +2031,12 @@ http
       return send(
         res,
         200,
-        page(
+        pageFrom(
           payments
             .slice()
             .reverse()
             .map(({ items: _i, ...x }) => x),
+          url.searchParams,
         ),
       )
     }
@@ -2122,6 +2207,8 @@ http
         sellerStatus: null,
         providers: [],
       })
+    // BE MemberController.withdraw: 204, 본문 없음. 회원 상태는 바꾸지 않는다 (뒤 테스트가 같은 시연 회원을 계속 쓴다)
+    if (r('DELETE', /^\/members\/me$/)) return send(res, 204)
     if ((x = r('PATCH', /^\/members\/me\/addresses\/(\d+)$/))) {
       const a = addresses.find((a) => a.id === +x[1])
       if (!a) return problem(res, 404, '찾을 수 없습니다', '배송지 없음', req.url)
@@ -2225,12 +2312,13 @@ http
       return send(
         res,
         200,
-        page(
+        pageFrom(
           charges
             .filter((c) => c.memberId === me)
             .slice()
             .reverse()
             .map(({ memberId: _m, ...c }) => c),
+          url.searchParams,
         ),
       )
     if ((x = r('GET', /^\/wallets\/me\/charges\/(\d+)$/)))
@@ -2247,26 +2335,31 @@ http
       return send(
         res,
         200,
-        page(
+        pageFrom(
           ledgers
             .filter((l) => l.memberId === me)
             .slice()
             .reverse()
             .map(({ memberId: _m, ...l }) => l),
+          url.searchParams,
         ),
       )
-    if (r('GET', /^\/payments$/))
+    if (r('GET', /^\/payments$/)) {
+      // orderId를 주면 그 주문의 내 결제만 (0 또는 1건)
+      const orderId = url.searchParams.get('orderId')
       return send(
         res,
         200,
-        page(
+        pageFrom(
           payments
-            .filter((x) => x.memberId === me)
+            .filter((x) => x.memberId === me && (orderId === null || x.orderId === +orderId))
             .slice()
             .reverse()
             .map(({ memberId: _m, items: _i, ...x }) => x),
+          url.searchParams,
         ),
       )
+    }
     if ((x = r('GET', /^\/payments\/(\d+)$/))) {
       const pm = payments.find((x2) => x2.paymentId === +x[1] && x2.memberId === me)
       if (!pm) return problem(res, 404, '찾을 수 없습니다', '결제를 찾을 수 없습니다.', req.url)
@@ -2726,6 +2819,72 @@ http
         })
       }
       return send(res, 200, deadLetterOf(d))
+    }
+    // 관리자 목록 (BE AdminAccountController.list): status 없으면 전체, ACTIVE · DISABLED 밖이면 400, ID 내림차순
+    if (r('GET', /^\/admin\/admins$/)) {
+      const status = url.searchParams.get('status')
+      if (status !== null && !['ACTIVE', 'DISABLED'].includes(status))
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      const rows = admins.filter((a) => !status || a.status === status).sort((a, b) => b.id - a.id)
+      return send(res, 200, pageFrom(rows, url.searchParams))
+    }
+    // 관리자 비활성화 (BE AdminAccount.disable): 없으면 404, 자기 자신이면 409, 이미 비활성이면 그대로 204
+    if ((x = r('POST', /^\/admin\/admins\/(\d+)\/disable$/))) {
+      const admin = admins.find((a) => a.id === Number(x[1]))
+      if (!admin)
+        return problem(
+          res,
+          404,
+          '관리자를 찾을 수 없습니다',
+          '관리자 ID를 다시 확인해 주세요.',
+          req.url,
+        )
+      if (String(u.sub) === `admin:${admin.id}`)
+        return problem(
+          res,
+          409,
+          '자기 자신은 비활성화할 수 없습니다',
+          '다른 관리자에게 요청해 주세요.',
+          req.url,
+        )
+      admin.status = 'DISABLED'
+      return send(res, 204)
+    }
+    // 관리자 추가 (BE AdminAccountController · AdminPassword). 이메일이 겹치면 409 ADMIN_EMAIL_ALREADY_USED
+    if (r('POST', /^\/admin\/admins$/)) {
+      const email = String(body?.email ?? '')
+        .trim()
+        .toLowerCase()
+      const password = String(body?.password ?? '')
+      if (!/^[^@\s]+@[^@\s]+$/.test(email) || !password)
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      if (password.length < 12)
+        return problem(
+          res,
+          400,
+          '관리자 비밀번호가 올바르지 않습니다',
+          '관리자 비밀번호는 12자 이상이어야 합니다',
+          req.url,
+        )
+      if (Buffer.byteLength(password, 'utf8') > 72)
+        return problem(
+          res,
+          400,
+          '관리자 비밀번호가 올바르지 않습니다',
+          '관리자 비밀번호는 UTF-8 72바이트 이하여야 합니다',
+          req.url,
+        )
+      if (admins.some((a) => a.email === email))
+        return problem(
+          res,
+          409,
+          '이미 등록된 이메일입니다',
+          '다른 이메일을 입력해 주세요.',
+          req.url,
+        )
+      const admin = { id: admins.length + 1, email, status: 'ACTIVE', createdAt: now() }
+      admins.push(admin)
+      return send(res, 201, admin, { location: `/api/v1/admin/admins/${admin.id}` })
     }
     if (r('GET', /^\/admin\/members$/)) {
       const filter = url.searchParams.get('filter') || 'ALL'
