@@ -1625,6 +1625,18 @@ http
         ? send(res, 200, run)
         : problem(res, 404, '찾을 수 없습니다', '정산 실행을 찾을 수 없습니다.', req.url)
     }
+    // 실행 복구: BE는 실행 중(RUNNING)으로 남은 실행만 정리한다. 가짜 실행은 바로 끝나 실행 중이 없으므로 409
+    if ((x = r('POST', /^\/admin\/settlement-runs\/(\d+)\/recover$/))) {
+      return !settlementRuns.some((run) => run.runId === +x[1])
+        ? problem(res, 404, '찾을 수 없습니다', '정산 실행을 찾을 수 없습니다.', req.url)
+        : problem(
+            res,
+            409,
+            '정리할 수 없는 정산 실행입니다',
+            '실행 중으로 남은 정산 실행만 정리할 수 있습니다.',
+            req.url,
+          )
+    }
     // 기준 옷 「산 옷에서 고르기」 (BE #1168): 이 자녀의 구매확정된 주문상품, 확정이 늦은 순서.
     // 상품 정보가 없으면 이름 · 카테고리 · 칸 · 실측이 null, 산 사이즈의 실측이 없으면 실측만 null
     if ((x = r('GET', /^\/recommendations\/children\/(\d+)\/purchases$/))) {

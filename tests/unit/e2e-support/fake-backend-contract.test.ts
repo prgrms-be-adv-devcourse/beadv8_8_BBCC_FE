@@ -733,6 +733,11 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const found = await call('GET', `/admin/settlement-runs/${run.data.runId}`, 3)
     expectContract(found.data, settlementRunShape)
     expect((await call('GET', '/admin/settlement-runs/99999', 3)).status).toBe(404)
+    // 실행 복구: 끝난 실행은 409, 없는 실행은 404
+    expect((await call('POST', `/admin/settlement-runs/${run.data.runId}/recover`, 3)).status).toBe(
+      409,
+    )
+    expect((await call('POST', '/admin/settlement-runs/99999/recover', 3)).status).toBe(404)
 
     const list = await call('GET', '/admin/settlements?status=PAID', 3)
     expectContract(list.data, adminSettlementPageShape)
