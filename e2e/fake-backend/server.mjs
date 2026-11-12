@@ -1353,11 +1353,12 @@ http
       return send(
         res,
         200,
-        page(
+        pageFrom(
           payments
             .slice()
             .reverse()
             .map(({ items: _i, ...x }) => x),
+          url.searchParams,
         ),
       )
     }
@@ -1625,12 +1626,13 @@ http
       return send(
         res,
         200,
-        page(
+        pageFrom(
           charges
             .filter((c) => c.memberId === me)
             .slice()
             .reverse()
             .map(({ memberId: _m, ...c }) => c),
+          url.searchParams,
         ),
       )
     if ((x = r('GET', /^\/wallets\/me\/charges\/(\d+)$/)))
@@ -1647,24 +1649,26 @@ http
       return send(
         res,
         200,
-        page(
+        pageFrom(
           ledgers
             .filter((l) => l.memberId === me)
             .slice()
             .reverse()
             .map(({ memberId: _m, ...l }) => l),
+          url.searchParams,
         ),
       )
     if (r('GET', /^\/payments$/))
       return send(
         res,
         200,
-        page(
+        pageFrom(
           payments
             .filter((x) => x.memberId === me)
             .slice()
             .reverse()
             .map(({ memberId: _m, items: _i, ...x }) => x),
+          url.searchParams,
         ),
       )
     if ((x = r('GET', /^\/payments\/(\d+)$/))) {
