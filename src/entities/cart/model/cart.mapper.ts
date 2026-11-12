@@ -1,6 +1,9 @@
 import type { AddCartItemRequestDto, CartDto } from '../api/cart.dto'
 import type { Cart } from './cart'
 
+/** 상품 정보가 없는 줄(판매가 끝나 복사본이 없음)의 상품명 */
+const ENDED_PRODUCT_NAME = '판매가 끝난 상품'
+
 export function toCart(dto: CartDto): Cart {
   return {
     lines: dto.items.map((item) => ({
@@ -9,7 +12,7 @@ export function toCart(dto: CartDto): Cart {
       productId: item.productId,
       sellerId: item.sellerId ?? null,
       sellerName: item.sellerName?.trim() || null,
-      productName: item.productName,
+      productName: item.productName ?? ENDED_PRODUCT_NAME,
       optionName: item.optionName ?? null,
       size: item.size,
       childId: item.childId,

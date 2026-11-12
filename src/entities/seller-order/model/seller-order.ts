@@ -17,7 +17,6 @@ export type SellerOrder = {
     size: string | null
     quantity: number
     amount: number
-    childLabel: string | null
     /** 발송 전 취소 등으로 이 주문상품이 취소됨 (BE 주문상품 CANCELLED) */
     isCancelled: boolean
   }[]

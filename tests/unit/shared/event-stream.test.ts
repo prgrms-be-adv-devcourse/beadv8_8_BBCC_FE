@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getErrorMessage,
   getErrorStatus,
@@ -12,9 +12,19 @@ import {
 } from '@/shared/api'
 
 // 공통 클라이언트로 SSE를 받는다: 목 어댑터가 이벤트를 흘려보내고, 흐름 기록에 이벤트 순서 · 계약 불일치가 남는다.
-// 목은 mock-endpoints에서 'mock'인 엔드포인트만 등록되므로, 아직 목인 GET 하나를 빌려 스트림을 흘려보낸다
-const ROUTE = '/orders/:orderId/timeline'
-const PATH = '/orders/1/timeline'
+// 목은 mock-endpoints에서 'mock'인 엔드포인트만 등록되므로, 테스트 전용 GET 하나를 목으로 끼워 스트림을 흘려보낸다
+const ROUTE = '/__test/streams/:streamId'
+const PATH = '/__test/streams/1'
+vi.mock('@/shared/api/mock-endpoints', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/shared/api/mock-endpoints')>()
+  return {
+    ...original,
+    endpointOf: (method: string, path: string) =>
+      method === 'GET' && path === '/__test/streams/:streamId'
+        ? { method, path, source: 'mock', backend: '테스트 전용', screens: '-' }
+        : original.endpointOf(method, path),
+  }
+})
 const shape = obj({ source: oneOf(['AI', 'RULE']), note: str })
 
 registerMockHandlers('스트림 테스트', [

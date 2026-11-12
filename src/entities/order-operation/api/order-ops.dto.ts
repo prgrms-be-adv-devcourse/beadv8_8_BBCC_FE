@@ -32,3 +32,52 @@ export type StuckOrderDto = {
     createdAt: string
   } | null
 }
+
+/** GET /admin/orders/recoveries 한 줄 (BE PaymentRecoveryResponse #353): 예치금은 빠졌는데 결제 완료 반영이 실패한 주문 */
+export type PaymentRecoveryDto = {
+  recoveryId: string
+  orderId: string
+  paymentId: string
+  memberId: string
+  amount: number
+  items: { orderItemId: string; amount: number }[]
+  /** PENDING · RECOVERED · CANCELLED · NOT_RETRYABLE */
+  status: string
+  failureCode: string | null
+  attemptCount: number
+  lastAttemptedAt: string | null
+  createdAt: string
+}
+
+/** GET /admin/orders/event-failures 한 줄 (BE OrderEventFailureResponse #449) */
+export type EventFailureDto = {
+  failureId: string
+  eventType: string
+  orderId: string | null
+  stockFailures: { orderItemId: string; reason: string }[]
+  /** PENDING · RECOVERED · CANCELLED */
+  status: string
+  failureCode: string | null
+  attemptCount: number
+  lastAttemptedAt: string | null
+  createdAt: string
+}
+
+/** GET /admin/orders/outbox/quarantined 한 줄 (BE OutboxQuarantineResponse #602). 본문 · 개인정보 없음 */
+export type QuarantinedOutboxDto = {
+  outboxId: string
+  eventId: string
+  eventType: string
+  topic: string
+  messageKey: string | null
+  /** PENDING · QUARANTINED · SENT */
+  status: string
+  attemptCount: number
+  lastError: string | null
+  createdAt: string
+  quarantinedAt: string | null
+  sentAt: string | null
+  lastRetriedAt: string | null
+  lastRetriedBy: string | null
+  retryCount: number
+}

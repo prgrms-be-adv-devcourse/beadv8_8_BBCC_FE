@@ -17,3 +17,7 @@ export const paymentDetailShape = obj({
   ...fields,
   items: arr(obj({ orderItemId: num, amount: num, refundedAmount: num })),
 })
+export const adminPaymentSummaryShape = obj({
+  daily: arr(obj({ date: str, paidAmount: num, paidCount: num })),
+  refundedPaymentCount: num,
+})

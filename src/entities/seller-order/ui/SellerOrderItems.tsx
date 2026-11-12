@@ -3,7 +3,7 @@ import type { SellerOrder } from '../model/seller-order'
 
 type SellerOrderItemsProps = { items: SellerOrder['items'] }
 
-/** 판매 주문의 상품 줄: 왼쪽에 상품명 · 옵션 · 입을 아이, 오른쪽에 금액 · 수량 */
+/** 판매 주문의 상품 줄: 왼쪽에 상품명 · 옵션, 오른쪽에 금액 · 수량 (자녀 정보는 받지 않는다, BE #997) */
 export function SellerOrderItems({ items }: SellerOrderItemsProps) {
   return (
     <ul className="divide-rule border-rule divide-y border-y">
@@ -21,9 +21,6 @@ export function SellerOrderItems({ items }: SellerOrderItemsProps) {
                 {item.productName}
               </p>
               {option && <p className="text-ink-3 text-[13px]">{option}</p>}
-              {item.childLabel && (
-                <p className="text-ink-3 text-[13px]">입을 아이 {item.childLabel}</p>
-              )}
             </div>
             <div className="shrink-0 space-y-1 text-right">
               <p className="figure text-[15px] font-bold">{formatWon(item.amount)}</p>

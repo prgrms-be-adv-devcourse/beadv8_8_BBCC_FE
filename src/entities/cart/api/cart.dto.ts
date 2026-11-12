@@ -2,12 +2,13 @@
 export type CartLineDto = {
   cartItemId: string
   optionId: string
-  productId: string
+  /** 상품 복사본이 없는 줄(판매 종료 등)은 상품 필드가 모두 null (BE CartResponse.Line) */
+  productId: string | null
   /** 상품 복사본의 판매자 ID. 복사본이 없는 줄(purchasable=false)은 null (BE #243) */
   sellerId: string | null
   /** 판매자의 지금 상호명 (BE #311). 판매자 정보가 아직 없으면 null */
   sellerName?: string | null
-  productName: string
+  productName: string | null
   /** 옵션 이름 (BE #221, 옛 주문상품은 null) */
   optionName: string | null
   /** 사이즈가 없는 상품은 null */

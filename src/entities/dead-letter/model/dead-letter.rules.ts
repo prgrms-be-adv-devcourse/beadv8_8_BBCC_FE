@@ -51,3 +51,11 @@ export function deadLetterPageOf(value: string | null): number {
   const page = Number(value)
   return Number.isInteger(page) && page > 0 ? page : 0
 }
+
+/** 목록 탭: 같은 칸 모듈들 + 주문 (주문은 칸 · 상태가 달라 따로 그린다) */
+export type DeadLetterTab = DeadLetterModule | 'order'
+
+/** 주소의 ?module= → 탭. 주문 또는 아는 모듈, 없거나 모르는 값은 인증 */
+export function deadLetterTabOf(value: string | null): DeadLetterTab {
+  return value === 'order' ? 'order' : deadLetterModuleOf(value)
+}
