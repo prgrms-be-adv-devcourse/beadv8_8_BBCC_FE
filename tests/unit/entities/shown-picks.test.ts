@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { hasAiReasons, shownPicksOf, type RecommendedPicks } from '@/entities/recommendation'
+import {
+  hasAiReasons,
+  isWaitingForAi,
+  shownPicksOf,
+  type RecommendedPicks,
+} from '@/entities/recommendation'
 
 const card = (id: string) => ({
   id,
@@ -43,5 +48,24 @@ describe('hasAiReasons: AI 이유 안내를 달지', () => {
   ]
   it.each(cases)('%s → %s', (_, picks, expected) => {
     expect(hasAiReasons(picks)).toBe(expected)
+  })
+})
+
+// 스트림이 열려 있는 동안이 AI 대기 중이다 (BE에는 대기 중 칸이 없다). 그리는 결과가 AI면 더 기다리지 않는다
+describe('isWaitingForAi: 규칙 결과를 그린 뒤 「AI 분석 중」을 보일지', () => {
+  it.each<[string, RecommendedPicks | null]>([
+    ['규칙 결과', rule],
+    ['규칙 결과가 빈 목록', null],
+  ])('%s · 스트림 열림 → AI를 기다린다', (_, picks) => {
+    expect(isWaitingForAi(picks, true)).toBe(true)
+  })
+
+  it.each<[string, RecommendedPicks | null | undefined, boolean]>([
+    ['AI 결과 · 스트림 열림 (닫히기 직전)', ai, true],
+    ['규칙 결과 · ai 없이 닫힘', rule, false],
+    ['AI 결과 · 닫힘', ai, false],
+    ['받은 것 없이 닫힘 (실패)', undefined, false],
+  ])('%s → 기다리지 않는다', (_, picks, isStreamOpen) => {
+    expect(isWaitingForAi(picks, isStreamOpen)).toBe(false)
   })
 })

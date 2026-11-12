@@ -15,3 +15,14 @@ export function shownPicksOf(received: RecommendedPicks[]): RecommendedPicks | n
 export function hasAiReasons(picks: RecommendedPicks): boolean {
   return picks.source === 'AI' && picks.products.some((product) => product.reason !== null)
 }
+
+/**
+ * 규칙 결과를 그린 뒤 「AI 분석 중」을 보일지. BE에는 대기 중 칸이 없어 스트림이 열려 있는 동안을 대기 중으로 본다.
+ * 그리는 결과가 AI면 더 기다리지 않는다. 규칙 결과가 빈 목록(null)이어도 열려 있으면 AI 답을 기다린다
+ */
+export function isWaitingForAi(
+  picks: RecommendedPicks | null | undefined,
+  isStreamOpen: boolean,
+): boolean {
+  return isStreamOpen && picks?.source !== 'AI'
+}

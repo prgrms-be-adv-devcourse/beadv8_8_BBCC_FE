@@ -105,6 +105,7 @@ export function ConsoleProductDetailPage() {
           childId={childId}
           isPending={companions.isPending}
           isError={companions.isError}
+          isWaitingForAi={companions.isWaitingForAi}
           picks={companions.data}
         />
       )}
@@ -162,12 +163,14 @@ type CompanionCardProps = {
   childId: string
   isPending: boolean
   isError: boolean
+  /** 규칙 결과를 그린 채 스트림이 열려 AI 답을 기다리는 중 */
+  isWaitingForAi: boolean
   /** 그릴 결과 (AI, 없으면 규칙). 그릴 것이 없으면 null */
   picks: RecommendedPicks | null | undefined
 }
 
 /** 함께 사면 좋은 상품 (자녀를 골랐을 때). 콘솔은 쇼핑과 달리 빈 결과 · 실패도 문구로 남긴다 */
-function CompanionCard({ childId, isPending, isError, picks }: CompanionCardProps) {
+function CompanionCard({ childId, isPending, isError, isWaitingForAi, picks }: CompanionCardProps) {
   return (
     <Card className="space-y-2">
       <p className="font-semibold">
@@ -178,9 +181,14 @@ function CompanionCard({ childId, isPending, isError, picks }: CompanionCardProp
           </span>
         )}
       </p>
-      {isPending && <StateMessage>AI 추천 계산 중… (SSE: 규칙 결과 → AI 답)</StateMessage>}
+      {isPending && <StateMessage>추천 계산 중… (SSE: 규칙 결과 → AI 답)</StateMessage>}
+      {isWaitingForAi && !isPending && (
+        <StateMessage>규칙 결과를 먼저 보여 주고 AI 답을 기다리는 중 (스트림 열림)</StateMessage>
+      )}
       {isError && <StateMessage>불러오지 못해 쇼핑 화면에서는 영역을 숨겨요.</StateMessage>}
-      {picks === null && <StateMessage>함께 살 만한 상품이 없어요.</StateMessage>}
+      {picks === null && !isWaitingForAi && (
+        <StateMessage>함께 살 만한 상품이 없어요.</StateMessage>
+      )}
       <ul className="space-y-1.5 text-sm">
         {picks?.products.map((product) => (
           <li key={product.id}>

@@ -1,8 +1,9 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { nextPageOf } from '@/shared/api'
+import { useInfiniteQuery, useQuery, type QueryFunctionContext } from '@tanstack/react-query'
+import { nextPageOf, type StreamEvent } from '@/shared/api'
 import { recommendationApi } from '../api/recommendation-api'
+import type { CompanionProductsDto, HomePreviewDto } from '../api/recommendation.dto'
 import type { RecommendedProductsQuery } from './recommendation'
-import { shownPicksOf } from './recommended-picks.rules'
+import { isWaitingForAi, shownPicksOf } from './recommended-picks.rules'
 import { nextRecommendedPageOf, type RecommendedPageParam } from './recommended-page.rules'
 import {
   toCompanionProducts,
@@ -45,33 +46,60 @@ function requireEvents<T>(events: T[]): T[] {
   return events
 }
 
+type OpenStream<T> = (
+  signal: AbortSignal,
+  onEvent: (event: StreamEvent<T>) => void,
+) => Promise<StreamEvent<T>[]>
+
 /**
- * 홈 맛보기 4개 (SSE): 스트림이 닫힐 때까지 기다려 AI 답, 없으면 규칙 결과를 돌려준다. 그릴 것이 없으면 null.
- * 다시 부르면 AI를 또 기다리므로 실패해도 다시 부르지 않는다. 화면을 떠나면 스트림을 끊는다(signal)
+ * 추천 스트림(SSE) 쿼리 함수: 이벤트가 올 때마다 지금까지 받은 목록을 캐시에 넣어, 먼저 온 규칙 결과를 바로 그린다.
+ * 캐시에 값이 들어가도 스트림이 닫힐 때까지 isFetching이 true라 그동안을 AI 대기 중으로 본다.
+ * 화면을 떠나면 스트림을 끊고(signal) 캐시도 부르기 전으로 되돌린다
+ */
+function streamIntoCache<T>(open: OpenStream<T>) {
+  return async ({ signal, client, queryKey }: QueryFunctionContext): Promise<StreamEvent<T>[]> => {
+    const received: StreamEvent<T>[] = []
+    const events = await open(signal, (event) => {
+      received.push(event)
+      client.setQueryData(queryKey, [...received])
+    })
+    return requireEvents(events)
+  }
+}
+
+/**
+ * 홈 맛보기 4개 (SSE): 규칙 결과(rule)를 받자마자 그리고, AI 답(ai)이 오면 바꾼다. 그릴 것이 없으면 null.
+ * 스트림이 열려 있고 그리는 결과가 AI가 아니면 isWaitingForAi.
+ * 다시 부르면 AI를 또 기다리므로 실패해도 다시 부르지 않는다
  */
 export function useHomePreviewQuery(childId: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: recommendationKeys.preview(childId ?? ''),
-    queryFn: ({ signal }) => recommendationApi.streamPreview(childId!, signal).then(requireEvents),
+    queryFn: streamIntoCache<HomePreviewDto>((signal, onEvent) =>
+      recommendationApi.streamPreview(childId!, signal, onEvent),
+    ),
     select: (events) => shownPicksOf(events.map((item) => toHomePreview(item.data))),
     enabled: childId !== null,
     retry: false,
   })
+  return { ...query, isWaitingForAi: isWaitingForAi(query.data, query.isFetching) }
 }
 
 /**
- * 함께 사면 좋은 상품 (SSE): 자녀를 골랐을 때만 부른다. 홈 맛보기와 같이 닫힐 때까지 모아 그릴 결과를 고른다.
+ * 함께 사면 좋은 상품 (SSE): 자녀를 골랐을 때만 부른다. 홈 맛보기와 같이 규칙 결과를 먼저 그리고 AI 답으로 바꾼다.
  * 실패(401 · 504 포함)해도 저절로 다시 부르지 않는다 (화면이 안내와 「다시 불러오기」를 둔다)
  */
 export function useCompanionProductsQuery(productId: string, childId: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: recommendationKeys.companions(productId, childId ?? ''),
-    queryFn: ({ signal }) =>
-      recommendationApi.streamCompanions(productId, childId!, signal).then(requireEvents),
+    queryFn: streamIntoCache<CompanionProductsDto>((signal, onEvent) =>
+      recommendationApi.streamCompanions(productId, childId!, signal, onEvent),
+    ),
     select: (events) => shownPicksOf(events.map((item) => toCompanionProducts(item.data))),
     enabled: childId !== null,
     retry: false,
   })
+  return { ...query, isWaitingForAi: isWaitingForAi(query.data, query.isFetching) }
 }
 
 /** 맞춤 목록 한 페이지 (홈 맛보기 · 시연 콘솔). 조건을 주지 않으면 첫 20개 */

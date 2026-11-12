@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { holdEventStream } from './support/held-event-stream'
 
 // 상품 상세 맨 아래 「함께 사면 좋은 상품」(BE #1164, SSE FE #290): 자녀를 골랐을 때 상세와 함께 바로 부르고,
 // AI 답을 기다리는 동안 카드 칸마다 원형 로딩을 두고, 이유가 없는 카드는 이유 칸을 숨기고,
@@ -54,6 +55,7 @@ async function asParentWithChild(page: Page) {
 
 const companionSection = (page: Page) => page.getByRole('region', { name: '함께 사면 좋은 상품' })
 const WAITING = '함께 입기 좋은 상품을 고르고 있어요'
+const AI_WAITING = 'AI가 더 잘 어울리는 상품을 고르고 있어요'
 
 /** 흐름 기록(탭 저장)에서 마지막 함께 사면 호출이 받은 이벤트 순서 */
 const lastStreamEvents = (page: Page) =>
@@ -100,6 +102,42 @@ test('자녀를 고르면 함께 사면 좋은 상품을 부르고, 이유가 �
   await page.reload()
   await expect(companionSection(page).getByText(REASON)).toBeVisible()
   await expect.poll(() => lastStreamEvents(page)).toEqual(['ai'])
+})
+
+test('규칙 결과를 받자마자 그리고, 스트림이 열려 있는 동안 AI 분석 중을 보이다가 AI 답으로 바꾼다', async ({
+  page,
+}) => {
+  const stream = await holdEventStream(page, '/api/v1/recommendations/companions')
+  await asParentWithChild(page)
+  await page.goto('/products/1?childId=501')
+  const section = companionSection(page)
+  await expect(section.getByRole('status', { name: WAITING })).toBeVisible()
+
+  await stream.send('rule', { source: 'RULE', products: [card(5, null), card(6, null)] })
+  await expect(section.getByRole('link', { name: /함께 상품 5/ })).toBeVisible()
+  await expect(section.getByRole('status', { name: WAITING })).toHaveCount(0)
+  await expect(section.getByRole('status', { name: AI_WAITING })).toBeVisible()
+
+  await stream.send('ai', { source: 'AI', products: [card(7, REASON), card(5, null)] })
+  await expect(section.getByText(REASON)).toBeVisible()
+  await expect(section.getByRole('link', { name: /함께 상품 6/ })).toHaveCount(0)
+  await expect(section.getByRole('status', { name: AI_WAITING })).toHaveCount(0)
+  await stream.close()
+})
+
+test('규칙 결과를 그린 뒤 ai 없이 닫히면 AI 분석 중만 걷는다', async ({ page }) => {
+  const stream = await holdEventStream(page, '/api/v1/recommendations/companions')
+  await asParentWithChild(page)
+  await page.goto('/products/2?childId=501')
+  const section = companionSection(page)
+
+  await stream.send('rule', { source: 'RULE', products: [card(8, null)] })
+  await expect(section.getByRole('status', { name: AI_WAITING })).toBeVisible()
+  await stream.close()
+
+  await expect(section.getByRole('status', { name: AI_WAITING })).toHaveCount(0)
+  await expect(section.getByRole('link', { name: /함께 상품 8/ })).toBeVisible()
+  await expect.poll(() => lastStreamEvents(page)).toEqual(['rule'])
 })
 
 test('AI 없이 규칙 결과만 오고 닫히면 받아 둔 규칙 결과를 그린다', async ({ page }) => {
