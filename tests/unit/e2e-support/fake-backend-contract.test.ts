@@ -111,6 +111,8 @@ import {
   reviewSummaryShape,
 } from '@/entities/review/api/review.shape'
 import { favoriteListShape, favoriteSummaryShape } from '@/entities/favorite/api/favorite.shape'
+import { adminReviewListShape } from '@/entities/review/api/admin-review.shape'
+import { reviewVisibilityShape } from '@/features/moderate-review'
 import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
 import { toWriteReviewRequest } from '@/features/write-review'
@@ -586,6 +588,34 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expectContract(patched.data, reviewShape)
     expect(patched.data).toMatchObject({ rating: 3, imageUrls: [] })
     expect((await call('PATCH', `/reviews/${review.id}`, 1, {})).status).toBe(400)
+    // 관리자 리뷰 검사 (BE AdminCommunityReviewController): 금칙어로 고치면 숨김 → 관리자 다시 공개 · 숨김 확정
+    const isListed = async () =>
+      (await call('GET', `/reviews?productId=${productId}&size=50`, null)).data.items.some(
+        (item: { reviewId: string }) => item.reviewId === review.id,
+      )
+    await call('PATCH', `/reviews/${review.id}`, 1, { content: '바보 같은 옷' })
+    expect(await isListed()).toBe(false)
+    expect((await call('GET', '/admin/community/reviews?status=HIDDEN', 1)).status).toBe(403)
+    expect((await call('GET', '/admin/community/reviews?status=NOPE', 3)).status).toBe(400)
+    const hidden = await call('GET', '/admin/community/reviews?status=HIDDEN', 3)
+    expectContract(hidden.data, adminReviewListShape)
+    expect(hidden.data.items[0]).toMatchObject({ reviewId: review.id, reason: 'PROFANITY' })
+    const visibilityPath = `/admin/community/reviews/${review.id}/visibility`
+    expect((await call('PATCH', visibilityPath, 3, { visibility: 'NOPE' })).status).toBe(400)
+    const restored = await call('PATCH', visibilityPath, 3, { visibility: 'VISIBLE' })
+    expectContract(restored.data, reviewVisibilityShape)
+    expect(restored.data).toEqual({ reviewId: review.id, status: 'RESTORED' })
+    expect(await isListed()).toBe(true)
+    const confirmedHidden = await call('PATCH', visibilityPath, 3, { visibility: 'HIDDEN' })
+    expect(confirmedHidden.data.status).toBe('CONFIRMED_HIDDEN')
+    expect(await isListed()).toBe(false)
+    const mineAfter = await call('GET', '/reviews/me', 1)
+    expect(
+      mineAfter.data.items.find((item: { reviewId: string }) => item.reviewId === review.id)
+        ?.visibility,
+    ).toBe('UNDER_REVIEW')
+    const unknown = '/admin/community/reviews/99999/visibility'
+    expect((await call('PATCH', unknown, 3, { visibility: 'VISIBLE' })).status).toBe(404)
     expect((await call('DELETE', `/reviews/${review.id}`, 2)).status).toBe(403)
     expect((await call('DELETE', `/reviews/${review.id}`, 1)).status).toBe(204)
   }, 15_000)

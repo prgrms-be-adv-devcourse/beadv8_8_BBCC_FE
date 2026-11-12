@@ -1,7 +1,10 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
+import { adminReviewApi } from '../api/admin-review-api'
 import { reviewApi } from '../api/review-api'
 import type { CursorPageDto } from '../api/review.dto'
+import type { ModerationStatus } from './admin-review'
+import { toAdminReview } from './admin-review.mapper'
 import { toReview, toReviewableItem, toReviewSummary } from './review.mapper'
 
 /** 상품 리뷰 한 번에 부를 개수. 내 리뷰 · 작성 가능 목록은 주문 상세에서 한 번에 확인하도록 최대(50)로 */
@@ -14,6 +17,7 @@ export const reviewKeys = {
   summary: (productId: string) => ['review', 'summary', productId] as const,
   mine: ['review', 'mine'] as const,
   reviewable: ['review', 'reviewable'] as const,
+  admin: (status: ModerationStatus) => ['review', 'admin', status] as const,
 }
 
 const nextCursorOf = (page: CursorPageDto<unknown>) => page.nextCursor ?? undefined
@@ -77,4 +81,15 @@ export function useReviewableItemQuery(orderItemId: string) {
     isError: query.isError,
     error: query.error,
   }
+}
+
+/** 관리자 리뷰 검사: 상태별 최신순, 「더 보기」로 이어 붙인다 */
+export function useAdminReviewsQuery(status: ModerationStatus) {
+  return useInfiniteQuery({
+    queryKey: reviewKeys.admin(status),
+    queryFn: ({ pageParam }) => adminReviewApi.list(status, { cursor: pageParam, size: 20 }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: nextCursorOf,
+    select: (data) => data.pages.flatMap((page) => page.items.map(toAdminReview)),
+  })
 }
