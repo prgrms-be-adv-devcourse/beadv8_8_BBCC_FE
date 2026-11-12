@@ -1000,16 +1000,30 @@ http
       confirmedAt: item.confirmedAt,
     })
     const summaryOf = ({ sellerId: _s, items: _i, failReason: _f, ...st }) => st
+    // BE: 정산 예정일 = 확정일 다음 영업일 (가짜 백엔드는 주말만 건너뛴다)
+    const nextBusinessDay = (dateTime) => {
+      const day = new Date(`${dateTime.slice(0, 10)}T00:00:00Z`)
+      do day.setUTCDate(day.getUTCDate() + 1)
+      while (day.getUTCDay() === 0 || day.getUTCDay() === 6)
+      return day.toISOString().slice(0, 10)
+    }
+    const myTargets = () =>
+      confirmedItems().filter((x) => String(x.item.sellerId) === String(me) && !x.item.settled)
     if (r('GET', /^\/seller\/settlement-targets$/))
       return send(
         res,
         200,
         page(
-          confirmedItems()
-            .filter((x) => String(x.item.sellerId) === String(me) && !x.item.settled)
-            .map(itemOf),
+          myTargets().map((x) => ({
+            ...itemOf(x),
+            expectedPayoutOn: nextBusinessDay(x.item.confirmedAt),
+          })),
         ),
       )
+    if (r('GET', /^\/seller\/settlement-targets\/summary$/))
+      return send(res, 200, {
+        totalSalesAmount: myTargets().reduce((sum, x) => sum + x.item.amount, 0),
+      })
     if (r('GET', /^\/seller\/settlements$/))
       return send(
         res,

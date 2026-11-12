@@ -204,8 +204,8 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
       step: '⑦',
       actor: '판매자',
       todo: [
-        '정산서 "상세"에서 수수료 10%를 뺀 지급액을 봐요',
-        '오늘 구매확정한 상품은 "정산 예정"에 있다가 내일 정산돼요',
+        '정산서 "상세"에서 수수료를 뺀 지급액을 봐요',
+        '오늘 구매확정한 상품은 "정산 예정"에 있다가 정산 예정일에 정산돼요',
       ],
       watch: 'GET /seller/settlements — 구매확정 → 정산 → 예치금 입금(지급 완료)까지 이어진 결과',
       next: { label: '흐름 확인', to: C.verify },
@@ -216,7 +216,7 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
     guide: {
       step: '⑦',
       actor: '판매자',
-      todo: ['수수료 10%를 뺀 지급액과 정산 항목(구매확정한 주문상품)을 봐요'],
+      todo: ['수수료를 뺀 지급액과 정산 항목(구매확정한 주문상품)을 봐요'],
       watch: 'GET /seller/settlements/{id} — 정산서 상세(항목 · 실패 사유)',
       next: { label: '흐름 확인', to: C.verify },
     },

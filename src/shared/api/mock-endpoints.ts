@@ -145,6 +145,13 @@ export const MOCK_ENDPOINTS: MockEndpoint[] = [
   },
   {
     method: 'GET',
+    path: '/seller/settlement-targets/summary',
+    source: 'real',
+    backend: 'BE develop(ea5393fff) 머지 → 실제',
+    screens: '판매자 센터 홈 · 판매자 정산(정산 예정 금액)',
+  },
+  {
+    method: 'GET',
     path: '/seller/settlements',
     source: 'real',
     backend: 'BE develop(ca574d3) 머지 → 실제 (FE #119)',

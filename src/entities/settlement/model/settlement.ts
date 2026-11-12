@@ -6,6 +6,9 @@ export type SettlementItem = {
   confirmedAt: string
 }
 
+/** 정산 예정 주문상품. 예정일이 null이면 공휴일 정보를 못 받아 아직 모른다 */
+export type SettlementTarget = SettlementItem & { expectedPayoutOn: string | null }
+
 /** COMPLETED = 정산 완료(지급 요청) · PAID = 예치금 입금 끝 · FAILED = 실패 */
 export type SettlementStatus = 'COMPLETED' | 'PAID' | 'FAILED'
 

@@ -9,16 +9,21 @@ import type {
   SettlementDetail,
   SettlementItem,
   SettlementRunResult,
+  SettlementTarget,
   SettlementStatus,
 } from './settlement'
 
-export function toSettlementItem(dto: SettlementTargetDto): SettlementItem {
+export function toSettlementItem(dto: SettlementDetailDto['items'][number]): SettlementItem {
   return {
     orderItemId: String(dto.orderItemId),
     orderId: String(dto.orderId),
     amount: dto.salesAmount,
     confirmedAt: dto.confirmedAt,
   }
+}
+
+export function toSettlementTarget(dto: SettlementTargetDto): SettlementTarget {
+  return { ...toSettlementItem(dto), expectedPayoutOn: dto.expectedPayoutOn }
 }
 
 export function toSettlement(dto: SettlementDto): Settlement {
@@ -28,7 +33,8 @@ export function toSettlement(dto: SettlementDto): Settlement {
     periodStart: dto.periodStartOn,
     periodEnd: dto.periodEndOn,
     totalAmount: dto.totalSalesAmount,
-    feeRatePercent: Math.round(dto.feeRate * 100),
+    // 0.035 → 3.5 (BE는 소수점 넷째 자리까지라 퍼센트는 둘째 자리까지)
+    feeRatePercent: Math.round(dto.feeRate * 10000) / 100,
     feeAmount: dto.feeAmount,
     payoutAmount: dto.settlementAmount,
     completedAt: dto.completedAt,
