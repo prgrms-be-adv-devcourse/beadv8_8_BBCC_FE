@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { adminMemberApi } from '../api/member-api'
 import type { MemberFilter } from './member'
 import { toAdminMember } from './member.mapper'
@@ -10,12 +10,18 @@ export const memberKeys = {
     ['admin-members', filter, keyword, page] as const,
 }
 
-/** 회원 목록 한 페이지 (page는 0부터). 페이지를 바꾸는 동안 앞 페이지를 그대로 보인다 */
+/**
+ * 회원 목록 한 페이지 (page는 0부터). 같은 구분 · 검색어에서 페이지만 바꿀 때 앞 페이지를 그대로 보인다
+ * (구분 · 검색어가 바뀌면 이전 조건의 목록을 보이지 않고 불러오는 중으로)
+ */
 export function useAdminMembersQuery(filter: MemberFilter, keyword: string, page = 0) {
   return useQuery({
     queryKey: memberKeys.list(filter, keyword, page),
     queryFn: () => adminMemberApi.list(filter, keyword, page),
-    placeholderData: keepPreviousData,
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[1] === filter && previousQuery.queryKey[2] === keyword
+        ? previous
+        : undefined,
     select: (page) => ({
       ...page,
       content: page.content.map(toAdminMember),

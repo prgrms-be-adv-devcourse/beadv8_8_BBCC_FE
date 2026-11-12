@@ -87,16 +87,23 @@ export function AdminSellerApplicationsPage() {
               >
                 처리한 신청
               </SectionTitle>
-              <ApplicationTable label="처리한 신청" lastColumn="상태">
-                {processed.map((application) => (
-                  <tr key={application.id} className={ROW}>
-                    <ApplicationCells application={application} />
-                    <td className={cn(CELL, 'text-ink-2 font-semibold whitespace-nowrap')}>
-                      {APPLICATION_STATUS_LABEL[application.status]}
-                    </td>
-                  </tr>
-                ))}
-              </ApplicationTable>
+              {processed.length === 0 ? (
+                // 전체 목록 한 페이지에서 처리한 것만 고르므로 대기 건만 있는 페이지는 비어 있다
+                <p className="bg-paper-2 text-ink-2 rounded-lg py-10 text-center text-sm">
+                  이 페이지에는 처리한 신청이 없어요. 다른 페이지를 눌러 보세요.
+                </p>
+              ) : (
+                <ApplicationTable label="처리한 신청" lastColumn="상태">
+                  {processed.map((application) => (
+                    <tr key={application.id} className={ROW}>
+                      <ApplicationCells application={application} />
+                      <td className={cn(CELL, 'text-ink-2 font-semibold whitespace-nowrap')}>
+                        {APPLICATION_STATUS_LABEL[application.status]}
+                      </td>
+                    </tr>
+                  ))}
+                </ApplicationTable>
+              )}
               <Pagination
                 page={processedPage}
                 totalPages={applications.data.totalPages}
