@@ -9,7 +9,7 @@ export function useUpdateNickname() {
   })
 }
 
-/** 탈퇴 (목) → 로그아웃 */
+/** 탈퇴 → 로그아웃 (Refresh Token 쿠키는 로그아웃이 지운다) */
 export function useWithdraw({ onDone }: { onDone: () => void }) {
   return useMutation({
     mutationFn: () => runWithAction('탈퇴', () => withdraw()),

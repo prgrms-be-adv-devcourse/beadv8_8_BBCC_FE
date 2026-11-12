@@ -42,6 +42,6 @@ export const sessionApi = {
       .then(expectShape(memberShape)),
   updateMe: (request: MemberUpdateRequestDto) =>
     apiClient.patch<MemberDto>('/members/me', request).then(expectShape(memberShape)),
-  /** 탈퇴 (기획서 8장 보완, 조건 보류). 백엔드에 아직 없어 목 응답이다 */
+  /** 탈퇴. 204, 이미 받은 Access Token은 무효화된다. 판매자는 남은 주문 · 정산이 있으면 409, 확인 실패 503 */
   withdraw: () => apiClient.delete('/members/me'),
 }

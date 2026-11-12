@@ -699,13 +699,27 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await switchRole(page, '보호자')
   })
 
-  await test.step('내 정보: 닉네임 수정 → 토큰 다시 받기 → 탈퇴(목)', async () => {
+  await test.step('내 정보: 닉네임 수정 → 토큰 다시 받기 → 탈퇴 → 로그아웃', async () => {
     await page.goto('/my/profile')
     await page.getByRole('button', { name: '변경', exact: true }).click()
     await page.getByLabel(/닉네임/).fill('보호자맘')
     await page.getByRole('button', { name: '닉네임 바꾸기' }).click()
     await expect(page.getByText('보호자맘 · 회원 1').first()).toBeVisible()
+    // 목이 아니라 서버로 탈퇴하고, 이어서 로그아웃으로 Refresh Token 쿠키를 지운다 (BE MemberController)
+    const withdrawn = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'DELETE' && response.url().endsWith('/api/v1/members/me'),
+    )
+    const loggedOut = page.waitForRequest(
+      (request) => request.method() === 'POST' && request.url().endsWith('/api/v1/auth/logout'),
+    )
     await page.getByRole('button', { name: '탈퇴하기' }).click()
+    // 확인 창은 locator 동작 · 단언 때 눌리므로(acceptConfirms) 화면 단언을 먼저 기다린다
+    await expect(page.getByText('로그인 전')).toBeVisible()
+    expect((await withdrawn).status()).toBe(204)
+    await loggedOut
+    // 탭에 기억한 시연 계정도 지웠으므로 새로고침해도 탈퇴한 회원으로 다시 로그인하지 않는다
+    await page.reload()
     await expect(page.getByText('로그인 전')).toBeVisible()
   })
 
