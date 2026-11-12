@@ -258,3 +258,25 @@ test('자녀가 대기 중인 조르기를 철회하면 예약이 풀리고 보�
   await expect(page.getByRole('main')).toContainText('아이가 철회함')
   await expect(page.getByRole('heading', { name: '조르기 답하기' })).toHaveCount(0)
 })
+
+test('자녀가 상품 상세에서 바로 조르기를 보내면 내 조르기로 간다 (같은 상품이 담겨 있으면 합친다고 알린다)', async ({
+  page,
+  context,
+}) => {
+  const { loginId } = await registerChildWithAccount(page)
+  const child = await context.newPage()
+  await loginChild(child, loginId)
+  await child.goto('/child/products/1')
+  await pickOption(child, '네이비', '110')
+  // 먼저 장바구니에 하나 담아 둔다 → 바로 조르기는 그 줄에 합쳐 2개로 조른다
+  await child.getByRole('button', { name: '내 장바구니에 담기' }).click()
+  await expect(child.getByRole('link', { name: '내 장바구니 보기' })).toBeVisible()
+  await child.getByLabel('보호자에게 한마디 (선택)').fill('바로 조르기예요')
+  await child.getByRole('button', { name: '바로 조르기' }).click()
+  const dialog = child.getByRole('alertdialog')
+  await expect(dialog).toContainText('장바구니에 같은 상품이 1개 있어요. 합쳐서 2개로 조를게요.')
+  await dialog.getByRole('button', { name: '조르기 보내기' }).click()
+  await expect(child).toHaveURL(/\/child\/wishes$/)
+  const card = child.getByRole('article').filter({ hasText: '바로 조르기예요' })
+  await expect(card).toContainText('기다리는 중')
+})
