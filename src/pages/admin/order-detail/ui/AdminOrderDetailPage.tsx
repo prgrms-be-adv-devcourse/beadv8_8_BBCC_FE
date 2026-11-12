@@ -98,7 +98,8 @@ export function AdminOrderDetailPage() {
                 )}
                 {payments.data && related.length === 0 && (
                   <p className="bg-paper-2 text-ink-2 rounded-lg px-4 py-8 text-center text-sm">
-                    결제 기록이 없어요. 결제 전에 취소됐거나 아직 처리 중이에요.
+                    최근 결제 50건 안에는 이 주문의 결제가 없어요. 결제 전에 취소됐거나 아직 처리
+                    중이거나, 더 오래된 결제일 수 있어요.
                   </p>
                 )}
                 {related.length > 0 && (
