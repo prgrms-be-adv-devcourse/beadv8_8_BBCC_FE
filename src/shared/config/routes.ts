@@ -73,6 +73,8 @@ export const paths = {
     walletHistory: '/my/wallet/history',
     /** 내 리뷰 (쓴 리뷰 · 리뷰를 기다리는 상품) */
     reviews: '/my/reviews',
+    /** 내 찜 (최신순, 판매 상태) */
+    favorites: '/my/favorites',
     /** 리뷰 쓰기 (메뉴 없이 한 가지 일만). 구매확정한 주문상품 하나 */
     reviewWrite: (orderItemId: string) => `/my/reviews/new?orderItemId=${orderItemId}`,
     /** 예치금 충전 (예치금과 따로, 메뉴 없이 한 가지 일만) */

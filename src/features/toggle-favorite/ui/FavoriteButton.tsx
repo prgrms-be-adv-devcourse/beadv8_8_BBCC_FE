@@ -12,11 +12,15 @@ type FavoriteButtonProps = {
   isSelling: boolean
   /** 로그인 전이면 로그인 주소. 누르면 그리로 간다 */
   loginHref?: string | null
+  /** 상품 목록 칸 위에 겹쳐 둘 작은 원형 하트 (찜 수 없음) */
+  isCompact?: boolean
   className?: string
 }
 
 const BOX =
   'border-rule text-ink-2 inline-flex min-h-12 min-w-12 flex-none flex-col items-center justify-center gap-0.5 rounded-md border bg-transparent px-1.5 py-1 transition-colors'
+const COMPACT_BOX =
+  'bg-paper/90 text-ink-2 inline-flex size-10 items-center justify-center rounded-full shadow-sm backdrop-blur transition-colors'
 
 function Heart({ isFilled }: { isFilled: boolean }) {
   return (
@@ -41,18 +45,22 @@ export function FavoriteButton({
   count,
   isSelling,
   loginHref,
+  isCompact = false,
   className,
 }: FavoriteButtonProps) {
   const toggle = useToggleFavorite(productId)
+  const box = isCompact ? COMPACT_BOX : BOX
   const countLabel =
-    count === undefined ? null : <span className="figure text-[11px] font-semibold">{count}</span>
+    count === undefined || isCompact ? null : (
+      <span className="figure text-[11px] font-semibold">{count}</span>
+    )
 
   if (loginHref)
     return (
       <Link
         to={loginHref}
         aria-label={`로그인하고 찜하기${count === undefined ? '' : `, 찜 ${count}`}`}
-        className={cn(BOX, 'hover:text-ink', className)}
+        className={cn(box, 'hover:text-ink', className)}
       >
         <Heart isFilled={false} />
         {countLabel}
@@ -71,7 +79,7 @@ export function FavoriteButton({
       disabled={!canToggle || toggle.isPending}
       onClick={() => toggle.mutate(!isFavorited)}
       className={cn(
-        BOX,
+        box,
         isShownFavorited ? 'text-primary' : 'hover:text-ink',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className,
