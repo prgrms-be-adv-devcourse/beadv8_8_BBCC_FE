@@ -3,6 +3,7 @@ import type {
   AdminOrderDto,
   ChildPurchaseDto,
   OrderDetailDto,
+  OrderStatusHistoryDto,
   OrderSummaryDto,
   OrderTimelineDto,
   PlaceOrderRequestDto,
@@ -11,6 +12,7 @@ import {
   adminOrderPageShape,
   childPurchasePageShape,
   orderDetailShape,
+  orderHistoryShape,
   orderPageShape,
   orderTimelineShape,
 } from './order.shape'
@@ -53,4 +55,9 @@ export const orderApi = {
     apiClient
       .get<Page<AdminOrderDto>>('/admin/orders', { params: { page: 0, size: 100 } })
       .then(expectShape(adminOrderPageShape)),
+  /** 관리자 주문 상태 이력 (BE #442). 오래된 것부터, 주문이 없으면 404 */
+  adminHistory: (orderId: string) =>
+    apiClient
+      .get<OrderStatusHistoryDto[]>(`/admin/orders/${encodeURIComponent(orderId)}/history`)
+      .then(expectShape(orderHistoryShape)),
 }

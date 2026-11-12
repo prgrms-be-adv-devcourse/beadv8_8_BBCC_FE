@@ -136,3 +136,19 @@ export const childPurchasePageShape = pageOf(
     status: oneOf(['PAID', 'SHIPPING', 'DELIVERED', 'CONFIRMED', 'CANCELLED']),
   }),
 )
+
+// GET /admin/orders/{orderId}/history (BE #442). 대상 · 상태 · 출처는 늘어날 수 있어 글자로 받는다
+export const orderHistoryShape = arr(
+  obj({
+    historyId: str,
+    targetType: str,
+    targetId: str,
+    fromStatus: nullable(str),
+    toStatus: str,
+    reason: nullable(str),
+    actorType: str,
+    actorId: nullable(str),
+    source: str,
+    occurredAt: str,
+  }),
+)

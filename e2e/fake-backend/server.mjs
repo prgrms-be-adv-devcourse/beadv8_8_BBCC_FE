@@ -488,6 +488,43 @@ function who(req) {
   if (!t) return null
   return JSON.parse(Buffer.from(t.split('.')[1], 'base64url'))
 }
+// BE OrderStatusHistory (#442): 주문 · 주문상품 · 배송 상태가 바뀔 때마다 한 줄 (관리자 상태 이력)
+function recordHistory(
+  o,
+  targetType,
+  targetId,
+  fromStatus,
+  toStatus,
+  reason,
+  actorType,
+  actorId,
+  source,
+) {
+  ;(o.history ??= []).push({
+    historyId: String(nid()),
+    targetType,
+    targetId: String(targetId),
+    fromStatus,
+    toStatus,
+    reason,
+    actorType,
+    actorId: actorId == null ? null : String(actorId),
+    source,
+    occurredAt: now(),
+  })
+}
+const cancelOrderHistory = (o, reason, actorType, actorId, source) =>
+  recordHistory(
+    o,
+    'ORDER',
+    o.orderId,
+    'PENDING_PAYMENT',
+    'CANCELLED',
+    reason,
+    actorType,
+    actorId,
+    source,
+  )
 function scheduleOrder(o, me, stall, clearCart = true) {
   // 결제 마감: 그때까지 결제 처리 중이면 PAYMENT_EXPIRED로 취소 (BE 마감 스케줄러)
   setTimeout(() => {
@@ -495,6 +532,7 @@ function scheduleOrder(o, me, stall, clearCart = true) {
     o.status = 'CANCELLED'
     o.cancelReason = 'PAYMENT_EXPIRED'
     cancelledAt.set(o, now())
+    cancelOrderHistory(o, 'PAYMENT_EXPIRED', 'SYSTEM', null, 'scheduler:payment-expiry')
   }, stall?.timeoutMs ?? PAYMENT_TIMEOUT_MS).unref()
   if (!stall)
     setTimeout(() => {
@@ -507,6 +545,7 @@ function scheduleOrder(o, me, stall, clearCart = true) {
         o.status = 'CANCELLED'
         o.cancelReason = 'OUT_OF_STOCK'
         cancelledAt.set(o, now())
+        cancelOrderHistory(o, 'OUT_OF_STOCK', 'EVENT', null, 'stock.deduction-failed')
         short.forEach((it) => (it.unavailableReason = 'OUT_OF_STOCK'))
         return
       }
@@ -517,6 +556,7 @@ function scheduleOrder(o, me, stall, clearCart = true) {
         o.status = 'CANCELLED'
         o.cancelReason = 'PAYMENT_FAILED'
         cancelledAt.set(o, now())
+        cancelOrderHistory(o, 'PAYMENT_FAILED', 'EVENT', null, 'payment.failed')
         // 백엔드: 잔액 부족만 실패 결제를 저장한다
         payments.push({
           paymentId: nid(),
@@ -552,6 +592,17 @@ function scheduleOrder(o, me, stall, clearCart = true) {
         })),
       })
       o.status = 'PAID'
+      recordHistory(
+        o,
+        'ORDER',
+        o.orderId,
+        'PENDING_PAYMENT',
+        'PAID',
+        null,
+        'EVENT',
+        null,
+        'payment.completed',
+      )
       // 칸으로 산 줄(BE #998): 산 수량만큼 칸에서 빼고, 조르기 예약 칸이면 조르기를 결제 완료로 (BE WishPurchaseService)
       const cartLines = orderCartLines.get(o) ?? []
       for (const bought of cartLines) {
@@ -1751,6 +1802,13 @@ http
         )
       return send(res, 200, page(kind === 'SHIPPING_DELAYED' ? shippingDelayed() : []))
     }
+    // BE AdminOrderController GET /admin/orders/{orderId}/history (#442): 오래된 것부터, 주문이 없으면 404
+    if ((x = r('GET', /^\/admin\/orders\/(\d+)\/history$/))) {
+      const o = orders.find((order) => order.orderId === +x[1])
+      if (!o)
+        return problem(res, 404, '주문을 찾을 수 없습니다', '주문을 찾을 수 없습니다.', req.url)
+      return send(res, 200, o.history ?? [])
+    }
     // BE OrderDeadLetterService (#601): 기본 OPEN, 결제 토픽이 먼저 · 그 안은 최근 받은 것부터
     if (r('GET', /^\/admin\/orders\/dead-letters$/)) {
       const status = url.searchParams.get('status') ?? 'OPEN'
@@ -2288,6 +2346,17 @@ http
         deliveries: [],
       }
       orders.push(o)
+      recordHistory(
+        o,
+        'ORDER',
+        o.orderId,
+        null,
+        'PENDING_PAYMENT',
+        null,
+        'BUYER',
+        me,
+        'POST /api/v1/orders',
+      )
       orderCartLines.set(
         o,
         body.items
@@ -2363,6 +2432,17 @@ http
           ledger(me, 'REFUND', refund, nid())
         }
       }
+      recordHistory(
+        o,
+        'ORDER',
+        o.orderId,
+        o.status,
+        'CANCELLED',
+        'BUYER_CANCELLED',
+        'BUYER',
+        me,
+        'POST /api/v1/orders/{orderId}/cancel',
+      )
       o.status = 'CANCELLED'
       o.cancelReason = 'BUYER_CANCELLED'
       cancelledAt.set(o, now())
@@ -2381,6 +2461,17 @@ http
       it.status = 'CONFIRMED'
       it.confirmedAt = now()
       it.confirmType = 'DIRECT'
+      recordHistory(
+        orders.find((o) => o.orderId === +x[1]),
+        'ORDER_ITEM',
+        it.orderItemId,
+        'ORDERED',
+        'CONFIRMED',
+        null,
+        'BUYER',
+        me,
+        'POST /api/v1/orders/{orderId}/items/{orderItemId}/confirm',
+      )
       return send(res, 200, it)
     }
     const sellerOrders = () => orders.flatMap((o) => o.deliveries.map((d) => ({ d, o })))
@@ -2394,8 +2485,8 @@ http
             orderId: String(o.orderId),
             orderedAt: o.orderedAt,
             shippingAddress: o.shippingAddress,
-            // BE: 판매 주문 목록의 sellerName은 늘 null (OrderDetailResponse.Item 재사용)
-            items: o.items.map((it) => ({ ...it, sellerName: null })),
+            // BE: 판매 주문 목록의 sellerName은 늘 null, 자녀(child) 칸은 없다 (BE #997)
+            items: o.items.map(({ child: _child, ...it }) => ({ ...it, sellerName: null })),
             deliveredAt: d.deliveredAt,
           })),
         ),
@@ -2428,6 +2519,17 @@ http
         trackingNumber: body.trackingNumber,
         shippedAt: now(),
       })
+      recordHistory(
+        o,
+        'DELIVERY',
+        d.sellerOrderId,
+        'READY',
+        'SHIPPING',
+        null,
+        'SELLER',
+        me,
+        'POST /api/v1/seller/orders/{sellerOrderId}/ship',
+      )
       return send(res, 200, { ...d, orderId: String(o.orderId) })
     }
     // BE DeliveryService.cancel (#655): 발송 준비일 때만 내 몫 주문상품을 모두 취소하고 결제가 그 금액을 돌려준다.
@@ -2468,6 +2570,17 @@ http
           req.url,
         )
       d.status = 'CANCELLED'
+      recordHistory(
+        o,
+        'DELIVERY',
+        d.sellerOrderId,
+        'READY',
+        'CANCELLED',
+        body.reason,
+        'SELLER',
+        me,
+        'POST /api/v1/seller/orders/{sellerOrderId}/cancel',
+      )
       const mine = o.items.filter((it) => it.sellerId === d.sellerId && it.status === 'ORDERED')
       mine.forEach((it) => (it.status = 'CANCELLED'))
       const refund = mine.reduce((sum, it) => sum + it.amount, 0)
@@ -2479,12 +2592,34 @@ http
         o.status = 'CANCELLED'
         o.cancelReason = 'SELLER_CANCELLED'
         cancelledAt.set(o, now())
+        recordHistory(
+          o,
+          'ORDER',
+          o.orderId,
+          'PAID',
+          'CANCELLED',
+          'SELLER_CANCELLED',
+          'SELLER',
+          me,
+          'POST /api/v1/seller/orders/{sellerOrderId}/cancel',
+        )
       }
       return send(res, 200, { ...d, orderId: String(o.orderId) })
     }
     if ((x = r('POST', /^\/seller\/orders\/(\d+)\/deliver$/))) {
       const { d, o } = sellerOrders().find(({ d }) => d.sellerOrderId === x[1])
       Object.assign(d, { status: 'DELIVERED', deliveredAt: now() })
+      recordHistory(
+        o,
+        'DELIVERY',
+        d.sellerOrderId,
+        'SHIPPING',
+        'DELIVERED',
+        null,
+        'SELLER',
+        me,
+        'POST /api/v1/seller/orders/{sellerOrderId}/deliver',
+      )
       o.items.forEach((i) => (i.deliveredAt = now()))
       return send(res, 200, { ...d, orderId: String(o.orderId) })
     }
