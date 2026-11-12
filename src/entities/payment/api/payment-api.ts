@@ -30,4 +30,9 @@ export const paymentApi = {
       .then(expectShape(adminPaymentSummaryShape)),
   get: (paymentId: string) =>
     apiClient.get<PaymentDetailDto>(`/payments/${paymentId}`).then(expectShape(paymentDetailShape)),
+  /** 그 주문의 내 결제 (0 또는 1건, 남의 주문이면 빈 목록) */
+  listOfOrder: (orderId: string) =>
+    apiClient
+      .get<Page<PaymentSummaryDto>>('/payments', { params: { orderId } })
+      .then(expectShape(paymentPageShape)),
 }

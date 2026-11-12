@@ -42,14 +42,15 @@ describe('toPayment: 결제 응답 → 화면 모델', () => {
   })
 })
 
-describe('findPaymentOfOrder: 내 결제 목록에서 주문의 결제 찾기', () => {
-  it('주문번호가 같은 결제를 찾는다', () => {
-    const list = [payment({ id: '4', orderId: '7' }), payment()]
-    expect(findPaymentOfOrder(list, '6')?.id).toBe('3')
+describe('findPaymentOfOrder: 주문 ID로 조회한 결과(0 또는 1건)에서 그 주문의 결제 고르기', () => {
+  it('그 주문의 결제 1건이 오면 그 결제', () => {
+    expect(findPaymentOfOrder([payment()], '6')?.id).toBe('3')
   })
-  it('없으면 null', () => {
-    expect(findPaymentOfOrder([payment({ orderId: '7' })], '6')).toBeNull()
-    expect(findPaymentOfOrder(undefined, '6')).toBeNull()
+  it('빈 목록이면 null (결제 기록이 없거나 남의 주문)', () => {
+    expect(findPaymentOfOrder([], '6')).toBeNull()
+  })
+  it('다른 주문의 결제만 오면 null (orderId를 거르지 않은 응답이어도 다른 주문 결제를 보여 주지 않는다)', () => {
+    expect(findPaymentOfOrder([payment({ id: '4', orderId: '7' })], '6')).toBeNull()
   })
 })
 

@@ -8,11 +8,9 @@ import {
   type AdminPaymentSummary,
 } from './payment'
 
-export function findPaymentOfOrder(
-  payments: Payment[] | undefined,
-  orderId: string,
-): Payment | null {
-  return payments?.find((payment) => payment.orderId === orderId) ?? null
+/** 주문 ID로 조회한 결과(0 또는 1건)에서 그 주문의 결제. 다른 주문의 결제는 고르지 않는다 */
+export function findPaymentOfOrder(payments: Payment[], orderId: string): Payment | null {
+  return payments.find((payment) => payment.orderId === orderId) ?? null
 }
 
 /** 결제 한 건의 실패 이유 · 환불 금액 한 줄 (둘 다 없으면 빈 글자) */
