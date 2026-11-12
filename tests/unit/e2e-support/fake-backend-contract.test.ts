@@ -32,6 +32,10 @@ import { childOnboardingShape } from '@/entities/child-onboarding'
 import { guardianVerificationShape } from '@/entities/guardian-verification/api/guardian-verification.shape'
 import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
 import { deadLetterPageShape, deadLetterShape } from '@/entities/dead-letter/api/dead-letter.shape'
+import {
+  orderDeadLetterPageShape,
+  orderDeadLetterShape,
+} from '@/entities/dead-letter/api/order-dead-letter.shape'
 import { adminSettlementPageShape } from '@/entities/settlement/api/admin-settlement.shape'
 import { adminWalletPageShape, balanceReturnShape } from '@/entities/wallet/api/admin-wallet.shape'
 import { toAdminWallet, toAdminWalletParams, toReturnBalanceRequest } from '@/entities/wallet'
@@ -41,13 +45,22 @@ import {
   unreadCountShape,
 } from '@/entities/notification/api/notification.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
-import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
+import {
+  orderDetailShape,
+  orderHistoryShape,
+  orderPageShape,
+  orderTimelineShape,
+} from '@/entities/order/api/order.shape'
 import {
   wishRequestShape,
   wishRequestsShape,
   wishTimelineShape,
 } from '@/entities/wish/api/wish.shape'
-import { paymentDetailShape, paymentPageShape } from '@/entities/payment/api/payment.shape'
+import {
+  adminPaymentSummaryShape,
+  paymentDetailShape,
+  paymentPageShape,
+} from '@/entities/payment/api/payment.shape'
 import { deliveryShape, sellerOrderPageShape } from '@/entities/seller-order/api/seller-order.shape'
 import { toSellerApplicationRequest } from '@/entities/seller'
 import {
@@ -521,6 +534,31 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       paymentDetailShape,
     )
 
+    // 관리자 결제 요약 (BE #1220): 결제일(paidAt의 한국 날짜) 하루를 물으면 방금 결제가 들어간다.
+    // 시계와 비교하지 않으려고 날짜는 응답의 paidAt에서 꺼낸다
+    const paidDate = payments.data.content[0].paidAt.slice(0, 10)
+    const paidDay = await call('GET', `/admin/payments/summary?from=${paidDate}&to=${paidDate}`, 3)
+    expectContract(paidDay.data, adminPaymentSummaryShape)
+    expect(paidDay.data.daily).toHaveLength(1)
+    expect(paidDay.data.daily[0].date).toBe(paidDate)
+    expect(paidDay.data.daily[0].paidCount).toBeGreaterThanOrEqual(1)
+    expect(paidDay.data.daily[0].paidAmount).toBeGreaterThanOrEqual(payments.data.content[0].amount)
+    // 비우면 하루(오늘)만 준다 (날짜 값은 시계에 달려 있어 비교하지 않는다)
+    const today = await call('GET', '/admin/payments/summary', 3)
+    expectContract(today.data, adminPaymentSummaryShape)
+    expect(today.data.daily).toHaveLength(1)
+    expect(today.data.daily[0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    const range = await call('GET', '/admin/payments/summary?from=2026-01-30&to=2026-03-01', 3)
+    expect(range.data.daily.map((day: { date: string }) => day.date)).toHaveLength(31)
+    expect(range.data.daily[0]).toEqual({ date: '2026-01-30', paidAmount: 0, paidCount: 0 })
+    expect(
+      (await call('GET', '/admin/payments/summary?from=2026-01-30&to=2026-03-02', 3)).status,
+    ).toBe(400)
+    expect(
+      (await call('GET', '/admin/payments/summary?from=2026-03-02&to=2026-03-01', 3)).status,
+    ).toBe(400)
+    expect((await call('GET', '/admin/payments/summary', 1)).status).toBe(403)
+
     const sellerOrders = await call('GET', '/seller/orders', 2)
     expectContract(sellerOrders.data, sellerOrderPageShape)
     const sellerOrderId = sellerOrders.data.content[0].sellerOrderId
@@ -537,6 +575,42 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const itemId = order.data.items[0].orderItemId
     expect((await call('POST', `/orders/${orderId}/items/${itemId}/confirm`, 1)).status).toBe(200)
     expectContract((await call('GET', `/orders/${orderId}`, 1)).data, orderDetailShape)
+
+    // 주문 처리 타임라인 (BE #352): 단계 순서 · 현재 단계, 남의 주문은 404
+    const timeline = await call('GET', `/orders/${orderId}/timeline`, 1)
+    expectContract(timeline.data, orderTimelineShape)
+    expect(
+      timeline.data.steps.map(
+        (step: { step: string; status: string }) => `${step.step}:${step.status}`,
+      ),
+    ).toEqual([
+      'CREATED:DONE',
+      'PAYMENT_REQUESTED:DONE',
+      'PAID:DONE',
+      'SHIPPED:DONE',
+      'DELIVERED:DONE',
+      'CONFIRMED:DONE',
+    ])
+    expect(timeline.data.currentStep).toBe('CONFIRMED')
+    expect((await call('GET', `/orders/${orderId}/timeline`, 2)).status).toBe(404)
+
+    // 관리자 상태 이력 (BE #442): 오래된 것부터, 없는 주문은 404
+    const history = await call('GET', `/admin/orders/${orderId}/history`, 3)
+    expectContract(history.data, orderHistoryShape)
+    expect(
+      history.data.map((row: { targetType: string; toStatus: string }) => [
+        row.targetType,
+        row.toStatus,
+      ]),
+    ).toEqual([
+      ['ORDER', 'PENDING_PAYMENT'],
+      ['ORDER', 'PAID'],
+      ['DELIVERY', 'SHIPPING'],
+      ['DELIVERY', 'DELIVERED'],
+      ['ORDER_ITEM', 'CONFIRMED'],
+    ])
+    expect((await call('GET', '/admin/orders/999999/history', 3)).status).toBe(404)
+    expect((await call('GET', `/admin/orders/${orderId}/history`, 1)).status).toBe(403)
 
     // 리뷰 (BE community): 구매확정한 주문상품이 작성 가능 목록에 나오고, 쓰면 빠지고 상품 리뷰 · 요약에 반영된다
     const eligible = await call('GET', '/reviews/eligible', 1)
@@ -743,10 +817,16 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('POST', '/auth/admin/logout', null)).status).toBe(204)
   })
 
-  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962, 네 모듈 같은 칸)', async () => {
-    for (const module of ['auth', 'member', 'seller', 'child-profile']) {
+  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티, 같은 칸)', async () => {
+    for (const base of [
+      'auth-dead-letters',
+      'member-dead-letters',
+      'seller-dead-letters',
+      'child-profile-dead-letters',
+      'community/dead-letters',
+    ]) {
       for (const status of ['OPEN', 'REPROCESSED']) {
-        const list = await call('GET', `/admin/${module}-dead-letters?status=${status}`, 3)
+        const list = await call('GET', `/admin/${base}?status=${status}`, 3)
         expect(list.status).toBe(200)
         expectContract(list.data, deadLetterPageShape)
       }
@@ -793,6 +873,36 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       404,
     )
     expect((await call('POST', '/admin/auth-dead-letters/99999/reprocess', 3)).status).toBe(404)
+  })
+
+  it('주문 처리 실패 메시지: 목록(결제 먼저) · 상세 · 재처리 · 확인 후 종료 (BE #601)', async () => {
+    for (const status of ['OPEN', 'REPROCESSED', 'CLOSED']) {
+      const list = await call('GET', `/admin/orders/dead-letters?status=${status}`, 3)
+      expectContract(list.data, orderDeadLetterPageShape)
+    }
+    expect((await call('GET', '/admin/orders/dead-letters?status=DONE', 3)).status).toBe(400)
+    const open = (await call('GET', '/admin/orders/dead-letters', 3)).data.content
+    expect(open[0].paymentEvent).toBe(true)
+
+    const fixable = await call('POST', '/__fake/order-dead-letters', null, {})
+    const base = `/admin/orders/dead-letters/${fixable.data.deadLetterId}`
+    expectContract((await call('GET', base, 3)).data, orderDeadLetterShape)
+    const done = await call('POST', `${base}/reprocess`, 3)
+    expectContract(done.data, orderDeadLetterShape)
+    expect(done.data).toMatchObject({ status: 'REPROCESSED', reprocessCount: 1, handledBy: '1' })
+    expect((await call('POST', `${base}/reprocess`, 3)).data.reprocessCount).toBe(1)
+    expect((await call('POST', `${base}/close`, 3, { memo: '확인' })).status).toBe(409)
+
+    const broken = await call('POST', '/__fake/order-dead-letters', null, { failOnReplay: true })
+    const brokenBase = `/admin/orders/dead-letters/${broken.data.deadLetterId}`
+    const failed = await call('POST', `${brokenBase}/reprocess`, 3)
+    expect(failed.data).toMatchObject({ status: 'OPEN', reprocessCount: 1 })
+    expect((await call('POST', `${brokenBase}/close`, 3, { memo: ' ' })).status).toBe(400)
+    const closed = await call('POST', `${brokenBase}/close`, 3, { memo: '결제 반영 확인' })
+    expectContract(closed.data, orderDeadLetterShape)
+    expect(closed.data).toMatchObject({ status: 'CLOSED', memo: '결제 반영 확인' })
+    expect((await call('POST', `${brokenBase}/reprocess`, 3)).status).toBe(409)
+    expect((await call('GET', '/admin/orders/dead-letters/999999', 3)).status).toBe(404)
   })
 
   it('관리자 API는 관리자 토큰만 받는다 (BE #755: 회원 토큰은 403)', async () => {

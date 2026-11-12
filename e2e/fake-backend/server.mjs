@@ -62,6 +62,53 @@ const balanceReturns = []
 // 주문 멱등키 (BE #351): '회원:키' → { hash, orderId }
 const idempotency = {}
 // BE WalletLedger: 잔액이 바뀔 때마다 한 줄 (출금은 음수)
+// 관리자 처리 대기 기록 (가짜는 하나씩으로 시작)
+const opsRecoveries = [
+  {
+    recoveryId: '9001',
+    orderId: '9001',
+    paymentId: '9001',
+    memberId: '1',
+    amount: 25000,
+    items: [{ orderItemId: '9001', amount: 25000 }],
+    status: 'PENDING',
+    failureCode: 'ORDER_STATE_CONFLICT',
+    attemptCount: 1,
+    lastAttemptedAt: null,
+    createdAt: '2026-11-12T09:00:00',
+  },
+]
+const opsEventFailures = [
+  {
+    failureId: '9101',
+    eventType: 'stock.deducted',
+    orderId: '9101',
+    stockFailures: [],
+    status: 'PENDING',
+    failureCode: 'OptimisticLockException',
+    attemptCount: 1,
+    lastAttemptedAt: null,
+    createdAt: '2026-11-12T09:00:00',
+  },
+]
+const opsOutbox = [
+  {
+    outboxId: '9201',
+    eventId: '00000000-0000-4000-8000-000000009201',
+    eventType: 'order.paid',
+    topic: 'kidly.order.events',
+    messageKey: '9201',
+    status: 'QUARANTINED',
+    attemptCount: 10,
+    lastError: 'TimeoutException',
+    createdAt: '2026-11-12T09:00:00',
+    quarantinedAt: '2026-11-12T09:30:00',
+    sentAt: null,
+    lastRetriedAt: null,
+    lastRetriedBy: null,
+    retryCount: 0,
+  },
+]
 const ledgers = []
 const ledger = (memberId, type, amount, refId) =>
   ledgers.push({
@@ -254,6 +301,97 @@ function orderStepsOf(o) {
     ),
   ]
 }
+// BE OrderTimeline.from (#352): 저장된 시각으로 단계를 조립. 취소는 마지막 완료 단계 뒤 CANCELLED(근사 시각) + 나머지 해당 없음
+function orderTimelineOf(o) {
+  const payment = payments.find((p) => p.orderId === o.orderId)
+  const paidAt = payment?.status === 'COMPLETED' ? payment.paidAt : null
+  const cancelled = o.status === 'CANCELLED'
+  const sellerName = (sellerId) =>
+    o.items.find((it) => it.sellerId === sellerId)?.sellerName ?? null
+  const simple = (step, status, at = null, approximate = false, details = []) => ({
+    step,
+    status,
+    at,
+    approximate,
+    details,
+  })
+  const progress = (doneAts, expected) => {
+    const done = doneAts.filter(Boolean)
+    if (done.length > 0 && done.length === doneAts.length && doneAts.length >= expected)
+      return { status: 'DONE', at: done.sort().at(-1) }
+    return { status: done.length ? 'PARTIAL' : 'WAITING', at: null }
+  }
+  const deliveryDetail = (d, at, status = at ? 'DONE' : 'WAITING') => ({
+    sellerOrderId: d.sellerOrderId,
+    sellerId: d.sellerId,
+    sellerName: sellerName(d.sellerId),
+    status,
+    at,
+  })
+  const itemDetail = (it, status, at) => ({
+    orderItemId: it.orderItemId,
+    productName: it.productName,
+    status,
+    at,
+    confirmType: status === 'DONE' ? it.confirmType : null,
+  })
+  const steps = [simple('CREATED', 'DONE', o.orderedAt)]
+  steps.push(
+    payment
+      ? simple('PAYMENT_REQUESTED', 'DONE', payment.createdAt)
+      : simple('PAYMENT_REQUESTED', cancelled ? 'NOT_APPLICABLE' : 'WAITING'),
+  )
+  if (paidAt) steps.push(simple('PAID', 'DONE', paidAt))
+  else if (!cancelled) steps.push(simple('PAID', 'WAITING'))
+  if (cancelled) {
+    const notShipped = paidAt
+      ? o.deliveries.map((d) => deliveryDetail(d, null, 'NOT_APPLICABLE'))
+      : []
+    const notConfirmed = paidAt ? o.items.map((it) => itemDetail(it, 'NOT_APPLICABLE', null)) : []
+    steps.push(
+      simple('CANCELLED', 'DONE', cancelledAt.get(o) ?? o.orderedAt, true),
+      simple('SHIPPED', 'NOT_APPLICABLE', null, false, notShipped),
+      simple('DELIVERED', 'NOT_APPLICABLE', null, false, notShipped),
+      simple('CONFIRMED', 'NOT_APPLICABLE', null, false, notConfirmed),
+    )
+  } else {
+    const sellerCount = new Set(
+      o.items.filter((it) => it.status !== 'CANCELLED').map((it) => it.sellerId),
+    ).size
+    for (const [name, key] of [
+      ['SHIPPED', 'shippedAt'],
+      ['DELIVERED', 'deliveredAt'],
+    ]) {
+      const details = o.deliveries.map((d) =>
+        d.status === 'CANCELLED'
+          ? deliveryDetail(d, null, 'NOT_APPLICABLE')
+          : deliveryDetail(d, d[key] ?? null),
+      )
+      const p = progress(
+        details.filter((each) => each.status !== 'NOT_APPLICABLE').map((each) => each.at),
+        sellerCount,
+      )
+      steps.push(simple(name, p.status, p.at, false, details))
+    }
+    const items = o.items.map((it) =>
+      it.status === 'CANCELLED'
+        ? itemDetail(it, 'NOT_APPLICABLE', null)
+        : itemDetail(it, it.confirmedAt ? 'DONE' : 'WAITING', it.confirmedAt ?? null),
+    )
+    const live = items.filter((each) => each.status !== 'NOT_APPLICABLE').map((each) => each.at)
+    const p = progress(live, live.length)
+    steps.push(simple('CONFIRMED', p.status, p.at, false, items))
+  }
+  const current = steps.filter((each) => each.status === 'DONE' || each.status === 'PARTIAL').at(-1)
+  return {
+    orderId: String(o.orderId),
+    status: o.status,
+    currentStep: current.step,
+    cancelReason: o.cancelReason,
+    paymentDueAt: o.status === 'PENDING_PAYMENT' ? o.paymentDueAt : null,
+    steps,
+  }
+}
 // 주문 BE #253: 수량 1~99, 범위 밖이면 400 INVALID_QUANTITY
 const badQuantity = (q) => !Number.isInteger(q) || q < 1 || q > 99
 const invalidQuantity = (res) =>
@@ -356,6 +494,43 @@ function who(req) {
   if (!t) return null
   return JSON.parse(Buffer.from(t.split('.')[1], 'base64url'))
 }
+// BE OrderStatusHistory (#442): 주문 · 주문상품 · 배송 상태가 바뀔 때마다 한 줄 (관리자 상태 이력)
+function recordHistory(
+  o,
+  targetType,
+  targetId,
+  fromStatus,
+  toStatus,
+  reason,
+  actorType,
+  actorId,
+  source,
+) {
+  ;(o.history ??= []).push({
+    historyId: String(nid()),
+    targetType,
+    targetId: String(targetId),
+    fromStatus,
+    toStatus,
+    reason,
+    actorType,
+    actorId: actorId == null ? null : String(actorId),
+    source,
+    occurredAt: now(),
+  })
+}
+const cancelOrderHistory = (o, reason, actorType, actorId, source) =>
+  recordHistory(
+    o,
+    'ORDER',
+    o.orderId,
+    'PENDING_PAYMENT',
+    'CANCELLED',
+    reason,
+    actorType,
+    actorId,
+    source,
+  )
 function scheduleOrder(o, me, stall, clearCart = true) {
   // 결제 마감: 그때까지 결제 처리 중이면 PAYMENT_EXPIRED로 취소 (BE 마감 스케줄러)
   setTimeout(() => {
@@ -363,6 +538,7 @@ function scheduleOrder(o, me, stall, clearCart = true) {
     o.status = 'CANCELLED'
     o.cancelReason = 'PAYMENT_EXPIRED'
     cancelledAt.set(o, now())
+    cancelOrderHistory(o, 'PAYMENT_EXPIRED', 'SYSTEM', null, 'scheduler:payment-expiry')
   }, stall?.timeoutMs ?? PAYMENT_TIMEOUT_MS).unref()
   if (!stall)
     setTimeout(() => {
@@ -375,6 +551,7 @@ function scheduleOrder(o, me, stall, clearCart = true) {
         o.status = 'CANCELLED'
         o.cancelReason = 'OUT_OF_STOCK'
         cancelledAt.set(o, now())
+        cancelOrderHistory(o, 'OUT_OF_STOCK', 'EVENT', null, 'stock.deduction-failed')
         short.forEach((it) => (it.unavailableReason = 'OUT_OF_STOCK'))
         return
       }
@@ -385,6 +562,7 @@ function scheduleOrder(o, me, stall, clearCart = true) {
         o.status = 'CANCELLED'
         o.cancelReason = 'PAYMENT_FAILED'
         cancelledAt.set(o, now())
+        cancelOrderHistory(o, 'PAYMENT_FAILED', 'EVENT', null, 'payment.failed')
         // 백엔드: 잔액 부족만 실패 결제를 저장한다
         payments.push({
           paymentId: nid(),
@@ -420,6 +598,17 @@ function scheduleOrder(o, me, stall, clearCart = true) {
         })),
       })
       o.status = 'PAID'
+      recordHistory(
+        o,
+        'ORDER',
+        o.orderId,
+        'PENDING_PAYMENT',
+        'PAID',
+        null,
+        'EVENT',
+        null,
+        'payment.completed',
+      )
       // 칸으로 산 줄(BE #998): 산 수량만큼 칸에서 빼고, 조르기 예약 칸이면 조르기를 결제 완료로 (BE WishPurchaseService)
       const cartLines = orderCartLines.get(o) ?? []
       for (const bought of cartLines) {
@@ -573,6 +762,91 @@ const adminWalletOf = (memberId) => ({
   frozenAt: frozenWallets[memberId] ?? null,
 })
 const deadLetterOf = ({ module: _m, failOnReplay: _f, ...d }) => d
+// 주문 처리 실패 메시지 (BE AdminOrderDeadLetterController #601): 칸 · 상태(CLOSED 있음)가 회원 서비스 모듈과 다르다
+const orderDeadLetters = []
+function addOrderDeadLetter(patch = {}) {
+  const deadLetterId = String(deadLetterSeq++)
+  const d = {
+    failOnReplay: false,
+    deadLetterId,
+    sourceTopic: 'kidly.payment.events',
+    sourcePartition: 0,
+    sourceOffset: Number(deadLetterId) * 10,
+    messageKey: '1',
+    eventType: 'payment.completed',
+    eventId: `00000000-0000-4000-9000-${deadLetterId.padStart(12, '0')}`,
+    payload: '{"eventType":"payment.completed","orderId":1}',
+    producer: 'payment',
+    occurredAt: now(),
+    aggregateId: '1',
+    correlationId: null,
+    orderId: '1',
+    orderStatus: 'PENDING_PAYMENT',
+    failureType: 'PROCESS_FAILED',
+    exceptionClass: 'java.lang.IllegalStateException',
+    exceptionMessage: '처리 중 오류',
+    stackTraceHead:
+      'java.lang.IllegalStateException: 처리 중 오류\n\tat com.bbcc.kidly.Order.pay(Order.java:1)',
+    firstReceivedAt: now(),
+    lastReceivedAt: now(),
+    receivedCount: 1,
+    status: 'OPEN',
+    handledBy: null,
+    handledAt: null,
+    memo: null,
+    reprocessCount: 0,
+    lastReprocessedAt: null,
+    lastReprocessResult: null,
+    recommendedAction: '원인을 고친 뒤 재처리하세요. 결제가 이미 반영됐다면 확인 후 종료하세요.',
+    paymentEvent: true,
+    ...patch,
+  }
+  orderDeadLetters.push(d)
+  return d
+}
+const orderDeadLetterOf = ({ failOnReplay: _f, ...d }) => d
+const orderDeadLetterNotFound = (res, req) =>
+  problem(
+    res,
+    404,
+    'DLT 메시지를 찾을 수 없습니다',
+    '없는 DLT 메시지입니다. DLT 메시지 목록을 새로고침해 주세요.',
+    req.url,
+  )
+const orderDeadLetterSummaryOf = (d) => ({
+  deadLetterId: d.deadLetterId,
+  lastReceivedAt: d.lastReceivedAt,
+  failureType: d.failureType,
+  eventType: d.eventType,
+  orderId: d.orderId,
+  receivedCount: d.receivedCount,
+  status: d.status,
+  paymentEvent: d.paymentEvent,
+})
+// 시드: 결제 이벤트 처리 대기 1건, 재고 이벤트 읽기 실패 1건(관련 주문 없음)
+addOrderDeadLetter()
+addOrderDeadLetter({
+  sourceTopic: 'kidly.product.events',
+  eventType: null,
+  eventId: null,
+  payload: 'not-json',
+  producer: null,
+  aggregateId: null,
+  orderId: null,
+  orderStatus: null,
+  failureType: 'READ_FAILED',
+  exceptionClass: 'org.springframework.kafka.support.serializer.DeserializationException',
+  recommendedAction: '본문을 읽지 못했어요. 보낸 쪽 형식을 확인하세요.',
+  paymentEvent: false,
+})
+// 주소의 모듈 칸 → 모듈 (회원 서비스는 /admin/{모듈}-dead-letters, 커뮤니티는 /admin/community/dead-letters · BE #962 같은 칸)
+const dltModule = (segment) => segment.slice(0, -1)
+// 커뮤니티: 구매확정 이벤트를 리뷰 작성 가능으로 옮기지 못한 1건
+addDeadLetter('community', {
+  sourceTopic: 'kidly.order.events',
+  dltTopic: 'kidly.order.events.community.dlt',
+  eventType: 'order.item-confirmed',
+})
 // 시연 · 화면 확인용: 회원 모듈에 처리 대기 2건(1건은 재처리도 실패) · 재처리 완료 1건, 판매자 모듈에 헤더 없던 1건, 인증 모듈은 두 페이지
 addDeadLetter('member')
 addDeadLetter('member', {
@@ -617,6 +891,11 @@ http
     }
     // POST /__fake/dead-letters { module, failOnReplay } — 처리 실패 메시지 하나 만들기 (가짜 백엔드 전용).
     // 재처리하면 상태가 바뀌므로 E2E는 실행마다 새 메시지를 만든다
+    // POST /__fake/order-dead-letters { failOnReplay } — 주문 처리 실패 메시지 하나 만들기 (가짜 백엔드 전용)
+    if (r('POST', /^\/__fake\/order-dead-letters$/)) {
+      const d = addOrderDeadLetter({ failOnReplay: Boolean(body.failOnReplay) })
+      return send(res, 201, orderDeadLetterOf(d))
+    }
     if (r('POST', /^\/__fake\/dead-letters$/)) {
       const d = addDeadLetter(body.module, { failOnReplay: Boolean(body.failOnReplay) })
       return send(res, 201, deadLetterOf(d))
@@ -1478,7 +1757,78 @@ http
         }))
       return sendPicks(req, res, { source, products })
     }
-    // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
+    // BE 관리자 처리 대기 (#353 결제 반영 실패 · #449 받은 이벤트 처리 실패 · #602 격리 아웃박스). 가짜는 기록 하나씩으로 시작한다
+    if (r('GET', /^\/admin\/orders\/recoveries$/)) {
+      const status = url.searchParams.get('status')
+      return send(res, 200, page(opsRecoveries.filter((x) => !status || x.status === status)))
+    }
+    if ((x = r('POST', /^\/admin\/orders\/recoveries\/(\d+)\/(retry|cancel)$/))) {
+      const rec = opsRecoveries.find((each) => each.recoveryId === x[1])
+      if (!rec)
+        return problem(
+          res,
+          404,
+          '기록을 찾을 수 없습니다',
+          '결제 반영 실패 기록을 찾을 수 없습니다.',
+          req.url,
+        )
+      if (rec.status === 'PENDING') {
+        rec.status = x[2] === 'retry' ? 'RECOVERED' : 'CANCELLED'
+        rec.attemptCount += x[2] === 'retry' ? 1 : 0
+        rec.lastAttemptedAt = now()
+      }
+      return send(res, 200, rec)
+    }
+    if (r('GET', /^\/admin\/orders\/event-failures$/)) {
+      const status = url.searchParams.get('status')
+      return send(res, 200, page(opsEventFailures.filter((x) => !status || x.status === status)))
+    }
+    if ((x = r('POST', /^\/admin\/orders\/event-failures\/(\d+)\/(retry|cancel)$/))) {
+      const rec = opsEventFailures.find((each) => each.failureId === x[1])
+      if (!rec)
+        return problem(
+          res,
+          404,
+          '기록을 찾을 수 없습니다',
+          '이벤트 처리 실패 기록을 찾을 수 없습니다.',
+          req.url,
+        )
+      if (rec.status === 'PENDING') {
+        rec.status = x[2] === 'retry' ? 'RECOVERED' : 'CANCELLED'
+        rec.attemptCount += x[2] === 'retry' ? 1 : 0
+        rec.lastAttemptedAt = now()
+      }
+      return send(res, 200, rec)
+    }
+    if (r('GET', /^\/admin\/orders\/outbox\/quarantined$/))
+      return send(res, 200, page(opsOutbox.filter((x) => x.status === 'QUARANTINED')))
+    if ((x = r('POST', /^\/admin\/orders\/outbox\/(\d+)\/retry$/))) {
+      const rec = opsOutbox.find((each) => each.outboxId === x[1])
+      if (!rec)
+        return problem(
+          res,
+          404,
+          '아웃박스를 찾을 수 없습니다',
+          '아웃박스 메시지를 찾을 수 없습니다.',
+          req.url,
+        )
+      if (rec.status === 'SENT')
+        return problem(
+          res,
+          409,
+          '이미 보낸 메시지입니다',
+          '이미 보낸 메시지라 다시 보낼 수 없습니다.',
+          req.url,
+        )
+      Object.assign(rec, {
+        status: 'PENDING',
+        quarantinedAt: null,
+        lastRetriedAt: now(),
+        lastRetriedBy: '1',
+        retryCount: rec.retryCount + 1,
+      })
+      return send(res, 200, rec)
+    }
     // BE StuckOrderController (#445 · #926): 종류별 건수(모든 종류 0 포함) · 종류별 목록(오래된 것부터).
     // 가짜는 발송 준비로 남은 배송만 발송 지연으로 보고, AI 메모는 가짜 공급자(fake)가 쓴 것처럼 붙인다
     const STUCK_KIND_ORDER = [
@@ -1534,6 +1884,92 @@ http
         )
       return send(res, 200, page(kind === 'SHIPPING_DELAYED' ? shippingDelayed() : []))
     }
+    // BE AdminOrderController GET /admin/orders/{orderId}/history (#442): 오래된 것부터, 주문이 없으면 404
+    if ((x = r('GET', /^\/admin\/orders\/(\d+)\/history$/))) {
+      const o = orders.find((order) => order.orderId === +x[1])
+      if (!o)
+        return problem(res, 404, '주문을 찾을 수 없습니다', '주문을 찾을 수 없습니다.', req.url)
+      return send(res, 200, o.history ?? [])
+    }
+    // BE OrderDeadLetterService (#601): 기본 OPEN, 결제 토픽이 먼저 · 그 안은 최근 받은 것부터
+    if (r('GET', /^\/admin\/orders\/dead-letters$/)) {
+      const status = url.searchParams.get('status') ?? 'OPEN'
+      if (!['OPEN', 'REPROCESSED', 'CLOSED'].includes(status))
+        return problem(
+          res,
+          400,
+          '지원하지 않는 DLT 메시지 상태입니다',
+          '상태는 OPEN · REPROCESSED · CLOSED 중 하나로 보내 주세요.',
+          req.url,
+        )
+      const rows = orderDeadLetters
+        .filter((d) => d.status === status)
+        .sort(
+          (a, b) =>
+            Number(b.paymentEvent) - Number(a.paymentEvent) ||
+            Number(b.deadLetterId) - Number(a.deadLetterId),
+        )
+        .map(orderDeadLetterSummaryOf)
+      return send(res, 200, pageFrom(rows, url.searchParams))
+    }
+    if ((x = r('GET', /^\/admin\/orders\/dead-letters\/(\d+)$/))) {
+      const d = orderDeadLetters.find((d) => d.deadLetterId === x[1])
+      return d ? send(res, 200, orderDeadLetterOf(d)) : orderDeadLetterNotFound(res, req)
+    }
+    if ((x = r('POST', /^\/admin\/orders\/dead-letters\/(\d+)\/reprocess$/))) {
+      const d = orderDeadLetters.find((d) => d.deadLetterId === x[1])
+      if (!d) return orderDeadLetterNotFound(res, req)
+      if (d.status === 'CLOSED')
+        return problem(
+          res,
+          409,
+          '이미 종료된 DLT 메시지입니다',
+          '확인 후 종료된 메시지라 재처리할 수 없습니다. DLT 메시지 목록을 새로고침해 주세요.',
+          req.url,
+        )
+      if (d.status === 'OPEN') {
+        const adminId = String(u.sub).slice('admin:'.length)
+        Object.assign(d, {
+          reprocessCount: d.reprocessCount + 1,
+          lastReprocessedAt: now(),
+          lastReprocessResult: d.failOnReplay ? 'IllegalStateException' : null,
+          ...(d.failOnReplay
+            ? {}
+            : {
+                status: 'REPROCESSED',
+                handledBy: adminId,
+                handledAt: now(),
+                recommendedAction: null,
+              }),
+        })
+      }
+      return send(res, 200, orderDeadLetterOf(d))
+    }
+    if ((x = r('POST', /^\/admin\/orders\/dead-letters\/(\d+)\/close$/))) {
+      const d = orderDeadLetters.find((d) => d.deadLetterId === x[1])
+      if (!d) return orderDeadLetterNotFound(res, req)
+      const memo = typeof body?.memo === 'string' ? body.memo : ''
+      if (memo.trim() === '' || memo.length > 500)
+        return problem(res, 400, '잘못된 요청입니다', 'memo: 1~500자로 입력해 주세요.', req.url)
+      if (d.status === 'REPROCESSED')
+        return problem(
+          res,
+          409,
+          '이미 재처리된 DLT 메시지입니다',
+          '재처리로 처리를 마친 메시지라 종료할 수 없습니다. DLT 메시지 목록을 새로고침해 주세요.',
+          req.url,
+        )
+      if (d.status === 'OPEN')
+        Object.assign(d, {
+          status: 'CLOSED',
+          handledBy: String(u.sub).slice('admin:'.length),
+          handledAt: now(),
+          memo,
+          recommendedAction: null,
+        })
+      return send(res, 200, orderDeadLetterOf(d))
+    }
+    // 관리자 전체 주문 (BE #323) · 전체 결제 (BE #326): 최근 것부터
     if (r('GET', /^\/admin\/orders$/)) {
       if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
@@ -1555,6 +1991,35 @@ http
             })),
         ),
       )
+    }
+    // 결제 요약 (BE AdminPaymentController.getSummary #1220): 한국 날짜, 양 끝 포함, 비우면 오늘, 31일까지
+    if (r('GET', /^\/admin\/payments\/summary$/)) {
+      if (!isAdmin(u))
+        return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
+      const to = url.searchParams.get('to') || now().slice(0, 10)
+      const from = url.searchParams.get('from') || to
+      const days = (Date.parse(to) - Date.parse(from)) / 86400e3 + 1
+      if (!(days >= 1 && days <= 31))
+        return problem(
+          res,
+          400,
+          '조회할 수 없는 기간입니다',
+          '시작일은 종료일보다 늦을 수 없고, 한 번에 31일까지 조회할 수 있습니다.',
+          req.url,
+        )
+      const daily = Array.from({ length: days }, (_, i) => {
+        const date = new Date(Date.parse(from) + i * 86400e3).toISOString().slice(0, 10)
+        const paid = payments.filter((p) => p.status !== 'FAILED' && p.paidAt?.startsWith(date))
+        return {
+          date,
+          paidAmount: paid.reduce((sum, p) => sum + p.amount, 0),
+          paidCount: paid.length,
+        }
+      })
+      const refundedPaymentCount = payments.filter((p) =>
+        ['PARTIALLY_REFUNDED', 'REFUNDED'].includes(p.status),
+      ).length
+      return send(res, 200, { daily, refundedPaymentCount })
     }
     if (r('GET', /^\/admin\/payments$/)) {
       if (!isAdmin(u))
@@ -1992,6 +2457,17 @@ http
         deliveries: [],
       }
       orders.push(o)
+      recordHistory(
+        o,
+        'ORDER',
+        o.orderId,
+        null,
+        'PENDING_PAYMENT',
+        null,
+        'BUYER',
+        me,
+        'POST /api/v1/orders',
+      )
       orderCartLines.set(
         o,
         body.items
@@ -2032,6 +2508,13 @@ http
       )
     if ((x = r('GET', /^\/orders\/(\d+)$/)))
       return send(res, 200, detailOf(orders.find((o) => o.orderId === +x[1])))
+    // BE OrderController GET /orders/{orderId}/timeline (#352): 본인 주문만, 아니면 404
+    if ((x = r('GET', /^\/orders\/(\d+)\/timeline$/))) {
+      const o = orders.find((each) => each.orderId === +x[1] && each.memberId === me)
+      return o
+        ? send(res, 200, orderTimelineOf(o))
+        : problem(res, 404, '주문을 찾을 수 없습니다', '주문을 찾을 수 없습니다.', req.url)
+    }
     // BE OrderService.cancelByBuyer (#354): 결제대기, 또는 모든 배송이 발송 전인 결제완료 주문만. 이미 취소면 그대로 200.
     // 결제완료면 남은 주문상품 금액을 돌려주고(REFUND) 재고를 되돌린다
     if ((x = r('POST', /^\/orders\/(\d+)\/cancel$/))) {
@@ -2060,6 +2543,17 @@ http
           ledger(me, 'REFUND', refund, nid())
         }
       }
+      recordHistory(
+        o,
+        'ORDER',
+        o.orderId,
+        o.status,
+        'CANCELLED',
+        'BUYER_CANCELLED',
+        'BUYER',
+        me,
+        'POST /api/v1/orders/{orderId}/cancel',
+      )
       o.status = 'CANCELLED'
       o.cancelReason = 'BUYER_CANCELLED'
       cancelledAt.set(o, now())
@@ -2078,6 +2572,17 @@ http
       it.status = 'CONFIRMED'
       it.confirmedAt = now()
       it.confirmType = 'DIRECT'
+      recordHistory(
+        orders.find((o) => o.orderId === +x[1]),
+        'ORDER_ITEM',
+        it.orderItemId,
+        'ORDERED',
+        'CONFIRMED',
+        null,
+        'BUYER',
+        me,
+        'POST /api/v1/orders/{orderId}/items/{orderItemId}/confirm',
+      )
       return send(res, 200, it)
     }
     const sellerOrders = () => orders.flatMap((o) => o.deliveries.map((d) => ({ d, o })))
@@ -2091,8 +2596,8 @@ http
             orderId: String(o.orderId),
             orderedAt: o.orderedAt,
             shippingAddress: o.shippingAddress,
-            // BE: 판매 주문 목록의 sellerName은 늘 null (OrderDetailResponse.Item 재사용)
-            items: o.items.map((it) => ({ ...it, sellerName: null })),
+            // BE: 판매 주문 목록의 sellerName은 늘 null, 자녀(child) 칸은 없다 (BE #997)
+            items: o.items.map(({ child: _child, ...it }) => ({ ...it, sellerName: null })),
             deliveredAt: d.deliveredAt,
           })),
         ),
@@ -2125,6 +2630,17 @@ http
         trackingNumber: body.trackingNumber,
         shippedAt: now(),
       })
+      recordHistory(
+        o,
+        'DELIVERY',
+        d.sellerOrderId,
+        'READY',
+        'SHIPPING',
+        null,
+        'SELLER',
+        me,
+        'POST /api/v1/seller/orders/{sellerOrderId}/ship',
+      )
       return send(res, 200, { ...d, orderId: String(o.orderId) })
     }
     // BE DeliveryService.cancel (#655): 발송 준비일 때만 내 몫 주문상품을 모두 취소하고 결제가 그 금액을 돌려준다.
@@ -2165,6 +2681,17 @@ http
           req.url,
         )
       d.status = 'CANCELLED'
+      recordHistory(
+        o,
+        'DELIVERY',
+        d.sellerOrderId,
+        'READY',
+        'CANCELLED',
+        body.reason,
+        'SELLER',
+        me,
+        'POST /api/v1/seller/orders/{sellerOrderId}/cancel',
+      )
       const mine = o.items.filter((it) => it.sellerId === d.sellerId && it.status === 'ORDERED')
       mine.forEach((it) => (it.status = 'CANCELLED'))
       const refund = mine.reduce((sum, it) => sum + it.amount, 0)
@@ -2176,12 +2703,34 @@ http
         o.status = 'CANCELLED'
         o.cancelReason = 'SELLER_CANCELLED'
         cancelledAt.set(o, now())
+        recordHistory(
+          o,
+          'ORDER',
+          o.orderId,
+          'PAID',
+          'CANCELLED',
+          'SELLER_CANCELLED',
+          'SELLER',
+          me,
+          'POST /api/v1/seller/orders/{sellerOrderId}/cancel',
+        )
       }
       return send(res, 200, { ...d, orderId: String(o.orderId) })
     }
     if ((x = r('POST', /^\/seller\/orders\/(\d+)\/deliver$/))) {
       const { d, o } = sellerOrders().find(({ d }) => d.sellerOrderId === x[1])
       Object.assign(d, { status: 'DELIVERED', deliveredAt: now() })
+      recordHistory(
+        o,
+        'DELIVERY',
+        d.sellerOrderId,
+        'SHIPPING',
+        'DELIVERED',
+        null,
+        'SELLER',
+        me,
+        'POST /api/v1/seller/orders/{sellerOrderId}/deliver',
+      )
       o.items.forEach((i) => (i.deliveredAt = now()))
       return send(res, 200, { ...d, orderId: String(o.orderId) })
     }
@@ -2207,31 +2756,38 @@ http
       apps.push(a)
       return send(res, 201, myAppOf(a))
     }
-    if ((x = r('GET', /^\/admin\/(auth|member|seller|child-profile)-dead-letters$/))) {
+    if (
+      (x = r('GET', /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters$/))
+    ) {
       const status = url.searchParams.get('status') ?? 'OPEN'
       // BE @Pattern(OPEN|REPROCESSED)
       if (!['OPEN', 'REPROCESSED'].includes(status))
         return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
       const rows = deadLetters
-        .filter((d) => d.module === x[1] && d.status === status)
+        .filter((d) => d.module === dltModule(x[1]) && d.status === status)
         .sort((a, b) => Number(b.deadLetterId) - Number(a.deadLetterId))
         .map(deadLetterOf)
       return send(res, 200, pageFrom(rows, url.searchParams))
     }
-    if ((x = r('GET', /^\/admin\/(auth|member|seller|child-profile)-dead-letters\/(\d+)$/))) {
-      const d = deadLetters.find((d) => d.module === x[1] && d.deadLetterId === x[2])
+    if (
+      (x = r(
+        'GET',
+        /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters\/(\d+)$/,
+      ))
+    ) {
+      const d = deadLetters.find((d) => d.module === dltModule(x[1]) && d.deadLetterId === x[2])
       return d
         ? send(res, 200, deadLetterOf(d))
         : problem(res, 404, '찾을 수 없습니다', '처리 실패 메시지를 찾을 수 없습니다.', req.url)
     }
-    // BE {모듈}DeadLetterService.reprocess: 처리기가 다시 실패해도 200(OPEN, 횟수 · 실패 예외 기록), 이미 재처리 완료면 그대로 200
+    // BE {모듈}DeadLetterService.reprocess (커뮤니티 CommunityDeadLetterService 같음): 처리기가 다시 실패해도 200(OPEN, 횟수 · 실패 예외 기록), 이미 재처리 완료면 그대로 200
     if (
       (x = r(
         'POST',
-        /^\/admin\/(auth|member|seller|child-profile)-dead-letters\/(\d+)\/reprocess$/,
+        /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters\/(\d+)\/reprocess$/,
       ))
     ) {
-      const d = deadLetters.find((d) => d.module === x[1] && d.deadLetterId === x[2])
+      const d = deadLetters.find((d) => d.module === dltModule(x[1]) && d.deadLetterId === x[2])
       if (!d)
         return problem(
           res,

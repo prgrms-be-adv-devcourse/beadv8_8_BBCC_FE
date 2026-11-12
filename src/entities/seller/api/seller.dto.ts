@@ -10,13 +10,16 @@ export type SellerApplicationDto = {
   rejectReason: string | null
 }
 
-/** GET /admin/seller-applications 한 줄 (백엔드 SellerApplicationSummaryResponse) */
+/**
+ * GET /admin/seller-applications 한 줄 (백엔드 SellerApplicationSummaryResponse). 승인 · 거절 응답도 같은 모양.
+ * 신청한 회원이 탈퇴하면 닉네임 · 사업자등록번호가 null
+ */
 export type SellerApplicationSummaryDto = {
   id: number
   businessName: string
   applicantId: number
-  applicantNickname: string
-  maskedBusinessRegistrationNumber: string
+  applicantNickname: string | null
+  maskedBusinessRegistrationNumber: string | null
   status: string
   createdAt: string
 }
