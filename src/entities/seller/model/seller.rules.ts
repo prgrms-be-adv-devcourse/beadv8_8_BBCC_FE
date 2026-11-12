@@ -4,6 +4,10 @@ import type { SellerApplication, SellerApplicationForm, SellerApplicationSummary
 export function validateSellerApplicationForm(form: SellerApplicationForm): string | null {
   if (!form.businessName.trim() || !form.representativeName.trim())
     return '상호명과 대표자명을 입력해 주세요.'
+  if (form.businessName.trim().length > BUSINESS_NAME_MAX)
+    return `상호명은 ${BUSINESS_NAME_MAX}자까지예요.`
+  if (form.representativeName.trim().length > BUSINESS_NAME_MAX)
+    return `대표자명은 ${BUSINESS_NAME_MAX}자까지예요.`
   if (!/^\d{10}$/.test(form.businessRegistrationNumber.trim()))
     return '사업자등록번호는 하이픈 없는 숫자 10자리예요.'
   return null

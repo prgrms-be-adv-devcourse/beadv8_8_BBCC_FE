@@ -88,9 +88,41 @@ describe('배송지 규칙', () => {
   it('정상 입력은 통과한다', () => {
     expect(validateAddressForm(form())).toBeNull()
   })
-  it('연락처는 010-1234-5678 형식만 받는다', () => {
-    expect(validateAddressForm(form({ phone: '01012345678' }))).not.toBeNull()
-    expect(validateAddressForm(form({ phone: '010-123-5678' }))).not.toBeNull()
+  it('연락처는 BE MemberPolicy.RECIPIENT_PHONE_REGEX(0[0-9]{1,2}-[0-9]{3,4}-[0-9]{4})를 따른다', () => {
+    for (const phone of [
+      '010-1234-5678',
+      '010-123-5678',
+      '02-123-4567',
+      '02-1234-5678',
+      '031-123-4567',
+    ])
+      expect(validateAddressForm(form({ phone }))).toBeNull()
+    for (const phone of [
+      '01012345678',
+      '1-123-4567',
+      '0-123-4567',
+      '0101-123-4567',
+      '02-12-4567',
+      '02-12345-6789',
+      '02-123-456',
+      '02-123-45678',
+      ' 010-1234-5678',
+      '',
+    ])
+      expect(validateAddressForm(form({ phone }))).not.toBeNull()
+  })
+  it('글자 수 상한은 BE MemberPolicy와 같다 (보내는 값은 앞뒤 공백을 뺀다)', () => {
+    const limits = [
+      ['recipientName', 50],
+      ['zipCode', 10],
+      ['roadAddress', 200],
+      ['detailAddress', 100],
+    ] as const
+    for (const [key, max] of limits) {
+      expect(validateAddressForm(form({ [key]: '가'.repeat(max) }))).toBeNull()
+      expect(validateAddressForm(form({ [key]: ` ${'가'.repeat(max)} ` }))).toBeNull()
+      expect(validateAddressForm(form({ [key]: '가'.repeat(max + 1) }))).not.toBeNull()
+    }
   })
   it('받는 분 · 우편번호 · 주소가 비면 막는다', () => {
     expect(validateAddressForm(form({ recipientName: ' ' }))).not.toBeNull()
