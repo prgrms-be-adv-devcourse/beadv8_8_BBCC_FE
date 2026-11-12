@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import {
   APPLICATION_STATUS_LABEL,
-  canApprove,
+  isDecided,
   useSellerApplicationsQuery,
   type SellerApplicationSummary,
 } from '@/entities/seller'
@@ -22,7 +22,7 @@ export function AdminSellerApplicationsPage() {
   const pendingApplications = useSellerApplicationsQuery('PENDING')
   const all = applications.data?.content ?? []
   const pending = pendingApplications.data?.content ?? []
-  const processed = all.filter((application) => !canApprove(application))
+  const processed = all.filter(isDecided)
 
   return (
     <div className="shop-look space-y-8">
@@ -169,7 +169,7 @@ function PendingRow({ application }: PendingRowProps) {
         <ApplicationCells application={application} />
         <td className={cn(CELL, 'pr-0 max-lg:pt-2')}>
           <span className="flex flex-wrap items-center gap-2">
-            <ApproveSellerButton applicationId={application.id} />
+            <ApproveSellerButton application={application} />
             {!isRejecting && (
               <button
                 type="button"
