@@ -20,7 +20,10 @@ export function ReviewCard({ review, product, action }: ReviewCardProps) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <ReviewStars rating={review.rating} />
         <span className="text-sm font-semibold">{review.authorName}</span>
-        <span className="text-ink-3 figure text-xs">{formatDateTime(review.createdAt)}</span>
+        <span className="text-ink-3 figure text-xs">
+          {formatDateTime(review.createdAt)}
+          {review.isEdited && ' (수정됨)'}
+        </span>
         {review.isUnderReview && (
           <span className="bg-paper-2 text-ink-2 inline-flex h-5 items-center rounded-sm px-1.5 text-[11px] font-semibold">
             검토 중이라 다른 사람에게 보이지 않아요
