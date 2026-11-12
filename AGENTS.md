@@ -138,6 +138,7 @@ React 커뮤니티에서 가장 흔한 관례(컴포넌트 PascalCase · 그 밖
 - 레이아웃(쇼핑 · 판매자 센터 · 관리자 · 콘솔)은 `app/layouts`에 둔다. 위젯끼리 import할 수 없으므로 시연 막대와 흐름 패널을 합치는 일(서랍)도 `app`에서 한다.
 - 기능(`features/*`)은 UI와 함께 모델 훅(`useXxx`)도 공개한다. 다른 모양의 화면은 훅을 받아 새 UI로 조합한다.
 - 쇼핑 머리말 · 영역 레이아웃은 API를 부르지 않는다 (흐름 기록에 화면 동작만 남기려고).
+  - 예외(사용자 승인): 쇼핑 · 자녀 레이아웃은 로그인한 보호자 · 자녀의 안 읽은 알림 수만 60초마다 조회한다 (BE에 알림 SSE가 없어 polling, 머리말 배지용).
 - FSD 구조는 Steiger(`npm run lint:fsd`, 설정 `steiger.config.ts`)로 검사한다: 레이어 방향 · 같은 레이어 import · 공개 API 우회 · 슬라이스 이름 등. 구조와 무관한 스타일 제안 3개(`insignificant-slice` · `excessive-slicing` · `segments-by-purpose`)만 끈다. 다른 규칙을 끄는 것은 승인 필요.
 
 ## 3. API 규칙
