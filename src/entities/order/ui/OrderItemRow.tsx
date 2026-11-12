@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { DELIVERY_STATUS_LABEL } from '@/shared/config'
-import { formatWon, optionLabel } from '@/shared/lib'
+import { formatWon, labelOf, optionLabel } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { ITEM_STATUS_LABEL, type OrderDelivery, type OrderItem } from '../model/order'
 import { unavailableLabel } from '../model/order.rules'
@@ -23,7 +23,7 @@ export function OrderItemRow({ item, delivery, cancelled = false, action }: Orde
           {[item.productName, optionLabel(item)].filter(Boolean).join(' · ')} × {item.quantity}{' '}
           {!cancelled && (
             <Badge variant={item.status === 'CONFIRMED' ? 'success' : 'muted'}>
-              {ITEM_STATUS_LABEL[item.status]}
+              {labelOf(ITEM_STATUS_LABEL, item.status)}
               {item.confirmType === 'AUTO' && ' (자동)'}
             </Badge>
           )}{' '}
@@ -33,7 +33,7 @@ export function OrderItemRow({ item, delivery, cancelled = false, action }: Orde
           {formatWon(item.unitPrice)} × {item.quantity} = {formatWon(item.amount)}
           {item.child &&
             ` · 입을 자녀${item.child.name ? ` ${item.child.name}` : ''} (주문 당시 ${item.child.heightCm}cm · ${item.child.weightKg}kg)`}
-          {delivery && ` · ${DELIVERY_STATUS_LABEL[delivery.status]}`}
+          {delivery && ` · ${labelOf(DELIVERY_STATUS_LABEL, delivery.status)}`}
         </p>
       </div>
       {action}

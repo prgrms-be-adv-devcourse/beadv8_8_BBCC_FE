@@ -8,7 +8,7 @@ import {
 import { ShipOrderControls } from '@/features/ship-order'
 import { getErrorMessage } from '@/shared/api'
 import { carrierName, DELIVERY_STATUS_LABEL, sellerPathsOf } from '@/shared/config'
-import { formatDateTime, useArea } from '@/shared/lib'
+import { formatDateTime, labelOf, useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -65,7 +65,7 @@ export function CenterOrderDetailPage() {
           {/* 배송 상태: 지금 상태를 제목으로, 아래에 다음 할 일 */}
           <section aria-label="배송 상태" className="border-rule space-y-4 rounded-lg border p-5">
             <div className="space-y-1">
-              <h2 className="text-page">{DELIVERY_STATUS_LABEL[order.status]}</h2>
+              <h2 className="text-page">{labelOf(DELIVERY_STATUS_LABEL, order.status)}</h2>
               {step && <p className="text-ink-2 text-sm">{NEXT_STEP_GUIDE[step]}</p>}
             </div>
             <ShipOrderControls sellerOrder={order} />

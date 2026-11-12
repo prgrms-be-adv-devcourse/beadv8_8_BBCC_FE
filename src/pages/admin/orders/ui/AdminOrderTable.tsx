@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { CANCEL_REASON_LABEL, OrderStatusTag, type AdminOrder } from '@/entities/order'
-import { formatDateTime, formatWon } from '@/shared/lib'
+import { formatDateTime, formatWon, labelOf } from '@/shared/lib'
 
 type AdminOrderTableProps = {
   orders: AdminOrder[]
@@ -77,7 +77,7 @@ export function AdminOrderTable({
                 <OrderStatusTag status={order.status} />
               </td>
               <td className="text-ink-2 min-w-56 py-3 text-[13px]">
-                {order.cancelReason ? CANCEL_REASON_LABEL[order.cancelReason] : ''}
+                {labelOf(CANCEL_REASON_LABEL, order.cancelReason)}
               </td>
             </tr>
           ))}

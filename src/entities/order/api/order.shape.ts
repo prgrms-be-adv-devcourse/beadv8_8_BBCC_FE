@@ -1,7 +1,16 @@
 import { arr, bool, nullable, num, obj, oneOf, pageOf, str } from '@/shared/api'
 
 const ORDER_STATUS = ['PENDING_PAYMENT', 'PAID', 'CANCELLED']
-const DELIVERY_STATUS = ['READY', 'SHIPPING', 'DELIVERED']
+const DELIVERY_STATUS = ['READY', 'SHIPPING', 'DELIVERED', 'CANCELLED']
+const ITEM_STATUS = ['ORDERED', 'CONFIRMED', 'CANCELLED']
+const CANCEL_REASON = [
+  'OUT_OF_STOCK',
+  'PAYMENT_FAILED',
+  'PAYMENT_EXPIRED',
+  'BUYER_CANCELLED',
+  'SELLER_CANCELLED',
+  'SELLER_UNAVAILABLE',
+]
 
 const shippingAddressShape = obj({
   recipientName: str,
@@ -21,7 +30,7 @@ const orderItemShape = obj({
   unitPrice: num,
   quantity: num,
   amount: num,
-  status: oneOf(['ORDERED', 'CONFIRMED']),
+  status: oneOf(ITEM_STATUS),
   deliveredAt: nullable(str),
   confirmedAt: nullable(str),
   confirmType: nullable(oneOf(['DIRECT', 'AUTO'])),
@@ -43,7 +52,7 @@ const orderItemShape = obj({
 export const orderDetailShape = obj({
   orderId: str,
   status: oneOf(ORDER_STATUS),
-  cancelReason: nullable(oneOf(['OUT_OF_STOCK', 'PAYMENT_FAILED', 'PAYMENT_EXPIRED'])),
+  cancelReason: nullable(oneOf(CANCEL_REASON)),
   totalAmount: num,
   orderedAt: str,
   paymentDueAt: nullable(str),
@@ -79,7 +88,7 @@ export const adminOrderPageShape = pageOf(
     orderId: str,
     memberId: str,
     status: oneOf(ORDER_STATUS),
-    cancelReason: nullable(oneOf(['OUT_OF_STOCK', 'PAYMENT_FAILED', 'PAYMENT_EXPIRED'])),
+    cancelReason: nullable(oneOf(CANCEL_REASON)),
     totalAmount: num,
     orderedAt: str,
     itemCount: num,

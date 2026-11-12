@@ -14,3 +14,12 @@ export function withObjectParticle(word: string): string {
   if (!(last >= 0xac00 && last <= 0xd7a3)) return `${word}을(를)`
   return (last - 0xac00) % 28 === 0 ? `${word}를` : `${word}을`
 }
+
+/** 코드 → 라벨. 표에 없는 값(서버가 새로 더한 값)은 빈칸 대신 받은 코드를 그대로 보여 준다 */
+export function labelOf(
+  table: Readonly<Record<string, string>>,
+  code: string | null | undefined,
+): string {
+  if (!code) return ''
+  return Object.hasOwn(table, code) ? table[code] : code
+}

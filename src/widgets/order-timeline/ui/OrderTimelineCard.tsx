@@ -8,7 +8,7 @@ import {
   type TimelineStepStatus,
 } from '@/entities/order'
 import { getErrorMessage } from '@/shared/api'
-import { cn } from '@/shared/lib'
+import { cn, labelOf } from '@/shared/lib'
 import { Card, CardTitle } from '@/shared/ui/card'
 import { MockBadge } from '@/shared/ui/MockBadge'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -91,7 +91,7 @@ export function OrderTimelineCard({ order }: OrderTimelineCardProps) {
                       {step.label}
                       {step.cancelled &&
                         timeline.data.cancelReason &&
-                        ` · ${TIMELINE_CANCEL_LABEL[timeline.data.cancelReason] ?? timeline.data.cancelReason}`}
+                        ` · ${labelOf(TIMELINE_CANCEL_LABEL, timeline.data.cancelReason)}`}
                     </span>
                     {step.at ? (
                       <span className="text-muted-foreground tabular-nums">

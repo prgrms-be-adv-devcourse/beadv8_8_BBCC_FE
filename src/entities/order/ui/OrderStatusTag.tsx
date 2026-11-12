@@ -1,4 +1,5 @@
 import { ORDER_STATUS_LABEL, type OrderStatus } from '../model/order'
+import { labelOf } from '@/shared/lib'
 
 type OrderStatusTagProps = { status: OrderStatus }
 
@@ -6,7 +7,7 @@ type OrderStatusTagProps = { status: OrderStatus }
 export function OrderStatusTag({ status }: OrderStatusTagProps) {
   return (
     <span className="bg-paper-2 text-ink-2 inline-flex h-6 items-center rounded-sm px-2 text-xs font-semibold whitespace-nowrap">
-      {ORDER_STATUS_LABEL[status]}
+      {labelOf(ORDER_STATUS_LABEL, status)}
     </span>
   )
 }
