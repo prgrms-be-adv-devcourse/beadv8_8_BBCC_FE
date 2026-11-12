@@ -1433,11 +1433,12 @@ http
       return send(
         res,
         200,
-        page(
+        pageFrom(
           myTargets().map((x) => ({
             ...itemOf(x),
             expectedPayoutOn: nextBusinessDay(x.item.confirmedAt),
           })),
+          url.searchParams,
         ),
       )
     if (r('GET', /^\/seller\/settlement-targets\/summary$/))
@@ -1448,12 +1449,13 @@ http
       return send(
         res,
         200,
-        page(
+        pageFrom(
           settlements
             .filter((st) => st.sellerId === me)
             .slice()
             .reverse()
             .map(summaryOf),
+          url.searchParams,
         ),
       )
     if ((x = r('GET', /^\/seller\/settlements\/(\d+)$/))) {
@@ -2906,7 +2908,7 @@ http
                 : true,
         )
         .filter((m) => !keyword || String(m.id) === keyword || m.nickname.includes(keyword))
-      return send(res, 200, page(rows))
+      return send(res, 200, pageFrom(rows, url.searchParams))
     }
     if ((x = r('POST', /^\/admin\/members\/(\d+)\/suspend$/))) {
       const m = members[x[1]]

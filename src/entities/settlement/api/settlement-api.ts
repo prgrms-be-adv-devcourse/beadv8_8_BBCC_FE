@@ -17,10 +17,10 @@ import {
 
 export const settlementApi = {
   /** 아직 정산 안 된 구매확정분 */
-  targets: () =>
+  targets: (page = 0) =>
     apiClient
       .get<Page<SettlementTargetDto>>('/seller/settlement-targets', {
-        params: { page: 0, size: 50 },
+        params: { page, size: 50 },
       })
       .then(expectShape(settlementTargetPageShape)),
   /** 아직 정산 안 된 구매확정분 전체 합 (목록 페이지와 상관없이) */
@@ -28,9 +28,9 @@ export const settlementApi = {
     apiClient
       .get<SettlementTargetSummaryDto>('/seller/settlement-targets/summary')
       .then(expectShape(settlementTargetSummaryShape)),
-  list: () =>
+  list: (page = 0) =>
     apiClient
-      .get<Page<SettlementDto>>('/seller/settlements', { params: { page: 0, size: 20 } })
+      .get<Page<SettlementDto>>('/seller/settlements', { params: { page, size: 20 } })
       .then(expectShape(settlementPageShape)),
   get: (settlementId: string) =>
     apiClient
