@@ -292,7 +292,7 @@ export function ShopProductDetailPage() {
                       childCart.data?.lines.find((line) => line.optionId === optionId)?.quantity ??
                       null
                     }
-                    disabled={!isSelling}
+                    disabled={!isSelling || childCart.isPending}
                     onSent={() => navigate(paths.child.wishes)}
                   />
                 </div>

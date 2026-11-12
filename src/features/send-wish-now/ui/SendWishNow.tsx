@@ -3,7 +3,7 @@ import { confirmAction } from '@/shared/lib'
 import { Input } from '@/shared/ui/input'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useSendWishNow, wishNowErrorMessage } from '../model/use-send-wish-now'
-import { wishNowMergeNotice } from '../model/wish-now.rules'
+import { wishNowMergeNotice, wishNowOverLimitNotice } from '../model/wish-now.rules'
 
 const MESSAGE_MAX = 100
 
@@ -26,9 +26,10 @@ export function SendWishNow({
 }: SendWishNowProps) {
   const [message, setMessage] = useState('')
   const send = useSendWishNow()
+  const overLimit = wishNowOverLimitNotice(existingQuantity, quantity)
 
   async function handleSend() {
-    if (!optionId) return
+    if (!optionId || overLimit) return
     const merge = wishNowMergeNotice(existingQuantity, quantity)
     const confirmed = await confirmAction({
       title: '보호자에게 바로 조를까요?',
@@ -53,12 +54,13 @@ export function SendWishNow({
       <button
         type="button"
         className="shop-btn w-full"
-        disabled={disabled || !optionId || send.isPending}
+        disabled={disabled || !optionId || overLimit !== null || send.isPending}
         aria-busy={send.isPending}
         onClick={handleSend}
       >
         바로 조르기
       </button>
+      {overLimit && <StateMessage tone="error">{overLimit}</StateMessage>}
       {send.isError && <StateMessage tone="error">{wishNowErrorMessage(send.error)}</StateMessage>}
     </div>
   )

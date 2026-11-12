@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { wishNowCartOnlyNotice, wishNowMergeNotice } from '@/features/send-wish-now'
+import {
+  wishNowCartOnlyNotice,
+  wishNowMergeNotice,
+  wishNowOverLimitNotice,
+} from '@/features/send-wish-now'
 
 // 자녀 「바로 조르기」: 장바구니에 담고(①) 그 칸으로 조르기를 보낸다(②)
 describe('바로 조르기 안내 문구', () => {
@@ -8,6 +12,17 @@ describe('바로 조르기 안내 문구', () => {
       '장바구니에 같은 상품이 2개 있어요. 합쳐서 3개로 조를게요.',
     )
     expect(wishNowMergeNotice(null, 1)).toBeNull()
+  })
+
+  it('합친 수량이 99개를 넘으면 담을 수 없다고 알린다 (경계 99는 된다)', () => {
+    expect(wishNowOverLimitNotice(98, 1)).toBeNull()
+    expect(wishNowOverLimitNotice(null, 99)).toBeNull()
+    expect(wishNowOverLimitNotice(98, 2)).toBe(
+      '장바구니에 같은 상품이 98개 있어요. 한 상품은 99개까지 담을 수 있어 1개까지만 더 조를 수 있어요.',
+    )
+    expect(wishNowOverLimitNotice(99, 1)).toBe(
+      '장바구니에 같은 상품이 99개 있어요. 한 상품은 99개까지 담을 수 있어 더 조를 수 없어요.',
+    )
   })
 
   it('①은 됐는데 ②가 실패하면 장바구니에 담겼다고 알리고 이유를 붙인다', () => {
