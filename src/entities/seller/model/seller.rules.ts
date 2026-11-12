@@ -9,8 +9,19 @@ export function validateSellerApplicationForm(form: SellerApplicationForm): stri
   return null
 }
 
+/** 승인을 막는 이유. 막지 않으면 null (탈퇴한 회원의 신청은 서버가 409 APPLICANT_WITHDRAWN) */
+export function approveBlockReason(application: SellerApplicationSummary): string | null {
+  return application.isApplicantWithdrawn ? '탈퇴한 회원이라 승인할 수 없어요' : null
+}
+
+/** 심사 중이고 탈퇴하지 않은 회원의 신청만 승인할 수 있다. 거절은 탈퇴해도 할 수 있다 */
 export function canApprove(application: SellerApplicationSummary): boolean {
-  return application.status === 'PENDING'
+  return application.status === 'PENDING' && approveBlockReason(application) === null
+}
+
+/** 승인 · 거절로 처리가 끝난 신청 */
+export function isDecided(application: SellerApplicationSummary): boolean {
+  return application.status !== 'PENDING'
 }
 
 /** 백엔드 SellerApplication.REJECT_REASON_MAX_LENGTH */

@@ -41,6 +41,8 @@ export function toSellerApplicationSummary(
       dto.maskedBusinessRegistrationNumber ?? WITHDRAWN_BUSINESS_REGISTRATION_NUMBER,
     status: dto.status as SellerApplicationStatus,
     createdAt: dto.createdAt,
+    // 백엔드는 탈퇴(clearPersonalInfo) 때만 닉네임을 비운다
+    isApplicantWithdrawn: dto.applicantNickname === null,
   }
 }
 

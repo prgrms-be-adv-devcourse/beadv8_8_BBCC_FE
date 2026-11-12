@@ -18,6 +18,8 @@ export type SellerApplicationSummary = {
   maskedBusinessRegistrationNumber: string
   status: SellerApplicationStatus
   createdAt: string
+  /** 신청한 회원이 탈퇴했는지 (닉네임 · 사업자번호는 탈퇴 안내 문구로 바뀐다) */
+  isApplicantWithdrawn: boolean
 }
 
 export type SellerApplicationForm = {
