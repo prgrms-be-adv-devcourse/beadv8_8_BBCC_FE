@@ -51,6 +51,8 @@ export const TIMELINE_CANCEL_LABEL: Record<string, string> = {
   PAYMENT_FAILED: '결제 실패',
   PAYMENT_EXPIRED: '결제 마감 지남',
   BUYER_CANCELLED: '구매자 취소',
+  SELLER_CANCELLED: '판매자 취소',
+  SELLER_UNAVAILABLE: '판매자 사정으로 판매 불가',
 }
 
 const timeOf = (at: string) => new Date(at).getTime()

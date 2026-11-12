@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { formatWon } from '@/shared/lib'
+import { formatWon, labelOf } from '@/shared/lib'
 import { Card } from '@/shared/ui/card'
 import { CANCEL_REASON_LABEL, ORDER_STATUS_LABEL, type Order } from '../model/order'
 import { paymentDeadline, paymentDeadlineLabel } from '../model/order.rules'
@@ -47,7 +47,9 @@ export function OrderStatusBanner({
       <Card className="border-destructive">
         <p className="text-destructive font-semibold">{ORDER_STATUS_LABEL.CANCELLED}</p>
         <p className="text-sm">
-          {order.cancelReason ? CANCEL_REASON_LABEL[order.cancelReason] : '주문이 취소됐어요.'}{' '}
+          {order.cancelReason
+            ? labelOf(CANCEL_REASON_LABEL, order.cancelReason)
+            : '주문이 취소됐어요.'}{' '}
           재고는 복구되고 예치금은 차감되지 않았어요.
         </p>
         {order.cancelReason === 'PAYMENT_EXPIRED' && (

@@ -5,12 +5,14 @@ import type {
   SettlementRunRequestDto,
   SettlementRunResultDto,
   SettlementTargetDto,
+  SettlementTargetSummaryDto,
 } from './settlement.dto'
 import {
   settlementDetailShape,
   settlementPageShape,
   settlementRunShape,
   settlementTargetPageShape,
+  settlementTargetSummaryShape,
 } from './settlement.shape'
 
 export const settlementApi = {
@@ -21,6 +23,11 @@ export const settlementApi = {
         params: { page: 0, size: 50 },
       })
       .then(expectShape(settlementTargetPageShape)),
+  /** 아직 정산 안 된 구매확정분 전체 합 (목록 페이지와 상관없이) */
+  targetSummary: () =>
+    apiClient
+      .get<SettlementTargetSummaryDto>('/seller/settlement-targets/summary')
+      .then(expectShape(settlementTargetSummaryShape)),
   list: () =>
     apiClient
       .get<Page<SettlementDto>>('/seller/settlements', { params: { page: 0, size: 20 } })

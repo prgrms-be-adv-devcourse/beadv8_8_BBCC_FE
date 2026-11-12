@@ -1,5 +1,5 @@
 export { cn } from './utils'
-export { formatDateTime, formatWon, withObjectParticle } from './format'
+export { formatDateTime, formatWon, labelOf, withObjectParticle } from './format'
 export { toImageUrl } from './image-url'
 export { fitWithin, shrinkImage, type ImageSize, type ShrinkImageOptions } from './image-resize'
 export { optionLabel } from './option-label'

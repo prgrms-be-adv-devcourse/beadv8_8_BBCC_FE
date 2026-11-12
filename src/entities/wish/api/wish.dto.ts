@@ -32,7 +32,7 @@ export type WishRequestDto = {
   requestId: string
   type: string
   childId: string
-  status: 'REQUESTED' | 'PAID' | 'REJECTED' | 'CANCELLED'
+  status: 'REQUESTED' | 'PAID' | 'REJECTED' | 'CANCELLED' | 'EXPIRED'
   requestedByType: 'MEMBER' | 'CHILD'
   requestedById: string
   message: string | null
@@ -44,12 +44,16 @@ export type WishRequestDto = {
   rejectedAt: string | null
   cancelReason: string | null
   cancelledAt: string | null
+  /** 만료 예정 시각(#1008). 대기 중이고 만료가 켜져 있을 때만, 그 밖은 null */
+  expiresAt: string | null
+  /** 만료 처리 시각. 만료가 아니면 null */
+  expiredAt: string | null
   items: WishRequestLineDto[]
   purchases: WishPurchaseDto[]
   paidOrderItemIds: string[]
 }
 
-/** BE WishTimelineResponse. steps: SENT → PAID · REJECTED · CANCELLED */
+/** BE WishTimelineResponse. steps: SENT → PAID · REJECTED · CANCELLED · EXPIRED */
 export type WishTimelineDto = {
   requestId: string
   status: string

@@ -1,3 +1,4 @@
+import { getErrorMessage, getErrorStatus, getErrorTitle } from '@/shared/api'
 import type { Fit, FitCounts, Review, ReviewAction, ReviewDraft, ReviewDraftErrors } from './review'
 
 /** 계약 값 (BE Review: 별점 1~5 정수, 본문 앞뒤 공백 제외 1~1000자 · community.yml max-count 5) */
@@ -80,4 +81,21 @@ export function reviewActionOf(
   if (item.status !== 'CONFIRMED') return null
   if (reviewedIds.has(item.id)) return 'written'
   return reviewableIds.has(item.id) ? 'write' : 'preparing'
+}
+
+/** BE ReviewErrorCode.IMAGE_NOT_UPLOADED의 title. 응답에 오류 코드가 없어 이 오류만 title로 나눈다 (사용자 승인) */
+const IMAGE_NOT_UPLOADED_TITLE = '올리지 않은 사진입니다'
+
+/**
+ * 리뷰 쓰기 · 고치기 오류 문구. 기본은 ProblemDetail detail 그대로.
+ * 올리지 않은 사진(400)은 개발자용 detail 대신 다시 올리기 안내, ProblemDetail이 없는 503(배포 중 등)은 잠시 뒤 다시
+ */
+export function reviewSaveErrorMessage(error: unknown): string {
+  const status = getErrorStatus(error)
+  const title = getErrorTitle(error)
+  if (status === 400 && title === IMAGE_NOT_UPLOADED_TITLE)
+    return '사진이 다 올라가지 않았어요. 그 사진을 지우고 다시 올려 주세요.'
+  if (status === 503 && title === null)
+    return '서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요.'
+  return getErrorMessage(error)
 }

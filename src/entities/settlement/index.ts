@@ -7,13 +7,15 @@ export {
   type SettlementItem,
   type SettlementRunResult,
   type SettlementStatus,
+  type SettlementTarget,
 } from './model/settlement'
-export { toSettlement, toSettlementRunResult } from './model/settlement.mapper'
-export { sumSettlementItems } from './model/settlement.rules'
+export { toSettlement, toSettlementRunResult, toSettlementTarget } from './model/settlement.mapper'
+export { expectedPayoutLabel } from './model/settlement.rules'
 export {
   settlementKeys,
   useSettlementQuery,
   useSettlementsQuery,
+  useSettlementTargetSummaryQuery,
   useSettlementTargetsQuery,
 } from './model/queries'
 export { SettlementItemList } from './ui/SettlementItemList'

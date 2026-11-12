@@ -26,7 +26,7 @@ export function ReviewCard({ review, product, action }: ReviewCardProps) {
         </span>
         {review.isUnderReview && (
           <span className="bg-paper-2 text-ink-2 inline-flex h-5 items-center rounded-sm px-1.5 text-[11px] font-semibold">
-            검토 중 · 나에게만 보여요
+            검토 중이라 다른 사람에게 보이지 않아요
           </span>
         )}
         {action && <div className="ml-auto flex gap-1">{action}</div>}

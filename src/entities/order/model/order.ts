@@ -1,8 +1,19 @@
 import type { DeliveryStatus } from '@/shared/config'
 
 export type OrderStatus = 'PENDING_PAYMENT' | 'PAID' | 'CANCELLED'
-export type CancelReason = 'OUT_OF_STOCK' | 'PAYMENT_FAILED' | 'PAYMENT_EXPIRED'
-export type OrderItemStatus = 'ORDERED' | 'CONFIRMED'
+/** BE Order.CancelReason */
+export type CancelReason =
+  | 'OUT_OF_STOCK'
+  | 'PAYMENT_FAILED'
+  | 'PAYMENT_EXPIRED'
+  | 'BUYER_CANCELLED'
+  | 'SELLER_CANCELLED'
+  | 'SELLER_UNAVAILABLE'
+/** BE OrderItem.Status. CANCELLED: 판매자 발송 전 취소 등으로 그 상품만 취소됨 */
+export type OrderItemStatus = 'ORDERED' | 'CONFIRMED' | 'CANCELLED'
+/** BE OrderItem.CancelReason (판매자 발송 전 취소 사유 + 시스템 정리) */
+export type ItemCancelReason =
+  'OUT_OF_STOCK' | 'WRONG_PRODUCT_INFO' | 'OTHER' | 'SELLER_UNAVAILABLE'
 export type ConfirmType = 'DIRECT' | 'AUTO'
 
 export type OrderItem = {
@@ -85,6 +96,17 @@ export const CANCEL_REASON_LABEL: Record<CancelReason, string> = {
   OUT_OF_STOCK: '구매할 수 없는 상품이 있어 주문이 취소됐어요.',
   PAYMENT_FAILED: '예치금 결제에 실패했어요 (잔액 부족 등)',
   PAYMENT_EXPIRED: '결제 마감 시간이 지나 주문이 자동으로 취소됐어요.',
+  BUYER_CANCELLED: '주문을 취소했어요.',
+  SELLER_CANCELLED: '판매자가 주문을 취소했어요.',
+  /** 판매자 정지 · 탈퇴 때 시스템이 배송 전 주문을 정리 */
+  SELLER_UNAVAILABLE: '판매자 사정으로 판매할 수 없게 되어 주문이 취소됐어요.',
+}
+
+export const ITEM_CANCEL_REASON_LABEL: Record<ItemCancelReason, string> = {
+  OUT_OF_STOCK: '재고 없음',
+  WRONG_PRODUCT_INFO: '상품 정보 오류',
+  OTHER: '판매자 사정',
+  SELLER_UNAVAILABLE: '판매자 사정으로 판매 불가',
 }
 
 /** 주문상품 단위 구매 불가 이유 (BE items[].unavailableReason). 모르는 값은 "구매 불가" */
@@ -97,6 +119,7 @@ export const UNAVAILABLE_REASON_LABEL: Record<string, string> = {
 export const ITEM_STATUS_LABEL: Record<OrderItemStatus, string> = {
   ORDERED: '주문됨',
   CONFIRMED: '구매확정',
+  CANCELLED: '취소됨',
 }
 
 /** 주문하기 입력 (화면 모델 기준). 요청 DTO로는 매퍼가 바꾼다 */

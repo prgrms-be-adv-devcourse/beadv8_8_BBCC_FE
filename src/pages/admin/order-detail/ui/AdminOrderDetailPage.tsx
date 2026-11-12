@@ -3,7 +3,7 @@ import { CANCEL_REASON_LABEL, ORDER_STATUS_LABEL, useAdminOrdersQuery } from '@/
 import { paymentIssueNote, PaymentStatusTag, useAdminPaymentsQuery } from '@/entities/payment'
 import { getErrorMessage } from '@/shared/api'
 import { adminPathsOf } from '@/shared/config'
-import { formatDateTime, formatWon, useArea } from '@/shared/lib'
+import { formatDateTime, formatWon, labelOf, useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -54,9 +54,11 @@ export function AdminOrderDetailPage() {
         <>
           {/* 주문 상태: 지금 상태를 제목으로, 취소면 아래에 취소 사유 (주문 정보에서는 되풀이하지 않는다) */}
           <section aria-label="주문 상태" className="border-rule space-y-1 rounded-lg border p-5">
-            <h2 className="text-page">{ORDER_STATUS_LABEL[order.status]}</h2>
+            <h2 className="text-page">{labelOf(ORDER_STATUS_LABEL, order.status)}</h2>
             {order.cancelReason && (
-              <p className="text-ink-2 text-sm">{CANCEL_REASON_LABEL[order.cancelReason]}</p>
+              <p className="text-ink-2 text-sm">
+                {labelOf(CANCEL_REASON_LABEL, order.cancelReason)}
+              </p>
             )}
           </section>
 

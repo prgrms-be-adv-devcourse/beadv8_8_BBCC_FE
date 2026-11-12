@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { nextShippingStep, type SellerOrder } from '@/entities/seller-order'
 import { carrierName, DELIVERY_STATUS_LABEL } from '@/shared/config'
-import { cn, formatDateTime } from '@/shared/lib'
+import { cn, formatDateTime, labelOf } from '@/shared/lib'
 
 type SellerOrderTableProps = {
   orders: SellerOrder[]
@@ -110,7 +110,7 @@ export function SellerOrderTable({
                 </td>
                 <td className="py-3 pr-4 max-lg:col-start-3 max-lg:row-start-1 max-lg:self-center max-lg:py-0 max-lg:pr-0">
                   <span className="bg-paper-2 text-ink-2 inline-flex h-6 items-center rounded-sm px-2 text-xs font-semibold whitespace-nowrap">
-                    {DELIVERY_STATUS_LABEL[order.status]}
+                    {labelOf(DELIVERY_STATUS_LABEL, order.status)}
                   </span>
                 </td>
                 <td

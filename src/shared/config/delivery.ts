@@ -1,10 +1,12 @@
 // 주문 · 판매 주문이 함께 쓰는 배송 코드표 (백엔드 Delivery.Status · Carrier)
-export type DeliveryStatus = 'READY' | 'SHIPPING' | 'DELIVERED'
+export type DeliveryStatus = 'READY' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED'
 
 export const DELIVERY_STATUS_LABEL: Record<DeliveryStatus, string> = {
   READY: '발송 준비',
   SHIPPING: '배송 중',
   DELIVERED: '배송 완료',
+  /** 판매자 발송 전 취소 · 주문 취소로 그 판매자 몫이 모두 취소됨 */
+  CANCELLED: '취소됨',
 }
 
 export const CARRIERS = [
