@@ -26,9 +26,10 @@ export const orderApi = {
         principal: 'child',
       })
       .then(expectShape(childPurchasePageShape)),
-  list: () =>
+  /** 최근 주문부터, 20건씩 (page는 0부터) */
+  list: (page = 0) =>
     apiClient
-      .get<Page<OrderSummaryDto>>('/orders', { params: { page: 0, size: 20 } })
+      .get<Page<OrderSummaryDto>>('/orders', { params: { page, size: 20 } })
       .then(expectShape(orderPageShape)),
   get: (orderId: string) =>
     apiClient.get<OrderDetailDto>(`/orders/${orderId}`).then(expectShape(orderDetailShape)),
