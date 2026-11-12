@@ -345,6 +345,8 @@ function scheduleOrder(o, me, stall, clearCart = true) {
   }, stall?.timeoutMs ?? PAYMENT_TIMEOUT_MS).unref()
   if (!stall)
     setTimeout(() => {
+      // 구매자가 결제 전에 취소했으면 재고 · 결제를 처리하지 않는다
+      if (o.status !== 'PENDING_PAYMENT') return
       // 상품: 하나라도 부족하면 아무것도 차감하지 않고 주문 취소 (기획서 4장).
       // 장바구니는 그대로 남는다 (BE: 결제 완료 뒤 주문한 줄만 빠진다)
       const short = o.items.filter((it) => (stock[it.optionId] ?? 0) < it.quantity)
@@ -1780,6 +1782,39 @@ http
       )
     if ((x = r('GET', /^\/orders\/(\d+)$/)))
       return send(res, 200, detailOf(orders.find((o) => o.orderId === +x[1])))
+    // BE OrderService.cancelByBuyer (#354): 결제대기, 또는 모든 배송이 발송 전인 결제완료 주문만. 이미 취소면 그대로 200.
+    // 결제완료면 남은 주문상품 금액을 돌려주고(REFUND) 재고를 되돌린다
+    if ((x = r('POST', /^\/orders\/(\d+)\/cancel$/))) {
+      const o = orders.find((each) => each.orderId === +x[1] && each.memberId === me)
+      if (!o)
+        return problem(res, 404, '주문을 찾을 수 없습니다', '주문을 찾을 수 없습니다.', req.url)
+      if (o.status === 'CANCELLED') return send(res, 200, detailOf(o))
+      if (o.deliveries.some((d) => d.status === 'SHIPPING' || d.status === 'DELIVERED'))
+        return problem(
+          res,
+          409,
+          '이미 발송된 상품이 있습니다',
+          '판매자가 발송을 시작해 취소할 수 없습니다. 판매자에게 문의해 주세요.',
+          req.url,
+        )
+      if (o.status === 'PAID') {
+        const open = o.items.filter((it) => it.status === 'ORDERED')
+        const refund = open.reduce((sum, it) => sum + it.amount, 0)
+        open.forEach((it) => {
+          it.status = 'CANCELLED'
+          stock[it.optionId] = (stock[it.optionId] ?? 0) + it.quantity
+        })
+        o.deliveries.forEach((d) => (d.status = 'CANCELLED'))
+        if (refund > 0) {
+          wallets[me] = (wallets[me] ?? 0) + refund
+          ledger(me, 'REFUND', refund, nid())
+        }
+      }
+      o.status = 'CANCELLED'
+      o.cancelReason = 'BUYER_CANCELLED'
+      cancelledAt.set(o, now())
+      return send(res, 200, detailOf(o))
+    }
     if ((x = r('POST', /^\/orders\/(\d+)\/items\/(\d+)\/confirm$/))) {
       const it = orders.find((o) => o.orderId === +x[1]).items.find((i) => i.orderItemId === x[2])
       if (!it.deliveredAt)
