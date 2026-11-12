@@ -1,6 +1,6 @@
 // 가짜 백엔드의 알림함 API (BE InboxNotificationController · ChildInboxNotificationController).
 // 응답 모양만 흉내 낸다. BE는 다른 서비스 이벤트로 알림을 만들지만, 여기서는 받는 사람이 처음 볼 때 두 건을 넣어 둔다.
-// 결과는 { status, body } 또는 { status, title, detail }
+// 결과는 { status, body } · { status, title, detail } · SSE면 { status, stream(res) }
 const SEOUL_OFFSET_MS = 9 * 3600e3
 const MAX_SIZE = 100
 
@@ -43,6 +43,20 @@ const mine = (recipient) =>
   inbox.filter((n) => n.recipient === recipient).sort((a, b) => b.notificationId - a.notificationId)
 
 const toResponse = ({ recipient: _recipient, ...rest }) => rest
+const unread = (recipient) => ({ count: mine(recipient).filter((n) => !n.read).length })
+
+// 안 읽은 수 SSE (BE UnreadCountStream): 연결하면 지금 수를, 읽음 처리로 바뀌면 새 수를 unread-count로 보낸다
+const streams = new Map()
+const pushCount = (res, recipient) =>
+  res.write(`event: unread-count\ndata: ${JSON.stringify(unread(recipient))}\n\n`)
+const changed = (recipient) => streams.get(recipient)?.forEach((res) => pushCount(res, recipient))
+const openStream = (recipient) => (res) => {
+  res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' })
+  const open = streams.get(recipient) ?? new Set()
+  streams.set(recipient, open.add(res))
+  res.on('close', () => open.delete(res))
+  pushCount(res, recipient)
+}
 
 /**
  * @param recipient 받는 사람 키 (회원 `member:1` · 자녀 계정 `child:3`)
@@ -71,10 +85,11 @@ export function notificationRoute(m, p, query, recipient, type) {
       },
     }
   }
-  if (m === 'GET' && rest === '/unread-count')
-    return { status: 200, body: { count: mine(recipient).filter((n) => !n.read).length } }
+  if (m === 'GET' && rest === '/unread-count') return { status: 200, body: unread(recipient) }
+  if (m === 'GET' && rest === '/stream') return { status: 200, stream: openStream(recipient) }
   if (m === 'PATCH' && rest === '/read-all') {
     mine(recipient).forEach((n) => (n.read = true))
+    changed(recipient)
     return { status: 204 }
   }
   const read = m === 'PATCH' && rest.match(/^\/(\d+)\/read$/)
@@ -83,6 +98,7 @@ export function notificationRoute(m, p, query, recipient, type) {
     if (!target)
       return { status: 404, title: '알림을 찾을 수 없습니다', detail: '알림을 찾을 수 없습니다.' }
     target.read = true
+    changed(recipient)
     return { status: 204 }
   }
   return null

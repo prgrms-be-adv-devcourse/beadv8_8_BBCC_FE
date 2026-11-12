@@ -417,11 +417,13 @@ function favoriteProductView(productId) {
   return { name: detail.name, thumbnailUrl: detail.thumbnailUrl, displayStatus }
 }
 
-/** reviews.mjs · notifications.mjs · favorites.mjs 결과 { status, body } · { status, title, detail }를 응답으로 */
+/** reviews.mjs · notifications.mjs · favorites.mjs 결과 { status, body } · { status, title, detail } · { stream }을 응답으로 */
 const reviewResult = (res, result, instance) =>
-  result.title
-    ? problem(res, result.status, result.title, result.detail, instance)
-    : send(res, result.status, result.body)
+  result.stream
+    ? result.stream(res)
+    : result.title
+      ? problem(res, result.status, result.title, result.detail, instance)
+      : send(res, result.status, result.body)
 function send(res, status, body, headers = {}) {
   res.writeHead(status, {
     'content-type': status >= 400 ? 'application/problem+json' : 'application/json',

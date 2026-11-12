@@ -133,7 +133,7 @@ import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload
 import { toWriteReviewRequest } from '@/features/write-review'
 import { adminPageShape, adminShape } from '@/entities/admin-account/api/admin-account.shape'
 import { toReview } from '@/entities/review'
-import { arr, readSseEvents, validate, type Shape } from '@/shared/api'
+import { arr, readSse, readSseEvents, validate, type SseEvent, type Shape } from '@/shared/api'
 
 // E2E가 쓰는 가짜 백엔드의 응답이 FE 계약(응답 모양)과 같은지 확인한다.
 // 어긋나면 E2E가 아니라 여기서 먼저, 어느 필드인지까지 드러난다.
@@ -337,8 +337,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       const unread = await call('GET', `${base}/unread-count`, as)
       expectContract(unread.data, unreadCountShape)
       expect(unread.data.count).toBe(list.data.content.length)
+      const live = await openStream(`${base}/stream`, as)
+      expect(await live.next()).toEqual({ event: 'unread-count', data: unread.data })
       const first = list.data.content[0].notificationId
       expect((await call('PATCH', `${base}/${first}/read`, as)).status).toBe(204)
+      expect(await live.next()).toEqual({
+        event: 'unread-count',
+        data: { count: unread.data.count - 1 },
+      })
+      live.close()
       expect((await call('PATCH', `${base}/${first}/read`, as)).status).toBe(204)
       expect((await call('GET', `${base}/unread-count`, as)).data.count).toBe(unread.data.count - 1)
       expect((await call('PATCH', `${base}/999999/read`, as)).status).toBe(404)
@@ -1804,6 +1811,30 @@ it('맞춤 목록: 1쪽 응답의 기준 시각 asOf를 2쪽에 넘기면 그대
   expect(future.status).toBe(400)
   expect(future.data.title).toBe('잘못된 기준 시각입니다')
 })
+
+/** 서버가 닫지 않는 SSE를 열어 두고 이벤트를 하나씩 기다린다 (알림 수 스트림) */
+async function openStream(url: string, as: number) {
+  const controller = new AbortController()
+  const response = await fetch(`${BASE}${url}`, {
+    signal: controller.signal,
+    headers: { accept: 'text/event-stream', authorization: `Bearer ${tokens[as]}` },
+  })
+  expect(response.headers.get('content-type')).toBe('text/event-stream')
+  const queue: SseEvent[] = []
+  let wake = () => {}
+  readSse(response.body!, (item) => {
+    queue.push(item)
+    wake()
+  }).catch(() => {})
+  return {
+    next: async () => {
+      while (queue.length === 0) await new Promise<void>((resolve) => (wake = resolve))
+      const item = queue.shift()!
+      return { event: item.event, data: JSON.parse(item.data) as unknown }
+    },
+    close: () => controller.abort(),
+  }
+}
 
 /** Accept: text/event-stream으로 불러 이벤트 이름 · data를 읽는다 */
 async function stream(url: string, as: number) {

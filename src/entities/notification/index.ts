@@ -6,6 +6,7 @@ export {
   useNotificationsQuery,
   useUnreadNotificationCount,
   useUnreadNotificationCountQuery,
+  useUnreadCountStream,
 } from './model/queries'
 
 // 목 응답 작성 전용

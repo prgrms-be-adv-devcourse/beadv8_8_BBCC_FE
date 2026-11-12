@@ -3,6 +3,7 @@ import {
   getErrorMessage,
   getErrorStatus,
   getEventStream,
+  openEventStream,
   obj,
   oneOf,
   registerMockHandlers,
@@ -42,15 +43,23 @@ registerMockHandlers('스트림 테스트', [
               instance: PATH,
             },
           }
-        : query.get('case') === 'rule-only'
-          ? { status: 200, events: [{ event: 'rule', data: { source: 'RULE', note: '규칙' } }] }
-          : {
+        : query.get('case') === 'live'
+          ? {
               status: 200,
               events: [
-                { event: 'rule', data: { source: 'RULE', note: '규칙' } },
-                { event: 'ai', data: { source: 'AI', note: 7 } },
+                { event: 'rule', data: { source: 'RULE', note: '첫째' } },
+                { event: 'ai', data: { source: 'AI', note: '둘째' }, delayMs: 30 },
               ],
-            },
+            }
+          : query.get('case') === 'rule-only'
+            ? { status: 200, events: [{ event: 'rule', data: { source: 'RULE', note: '규칙' } }] }
+            : {
+                status: 200,
+                events: [
+                  { event: 'rule', data: { source: 'RULE', note: '규칙' } },
+                  { event: 'ai', data: { source: 'AI', note: 7 } },
+                ],
+              },
   },
 ])
 
@@ -101,5 +110,58 @@ describe('getEventStream: 공통 클라이언트로 text/event-stream 받기', (
       status: 404,
       responseBody: { detail: '자녀를 다시 확인해 주세요.' },
     })
+  })
+})
+
+describe('openEventStream: 열린 스트림을 읽으며 이벤트마다 부르기', () => {
+  beforeEach(() => useApiFlowLog.getState().clear())
+
+  it('이벤트가 올 때마다 data를 JSON으로 넘기고, 서버가 닫으면 끝난다. 흐름 기록은 한 건에 마지막 이벤트만 남긴다', async () => {
+    const received: unknown[] = []
+
+    await openEventStream(PATH, {
+      params: { case: 'live' },
+      signal: new AbortController().signal,
+      shape,
+      onEvent: (item) => received.push(item),
+    })
+
+    expect(received).toEqual([
+      { event: 'rule', data: { source: 'RULE', note: '첫째' } },
+      { event: 'ai', data: { source: 'AI', note: '둘째' } },
+    ])
+    expect(useApiFlowLog.getState().logs).toHaveLength(1)
+    expect(lastLog()).toMatchObject({
+      status: 200,
+      responseBody: { event: 'ai', data: { source: 'AI', note: '둘째' } },
+    })
+  })
+
+  it('끊으면(abort) 그 뒤 이벤트는 넘기지 않는다', async () => {
+    const controller = new AbortController()
+    const received: unknown[] = []
+
+    await openEventStream(PATH, {
+      params: { case: 'live' },
+      signal: controller.signal,
+      shape,
+      onEvent: (item) => {
+        received.push(item)
+        controller.abort()
+      },
+    }).catch(() => {})
+
+    expect(received).toHaveLength(1)
+  })
+
+  it('스트림을 열기 전 오류는 상태 코드를 읽을 수 있게 던진다', async () => {
+    const failed = await openEventStream(PATH, {
+      params: { case: 'missing' },
+      signal: new AbortController().signal,
+      shape,
+      onEvent: () => {},
+    }).catch((error: unknown) => error)
+
+    expect(getErrorStatus(failed)).toBe(404)
   })
 })

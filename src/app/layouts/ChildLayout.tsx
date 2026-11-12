@@ -1,5 +1,5 @@
 import { Link, Outlet } from 'react-router'
-import { useUnreadNotificationCountQuery } from '@/entities/notification'
+import { useUnreadCountStream, useUnreadNotificationCountQuery } from '@/entities/notification'
 import { useChildSessionStore } from '@/entities/session'
 import { useChildLogout } from '@/features/logout'
 import { paths } from '@/shared/config'
@@ -15,6 +15,7 @@ export function ChildLayout() {
   const logout = useChildLogout()
   // 머리말 알림 배지: 레이아웃이 API를 부르는 예외 (AGENTS.md 2절)
   const { data: unreadCount } = useUnreadNotificationCountQuery('child', !!accessToken)
+  useUnreadCountStream('child', accessToken)
   return (
     <div className="bg-paper min-h-svh">
       <DemoBarWithFlowDrawer />

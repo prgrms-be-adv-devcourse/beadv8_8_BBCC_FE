@@ -39,26 +39,33 @@ function createSseParser(onEvent: (event: SseEvent) => void) {
   }
 }
 
+/** 스트림을 닫힐 때까지 읽으며 이벤트마다 onEvent를 부른다. 읽다가 끊기면 오류를 던진다 */
+export async function readSse(
+  stream: ReadableStream<Uint8Array>,
+  onEvent: (event: SseEvent) => void,
+): Promise<void> {
+  const parser = createSseParser(onEvent)
+  const reader = stream.getReader()
+  const decoder = new TextDecoder()
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    parser.feed(decoder.decode(value, { stream: true }))
+  }
+  parser.feed(decoder.decode())
+  parser.end()
+}
+
 /**
  * 스트림을 끝까지 읽어 이벤트 목록을 돌려준다.
  * 읽다가 끊기면 그때까지 다 받은 이벤트를 돌려주고, 하나도 받지 못했으면 오류를 그대로 던진다
  */
 export async function readSseEvents(stream: ReadableStream<Uint8Array>): Promise<SseEvent[]> {
   const events: SseEvent[] = []
-  const parser = createSseParser((event) => events.push(event))
-  const reader = stream.getReader()
-  const decoder = new TextDecoder()
   try {
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      parser.feed(decoder.decode(value, { stream: true }))
-    }
+    await readSse(stream, (event) => events.push(event))
   } catch (error) {
     if (events.length === 0) throw error
-    return events
   }
-  parser.feed(decoder.decode())
-  parser.end()
   return events
 }
