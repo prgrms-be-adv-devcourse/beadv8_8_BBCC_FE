@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 
-/** 목 데이터 사용 · 시연 기능(역할 전환 · 시연 콘솔 · API 흐름) — FE 동작 설정 */
+/** 시연 데이터(쇼핑 목록 예시 사진) · 시연 기능(역할 전환 · 시연 콘솔 · API 흐름) — FE 동작 설정 */
 export type AppSettingValues = { isMockEnabled: boolean; isDemoRoleSwitchEnabled: boolean }
 
-/** 관리자 설정에서 고른 시연 데이터(목) 사용 여부. 이 브라우저에만 기억한다 */
+/** 관리자 설정에서 고른 시연 데이터 사용 여부. 이 브라우저에만 기억한다 */
 const DEMO_DATA_KEY = 'kidly.demo-data'
 
-/** 시연 데이터(목) 사용 여부: 관리자가 고른 값('on' · 'off')이 있으면 그 값, 없으면 빌드 값(없으면 켬) */
+/** 시연 데이터 사용 여부: 관리자가 고른 값('on' · 'off')이 있으면 그 값, 없으면 빌드 값(없으면 켬) */
 export function resolveMockEnabled(buildValue: string | undefined, saved: string | null): boolean {
   if (saved === 'on') return true
   if (saved === 'off') return false

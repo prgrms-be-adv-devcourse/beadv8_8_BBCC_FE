@@ -8,6 +8,6 @@ export {
   useUnreadNotificationCountQuery,
 } from './model/queries'
 
-// 목 응답 작성 전용
+// 단위 테스트 입력용 (tests/unit)
 export type { InboxNotificationDto as MockInboxNotificationDto } from './api/notification.dto'
 export { NotificationItem } from './ui/NotificationItem'

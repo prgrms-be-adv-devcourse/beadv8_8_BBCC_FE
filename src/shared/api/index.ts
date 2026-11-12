@@ -33,23 +33,6 @@ export {
 } from './problem-detail'
 export type { Page } from './types'
 export { putToPresignedUrl, UploadError } from './presigned-upload'
-export {
-  registerMockHandlers,
-  isMockActive,
-  registerMockObservers,
-  type MockHandler,
-  type MockObserver,
-  type MockRequest,
-  type MockResult,
-  type MockStreamEvent,
-} from './mock-adapter'
-export { activeMockDomains, useMockSettings } from './mock-settings'
-export {
-  endpointOf,
-  MOCK_ENDPOINTS,
-  type EndpointSource,
-  type MockEndpoint,
-} from './mock-endpoints'
 export { nextPageOf, pageNumbersOf } from './paging'
 export { getEventStream, type StreamEvent } from './event-stream'
 export { readSseEvents, type SseEvent } from './sse'

@@ -1,63 +1,75 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getErrorMessage,
   getErrorStatus,
   getEventStream,
   obj,
   oneOf,
-  registerMockHandlers,
   str,
   useApiFlowLog,
 } from '@/shared/api'
 
-// 공통 클라이언트로 SSE를 받는다: 목 어댑터가 이벤트를 흘려보내고, 흐름 기록에 이벤트 순서 · 계약 불일치가 남는다.
-// 목은 mock-endpoints에서 'mock'인 엔드포인트만 등록되므로, 테스트 전용 GET 하나를 목으로 끼워 스트림을 흘려보낸다
-const ROUTE = '/__test/streams/:streamId'
+// 공통 클라이언트로 SSE를 받는다: fetch가 text/event-stream 본문을 흘려보내고, 흐름 기록에 이벤트 순서 · 계약 불일치가 남는다.
+// Node의 fetch는 상대 주소를 받지 않아 API 주소를 절대 주소로 둔다 (클라이언트가 불러올 때 읽으므로 import보다 먼저)
+vi.hoisted(() => vi.stubEnv('VITE_API_BASE_URL', 'http://localhost'))
+
 const PATH = '/__test/streams/1'
-vi.mock('@/shared/api/mock-endpoints', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/shared/api/mock-endpoints')>()
-  return {
-    ...original,
-    endpointOf: (method: string, path: string) =>
-      method === 'GET' && path === '/__test/streams/:streamId'
-        ? { method, path, source: 'mock', backend: '테스트 전용', screens: '-' }
-        : original.endpointOf(method, path),
-  }
-})
 const shape = obj({ source: oneOf(['AI', 'RULE']), note: str })
 
-registerMockHandlers('스트림 테스트', [
-  {
-    method: 'GET',
-    path: ROUTE,
-    handle: ({ query }) =>
-      query.get('case') === 'missing'
-        ? {
-            status: 404,
-            data: {
-              type: 'about:blank',
-              title: '자녀를 찾을 수 없습니다',
-              status: 404,
-              detail: '자녀를 다시 확인해 주세요.',
-              instance: PATH,
-            },
-          }
-        : query.get('case') === 'rule-only'
-          ? { status: 200, events: [{ event: 'rule', data: { source: 'RULE', note: '규칙' } }] }
-          : {
-              status: 200,
-              events: [
-                { event: 'rule', data: { source: 'RULE', note: '규칙' } },
-                { event: 'ai', data: { source: 'AI', note: 7 } },
-              ],
-            },
-  },
-])
+function eventStream(events: { event: string; data: unknown }[]): Response {
+  const encoder = new TextEncoder()
+  let index = 0
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      const next = events[index++]
+      if (!next) {
+        controller.close()
+        return
+      }
+      controller.enqueue(
+        encoder.encode(`event: ${next.event}\ndata: ${JSON.stringify(next.data)}\n\n`),
+      )
+    },
+  })
+  return new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } })
+}
+
+function respond(url: URL): Response {
+  const testCase = url.searchParams.get('case')
+  if (testCase === 'missing') {
+    return new Response(
+      JSON.stringify({
+        type: 'about:blank',
+        title: '자녀를 찾을 수 없습니다',
+        status: 404,
+        detail: '자녀를 다시 확인해 주세요.',
+        instance: PATH,
+      }),
+      { status: 404, headers: { 'content-type': 'application/problem+json' } },
+    )
+  }
+  if (testCase === 'rule-only') {
+    return eventStream([{ event: 'rule', data: { source: 'RULE', note: '규칙' } }])
+  }
+  return eventStream([
+    { event: 'rule', data: { source: 'RULE', note: '규칙' } },
+    { event: 'ai', data: { source: 'AI', note: 7 } },
+  ])
+}
 
 const lastLog = () => useApiFlowLog.getState().logs.at(-1)
 
 describe('getEventStream: 공통 클라이언트로 text/event-stream 받기', () => {
-  beforeEach(() => useApiFlowLog.getState().clear())
+  beforeEach(() => {
+    useApiFlowLog.getState().clear()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: Request | string) =>
+        respond(new URL(typeof input === 'string' ? input : input.url)),
+      ),
+    )
+  })
+  afterEach(() => vi.unstubAllGlobals())
 
   it('이벤트를 순서대로 JSON으로 받고, 흐름 기록에 이벤트 순서와 마지막 데이터를 남긴다', async () => {
     const events = await getEventStream(PATH, { params: { productId: '1' }, shape })

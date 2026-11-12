@@ -30,5 +30,5 @@ export {
   useWishTimelineQuery,
 } from './model/queries'
 
-// 목 응답 작성 전용
+// 단위 테스트 입력용 (tests/unit)
 export type { WishRequestDto as MockWishRequestDto } from './api/wish.dto'

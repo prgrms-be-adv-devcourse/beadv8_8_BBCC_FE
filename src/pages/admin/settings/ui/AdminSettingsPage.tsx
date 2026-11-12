@@ -6,7 +6,7 @@ import { Button } from '@/shared/ui/button'
 import { PageHeader } from '@/shared/ui/PageHeader'
 
 /**
- * 관리자 설정: 시연 데이터(목 응답)를 켜고 끈다.
+ * 관리자 설정: 시연 데이터(쇼핑 목록의 예시 사진)를 켜고 끈다.
  * 저장할 백엔드 API가 없어 이 브라우저에만 기억한다 (다른 방문자에게는 적용되지 않는다)
  */
 export function AdminSettingsPage() {
@@ -38,8 +38,7 @@ export function AdminSettingsPage() {
               시연 데이터
             </h2>
             <p className="text-ink-3 text-[13px]">
-              백엔드에 아직 없는 API를 시연용 응답으로 대신해요. 끄면 모든 화면이 실제 서버만
-              불러요.
+              쇼핑 목록에서 사진이 없는 상품에 예시 사진을 보여 줘요. 끄면 기본 이미지를 보여 줘요.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-4 self-end sm:self-auto">

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { ordersSeenInLogs, paymentsSeenInLogs } from '@/app/mocks/admin-handlers'
 import {
   canSuspendMember,
   canSuspendSeller,
@@ -9,7 +8,6 @@ import {
 import { toAdminOrder } from '@/entities/order'
 import { toAdminPayment } from '@/entities/payment'
 import { toSettlement, toSettlementRunResult } from '@/entities/settlement'
-import type { ApiCallLog } from '@/shared/api'
 import { REASON_MAX, validateReason } from '@/shared/lib'
 
 describe('validateReason: 정지 · 거절 사유 (백엔드 @NotBlank · 200자)', () => {
@@ -131,75 +129,5 @@ describe('관리자 전체 주문 · 결제 · 정산', () => {
       periodEnd: '2026-10-16',
       skippedSellers: [],
     })
-  })
-})
-
-let id = 0
-const log = (patch: Partial<ApiCallLog>): ApiCallLog => ({
-  id: ++id,
-  action: null,
-  actor: '1',
-  method: 'GET',
-  path: '/',
-  status: 200,
-  durationMs: 10,
-  startedAt: '2026-10-15T10:00:00.000Z',
-  requestBody: null,
-  responseBody: null,
-  contractIssues: [],
-  ...patch,
-})
-const orderBody = (status: string) => ({
-  orderId: '6',
-  status,
-  cancelReason: null,
-  totalAmount: 25000,
-  orderedAt: '2026-10-15T10:00:00',
-  items: [{}, {}],
-  deliveries: [],
-})
-
-describe('목: 관리자 전체 조회는 이 탭에서 본 응답으로 만든다', () => {
-  it('주문: 같은 주문은 마지막 상태로 하나, 회원은 호출한 사람', () => {
-    const orders = ordersSeenInLogs([
-      log({
-        method: 'POST',
-        path: '/orders',
-        status: 201,
-        responseBody: orderBody('PENDING_PAYMENT'),
-      }),
-      log({ path: '/orders/6', responseBody: orderBody('PAID') }),
-      log({ path: '/orders/6', status: 500, responseBody: orderBody('CANCELLED') }),
-    ])
-    expect(orders).toEqual([
-      {
-        orderId: '6',
-        memberId: '1',
-        status: 'PAID',
-        cancelReason: null,
-        totalAmount: 25000,
-        orderedAt: '2026-10-15T10:00:00',
-        itemCount: 2,
-      },
-    ])
-  })
-  it('결제: 결제 목록 응답에서 결제별 마지막 값, 회원 번호를 붙인다', () => {
-    const payment = {
-      paymentId: 3,
-      orderId: 6,
-      amount: 25000,
-      refundedAmount: 0,
-      status: 'COMPLETED',
-    }
-    const payments = paymentsSeenInLogs([
-      log({ actor: '1', path: '/payments', responseBody: { content: [payment] } }),
-      log({
-        actor: '1',
-        path: '/payments',
-        responseBody: { content: [{ ...payment, status: 'REFUNDED' }] },
-      }),
-    ])
-    expect(payments).toHaveLength(1)
-    expect(payments[0]).toMatchObject({ paymentId: 3, memberId: 1, status: 'REFUNDED' })
   })
 })

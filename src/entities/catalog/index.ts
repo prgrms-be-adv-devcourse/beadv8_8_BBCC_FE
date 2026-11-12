@@ -1,12 +1,6 @@
 export { catalogApi } from './api/catalog-api'
-/** 목 응답 작성 전용 (app/mocks) */
-export type {
-  CategoryDto,
-  AttributeDto,
-  CategoryCreateRequestDto,
-  MeasurementItemDto,
-  ProductTypeDto,
-} from './api/catalog.dto'
+/** 단위 테스트 입력용 (tests/unit) */
+export type { CategoryDto, AttributeDto, ProductTypeDto } from './api/catalog.dto'
 export {
   ATTRIBUTE_INPUT_TYPE_LABEL,
   ATTRIBUTE_ROLE_LABEL,

@@ -28,7 +28,7 @@ describe('실행 중 설정 (앱 시작 때 BE 설정을 적용)', () => {
   })
 })
 
-describe('시연 데이터(목) 사용 여부: 관리자 설정에서 고른 값이 빌드 값보다 앞선다', () => {
+describe('시연 데이터 사용 여부: 관리자 설정에서 고른 값이 빌드 값보다 앞선다', () => {
   it('고른 적이 없으면 빌드 값을 따른다 (없으면 켬)', () => {
     expect(resolveMockEnabled(undefined, null)).toBe(true)
     expect(resolveMockEnabled('true', null)).toBe(true)

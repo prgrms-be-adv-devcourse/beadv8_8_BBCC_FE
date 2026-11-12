@@ -1,16 +1,10 @@
 export { productApi } from './api/product-api'
-/** 목 응답 작성 전용 (app/mocks) */
+/** 단위 테스트 입력용 (tests/unit) */
 export type {
   CategoryInputsDto,
   CategoryTreeDto,
   ProductDetailDto,
   ProductSummaryDto,
-  RegisterProductRequestDto,
-  RegisterProductResultDto,
-  SaleStatusResultDto,
-  ProductUpdateRequestDto,
-  SellerProductDetailDto,
-  SellerProductSummaryDto,
 } from './api/product.dto'
 export {
   PRODUCT_STATUS_LABEL,
