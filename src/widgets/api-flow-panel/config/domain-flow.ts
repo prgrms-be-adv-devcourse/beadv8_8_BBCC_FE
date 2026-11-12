@@ -39,7 +39,7 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   [/^\/(wallets|payments)/, 'payment'],
   // 리뷰 · 찜 (리뷰 사진 업로드 주소 발급 포함)
   [/^\/(reviews|favorites)(\/|$)/, 'community'],
-  [/^\/(seller\/settlement|admin\/settlements)/, 'settlement'],
+  [/^\/(seller|admin)\/settlement/, 'settlement'],
   [/^\/(auth|members|children|child\/|dev|admin\/(members|seller|sellers)|seller\/me)/, 'member'],
   // 회원 서비스의 처리 실패 메시지 (인증 · 회원 · 판매자 · 자녀 프로필 모듈)
   [/^\/admin\/(auth|member|seller|child-profile)-dead-letters/, 'member'],
@@ -236,7 +236,8 @@ const FLOWS: { method: string; pattern: RegExp; steps: FlowStep[] }[] = [
   },
   {
     method: 'POST',
-    pattern: /^\/admin\/settlements\/run$/,
+    // 실행 · 지급 재요청 (재요청은 같은 정산서로 다시 입금 요청)
+    pattern: /^\/admin\/settlements\/(run|[^/]+\/retry)$/,
     steps: [
       {
         name: 'settlement.payout-requested',

@@ -48,4 +48,9 @@ export type SettlementRunResultDto = {
   requestedBy: number | null
   startedAt: string
   finishedAt: string | null
+  /** 건너뛴 판매자. 없으면 [] */
+  skippedSellers: SkippedSellerDto[]
 }
+
+/** 정산에서 건너뛴 판매자. phase = PROCESS(계산) · WRITE(저장), reason = "예외 이름: 메시지" (200자까지) */
+export type SkippedSellerDto = { sellerId: number; phase: string; reason: string }

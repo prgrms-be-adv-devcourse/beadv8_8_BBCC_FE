@@ -190,7 +190,7 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
       step: '⑦',
       actor: '관리자',
       todo: [
-        '"정산 실행"을 눌러요 (원래는 매월 자동)',
+        '"정산 실행"을 눌러요 (원래는 영업일 오전 10시 자동 정산)',
         '기준일은 오늘이라 어제까지 구매확정분이 대상이에요. 오늘 구매확정분은 내일 정산돼요',
       ],
       watch:

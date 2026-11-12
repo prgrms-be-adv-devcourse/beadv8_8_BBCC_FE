@@ -52,5 +52,9 @@ export function toSettlementRunResult(dto: SettlementRunResultDto): SettlementRu
     failCount: dto.failCount,
     periodStart: dto.periodStartOn,
     periodEnd: dto.periodEndOn,
+    skippedSellers: dto.skippedSellers.map((seller) => ({
+      ...seller,
+      sellerId: String(seller.sellerId),
+    })),
   }
 }

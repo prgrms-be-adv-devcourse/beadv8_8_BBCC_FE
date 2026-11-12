@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { confirmAction } from '@/shared/lib'
-import { SETTLEMENT_RUN_STATUS_LABEL } from '@/entities/settlement'
+import { SettlementRunSummary } from '@/entities/settlement'
 import { getErrorMessage } from '@/shared/api'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { settlementPeriodEnd } from '../lib/period-end'
@@ -41,13 +41,7 @@ export function RunSettlementButton() {
         정산 실행
       </button>
       {run.isError && <StateMessage tone="error">{getErrorMessage(run.error)}</StateMessage>}
-      {run.data && (
-        <p role="status" className="bg-paper-2 text-ink figure rounded-lg px-5 py-4 text-sm">
-          정산 {SETTLEMENT_RUN_STATUS_LABEL[run.data.status] ?? run.data.status} · 성공{' '}
-          {run.data.successCount} · 실패 {run.data.failCount} · 기간 {run.data.periodStart} ~{' '}
-          {run.data.periodEnd}
-        </p>
-      )}
+      {run.data && <SettlementRunSummary run={run.data} />}
     </div>
   )
 }
