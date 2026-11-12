@@ -125,3 +125,15 @@ export type OrderTimelineDto = {
     details: OrderTimelineDetailDto[]
   }[]
 }
+
+/** GET /orders/items/mine 한 줄 (BE ChildPurchaseResponse #1000, 자녀 로그인만). 가격 · 판매자 · 주문 ID · 출처 없음 */
+export type ChildPurchaseDto = {
+  orderItemId: string
+  orderedAt: string
+  productId: string | null
+  productName: string | null
+  optionName: string | null
+  quantity: number
+  /** PAID · SHIPPING · DELIVERED · CONFIRMED · CANCELLED */
+  status: string
+}

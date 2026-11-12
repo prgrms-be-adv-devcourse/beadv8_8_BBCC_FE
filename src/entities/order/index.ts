@@ -1,4 +1,10 @@
 export { orderApi } from './api/order-api'
+export {
+  childPurchaseSourceOf,
+  childPurchaseStatusLabel,
+  toChildPurchase,
+  type ChildPurchase,
+} from './model/child-purchase'
 export type { AdminOrderDto, OrderDetailDto, OrderTimelineDto } from './api/order.dto'
 export {
   CANCEL_REASON_LABEL,
@@ -60,6 +66,7 @@ export {
   orderKeys,
   paymentPendingMs,
   useAdminOrdersQuery,
+  useChildPurchasesQuery,
   useOrderQuery,
   useOrderTimelineQuery,
   useOrdersQuery,

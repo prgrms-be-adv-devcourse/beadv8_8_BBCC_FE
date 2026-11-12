@@ -34,6 +34,8 @@ export type WishRequest = {
   rejectReason: 'TOO_EXPENSIVE' | 'ALREADY_HAVE' | 'NEXT_TIME' | 'OTHER' | null
   /** 조르기로 산 주문 (먼저 산 것부터, 겹치지 않게) */
   orderIds: string[]
+  /** 이 조르기로 결제된 주문상품 ID (BE #1000, 결제 반영 전엔 빈 목록) */
+  paidOrderItemIds: string[]
   items: WishRequestLine[]
 }
 export type WishTimelineStep = { step: string; status: 'DONE' | 'WAITING'; at: string | null }

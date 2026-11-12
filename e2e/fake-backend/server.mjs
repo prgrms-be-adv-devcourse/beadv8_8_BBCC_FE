@@ -766,6 +766,42 @@ http
           : problem(res, 404, '찾을 수 없습니다', '프로필을 찾을 수 없습니다.', req.url)
       }
     }
+    // BE ChildPurchaseController (#1000): 자녀만(회원 403). 결제된 적 있는 주문에서 내가 입을 아이인 주문상품, 주문 일시 최신순
+    if (r('GET', /^\/orders\/items\/mine$/)) {
+      if (!isChild) return problem(res, 403, '권한이 없습니다', '자녀만 볼 수 있습니다.', req.url)
+      const account = childAccounts.find(
+        (a) => `child:${a.id}` === u.sub && a.version === u.version,
+      )
+      if (!account)
+        return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
+      const childId = String(account.childProfileId)
+      const paidBefore = (o) =>
+        o.status === 'PAID' ||
+        ['BUYER_CANCELLED', 'SELLER_CANCELLED', 'SELLER_UNAVAILABLE'].includes(o.cancelReason)
+      const statusOf = (o, it) => {
+        if (o.status === 'CANCELLED' || it.status === 'CANCELLED') return 'CANCELLED'
+        if (it.status === 'CONFIRMED') return 'CONFIRMED'
+        const d = o.deliveries.find((each) => each.sellerId === it.sellerId)
+        return d && (d.status === 'SHIPPING' || d.status === 'DELIVERED') ? d.status : 'PAID'
+      }
+      const rows = orders
+        .filter(paidBefore)
+        .flatMap((o) =>
+          o.items
+            .filter((it) => it.child?.childId === childId)
+            .map((it) => ({
+              orderItemId: it.orderItemId,
+              orderedAt: o.orderedAt,
+              productId: it.productId,
+              productName: it.productName,
+              optionName: it.optionName,
+              quantity: it.quantity,
+              status: statusOf(o, it),
+            })),
+        )
+        .sort((a, b) => b.orderedAt.localeCompare(a.orderedAt))
+      return send(res, 200, page(rows))
+    }
     // 장바구니 · 조르기는 회원과 자녀(자녀 토큰)를 함께 받는다 (BE @CartCaller · @WishCaller, #998 · #999)
     if (/^\/(cart|wish\/requests)(\/|$)/.test(p)) {
       let actor
