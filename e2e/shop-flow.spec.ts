@@ -734,7 +734,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByLabel(/닉네임/).fill('보호자맘')
     await page.getByRole('button', { name: '닉네임 바꾸기' }).click()
     await expect(page.getByText('보호자맘 · 회원 1').first()).toBeVisible()
-    // 목이 아니라 서버로 탈퇴하고, 이어서 로그아웃으로 Refresh Token 쿠키를 지운다 (BE MemberController)
+    // 서버로 탈퇴하고, 이어서 로그아웃으로 Refresh Token 쿠키를 지운다 (BE MemberController)
     const withdrawn = page.waitForResponse(
       (response) =>
         response.request().method() === 'DELETE' && response.url().endsWith('/api/v1/members/me'),

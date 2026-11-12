@@ -4,7 +4,7 @@ import { acceptConfirms } from './support/confirm'
 import { pickOption } from './support/option'
 
 // 시연 콘솔(/console)에서 정상 흐름 ①~⑦을 시연 순서대로 따라가며, 화면 결과와 흐름 확인(/verify) 판정까지 확인한다.
-// 가짜 백엔드(e2e/fake-backend) + FE 목(판매자 상품 목록 · 수정 등 BE에 없는 것)으로 돈다.
+// 가짜 백엔드(e2e/fake-backend)로 돈다.
 
 const NICKNAME = {
   보호자: '보호자 · 회원 1',
@@ -146,7 +146,7 @@ test('시연 콘솔: 정상 흐름 ①~⑦', async ({ page }) => {
     await expect(page.getByRole('table', { name: '사이즈 정보' })).toBeVisible()
   })
 
-  await test.step('③ 자녀 맞춤 목록(목) → 방금 등록한 상품 상세 사이즈 추천', async () => {
+  await test.step('③ 자녀 맞춤 목록 → 방금 등록한 상품 상세 사이즈 추천', async () => {
     await switchRole(page, '보호자')
     await page.goto('/console/products')
     await page.getByRole('button', { name: /테스트 맞춤/ }).click()
