@@ -34,7 +34,6 @@ export function AdminPaymentsPage() {
   return (
     <div className="shop-look space-y-5">
       <PageHeader
-        mockEndpoints={['GET /admin/payments']}
         title="전체 결제 · 환불"
         description="모든 회원의 주문 결제 · 환불 기록을 봐요. 결제를 누르면 주문까지 이어서 봐요."
         note="GET /admin/payments (BE #326)."

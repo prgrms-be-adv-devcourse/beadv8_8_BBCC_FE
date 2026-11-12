@@ -24,7 +24,6 @@ import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn, useArea } from '@/shared/lib'
-import { MockBadge } from '@/shared/ui/MockBadge'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Button } from '@/shared/ui/button'
 import { CardGridSkeleton } from '@/shared/ui/Skeleton'
@@ -145,10 +144,7 @@ export function ShopHomePage() {
         {/* 목록 머리: 제목 · 개수 · 검색어 왼쪽, 정렬 오른쪽. 카테고리를 고르면 아래에 옵션 거르기 */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-            <h2 className="text-section">
-              {title}
-              <MockBadge endpoints={['GET /products']} />
-            </h2>
+            <h2 className="text-section">{title}</h2>
             {all.data && !isStale && (
               <span className="text-ink-3 figure text-sm">{all.data.totalElements}</span>
             )}

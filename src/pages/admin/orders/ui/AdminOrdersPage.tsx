@@ -60,7 +60,6 @@ export function AdminOrdersPage() {
   return (
     <div className="shop-look space-y-5">
       <PageHeader
-        mockEndpoints={['GET /admin/orders']}
         title="전체 주문"
         description="모든 회원의 주문을 상태별로 봐요. 주문을 누르면 결제까지 이어서 봐요."
         note="GET /admin/orders (BE #323). 최근 100건 안에서 화면이 상태로 거른다."
