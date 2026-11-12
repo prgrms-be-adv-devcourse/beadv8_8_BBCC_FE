@@ -561,6 +561,14 @@ function addDeadLetter(module, patch = {}) {
   return d
 }
 const deadLetterOf = ({ module: _m, failOnReplay: _f, ...d }) => d
+// 주소의 모듈 칸 → 모듈 (회원 서비스는 /admin/{모듈}-dead-letters, 커뮤니티는 /admin/community/dead-letters · BE #962 같은 칸)
+const dltModule = (segment) => segment.slice(0, -1)
+// 커뮤니티: 구매확정 이벤트를 리뷰 작성 가능으로 옮기지 못한 1건
+addDeadLetter('community', {
+  sourceTopic: 'kidly.order.events',
+  dltTopic: 'kidly.order.events.community.dlt',
+  eventType: 'order.item-confirmed',
+})
 // 시연 · 화면 확인용: 회원 모듈에 처리 대기 2건(1건은 재처리도 실패) · 재처리 완료 1건, 판매자 모듈에 헤더 없던 1건, 인증 모듈은 두 페이지
 addDeadLetter('member')
 addDeadLetter('member', {
@@ -2125,31 +2133,38 @@ http
       apps.push(a)
       return send(res, 201, myAppOf(a))
     }
-    if ((x = r('GET', /^\/admin\/(auth|member|seller|child-profile)-dead-letters$/))) {
+    if (
+      (x = r('GET', /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters$/))
+    ) {
       const status = url.searchParams.get('status') ?? 'OPEN'
       // BE @Pattern(OPEN|REPROCESSED)
       if (!['OPEN', 'REPROCESSED'].includes(status))
         return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
       const rows = deadLetters
-        .filter((d) => d.module === x[1] && d.status === status)
+        .filter((d) => d.module === dltModule(x[1]) && d.status === status)
         .sort((a, b) => Number(b.deadLetterId) - Number(a.deadLetterId))
         .map(deadLetterOf)
       return send(res, 200, pageFrom(rows, url.searchParams))
     }
-    if ((x = r('GET', /^\/admin\/(auth|member|seller|child-profile)-dead-letters\/(\d+)$/))) {
-      const d = deadLetters.find((d) => d.module === x[1] && d.deadLetterId === x[2])
+    if (
+      (x = r(
+        'GET',
+        /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters\/(\d+)$/,
+      ))
+    ) {
+      const d = deadLetters.find((d) => d.module === dltModule(x[1]) && d.deadLetterId === x[2])
       return d
         ? send(res, 200, deadLetterOf(d))
         : problem(res, 404, '찾을 수 없습니다', '처리 실패 메시지를 찾을 수 없습니다.', req.url)
     }
-    // BE {모듈}DeadLetterService.reprocess: 처리기가 다시 실패해도 200(OPEN, 횟수 · 실패 예외 기록), 이미 재처리 완료면 그대로 200
+    // BE {모듈}DeadLetterService.reprocess (커뮤니티 CommunityDeadLetterService 같음): 처리기가 다시 실패해도 200(OPEN, 횟수 · 실패 예외 기록), 이미 재처리 완료면 그대로 200
     if (
       (x = r(
         'POST',
-        /^\/admin\/(auth|member|seller|child-profile)-dead-letters\/(\d+)\/reprocess$/,
+        /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters\/(\d+)\/reprocess$/,
       ))
     ) {
-      const d = deadLetters.find((d) => d.module === x[1] && d.deadLetterId === x[2])
+      const d = deadLetters.find((d) => d.module === dltModule(x[1]) && d.deadLetterId === x[2])
       if (!d)
         return problem(
           res,
