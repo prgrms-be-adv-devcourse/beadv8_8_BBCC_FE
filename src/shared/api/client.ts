@@ -2,7 +2,6 @@ import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axio
 import { env } from '@/shared/config'
 import { useApiFlowLog } from './api-flow-log'
 import { expectedReasonOf, type ExpectedResponse } from './call-outcome'
-import { createMockAdapter, defaultAdapter } from './mock-adapter'
 import { isSessionRejected } from './problem-detail'
 
 declare module 'axios' {
@@ -68,7 +67,6 @@ export const apiClient = axios.create({
   timeout: 10_000,
   // Refresh Token이 HttpOnly 쿠키라 로그인 · 재발급 · 로그아웃에 쿠키가 실려야 한다
   withCredentials: true,
-  adapter: createMockAdapter(defaultAdapter),
 })
 
 const reissuing: Record<Principal, Promise<string> | null> = {

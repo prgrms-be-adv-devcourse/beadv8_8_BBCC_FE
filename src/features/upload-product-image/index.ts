@@ -1,8 +1,5 @@
-/** 목 응답 작성 전용 (app/mocks) */
-export type {
-  ProductImageUploadUrlsDto,
-  ProductImageUploadUrlsRequestDto,
-} from './api/product-image.dto'
+/** 단위 테스트 입력용 (tests/unit) */
+export type { ProductImageUploadUrlsDto } from './api/product-image.dto'
 export { productImageUploadUrlsShape } from './api/product-image.shape'
 export {
   toUploadTargets,

@@ -1,10 +1,6 @@
 export { recommendationApi } from './api/recommendation-api'
-/** 목 응답 작성 전용 (app/mocks) */
-export type {
-  CompanionProductsDto,
-  RecommendedProductDto,
-  SizeRecommendationDto,
-} from './api/recommendation.dto'
+/** 단위 테스트 입력용 (tests/unit) */
+export type { SizeRecommendationDto } from './api/recommendation.dto'
 export type { ReferenceGarmentDto, ReferenceGarmentRequestDto } from './api/reference-garment.dto'
 export type { PurchasedGarmentDto } from './api/purchased-garment.dto'
 export type { WearPreviewDto } from './api/wear-preview.dto'
