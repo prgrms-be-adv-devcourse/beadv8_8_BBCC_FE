@@ -8,20 +8,28 @@ import {
   useOrdersQuery,
   type OrderTab,
 } from '@/entities/order'
-import { getErrorMessage } from '@/shared/api'
+import { getErrorMessage, pageFromSearch } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn, formatDateTime, formatWon } from '@/shared/lib'
+import { Pagination } from '@/shared/ui/Pagination'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 /** 내 주문 (기획서 F08): 상태 탭 → 주문 카드 → 주문 상세 */
 export function ShopOrdersPage() {
-  const orders = useOrdersQuery()
-  // 탭은 주소(?tab=)에 둔다 → 마이페이지 요약에서 바로 열고, 상세에서 뒤로 와도 그대로
+  // 탭 · 페이지는 주소(?tab= · ?page=)에 둔다 → 마이페이지 요약에서 바로 열고, 상세에서 뒤로 와도 그대로
   const [params, setParams] = useSearchParams()
   const tab = orderTabOf(params.get('tab'))
+  const page = pageFromSearch(params.get('page'))
+  const orders = useOrdersQuery(page)
   const setTab = (next: OrderTab) =>
     setParams(next === 'ALL' ? {} : { tab: next }, { replace: true })
+  const setPage = (next: number) => {
+    const search = new URLSearchParams(params)
+    if (next > 0) search.set('page', String(next))
+    else search.delete('page')
+    setParams(search, { replace: true })
+  }
   const all = orders.data?.content ?? []
   const counts = countOrdersByTab(all, orders.data?.totalElements)
   const visible = filterOrdersByTab(all, tab)
@@ -90,6 +98,13 @@ export function ShopOrdersPage() {
             </li>
           ))}
         </ul>
+      )}
+      {orders.data && (
+        <Pagination
+          page={orders.data.page}
+          totalPages={orders.data.totalPages}
+          onChange={setPage}
+        />
       )}
     </div>
   )

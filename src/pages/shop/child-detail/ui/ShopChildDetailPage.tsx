@@ -8,7 +8,6 @@ import {
   useGrowthRecordsQuery,
 } from '@/entities/child'
 import { accountOfChild, useChildAccountsQuery } from '@/entities/child-account'
-import { countPendingWishes, useWishRequestsQuery } from '@/entities/wish'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { ManageChildAccount } from '@/features/manage-child-account'
 import { DeleteChildButton, EditChildForm, EditGrowthRecord } from '@/features/edit-child'
@@ -17,6 +16,7 @@ import { memberPathsOf } from '@/shared/config'
 import { useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { ChildWishSection } from './ChildWishSection'
 import { ReferenceGarmentSection } from './ReferenceGarmentSection'
 
 /** 자녀 상세 · 수정 · 삭제 · 기준 옷 · 성장 이력 */
@@ -29,7 +29,6 @@ export function ShopChildDetailPage() {
   const user = useSessionStore((state) => state.user)
   const isBuyer = hasRole(user, 'BUYER')
   const accounts = useChildAccountsQuery(isBuyer)
-  const wishes = useWishRequestsQuery(childId)
 
   if (child.isPending) return <StateMessage>불러오는 중…</StateMessage>
   if (child.isError)
@@ -77,10 +76,7 @@ export function ShopChildDetailPage() {
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
         <div className="space-y-6">
           <ChildCard child={child.data} />
-          <Link className="text-primary underline" to={memberPaths.childWishes(childId)}>
-            받은 조르기
-            {wishes.data && ` (${countPendingWishes(wishes.data)})`}
-          </Link>
+          <ChildWishSection childId={childId} childName={child.data.name} />
           {accounts.data && (
             <ManageChildAccount
               childId={childId}

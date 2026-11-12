@@ -2506,9 +2506,12 @@ http
       return send(
         res,
         200,
-        page(
+        // BE: 최근 주문부터 page · size로 자른다
+        pageFrom(
           orders
             .filter((o) => o.memberId === me)
+            .slice()
+            .reverse()
             .map((o) => ({
               orderId: String(o.orderId),
               status: o.status,
@@ -2521,6 +2524,7 @@ http
               itemCount: o.items.length,
               sellerName: o.items[0]?.sellerName ?? null,
             })),
+          url.searchParams,
         ),
       )
     if ((x = r('GET', /^\/orders\/(\d+)$/)))
@@ -2607,16 +2611,21 @@ http
       return send(
         res,
         200,
-        page(
-          sellerOrders().map(({ d, o }) => ({
-            ...d,
-            orderId: String(o.orderId),
-            orderedAt: o.orderedAt,
-            shippingAddress: o.shippingAddress,
-            // BE: 판매 주문 목록의 sellerName은 늘 null, 자녀(child) 칸은 없다 (BE #997)
-            items: o.items.map(({ child: _child, ...it }) => ({ ...it, sellerName: null })),
-            deliveredAt: d.deliveredAt,
-          })),
+        // BE DeliveryRepository.findAllBySellerIdOrderByIdDesc: 최근 배송부터 page · size로 자른다
+        pageFrom(
+          sellerOrders()
+            .slice()
+            .reverse()
+            .map(({ d, o }) => ({
+              ...d,
+              orderId: String(o.orderId),
+              orderedAt: o.orderedAt,
+              shippingAddress: o.shippingAddress,
+              // BE: 판매 주문 목록의 sellerName은 늘 null, 자녀(child) 칸은 없다 (BE #997)
+              items: o.items.map(({ child: _child, ...it }) => ({ ...it, sellerName: null })),
+              deliveredAt: d.deliveredAt,
+            })),
+          url.searchParams,
         ),
       )
     if ((x = r('POST', /^\/seller\/orders\/(\d+)\/ship$/))) {
