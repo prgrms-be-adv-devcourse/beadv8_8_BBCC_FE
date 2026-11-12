@@ -1,12 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  childApi,
-  childKeys,
-  toChildRequest,
-  type BodyType,
-  type ChildForm,
-  type GrowthRecordDto,
-} from '@/entities/child'
+import { childApi, childKeys, toChildRequest, type ChildForm } from '@/entities/child'
 import { toast } from '@/shared/lib'
 import { runWithAction } from '@/shared/api'
 
@@ -35,25 +28,11 @@ export function useDeleteChild(childId: string, { onDeleted }: { onDeleted: () =
   })
 }
 
-/** 성장 이력 수정 (목). 응답으로 목록 캐시만 고친다 — 다시 조회하면 서버 값 */
-export function useUpdateGrowthRecord(childId: string) {
+export function useDeleteGrowthRecord(childId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      recordId,
-      heightCm,
-      bodyType,
-    }: {
-      recordId: string
-      heightCm: number
-      bodyType: BodyType | null
-    }) =>
-      runWithAction('성장 이력 수정', () =>
-        childApi.updateGrowthRecord(childId, recordId, { heightCm, bodyType }),
-      ),
-    onSuccess: (updated) =>
-      queryClient.setQueryData<GrowthRecordDto[]>(childKeys.growth(childId), (list) =>
-        list?.map((record) => (record.id === updated.id ? updated : record)),
-      ),
+    mutationFn: (recordId: string) =>
+      runWithAction('성장 기록 삭제', () => childApi.removeGrowthRecord(childId, recordId)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: childKeys.all }),
   })
 }

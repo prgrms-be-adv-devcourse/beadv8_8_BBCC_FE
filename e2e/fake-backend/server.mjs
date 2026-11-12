@@ -2204,6 +2204,25 @@ http
       if (!c) return problem(res, 404, '찾을 수 없습니다', '자녀 없음', req.url)
       return send(res, 200, c.growth)
     }
+    if ((x = r('DELETE', /^\/children\/(\d+)\/growth-records\/(\d+)$/))) {
+      const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
+      const index = c?.growth.findIndex((record) => record.id === +x[2]) ?? -1
+      if (!c || index < 0) return problem(res, 404, '찾을 수 없습니다', '성장 기록 없음', req.url)
+      if (c.growth.length === 1)
+        return problem(
+          res,
+          409,
+          '지울 수 없는 기록입니다',
+          '성장 기록이 하나뿐이면 지울 수 없습니다.',
+          req.url,
+        )
+      const isLatest = index === c.growth.length - 1
+      c.growth.splice(index, 1)
+      const latest = c.growth.at(-1)
+      if (isLatest) Object.assign(c, { heightCm: latest.heightCm, bodyType: latest.bodyType })
+      Object.assign(c, { growthRecordCount: c.growth.length, lastRecordedAt: latest.recordedAt })
+      return send(res, 204)
+    }
     if (r('PATCH', /^\/members\/me$/))
       return send(res, 200, {
         id: me,
