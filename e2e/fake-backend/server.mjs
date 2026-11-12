@@ -2136,8 +2136,8 @@ http
             orderId: String(o.orderId),
             orderedAt: o.orderedAt,
             shippingAddress: o.shippingAddress,
-            // BE: 판매 주문 목록의 sellerName은 늘 null (OrderDetailResponse.Item 재사용)
-            items: o.items.map((it) => ({ ...it, sellerName: null })),
+            // BE: 판매 주문 목록의 sellerName은 늘 null, 자녀(child) 칸은 없다 (BE #997)
+            items: o.items.map(({ child: _child, ...it }) => ({ ...it, sellerName: null })),
             deliveredAt: d.deliveredAt,
           })),
         ),
