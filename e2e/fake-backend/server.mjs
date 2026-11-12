@@ -22,6 +22,7 @@ import {
 } from './products.mjs'
 import { catalogRoute } from './catalog.mjs'
 import { garmentPartOfCategory, referenceGarmentRoute } from './reference-garments.mjs'
+import { memberFavoriteRoute, publicFavoriteRoute } from './favorites.mjs'
 import { memberReviewRoute, publicReviewRoute } from './reviews.mjs'
 
 const PORT = Number(process.env.PORT ?? 18080)
@@ -241,6 +242,19 @@ const invalidQuantity = (res) =>
     '수량은 1개부터 99개까지 담을 수 있습니다.',
     '/cart/items',
   )
+
+/** 찜 · 리뷰 화면에 보이는 상품 표시 상태 (BE community DisplayStatus): 판매 중이 아니거나 옵션이 없으면 판매 종료, 모두 재고 없으면 품절 */
+function favoriteProductView(productId) {
+  const detail = productDetailOf(productId)
+  if (!detail) return null
+  const displayStatus =
+    detail.status !== 'ON_SALE' || detail.options.length === 0
+      ? 'SALE_ENDED'
+      : detail.options.some((option) => option.purchasable)
+        ? 'ON_SALE'
+        : 'SOLD_OUT'
+  return { name: detail.name, thumbnailUrl: detail.thumbnailUrl, displayStatus }
+}
 
 /** reviews.mjs 결과 { status, body } · { status, title, detail }를 응답으로 */
 const reviewResult = (res, result, instance) =>
@@ -698,6 +712,9 @@ http
     // 공개 리뷰 API: 상품 리뷰 · 요약 (reviews.mjs)
     const publicReview = publicReviewRoute(m, p, url.searchParams)
     if (publicReview) return reviewResult(res, publicReview, req.url)
+    // 공개 찜 API: 찜 수 (favorites.mjs)
+    const publicFavorite = publicFavoriteRoute(m, p, url.searchParams)
+    if (publicFavorite) return reviewResult(res, publicFavorite, req.url)
     if (!u) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
     // 검색 결과 클릭 기록 (BE SearchClickRequest): 저장하지 않고 이벤트로만 남기므로 204만 준다
     if (r('POST', /^\/search\/clicks$/)) {
@@ -943,6 +960,12 @@ http
       orders,
     })
     if (memberReview) return reviewResult(res, memberReview, req.url)
+    // 회원 찜 API: 찜 · 해제 · 내 찜 (favorites.mjs)
+    const memberFavorite = memberFavoriteRoute(m, p, url.searchParams, {
+      memberId: me,
+      productView: favoriteProductView,
+    })
+    if (memberFavorite) return reviewResult(res, memberFavorite, req.url)
     if (r('GET', /^\/guardian-verification$/)) {
       const verifiedAt = verifications[me] ?? null
       return send(res, 200, { verified: verifiedAt !== null, verifiedAt })

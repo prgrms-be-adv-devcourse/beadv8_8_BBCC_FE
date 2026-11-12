@@ -104,6 +104,7 @@ import {
   reviewShape,
   reviewSummaryShape,
 } from '@/entities/review/api/review.shape'
+import { favoriteListShape, favoriteSummaryShape } from '@/entities/favorite/api/favorite.shape'
 import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
 import { toWriteReviewRequest } from '@/features/write-review'
@@ -1630,4 +1631,55 @@ it('판매자 정산 예정: 목록은 예정일을 싣고, 합계는 목록 전
       0,
     ),
   )
+})
+
+describe('찜 (BE FavoriteController)', () => {
+  async function registeredProduct(status: 'ON_SALE' | 'STOPPED') {
+    const inputs: CategoryInputs = toCategoryInputs(
+      (await call('GET', '/categories/11/attributes', null)).data,
+    )
+    const registered = await call(
+      'POST',
+      '/seller/products',
+      2,
+      toRegisterProductRequest(inputs, demoRegisterForm(inputs)),
+    )
+    const productId = registered.data.productId as string
+    await call('PUT', `/seller/products/${productId}/sale-status`, 2, { status: 'ON_SALE' })
+    if (status === 'STOPPED')
+      await call('PUT', `/seller/products/${productId}/sale-status`, 2, { status: 'STOPPED' })
+    return productId
+  }
+
+  it('찜 · 다시 찜(204) → 찜 수 · productIds 필터 · 내 찜 모양, 해제는 없어도 204', async () => {
+    const productId = await registeredProduct('ON_SALE')
+    expect((await call('PUT', `/favorites/${productId}`, 1)).status).toBe(204)
+    expect((await call('PUT', `/favorites/${productId}`, 1)).status).toBe(204)
+    const summary = await call('GET', `/favorites/summary?productId=${productId}`, null)
+    expectContract(summary.data, favoriteSummaryShape)
+    expect(summary.data).toEqual({ productId, favoriteCount: 1 })
+    const among = await call('GET', `/favorites?productIds=${productId},99999`, 1)
+    expectContract(among.data, favoriteListShape)
+    expect(among.data.items.map((item: { productId: string }) => item.productId)).toEqual([
+      productId,
+    ])
+    expect(among.data.nextCursor).toBeNull()
+    const mine = await call('GET', '/favorites?size=1', 1)
+    expectContract(mine.data, favoriteListShape)
+    expect(mine.data.items[0]).toMatchObject({ productId, displayStatus: 'ON_SALE' })
+    expect((await call('DELETE', `/favorites/${productId}`, 1)).status).toBe(204)
+    expect((await call('DELETE', `/favorites/${productId}`, 1)).status).toBe(204)
+    expect((await call('PUT', `/favorites/${productId}`, null)).status).toBe(401)
+  })
+
+  it('판매 종료는 409, 없는 상품은 404, productIds 51개 · cursor 함께면 400', async () => {
+    const stopped = await registeredProduct('STOPPED')
+    const ended = await call('PUT', `/favorites/${stopped}`, 1)
+    expect(ended.status).toBe(409)
+    expect(ended.data.detail).toBe('판매가 끝난 상품은 새로 찜할 수 없습니다.')
+    expect((await call('PUT', '/favorites/99999', 1)).status).toBe(404)
+    const tooMany = Array.from({ length: 51 }, (_, i) => i + 1).join(',')
+    expect((await call('GET', `/favorites?productIds=${tooMany}`, 1)).status).toBe(400)
+    expect((await call('GET', '/favorites?productIds=1&cursor=MA', 1)).status).toBe(400)
+  })
 })

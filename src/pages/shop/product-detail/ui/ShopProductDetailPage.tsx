@@ -29,10 +29,12 @@ import {
   useReferenceGarmentsQuery,
   useSizeRecommendationQuery,
 } from '@/entities/recommendation'
+import { useFavoritedIdsQuery, useFavoriteSummaryQuery } from '@/entities/favorite'
 import { useSessionStore } from '@/entities/session'
 import { AddToCartButton } from '@/features/add-to-cart'
 import { ChildWishAddButton } from '@/features/child-wish-cart'
 import { useRecordProductView } from '@/features/record-product-view'
+import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
 import { loginPath, paths } from '@/shared/config'
 import { formatWon, useArea } from '@/shared/lib'
@@ -63,6 +65,9 @@ export function ShopProductDetailPage() {
   const categories = useCategoriesQuery()
   // 보호자 회원만 기록한다 (자녀 화면은 자녀 토큰이라 부르지 않음)
   useRecordProductView(productId, childId, Boolean(user) && !isChild)
+  // 찜 수는 누구나, 내가 찜했는지는 로그인한 보호자만 (자녀 화면은 하트를 그리지 않음)
+  const favoriteSummary = useFavoriteSummaryQuery(isChild ? '' : productId)
+  const favoritedIds = useFavoritedIdsQuery([productId], { enabled: Boolean(user) && !isChild })
   // 로그인하고 돌아오면 주소(?option=&qty=)에 실어 둔 옵션 · 수량으로 시작한다. 고르기 전까지는 null
   const [pickedByUser, setPicks] = useState<OptionPicks | null>(null)
   const [quantityByUser, setQuantity] = useState<number | null>(null)
@@ -182,7 +187,20 @@ export function ShopProductDetailPage() {
                 </div>
               )}
               <p className="text-ink-3 pt-1 text-[13px]">{productMeta(detail)}</p>
-              <h1 className="text-page">{detail.name}</h1>
+              {isChild ? (
+                <h1 className="text-page">{detail.name}</h1>
+              ) : (
+                <div className="flex items-start gap-3">
+                  <h1 className="text-page min-w-0 flex-1">{detail.name}</h1>
+                  <FavoriteButton
+                    productId={detail.id}
+                    isFavorited={favoritedIds.data?.has(detail.id) ?? false}
+                    count={favoriteSummary.data?.count}
+                    isSelling={isSelling}
+                    loginHref={user ? null : loginPath(returnPath())}
+                  />
+                </div>
+              )}
               {detail.minPrice !== null && (
                 <p className="figure pt-1 text-2xl font-bold">{formatWon(detail.minPrice)}~</p>
               )}
