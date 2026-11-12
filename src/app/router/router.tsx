@@ -451,6 +451,30 @@ export const router = createBrowserRouter(
             })),
           ),
         },
+        {
+          path: rel(paths.admin.home, paths.admin.chatbotDocuments),
+          ...page(() =>
+            import('@/pages/admin/chatbot-documents').then((m) => ({
+              Component: m.AdminChatbotDocumentsPage,
+            })),
+          ),
+        },
+        {
+          path: rel(paths.admin.home, paths.admin.chatbotDocumentNew),
+          ...page(() =>
+            import('@/pages/admin/chatbot-document-new').then((m) => ({
+              Component: m.AdminChatbotDocumentNewPage,
+            })),
+          ),
+        },
+        {
+          path: 'chatbot/documents/:documentId',
+          ...page(() =>
+            import('@/pages/admin/chatbot-document-detail').then((m) => ({
+              Component: m.AdminChatbotDocumentDetailPage,
+            })),
+          ),
+        },
         { path: '*', element: <NotFoundPage /> },
       ],
     },

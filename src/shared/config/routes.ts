@@ -134,6 +134,10 @@ export const paths = {
     categories: '/admin/catalog/categories',
     categoryNew: '/admin/catalog/categories/new',
     categoryEdit: (id: string) => `/admin/catalog/categories/${id}/edit`,
+    /** 챗봇 답변 근거 문서 (FAQ · 정책 · 사이즈 안내): 목록 · 등록(목록과 따로) · 상세(수정 · 삭제) */
+    chatbotDocuments: '/admin/chatbot/documents',
+    chatbotDocumentNew: '/admin/chatbot/documents/new',
+    chatbotDocument: (id: string) => `/admin/chatbot/documents/${id}`,
   },
   console: {
     home: C,

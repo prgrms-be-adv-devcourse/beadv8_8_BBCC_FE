@@ -4,7 +4,8 @@ import { DOMAINS, type DomainId } from '../config/domain-flow'
 import type { EdgeState, EventTimeline } from '../model/event-timeline'
 
 // 도메인 자리 (viewBox 400 × 250). 주문을 가운데, 상품 · 결제를 아래 양옆에 두어 오가는 이벤트 곡선이 겹치지 않게.
-// 외부(카카오 · 토스)는 위 끝에, S3는 상품 위 왼쪽에, 커뮤니티는 결제 위 오른쪽에, 알림은 결제 아래에
+// 외부(카카오 · 토스)는 위 끝에, S3는 상품 위 왼쪽에, 커뮤니티는 결제 위 오른쪽에, 알림은 결제 아래에.
+// 챗봇은 주문 오른쪽 아래, OpenAI는 주문 왼쪽 아래 빈자리에
 const NODE: Record<DomainId, { x: number; y: number }> = {
   kakao: { x: 45, y: 28 },
   member: { x: 145, y: 28 },
@@ -17,6 +18,8 @@ const NODE: Record<DomainId, { x: number; y: number }> = {
   settlement: { x: 200, y: 228 },
   community: { x: 342, y: 118 },
   notification: { x: 342, y: 235 },
+  chatbot: { x: 262, y: 168 },
+  openai: { x: 128, y: 160 },
 }
 const HALF_W = 38
 const HALF_H = 15
