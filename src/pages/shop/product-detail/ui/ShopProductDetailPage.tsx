@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import { Link, useLocation, useParams, useSearchParams } from 'react-router'
-import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY } from '@/entities/cart'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
+import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY, useChildCartQuery } from '@/entities/cart'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
   detailImagesOf,
@@ -33,6 +33,7 @@ import { useFavoritedIdsQuery, useFavoriteSummaryQuery } from '@/entities/favori
 import { useSessionStore } from '@/entities/session'
 import { AddToCartButton } from '@/features/add-to-cart'
 import { ChildWishAddButton } from '@/features/child-wish-cart'
+import { SendWishNow } from '@/features/send-wish-now'
 import { useRecordProductView } from '@/features/record-product-view'
 import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
@@ -47,6 +48,9 @@ import { SizeAdvice } from './SizeAdvice'
 
 export function ShopProductDetailPage() {
   const isChild = useArea() === 'child'
+  const navigate = useNavigate()
+  // 자녀 「바로 조르기」: 같은 옵션이 장바구니에 있으면 합쳐진다고 알리려고 자녀 장바구니를 읽는다
+  const childCart = useChildCartQuery({ enabled: isChild })
   const { productId = '' } = useParams()
   const [search] = useSearchParams()
   const location = useLocation()
@@ -275,7 +279,23 @@ export function ShopProductDetailPage() {
               </div>
               {!isSelling && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}
               {isChild ? (
-                <ChildWishAddButton optionId={optionId} quantity={quantity} disabled={!isSelling} />
+                <div className="space-y-3">
+                  <ChildWishAddButton
+                    optionId={optionId}
+                    quantity={quantity}
+                    disabled={!isSelling}
+                  />
+                  <SendWishNow
+                    optionId={optionId}
+                    quantity={quantity}
+                    existingQuantity={
+                      childCart.data?.lines.find((line) => line.optionId === optionId)?.quantity ??
+                      null
+                    }
+                    disabled={!isSelling || childCart.isPending}
+                    onSent={() => navigate(paths.child.wishes)}
+                  />
+                </div>
               ) : user ? (
                 <AddToCartButton
                   optionId={optionId}

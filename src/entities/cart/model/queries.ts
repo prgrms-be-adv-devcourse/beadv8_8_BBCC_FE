@@ -9,11 +9,12 @@ export const cartKeys = {
 }
 
 /** 로그인한 자녀의 장바구니 (같은 GET /cart, 자녀 토큰) */
-export function useChildCartQuery() {
+export function useChildCartQuery({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: cartKeys.child,
     queryFn: childCartApi.get,
     select: toCart,
+    enabled,
     gcTime: 0,
     staleTime: 0,
   })
