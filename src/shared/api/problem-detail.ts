@@ -1,12 +1,14 @@
 import { isAxiosError } from 'axios'
 
-/** 백엔드 오류 응답. 오류 코드 필드가 없으므로 status로만 분기한다 */
+/** 백엔드 오류 응답. 같은 status를 나눌 때는 code(BE 오류 enum 상수 이름)를 쓴다 */
 export type ProblemDetail = {
   type: string
   title: string
   status: number
   detail: string | null
   instance: string
+  /** BE #1326부터. 그 전 응답과 스프링이 직접 만든 오류(405 등)에는 없다 */
+  code?: string
 }
 
 function isProblemDetail(value: unknown): value is ProblemDetail {
@@ -17,11 +19,26 @@ export function getErrorStatus(error: unknown): number | null {
   return isAxiosError(error) ? (error.response?.status ?? null) : null
 }
 
-/** ProblemDetail의 title. 응답에 오류 코드가 없어 같은 status를 나눌 때만 쓴다 (BE가 정한 문구와 같아야 함) */
-export function getErrorTitle(error: unknown): string | null {
+function problemOf(error: unknown): ProblemDetail | null {
   if (!isAxiosError(error)) return null
   const data: unknown = error.response?.data
-  return isProblemDetail(data) ? data.title : null
+  return isProblemDetail(data) ? data : null
+}
+
+/** ProblemDetail의 title. ProblemDetail이 아닌 응답(배포 중 503 등)이면 null */
+export function getErrorTitle(error: unknown): string | null {
+  return problemOf(error)?.title ?? null
+}
+
+/**
+ * BE 오류 코드가 이 오류인지. code가 없는 응답(BE #1326 배포 전)은 legacyTitle(BE가 정한 title 문구)로 본다.
+ * BE 배포 뒤 legacyTitle은 지운다
+ */
+export function isErrorCode(error: unknown, code: string, legacyTitle?: string): boolean {
+  const problem = problemOf(error)
+  if (!problem) return false
+  if (problem.code !== undefined) return problem.code === code
+  return legacyTitle !== undefined && problem.title === legacyTitle
 }
 
 /**

@@ -171,8 +171,9 @@ function searchClickProblem(body) {
     return '자녀 ID는 양수여야 합니다.'
   return null
 }
-const problem = (res, status, title, detail, instance) =>
-  send(res, status, { type: 'about:blank', title, status, detail, instance })
+// code: BE 오류 enum 상수 이름(#1326). 화면이 code로 나누는 오류만 넣는다
+const problem = (res, status, title, detail, instance, code) =>
+  send(res, status, { type: 'about:blank', title, status, detail, instance, code })
 // BE WishErrorCode와 같은 상태 · title · detail (#999)
 const WISH_ERROR = {
   WISH_ITEM_IN_REQUEST: [
@@ -2398,6 +2399,7 @@ http
             '이미 다른 주문에 쓴 요청입니다',
             '주문서를 다시 열어 주문해 주세요.',
             req.url,
+            'IDEMPOTENCY_KEY_REUSED',
           )
         return send(res, 200, detailOf(orders.find((o) => o.orderId === prev.orderId)))
       }

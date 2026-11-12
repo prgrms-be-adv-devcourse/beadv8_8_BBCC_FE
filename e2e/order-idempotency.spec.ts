@@ -36,7 +36,7 @@ test('주문 멱등키: 같은 키 · 같은 내용은 주문 하나, 다른 내
 
   const changed = await place(order(2), key)
   expect(changed.status()).toBe(409)
-  expect((await changed.json()).title).toBe('이미 다른 주문에 쓴 요청입니다')
+  expect((await changed.json()).code).toBe('IDEMPOTENCY_KEY_REUSED')
 
   expect((await place(order(1), 'not-a-uuid')).status()).toBe(400)
   // 헤더가 없으면 지금처럼 매번 새 주문
