@@ -1,4 +1,9 @@
-import { useChildWishRequestsQuery, wishRejectReasonLabel, wishStatusLabel } from '@/entities/wish'
+import {
+  useChildWishRequestsQuery,
+  wishRejectReasonLabel,
+  wishDeadlineLabel,
+  wishStatusLabel,
+} from '@/entities/wish'
 import { getErrorMessage } from '@/shared/api'
 import { formatDateTime } from '@/shared/lib'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -16,6 +21,9 @@ export function ChildWishesPage() {
           <p>
             {formatDateTime(wish.requestedAt)} · {wishStatusLabel(wish)}
           </p>
+          {wishDeadlineLabel(wish) && (
+            <p className="text-ink-2 text-sm">{wishDeadlineLabel(wish)}</p>
+          )}
           {wish.items.map((item) => (
             <p key={item.optionId}>
               {item.productName} · {item.optionName} · {item.quantity}개

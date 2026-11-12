@@ -1,4 +1,4 @@
-import { labelOf } from '@/shared/lib'
+import { formatDateTime, labelOf } from '@/shared/lib'
 import type { WishRequest, WishStatus } from './wish'
 
 const TIMELINE_LABEL: Record<string, string> = {
@@ -73,4 +73,23 @@ export const WISH_REJECT_REASONS = Object.keys(REJECT_REASON_LABEL) as WishRejec
 
 export function wishRejectReasonLabel(reason: WishRejectReason): string {
   return REJECT_REASON_LABEL[reason]
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/**
+ * 조르기 남은 기한 (BE #1008, 기본 7일). 대기: n일 남음 · 하루 미만 오늘 마감 · 지났으면 기한 지남(만료 처리 전),
+ * 만료: 만료된 시각(상태 라벨과 함께 보인다). 그 밖(결제 · 거절 · 철회) · 만료 꺼짐은 null
+ */
+export function wishDeadlineLabel(
+  wish: { status: WishStatus; expiresAt: string | null; expiredAt: string | null },
+  now: Date = new Date(),
+): string | null {
+  if (wish.status === 'EXPIRED')
+    return wish.expiredAt ? `${formatDateTime(wish.expiredAt)} 만료` : null
+  if (wish.status !== 'REQUESTED' || !wish.expiresAt) return null
+  const left = new Date(wish.expiresAt).getTime() - now.getTime()
+  if (left <= 0) return '기한 지남'
+  if (left < DAY_MS) return '오늘 마감'
+  return `${Math.floor(left / DAY_MS)}일 남음`
 }

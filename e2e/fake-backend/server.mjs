@@ -85,6 +85,10 @@ const members = {
   },
 }
 const now = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19)
+// BE kidly.order.wish.expiry.ttl 기본 7일: 대기 중인 조르기의 expiresAt = 보낸 시각 + 7일
+const WISH_TTL_MS = 7 * 24 * 3600e3
+const wishExpiresAt = (requestedAt) =>
+  new Date(new Date(`${requestedAt}Z`).getTime() + WISH_TTL_MS).toISOString().slice(0, 19)
 const later = (ms) => new Date(Date.now() + 9 * 3600e3 + ms).toISOString().slice(0, 19)
 // 결제 마감 (BE kidly.order.payment-timeout, 기본 10분)
 const PAYMENT_TIMEOUT_MS = 10 * 60e3
@@ -389,6 +393,7 @@ function scheduleOrder(o, me, stall, clearCart = true) {
         if (!wish) continue
         if (wish.status === 'REQUESTED') {
           wish.status = 'PAID'
+          wish.expiresAt = null
           wish.payerType = 'MEMBER'
           wish.payerId = String(me)
           wish.paidAt = now()
@@ -852,6 +857,8 @@ http
           rejectedAt: null,
           cancelReason: null,
           cancelledAt: null,
+          expiresAt: null,
+          expiredAt: null,
           items: lines.map((l) => ({
             cartItemId: l.cartItemId,
             optionId: l.optionId,
@@ -870,6 +877,7 @@ http
           purchases: [],
           paidOrderItemIds: [],
         }
+        wish.expiresAt = wishExpiresAt(wish.requestedAt)
         wishRequests.push(wish)
         return send(res, 201, wish, { location: `/api/v1/wish/requests/${wish.requestId}` })
       }
@@ -894,6 +902,7 @@ http
         if (wish.status !== 'REQUESTED')
           return wishProblem(res, 'WISH_REQUEST_ALREADY_DECIDED', req.url)
         wish.status = 'REJECTED'
+        wish.expiresAt = null
         wish.rejectReason = body.reason
         wish.rejectedAt = now()
         return send(res, 200, wish)

@@ -19,6 +19,8 @@ function dto(change: Partial<MockWishRequestDto> = {}): MockWishRequestDto {
     rejectedAt: null,
     cancelReason: null,
     cancelledAt: null,
+    expiresAt: '2026-11-16T10:00:00',
+    expiredAt: null,
     items: [
       {
         cartItemId: '30',

@@ -27,6 +27,10 @@ export type WishRequest = {
   requestedAt: string
   /** 결제 · 거절 · 철회 시각. 대기면 null */
   decidedAt: string | null
+  /** 만료 예정 시각. 대기 중이고 만료가 켜져 있을 때만 */
+  expiresAt: string | null
+  /** 만료된 시각. 만료가 아니면 null */
+  expiredAt: string | null
   rejectReason: 'TOO_EXPENSIVE' | 'ALREADY_HAVE' | 'NEXT_TIME' | 'OTHER' | null
   /** 조르기로 산 주문 (먼저 산 것부터, 겹치지 않게) */
   orderIds: string[]
