@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { useCartCount } from '@/entities/cart'
+import { useUnreadNotificationCount } from '@/entities/notification'
 import { useSessionStore } from '@/entities/session'
 import { useLogout } from '@/features/logout'
 import { loginPath, paths, shopNeedsLogin } from '@/shared/config'
@@ -140,6 +141,7 @@ function AccountAction() {
 export function ShopHeader() {
   const user = useSessionStore((state) => state.user)
   const cartCount = useCartCount()
+  const unreadCount = useUnreadNotificationCount()
   return (
     // 휴대폰에서는 고정하지 않는다 (머리말이 화면을 덮지 않게)
     <header className="bg-paper border-rule z-30 border-b md:sticky md:top-0">
@@ -170,7 +172,12 @@ export function ShopHeader() {
                 <path d="M10 20v-4.5h4V20" />
               </svg>
             </UtilityLink>
-            <UtilityLink to={paths.shop.notifications} label="알림">
+            <UtilityLink
+              to={paths.shop.notifications}
+              label="알림"
+              ariaLabel={user && unreadCount ? `알림 ${unreadCount}개 안 읽음` : '알림'}
+              count={user ? unreadCount : null}
+            >
               <svg
                 viewBox="0 0 24 24"
                 className="size-6 md:size-5"

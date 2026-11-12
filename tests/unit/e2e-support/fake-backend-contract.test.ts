@@ -32,6 +32,10 @@ import { childOnboardingShape } from '@/entities/child-onboarding'
 import { guardianVerificationShape } from '@/entities/guardian-verification/api/guardian-verification.shape'
 import { childShape, growthRecordShape } from '@/entities/child/api/child.shape'
 import { deadLetterPageShape, deadLetterShape } from '@/entities/dead-letter/api/dead-letter.shape'
+import {
+  inboxNotificationPageShape,
+  unreadCountShape,
+} from '@/entities/notification/api/notification.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import { orderDetailShape, orderPageShape } from '@/entities/order/api/order.shape'
 import {
@@ -285,6 +289,44 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     ).toBe(204)
     expect((await call('GET', '/child/profile', 4)).status).toBe(401)
     expect((await call('DELETE', `/auth/child-accounts/${account.data.id}`, 1)).status).toBe(204)
+  })
+  it('보호자 · 자녀 알림함: 목록 · 안 읽은 수 · 읽음 · 모두 읽음', async () => {
+    const child = await call('POST', '/children', 1, {
+      ...toChildRequest(DEMO_CHILD),
+      requiredConsent: true,
+      optionalConsent: true,
+    })
+    await call('POST', '/auth/child-accounts', 1, {
+      childProfileId: child.data.id,
+      loginId: 'inboxchild',
+      password: 'password1',
+    })
+    const login = await call('POST', '/auth/child/login', null, {
+      loginId: 'inboxchild',
+      password: 'password1',
+    })
+    tokens[6] = login.data.accessToken
+    for (const [base, as] of [
+      ['/notifications', 2],
+      ['/child/notifications', 6],
+    ] as const) {
+      const list = await call('GET', `${base}?page=0&size=20`, as)
+      expectContract(list.data, inboxNotificationPageShape)
+      expect(list.data.content.length).toBeGreaterThan(0)
+      const unread = await call('GET', `${base}/unread-count`, as)
+      expectContract(unread.data, unreadCountShape)
+      expect(unread.data.count).toBe(list.data.content.length)
+      const first = list.data.content[0].notificationId
+      expect((await call('PATCH', `${base}/${first}/read`, as)).status).toBe(204)
+      expect((await call('PATCH', `${base}/${first}/read`, as)).status).toBe(204)
+      expect((await call('GET', `${base}/unread-count`, as)).data.count).toBe(unread.data.count - 1)
+      expect((await call('PATCH', `${base}/999999/read`, as)).status).toBe(404)
+      expect((await call('PATCH', `${base}/read-all`, as)).status).toBe(204)
+      expect((await call('GET', `${base}/unread-count`, as)).data.count).toBe(0)
+      expect((await call('GET', `${base}?size=101`, as)).status).toBe(400)
+    }
+    expect((await call('GET', '/child/notifications', 2)).status).toBe(403)
+    expect((await call('GET', '/notifications', 6)).status).toBe(401)
   })
   it('자녀 · 배송지 · 예치금', async () => {
     expectContract(
