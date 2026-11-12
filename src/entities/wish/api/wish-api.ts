@@ -7,10 +7,10 @@ import { wishRequestShape, wishRequestsShape, wishTimelineShape } from './wish.s
  * 각자 볼 수 있는 것(보낸 것 + 승인자인 것)만 온다
  */
 export const wishApi = {
-  /** @param childId 받는 자녀로 거른다 */
-  requests: (childId: string) =>
+  /** @param childId 받는 자녀로 거른다. 없으면 내 자녀 모두 */
+  requests: (childId?: string) =>
     apiClient
-      .get<WishRequestDto[]>('/wish/requests', { params: { childId } })
+      .get<WishRequestDto[]>('/wish/requests', { params: childId ? { childId } : {} })
       .then(expectShape(wishRequestsShape)),
   request: (id: string) =>
     apiClient.get<WishRequestDto>(`/wish/requests/${id}`).then(expectShape(wishRequestShape)),

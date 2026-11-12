@@ -3,6 +3,14 @@ export {
   canRemoveChildCartLine,
   canSendWishLine,
   canWithdrawWish,
+  childWishStatusLabel,
+  filterWishes,
+  guardianWishStatusLabel,
+  wishesOfChild,
+  WISH_FILTER_LABEL,
+  type WishFilter,
+  wishSellersLabel,
+  wishTotalAmount,
   countPendingWishes,
   wishDeadlineLabel,
   wishLineDecisionLabel,
@@ -24,11 +32,13 @@ export { toWishRequest, toWishTimeline } from './model/wish.mapper'
 export { wishRequestShape } from './api/wish.shape'
 export {
   wishKeys,
+  useAllWishRequestsQuery,
   useChildWishRequestsQuery,
   useWishRequestsQuery,
   useWishRequestQuery,
   useWishTimelineQuery,
 } from './model/queries'
+export { WishSummaryCard } from './ui/WishSummaryCard'
 
 // 목 응답 작성 전용
 export type { WishRequestDto as MockWishRequestDto } from './api/wish.dto'
