@@ -57,8 +57,10 @@ export const orderApi = {
   /** 이미 확정이어도 200, 배송 완료 전이면 409 */
   confirmItem: (orderId: string, orderItemId: string) =>
     apiClient.post(`/orders/${orderId}/items/${orderItemId}/confirm`),
-  /** 모든 회원의 주문을 최근 주문부터 (size 1~100). status(BE #1280)는 내 주문과 같다 */
-  /** cancelledFrom(BE #1325, 한국 시간 yyyy-MM-ddTHH:mm:ss, 포함)을 주면 그 시각 이후 취소된 주문만 */
+  /**
+   * 모든 회원의 주문을 최근 주문부터 (size 1~100). status(BE #1280)는 내 주문과 같다.
+   * cancelledFrom(BE #1325, 한국 시간 yyyy-MM-ddTHH:mm:ss, 포함)을 주면 그 시각 이후 취소된 주문만
+   */
   adminList: (
     page = 0,
     status: OrderStatus | null = null,
