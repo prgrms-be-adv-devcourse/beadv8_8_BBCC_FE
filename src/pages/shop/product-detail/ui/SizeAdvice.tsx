@@ -4,6 +4,7 @@ import {
   AiSentenceNotice,
   FIT_LABEL,
   GrowthOutlook,
+  lastPurchaseTextOf,
   referenceFitSummaryOf,
   showsAiSizeNotice,
   SizeReasonList,
@@ -29,7 +30,7 @@ type SizeAdviceProps = {
 /**
  * 사이즈 칩 바로 위 추천 한 줄: 「추천 사이즈 120 · 여유 있음 · 김들희 115cm 기준」 + 「사이즈 자세히」.
  * 그 아래 AI 근거(있으면) · AI 안내 · 기준 옷 등록 안내. 펼치면 백엔드 안내 · 이 상품 사이즈 눈금 · 착용 미리보기.
- * 추천 한 줄 바로 아래(근거 위)에 입을 수 있는 기간 · 성장 속도(예상치), 그 아래 기준 핏(기준 옷과의 cm 차이)을 둔다
+ * 추천 한 줄 바로 아래에 지난 구매 사이즈, 그 아래(근거 위)에 입을 수 있는 기간 · 성장 속도(예상치), 그 아래 기준 핏(기준 옷과의 cm 차이)을 둔다
  */
 export function SizeAdvice({
   child,
@@ -42,6 +43,7 @@ export function SizeAdvice({
   const detailsId = useId()
   const { recommendedSize, fit, notices, reasons } = recommendation
   const fitSummary = referenceFitSummaryOf(recommendation)
+  const lastPurchaseText = lastPurchaseTextOf(recommendation)
 
   return (
     <div className="bg-paper-2 rounded-md">
@@ -90,6 +92,9 @@ export function SizeAdvice({
           </svg>
         </button>
       </div>
+      {lastPurchaseText && (
+        <p className="text-ink-2 px-3.5 pb-2.5 text-[13px]">{lastPurchaseText}</p>
+      )}
       {/* 사이즈 무관 · 맞는 사이즈 없음이면 예상치를 보이지 않는다 */}
       {recommendedSize && (
         <div className="px-3.5 pb-2.5">

@@ -48,4 +48,22 @@ describe('toSizeRecommendation: 사이즈 추천 출처 · 근거 (BE #1162)', (
     expect(recommendation.source).toBe('RULE')
     expect(recommendation.reasons).toEqual([])
   })
+
+  // 지난 구매(PURCHASE, BE #1299)를 포함해 아는 종류는 그대로, 모르는 종류는 null(화면에 영어 코드를 보이지 않게)
+  it.each([
+    ['HEIGHT', 'HEIGHT'],
+    ['GROWTH', 'GROWTH'],
+    ['PURCHASE', 'PURCHASE'],
+    ['WEATHER', null],
+    ['', null],
+    ['constructor', null],
+  ])('근거 종류 %s는 %s로 옮긴다', (type, expected) => {
+    const recommendation = toSizeRecommendation({
+      ...base,
+      source: 'AI',
+      reasons: [{ type, detail: '지난번 산 바지(120)보다 총장이 1cm 길어요.', sourceId: null }],
+    })
+
+    expect(recommendation.reasons[0]?.type).toBe(expected)
+  })
 })

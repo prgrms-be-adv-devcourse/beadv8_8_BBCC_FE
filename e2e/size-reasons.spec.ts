@@ -220,3 +220,31 @@ test('성장이 0.0cm로 반올림되면 기간 줄을 숨기고 키가 거의 �
     '또래 평균은 한 달에 약 0.6cm예요. 키를 잰 날짜와 값이 맞는지 확인해 보세요.',
   )
 })
+
+test('지난 구매 사이즈를 한 줄로 보이고, 지난 구매 근거에 이름표를 붙이고, 모르는 근거 종류는 문구만 보인다', async ({
+  page,
+}) => {
+  await openDetail(
+    page,
+    size({
+      lastPurchasedSize: '120',
+      source: 'AI',
+      reasons: [
+        {
+          type: 'PURCHASE',
+          detail: '지난번 산 맨투맨(120)보다 총장이 1cm 길어요.',
+          sourceId: null,
+        },
+        { type: 'WEATHER', detail: '요즘 쌀쌀해서 넉넉하게 골랐어요.', sourceId: null },
+      ],
+    }),
+  )
+
+  await expect(page.getByText('지난번 같은 종류는 120 사이즈를 샀어요')).toBeVisible()
+  const reasons = page.getByRole('list', { name: '추천 근거' })
+  await expect(reasons.getByRole('listitem')).toHaveText([
+    '지난 구매지난번 산 맨투맨(120)보다 총장이 1cm 길어요.',
+    '요즘 쌀쌀해서 넉넉하게 골랐어요.',
+  ])
+  await expect(page.getByText('WEATHER')).toHaveCount(0)
+})

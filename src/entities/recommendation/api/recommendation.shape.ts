@@ -10,6 +10,7 @@ const SIZE_REASON_TYPE = oneOf([
   'MEASUREMENT',
   'RULE_RESULT',
   'GROWTH',
+  'PURCHASE',
 ])
 
 const GARMENT_PART = oneOf(['TOP', 'BOTTOM', 'OUTER', 'DRESS', 'SKIRT'])
