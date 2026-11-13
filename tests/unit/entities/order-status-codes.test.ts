@@ -6,10 +6,9 @@ import {
   TIMELINE_CANCEL_LABEL,
 } from '@/entities/order'
 import {
-  countSellerOrdersByTab,
-  filterSellerOrdersByTab,
   nextShippingStep,
   SELLER_ORDER_TABS,
+  sellerOrderStatusOfTab,
   sellerOrderTabOf,
   type SellerOrder,
 } from '@/entities/seller-order'
@@ -66,7 +65,6 @@ describe('조르기 EXPIRED', () => {
 
 describe('판매자 주문 · 배송 탭의 취소', () => {
   const order = (id: string, status: SellerOrder['status']) => ({ id, status }) as SellerOrder
-  const orders = [order('1', 'READY'), order('2', 'CANCELLED'), order('3', 'DELIVERED')]
 
   it('취소 탭이 전체 앞에 있다', () => {
     expect(SELLER_ORDER_TABS.map((tab) => tab.value)).toEqual([
@@ -81,9 +79,8 @@ describe('판매자 주문 · 배송 탭의 취소', () => {
   it('주소 ?tab=CANCELLED를 읽는다', () => {
     expect(sellerOrderTabOf('CANCELLED')).toBe('CANCELLED')
   })
-  it('취소 탭은 취소된 배송만', () => {
-    expect(filterSellerOrdersByTab(orders, 'CANCELLED').map((o) => o.id)).toEqual(['2'])
-    expect(countSellerOrdersByTab(orders).CANCELLED).toBe(1)
+  it('취소 탭은 취소된 배송만 서버에 묻는다', () => {
+    expect(sellerOrderStatusOfTab('CANCELLED')).toBe('CANCELLED')
   })
   it('취소된 배송은 다음 처리가 없다', () => {
     expect(nextShippingStep(order('2', 'CANCELLED'))).toBeNull()

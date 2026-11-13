@@ -4,14 +4,16 @@ export type { NextShippingStep, SellerOrder } from './model/seller-order'
 export {
   bulkTargets,
   canCancelSellerOrder,
-  countSellerOrdersByTab,
-  filterSellerOrdersByTab,
   nextShippingStep,
   SELLER_ORDER_TABS,
+  sellerOrderStatusOfTab,
   sellerOrderTabOf,
-  summarizeSellerOrders,
   validateTrackingNumber,
   type SellerOrderTab,
 } from './model/seller-order.rules'
-export { sellerOrderKeys, useSellerOrdersQuery } from './model/queries'
+export {
+  sellerOrderKeys,
+  useSellerOrdersQuery,
+  useSellerOrderTabCountsQuery,
+} from './model/queries'
 export { SellerOrderItems } from './ui/SellerOrderItems'

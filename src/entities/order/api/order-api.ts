@@ -1,4 +1,5 @@
 import { apiClient, expectShape, type Page } from '@/shared/api'
+import type { OrderStatus } from '../model/order'
 import type {
   AdminOrderDto,
   ChildPurchaseDto,
@@ -26,10 +27,15 @@ export const orderApi = {
         principal: 'child',
       })
       .then(expectShape(childPurchasePageShape)),
-  /** 최근 주문부터, 20건씩 (page는 0부터) */
-  list: (page = 0) =>
+  /**
+   * 최근 주문부터 (page는 0부터, 기본 20건). status(BE #1280)는 주문 상태 하나로 거르고
+   * totalElements가 그 상태의 전체 건수. null이면 보내지 않는다(전체)
+   */
+  list: (page = 0, status: OrderStatus | null = null, size = 20) =>
     apiClient
-      .get<Page<OrderSummaryDto>>('/orders', { params: { page, size: 20 } })
+      .get<Page<OrderSummaryDto>>('/orders', {
+        params: { page, size, ...(status && { status }) },
+      })
       .then(expectShape(orderPageShape)),
   get: (orderId: string) =>
     apiClient.get<OrderDetailDto>(`/orders/${orderId}`).then(expectShape(orderDetailShape)),
@@ -51,10 +57,12 @@ export const orderApi = {
   /** 이미 확정이어도 200, 배송 완료 전이면 409 */
   confirmItem: (orderId: string, orderItemId: string) =>
     apiClient.post(`/orders/${orderId}/items/${orderItemId}/confirm`),
-  /** 최근 주문부터 (BE는 상태로 거르지 않는다 → 화면에서 거른다) */
-  adminList: () =>
+  /** 모든 회원의 주문을 최근 주문부터 (size 1~100). status(BE #1280)는 내 주문과 같다 */
+  adminList: (page = 0, status: OrderStatus | null = null, size = 100) =>
     apiClient
-      .get<Page<AdminOrderDto>>('/admin/orders', { params: { page: 0, size: 100 } })
+      .get<Page<AdminOrderDto>>('/admin/orders', {
+        params: { page, size, ...(status && { status }) },
+      })
       .then(expectShape(adminOrderPageShape)),
   /** 관리자 주문 상태 이력 (BE #442). 오래된 것부터, 주문이 없으면 404 */
   adminHistory: (orderId: string) =>

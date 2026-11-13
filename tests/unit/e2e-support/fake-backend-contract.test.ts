@@ -46,6 +46,7 @@ import {
 } from '@/entities/notification/api/notification.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import {
+  adminOrderPageShape,
   orderDetailShape,
   orderHistoryShape,
   orderPageShape,
@@ -1083,6 +1084,35 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       { type: 'CHARGE_CANCEL', amount: -50000, refId: 77 },
       { type: 'CHARGE', amount: 50000, refId: 77 },
     ])
+  })
+
+  it('주문 목록 status 거르기 (BE #1280): 대문자 값 하나, 모르는 값 · 소문자 · 빈 값은 400', async () => {
+    const all = (await call('GET', '/orders?size=100', 1)).data
+    const paid = (await call('GET', '/orders?status=PAID&size=100', 1)).data
+    expectContract(paid, orderPageShape)
+    expect(paid.content.every((o: { status: string }) => o.status === 'PAID')).toBe(true)
+    expect(paid.totalElements).toBe(
+      all.content.filter((o: { status: string }) => o.status === 'PAID').length,
+    )
+    expect((await call('GET', '/orders?status=PAID&size=1', 1)).data.totalElements).toBe(
+      paid.totalElements,
+    )
+    for (const bad of ['paid', '', 'SHIPPING', 'PAID,CANCELLED'])
+      expect((await call('GET', `/orders?status=${bad}`, 1)).status).toBe(400)
+
+    const adminCancelled = (await call('GET', '/admin/orders?status=CANCELLED&size=100', 3)).data
+    expectContract(adminCancelled, adminOrderPageShape)
+    expect(adminCancelled.content.every((o: { status: string }) => o.status === 'CANCELLED')).toBe(
+      true,
+    )
+    expect((await call('GET', '/admin/orders?status=cancelled', 3)).status).toBe(400)
+    expect((await call('GET', '/admin/orders?page=0&size=1', 3)).data.content).toHaveLength(1)
+
+    const delivered = (await call('GET', '/seller/orders?status=DELIVERED&size=100', 2)).data
+    expectContract(delivered, sellerOrderPageShape)
+    expect(delivered.content.every((o: { status: string }) => o.status === 'DELIVERED')).toBe(true)
+    for (const bad of ['PAID', 'ready', ''])
+      expect((await call('GET', `/seller/orders?status=${bad}`, 2)).status).toBe(400)
   })
 
   it('결제 · 예치금 목록은 요청한 page · size로 나눈다 (BE PageResponse)', async () => {

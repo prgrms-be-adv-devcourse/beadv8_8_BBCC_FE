@@ -470,6 +470,34 @@ const page = (content) => ({
   totalPages: 1,
   hasNext: false,
 })
+// 목록 status 거르기 (BE #1280): 응답 status와 같은 대문자 값 하나만. 없으면 전체, 그 밖(빈 값 · 소문자 · 여러 값)은 400
+const ORDER_STATUSES = ['PENDING_PAYMENT', 'PAID', 'CANCELLED']
+const DELIVERY_STATUSES = ['READY', 'SHIPPING', 'DELIVERED', 'CANCELLED']
+const statusFilterOf = (query, allowed) => {
+  if (!query.has('status')) return { ok: true, keep: () => true }
+  const status = query.get('status')
+  return allowed.includes(status)
+    ? { ok: true, keep: (row) => row.status === status }
+    : { ok: false }
+}
+const badOrderStatus = (res, instance) =>
+  problem(
+    res,
+    400,
+    '지원하지 않는 주문 상태입니다',
+    'status는 PENDING_PAYMENT · PAID · CANCELLED 중 하나를 대문자 그대로 보내 주세요. 전체는 status를 빼고 보내 주세요.',
+    instance,
+    'INVALID_ORDER_STATUS',
+  )
+const badDeliveryStatus = (res, instance) =>
+  problem(
+    res,
+    400,
+    '지원하지 않는 판매 주문 상태입니다',
+    'status는 READY · SHIPPING · DELIVERED · CANCELLED 중 하나를 대문자 그대로 보내 주세요. 전체는 status를 빼고 보내 주세요.',
+    instance,
+    'INVALID_DELIVERY_STATUS',
+  )
 /** 요청의 page · size(기본 0 · 20)로 자른 PageResponse (BE PageResponse) */
 const pageFrom = (content, query) => {
   const number = Math.max(0, Number(query.get('page') ?? 0))
@@ -1993,11 +2021,15 @@ http
     if (r('GET', /^\/admin\/orders$/)) {
       if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
+      const filter = statusFilterOf(url.searchParams, ORDER_STATUSES)
+      if (!filter.ok) return badOrderStatus(res, req.url)
       return send(
         res,
         200,
-        page(
+        // BE: 최근 주문부터 page · size로 자른다, status(#1280)로 거른다
+        pageFrom(
           orders
+            .filter(filter.keep)
             .slice()
             .reverse()
             .map((o) => ({
@@ -2009,6 +2041,7 @@ http
               orderedAt: o.orderedAt,
               itemCount: o.items.length,
             })),
+          url.searchParams,
         ),
       )
     }
@@ -2535,14 +2568,16 @@ http
       scheduleOrder(o, me, stall)
       return send(res, 201, detailOf(o))
     }
-    if (r('GET', /^\/orders$/))
+    if (r('GET', /^\/orders$/)) {
+      const filter = statusFilterOf(url.searchParams, ORDER_STATUSES)
+      if (!filter.ok) return badOrderStatus(res, req.url)
       return send(
         res,
         200,
-        // BE: 최근 주문부터 page · size로 자른다
+        // BE: 최근 주문부터 page · size로 자른다, status(#1280)로 거른다
         pageFrom(
           orders
-            .filter((o) => o.memberId === me)
+            .filter((o) => o.memberId === me && filter.keep(o))
             .slice()
             .reverse()
             .map((o) => ({
@@ -2560,6 +2595,7 @@ http
           url.searchParams,
         ),
       )
+    }
     if ((x = r('GET', /^\/orders\/(\d+)$/)))
       return send(res, 200, detailOf(orders.find((o) => o.orderId === +x[1])))
     // BE OrderController GET /orders/{orderId}/timeline (#352): 본인 주문만, 아니면 404
@@ -2640,13 +2676,16 @@ http
       return send(res, 200, it)
     }
     const sellerOrders = () => orders.flatMap((o) => o.deliveries.map((d) => ({ d, o })))
-    if (r('GET', /^\/seller\/orders$/))
+    if (r('GET', /^\/seller\/orders$/)) {
+      const filter = statusFilterOf(url.searchParams, DELIVERY_STATUSES)
+      if (!filter.ok) return badDeliveryStatus(res, req.url)
       return send(
         res,
         200,
-        // BE DeliveryRepository.findAllBySellerIdOrderByIdDesc: 최근 배송부터 page · size로 자른다
+        // BE DeliveryRepository.findAllBySellerIdOrderByIdDesc: 최근 배송부터 page · size로 자른다, status(#1280)는 배송 상태
         pageFrom(
           sellerOrders()
+            .filter(({ d }) => filter.keep(d))
             .slice()
             .reverse()
             .map(({ d, o }) => ({
@@ -2661,6 +2700,7 @@ http
           url.searchParams,
         ),
       )
+    }
     if ((x = r('POST', /^\/seller\/orders\/(\d+)\/ship$/))) {
       const { d, o } = sellerOrders().find(({ d }) => d.sellerOrderId === x[1])
       // BE ShipRequest · OrderErrorCode: 택배사는 코드만(대문자 정확히), 송장 1~50자, 발송은 한 번

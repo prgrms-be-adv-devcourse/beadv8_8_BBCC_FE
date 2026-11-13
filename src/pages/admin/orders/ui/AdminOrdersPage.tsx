@@ -3,10 +3,11 @@ import {
   CANCEL_REASON_LABEL,
   ORDER_STATUS_LABEL,
   useAdminOrdersQuery,
+  useAdminOrderTabCountsQuery,
   type AdminOrder,
   type OrderStatus,
 } from '@/entities/order'
-import { getErrorMessage } from '@/shared/api'
+import { getErrorMessage, pageFromSearch } from '@/shared/api'
 import { adminPathsOf } from '@/shared/config'
 import {
   cn,
@@ -18,6 +19,7 @@ import {
   type CsvColumn,
 } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Pagination } from '@/shared/ui/Pagination'
 import { ListSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { AdminOrderTable } from './AdminOrderTable'
@@ -27,6 +29,7 @@ const TABS: { value: OrderStatus | null; label: string }[] = [
   { value: null, label: '전체' },
   ...STATUSES.map((status) => ({ value: status, label: labelOf(ORDER_STATUS_LABEL, status) })),
 ]
+const PAGE_SIZE = 20
 
 const CSV_COLUMNS: CsvColumn<AdminOrder>[] = [
   { header: '주문', value: (o) => o.id },
@@ -41,28 +44,32 @@ const CSV_COLUMNS: CsvColumn<AdminOrder>[] = [
   },
 ]
 
-/** 관리자 전체 주문 (기획서 8장 보완): 상태 탭(주소 ?status=) → 주문 표 → 주문을 누르면 주문 상세 */
+/** 관리자 전체 주문 (기획서 8장 보완): 상태 탭(주소 ?status=) · 페이지(?page=) → 주문 표 → 주문을 누르면 주문 상세 */
 export function AdminOrdersPage() {
   const adminPaths = adminPathsOf(useArea())
   // 상태 탭은 주소(?status=)에 둔다 → 대시보드에서 바로 열린다
   const [params, setParams] = useSearchParams()
   const raw = params.get('status')
   const status = STATUSES.includes(raw as OrderStatus) ? (raw as OrderStatus) : null
-  // BE는 상태로 거르지 않는다: 같은 목록(최근 100건)을 한 번 받아 탭 건수와 표를 만든다
-  const all = useAdminOrdersQuery(null)
-  const visible = useAdminOrdersQuery(status)
+  const page = pageFromSearch(params.get('page'))
+  // 탭은 서버가 거른다 (BE #1280). 탭 건수는 탭마다 size 1 요청의 전체 건수
+  const visible = useAdminOrdersQuery(status, page, PAGE_SIZE)
+  const counts = useAdminOrderTabCountsQuery()
   const orders = visible.data?.content ?? []
-  const countOf = (value: OrderStatus | null) =>
-    value === null
-      ? all.data?.totalElements
-      : all.data?.content.filter((order) => order.status === value).length
+  const countOf = (value: OrderStatus | null) => counts[value ?? 'ALL']
+  const setPage = (next: number) => {
+    const search = new URLSearchParams(params)
+    if (next > 0) search.set('page', String(next))
+    else search.delete('page')
+    setParams(search, { replace: true })
+  }
 
   return (
     <div className="shop-look space-y-5">
       <PageHeader
         title="전체 주문"
         description="모든 회원의 주문을 상태별로 봐요. 주문을 누르면 결제까지 이어서 봐요."
-        note="GET /admin/orders (BE #323). 최근 100건 안에서 화면이 상태로 거른다."
+        note="GET /admin/orders?status= (BE #323 · #1280). 상태는 서버가 거르고, 탭 건수는 size 1 요청의 전체 건수."
       />
       <div
         role="tablist"
@@ -83,7 +90,7 @@ export function AdminOrdersPage() {
                 : 'text-ink-3 hover:text-ink active:text-ink border-transparent',
             )}
           >
-            {tab.label} <span className="figure text-sm">{countOf(tab.value)}</span>
+            {tab.label} <span className="figure text-sm">{countOf(tab.value) ?? '…'}</span>
           </button>
         ))}
       </div>
@@ -94,9 +101,7 @@ export function AdminOrdersPage() {
       {visible.data && (
         <section aria-label="주문 목록" className="space-y-2">
           <div className="text-ink-3 flex min-h-11 items-center justify-between text-[13px]">
-            <span className="figure">
-              {status === null ? visible.data.totalElements : orders.length}건
-            </span>
+            <span className="figure">{visible.data.totalElements}건</span>
             {orders.length > 0 && (
               <button
                 type="button"
@@ -122,6 +127,13 @@ export function AdminOrdersPage() {
             />
           )}
         </section>
+      )}
+      {visible.data && (
+        <Pagination
+          page={visible.data.page}
+          totalPages={visible.data.totalPages}
+          onChange={setPage}
+        />
       )}
     </div>
   )
