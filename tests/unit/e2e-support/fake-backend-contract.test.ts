@@ -1941,6 +1941,26 @@ it('함께 사면 · 홈 맛보기 SSE: rule → ai, 다시 물으면 ai만, 규
   preview.forEach((item) => expectContract(item.data, homePreviewShape))
 })
 
+it('사이즈 추천 SSE: rule(근거 없음) → ai, 다시 물으면 ai만, 규칙 답이면 rule만 (FE #401)', async () => {
+  const child = await call('POST', '/children', 1, {
+    ...toChildRequest(DEMO_CHILD),
+    requiredConsent: true,
+    optionalConsent: true,
+  })
+  const size = (productId: string) =>
+    `/recommendations/size?productId=${productId}&childId=${child.data.id}`
+
+  const first = await stream(size('1'), 1)
+  expect(first.map((item) => item.event)).toEqual(['rule', 'ai'])
+  first.forEach((item) => expectContract(item.data, sizeRecommendationShape))
+  expect(first.map((item) => item.data)).toMatchObject([
+    { source: 'RULE', reasons: [], itemJudgements: [] },
+    { source: 'AI' },
+  ])
+  expect((await stream(size('1'), 1)).map((item) => item.event)).toEqual(['ai'])
+  expect((await stream(size('2'), 1)).map((item) => item.event)).toEqual(['rule'])
+})
+
 it('함께 사면 좋은 상품: AI · RULE 응답 모두 계약 모양이고, 이유는 null일 수 있다 (BE #1164)', async () => {
   const child = await call('POST', '/children', 1, {
     ...toChildRequest(DEMO_CHILD),

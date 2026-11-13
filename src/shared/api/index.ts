@@ -35,5 +35,11 @@ export {
 export type { Page } from './types'
 export { putToPresignedUrl, UploadError } from './presigned-upload'
 export { nextPageOf, pageFromSearch, pageNumbersOf } from './paging'
-export { getEventStream, openEventStream, type StreamEvent } from './event-stream'
+export {
+  getEventStream,
+  openEventStream,
+  streamLogOf,
+  type StreamEvent,
+  type StreamLogBody,
+} from './event-stream'
 export { readSse, readSseEvents, type SseEvent } from './sse'

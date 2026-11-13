@@ -432,36 +432,46 @@ function send(res, status, body, headers = {}) {
   })
   res.end(body === undefined ? '' : JSON.stringify(body))
 }
-// 함께 사면 · 홈 맛보기 SSE (BE 계약, FE #290). Accept: text/event-stream이면 흘려보낸다
-// AI 답이고 처음 묻는 요청이면 rule(같은 상품, 이유 없음) → 잠시 뒤 ai, 다시 물으면 저장해 둔 답처럼 ai만, 규칙 답이면 rule만
+// AI 추천 SSE (BE 계약: 함께 사면 · 홈 맛보기 FE #290, 사이즈 추천 FE #401). Accept: text/event-stream이면 흘려보낸다
+// AI 답이고 처음 묻는 요청이면 rule(ruleOf로 만든 규칙 결과) → 잠시 뒤 ai, 다시 물으면 저장해 둔 답처럼 ai만, 규칙 답이면 rule만
 const answeredStreams = new Set()
 const STREAM_AI_WAIT_MS = 300
-function sendPicks(req, res, picks) {
-  if (!String(req.headers.accept ?? '').includes('text/event-stream')) return send(res, 200, picks)
+function sendStream(req, res, ruleOf, answer) {
+  if (!String(req.headers.accept ?? '').includes('text/event-stream')) return send(res, 200, answer)
   res.writeHead(200, {
     'content-type': 'text/event-stream',
     'cache-control': 'no-cache',
     'x-accel-buffering': 'no',
   })
   const write = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-  if (picks.source === 'RULE') {
-    write('rule', picks)
+  if (answer.source === 'RULE') {
+    write('rule', answer)
     return res.end()
   }
   if (answeredStreams.has(req.url)) {
-    write('ai', picks)
+    write('ai', answer)
     return res.end()
   }
   answeredStreams.add(req.url)
-  write('rule', {
-    source: 'RULE',
-    products: picks.products.map((product) => ({ ...product, reason: null })),
-  })
+  write('rule', ruleOf(answer))
   setTimeout(() => {
-    write('ai', picks)
+    write('ai', answer)
     res.end()
   }, STREAM_AI_WAIT_MS)
 }
+/** 함께 사면 · 홈 맛보기: 규칙 결과는 같은 상품에 이유가 없다 */
+const sendPicks = (req, res, picks) =>
+  sendStream(
+    req,
+    res,
+    (ai) => ({
+      source: 'RULE',
+      products: ai.products.map((product) => ({ ...product, reason: null })),
+    }),
+    picks,
+  )
+/** 사이즈 추천: 규칙 결과는 같은 사이즈에 근거 · 항목 판단이 없다 */
+const sizeRuleOf = (ai) => ({ ...ai, source: 'RULE', reasons: [], itemJudgements: [] })
 const page = (content) => ({
   content,
   page: 0,
@@ -2133,7 +2143,7 @@ http
         ),
       )
     }
-    // 사이즈 추천 (BE #262 · #681). 규칙은 단순화: 키가 권장 키 ±2cm 안이면 후보, 둘 이상이면 체형 · 선호 핏으로 고름
+    // 사이즈 추천 (BE #262 · #681, SSE FE #401). 규칙은 단순화: 키가 권장 키 ±2cm 안이면 후보, 둘 이상이면 체형 · 선호 핏으로 고름
     if (r('GET', /^\/recommendations\/size$/)) {
       const productId = url.searchParams.get('productId')
       const childId = url.searchParams.get('childId')
@@ -2165,7 +2175,7 @@ http
             },
           ]
         : []
-      return send(res, 200, {
+      return sendStream(req, res, sizeRuleOf, {
         ...rec,
         lastPurchasedSize,
         referenceFit,

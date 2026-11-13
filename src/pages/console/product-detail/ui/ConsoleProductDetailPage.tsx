@@ -80,7 +80,12 @@ export function ConsoleProductDetailPage() {
           onSelect={setChildId}
           noneLabel={childId !== null ? '자녀 선택 안 함' : undefined}
         />
-        {recommendation.isFetching && <StateMessage>추천 계산 중…</StateMessage>}
+        {recommendation.isLoading && (
+          <StateMessage>추천 계산 중… (SSE: 규칙 결과 → AI 답)</StateMessage>
+        )}
+        {recommendation.data && recommendation.isWaitingForAi && (
+          <StateMessage>규칙 추천을 먼저 보여 주고 AI 답을 기다리는 중 (스트림 열림)</StateMessage>
+        )}
         {recommendation.isError && (
           <StateMessage tone="error">{getErrorMessage(recommendation.error)}</StateMessage>
         )}

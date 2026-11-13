@@ -38,6 +38,7 @@ export {
 export {
   candidateNoteOf,
   lastPurchaseTextOf,
+  shownSizeOf,
   showsAiSizeNotice,
 } from './model/size-recommendation.rules'
 export { type ItemJudgement, type ReferenceFit, type ReferenceFitItem } from './model/reference-fit'

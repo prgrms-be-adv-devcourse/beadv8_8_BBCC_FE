@@ -1,10 +1,15 @@
 import { useInfiniteQuery, useQuery, type QueryFunctionContext } from '@tanstack/react-query'
 import { nextPageOf, type StreamEvent } from '@/shared/api'
 import { recommendationApi } from '../api/recommendation-api'
-import type { CompanionProductsDto, HomePreviewDto } from '../api/recommendation.dto'
+import type {
+  CompanionProductsDto,
+  HomePreviewDto,
+  SizeRecommendationDto,
+} from '../api/recommendation.dto'
 import type { RecommendedProductsQuery } from './recommendation'
 import { isWaitingForAi, shownPicksOf } from './recommended-picks.rules'
 import { nextRecommendedPageOf, type RecommendedPageParam } from './recommended-page.rules'
+import { shownSizeOf } from './size-recommendation.rules'
 import {
   toCompanionProducts,
   toHomePreview,
@@ -31,13 +36,21 @@ export const recommendationKeys = {
     ['recommendation', 'more', childId, categoryId] as const,
 }
 
+/**
+ * 사이즈 추천 (SSE): 규칙 결과를 받자마자 그리고, AI 답이 오면 바꾼다. 스트림이 열려 있고 그리는 결과가 AI가 아니면 isWaitingForAi.
+ * 실패해도 JSON으로 다시 부르지 않고, AI를 또 기다리므로 저절로 다시 부르지도 않는다
+ */
 export function useSizeRecommendationQuery(productId: string, childId: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: recommendationKeys.size(productId, childId ?? ''),
-    queryFn: () => recommendationApi.getSize(productId, childId!),
-    select: toSizeRecommendation,
+    queryFn: streamIntoCache<SizeRecommendationDto>((signal, onEvent) =>
+      recommendationApi.streamSize(productId, childId!, signal, onEvent),
+    ),
+    select: (events) => shownSizeOf(events.map((item) => toSizeRecommendation(item.data))),
     enabled: childId !== null,
+    retry: false,
   })
+  return { ...query, isWaitingForAi: isWaitingForAi(query.data, query.isFetching) }
 }
 
 /** 스트림이 아무 이벤트 없이 닫히면(서버 오류) 불러오지 못한 것으로 본다 → 화면은 「다시 불러오기」 */

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { holdEventStream } from './support/held-event-stream'
 
 // 사이즈 추천 근거 (BE #1162): AI가 고르면 추천 한 줄 바로 아래에 근거(종류 라벨 + 문구)를 보이고, 규칙이면 숨긴다.
 // AI는 규칙 후보 밖의 실제 사이즈를 고를 수 있다 (recommendedSize가 candidateSizes에 없음).
@@ -52,14 +53,12 @@ const size = (overrides: object) => ({
 const AI_NOTICE = 'AI를 활용한 문장이라 실수가 있을 수 있어요.'
 const GARMENT_HINT = '잘 맞는 옷을 등록하면 더 정확해요'
 
-async function openDetail(page: Page, sizeResponse: object, garments: object[] = []) {
+/** 보호자로 들어와 자녀 501로 상품 1 상세를 연다 (사이즈 추천 응답은 부르는 쪽이 정한다) */
+async function openDetailWith(page: Page, garments: object[] = []) {
   await page.route('**/api/v1/children', (route) =>
     route.request().method() === 'GET' ? route.fulfill({ json: [CHILD] }) : route.fallback(),
   )
   await page.route('**/api/v1/children/501', (route) => route.fulfill({ json: CHILD }))
-  await page.route('**/api/v1/recommendations/size?*', (route) =>
-    route.fulfill({ json: sizeResponse }),
-  )
   await page.route('**/api/v1/recommendations/children/501/reference-garments', (route) =>
     route.fulfill({ json: garments }),
   )
@@ -70,8 +69,43 @@ async function openDetail(page: Page, sizeResponse: object, garments: object[] =
   await page.getByRole('button', { name: '보호자', exact: true }).first().click()
   await expect(page.getByText('보호자 · 회원 1')).toBeVisible()
   await page.goto('/products/1?childId=501')
+}
+
+async function openDetail(page: Page, sizeResponse: object, garments: object[] = []) {
+  await page.route('**/api/v1/recommendations/size?*', (route) =>
+    route.fulfill({ json: sizeResponse }),
+  )
+  await openDetailWith(page, garments)
   await expect(page.getByText('추천 사이즈')).toBeVisible()
 }
+
+// 사이즈 추천 SSE (FE #401): 규칙 추천을 받자마자 그리고, 스트림이 열려 있는 동안 AI 대기를 보이다가 AI 추천으로 바꾼다
+test('규칙 추천을 먼저 그리고, AI가 살펴보는 동안 안내를 두다가 AI 추천과 근거로 바꾼다', async ({
+  page,
+}) => {
+  const stream = await holdEventStream(page, '/api/v1/recommendations/size')
+  await openDetailWith(page)
+  const aiWaiting = page.getByRole('status', { name: 'AI가 사이즈를 더 살펴보고 있어요' })
+
+  await stream.send('rule', size({ recommendedSize: '110' }))
+  await expect(page.locator('strong', { hasText: /^110$/ }).first()).toBeVisible()
+  await expect(aiWaiting).toBeVisible()
+  await expect(page.getByText('추천 계산 중…')).toHaveCount(0)
+
+  await stream.send(
+    'ai',
+    size({
+      recommendedSize: '120',
+      source: 'AI',
+      reasons: [
+        { type: 'HEIGHT', detail: '키가 빨리 자라 한 치수 크게 골랐어요.', sourceId: null },
+      ],
+    }),
+  )
+  await expect(page.getByText('키가 빨리 자라 한 치수 크게 골랐어요.')).toBeVisible()
+  await expect(aiWaiting).toHaveCount(0)
+  await stream.close()
+})
 
 test('AI가 후보 밖 사이즈를 고르면 그 사이즈와 근거를 추천 한 줄 아래에 보인다', async ({
   page,
