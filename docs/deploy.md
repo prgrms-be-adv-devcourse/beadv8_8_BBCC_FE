@@ -59,24 +59,24 @@ fe:
 
 ## Vercel 배포
 
-develop push 에서 CI 가 성공하면 Vercel Production 에 올라간다 (`.github/workflows/vercel-deploy.yml`). 주소는 https://kidly.kro.kr · https://kidly-fe.vercel.app 하나다. dev 주소(dev.kidly.kro.kr · kidly-fe-dev.vercel.app)는 없앴다(#431).
+develop push 에서 CI 가 성공하면 Vercel Production 에 올라간다 (`.github/workflows/vercel-deploy.yml`). 주소는 https://dev.kidly.kro.kr 하나다. Preview 배포와 별칭(kidly-fe-dev.vercel.app)은 없앴다(#431).
 
 - 다시 올리려면 Actions에서 develop 으로 수동 실행한다. vercel CLI로 로컬 파일을 직접 올리지 않는다
 - GitHub에 필요한 값: Secrets `VERCEL_TOKEN`, Variables `VERCEL_ORG_ID` · `VERCEL_PROJECT_ID`
-- 도메인(내도메인.한국): `kidly.kro.kr`은 Vercel 프로젝트 Production 도메인이다. 프로젝트는 Git 연동이 아니라 워크플로가 빌드 결과를 올린다
+- 도메인(내도메인.한국): `dev.kidly.kro.kr`은 Vercel 프로젝트 Production 도메인이다. 프로젝트는 Git 연동이 아니라 워크플로가 빌드 결과를 올린다
 
 ### 빌드 값 (Vercel 프로젝트 Settings → Environment Variables)
 
 GitHub Variables가 아니라 **Vercel 환경 변수**의 Production 값에서 받는다. 바꾼 뒤 develop 으로 다시 실행하면 반영된다.
 
-| 이름                      | Production                                  | 넣지 않으면                       |
-| ------------------------- | ------------------------------------------- | --------------------------------- |
-| `VITE_USE_MOCK`           | 쇼핑 목록 예시 사진을 끄려면 `false`        | 예시 사진 켜짐                    |
-| `VITE_API_BASE_URL`       | 아래 "백엔드 연결" 참고                     | 비움 (로그인 · 주문 · 결제 안 됨) |
-| `VITE_DEMO_ROLE_SWITCH`   | 연결한 백엔드에 개발 토큰이 없으면 `false`  | 켜짐                              |
-| `VITE_TOSS_CLIENT_KEY`    | 토스 테스트 클라이언트 키 (결제 담당)       | 충전 안 됨                        |
-| `VITE_KAKAO_CLIENT_ID`    | 카카오 REST API 키 (회원 담당)              | 카카오 로그인 안 됨               |
-| `VITE_KAKAO_REDIRECT_URI` | `https://kidly.kro.kr/oauth/kakao/callback` | 로그인 복귀 실패                  |
+| 이름                      | Production                                      | 넣지 않으면                       |
+| ------------------------- | ----------------------------------------------- | --------------------------------- |
+| `VITE_USE_MOCK`           | 쇼핑 목록 예시 사진을 끄려면 `false`            | 예시 사진 켜짐                    |
+| `VITE_API_BASE_URL`       | 아래 "백엔드 연결" 참고                         | 비움 (로그인 · 주문 · 결제 안 됨) |
+| `VITE_DEMO_ROLE_SWITCH`   | 연결한 백엔드에 개발 토큰이 없으면 `false`      | 켜짐                              |
+| `VITE_TOSS_CLIENT_KEY`    | 토스 테스트 클라이언트 키 (결제 담당)           | 충전 안 됨                        |
+| `VITE_KAKAO_CLIENT_ID`    | 카카오 REST API 키 (회원 담당)                  | 카카오 로그인 안 됨               |
+| `VITE_KAKAO_REDIRECT_URI` | `https://dev.kidly.kro.kr/oauth/kakao/callback` | 로그인 복귀 실패                  |
 
 모두 화면에 그대로 들어가는 **공개 값**이다. 비밀 값은 넣지 않는다.
 
@@ -89,7 +89,7 @@ Vercel 사이트는 백엔드와 **주소가 다르다**. EC2 배포처럼 같�
 
 ### 함께 등록할 것
 
-- [ ] 카카오 개발자 콘솔 Redirect URI에 `https://kidly.kro.kr/oauth/kakao/callback`, 백엔드 `KAKAO_REDIRECT_URI`와 맞춤
+- [ ] 카카오 개발자 콘솔 Redirect URI에 `https://dev.kidly.kro.kr/oauth/kakao/callback`, 백엔드 `KAKAO_REDIRECT_URI`와 맞춤
 - [ ] 토스 성공 · 실패 URL을 Vercel 주소로 쓸 수 있는지 (결제 담당)
 - [ ] 연결할 백엔드 주소와 개발 토큰 여부 (인프라 · 회원 담당)
 

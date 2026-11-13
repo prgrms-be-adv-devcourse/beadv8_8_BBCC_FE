@@ -1,7 +1,7 @@
 name: Vercel Deploy
 
-# FE를 Vercel에 배포한다. develop 머지 → production https://kidly.kro.kr · https://kidly-fe.vercel.app
-# 프론트 주소는 이것 하나다. dev 주소(dev.kidly.kro.kr · kidly-fe-dev.vercel.app)는 없앴다(#431)
+# FE를 Vercel에 배포한다. develop 머지 → production https://dev.kidly.kro.kr
+# 프론트 주소는 이것 하나다. Preview 배포와 별칭(kidly-fe-dev.vercel.app)은 없앴다(#431)
 # CI(ci.yml)가 develop push 에서 성공한 뒤에만 올린다(#271). CI 가 실패한 코드는 올리지 않는다
 # 다시 올려야 하면 Actions에서 develop 으로 수동 실행한다(CI 를 기다리지 않는다). vercel CLI로 로컬 파일을 직접 올리지 않는다
 # 필요한 값: Secrets VERCEL_TOKEN, Variables VERCEL_ORG_ID · VERCEL_PROJECT_ID (Settings → Secrets and variables → Actions)
@@ -94,4 +94,4 @@ jobs:
         if: steps.ready.outputs.ok == 'true' && steps.latest.outputs.skip != 'true'
         run: |
           url=$(npx --yes vercel@64.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
-          echo "::notice::production 배포됨 https://kidly.kro.kr ($url)"
+          echo "::notice::production 배포됨 https://dev.kidly.kro.kr ($url)"
