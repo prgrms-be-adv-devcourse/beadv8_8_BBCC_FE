@@ -35,7 +35,11 @@ export {
   useReferenceGarmentsQuery,
   useSizeRecommendationQuery,
 } from './model/queries'
-export { candidateNoteOf, showsAiSizeNotice } from './model/size-recommendation.rules'
+export {
+  candidateNoteOf,
+  lastPurchaseTextOf,
+  showsAiSizeNotice,
+} from './model/size-recommendation.rules'
 export { type ItemJudgement, type ReferenceFit, type ReferenceFitItem } from './model/reference-fit'
 export { referenceFitSummaryOf, type ReferenceFitSummary } from './model/reference-fit.rules'
 export { type GrowthSpeed, type WearablePeriod } from './model/growth-speed'

@@ -744,6 +744,23 @@ function growthOf(c, detail) {
   })
   return { growthSpeed, wearablePeriods }
 }
+/**
+ * 지난 구매 사이즈 (BE #1299) 흉내: 이 자녀에게 구매확정한 주문상품 중 지금 상품과 같은 기준 옷 칸에서
+ * 확정이 가장 늦은 것의 사이즈. 칸이 없거나(모자 · 양말) 산 적이 없으면 null (가짜는 12개월 기간을 따지지 않는다)
+ */
+function lastPurchasedSizeOf(childId, categoryId) {
+  const part = garmentPartOfCategory(categoryId)
+  if (!part) return null
+  const last = orders
+    .flatMap((o) => o.items)
+    .filter((it) => it.status === 'CONFIRMED' && it.size && it.child?.childId === String(childId))
+    .filter((it) => {
+      const bought = productDetailOf(it.productId)
+      return bought && garmentPartOfCategory(bought.categoryId) === part
+    })
+    .sort((a, b) => b.confirmedAt.localeCompare(a.confirmedAt))[0]
+  return last?.size ?? null
+}
 /** 자녀에게 맞는 사이즈가 있거나 사이즈 무관인 상품만 맞춤 카드로 (BE RecommendedProductResponse) */
 function fitCardsOf(items, c) {
   return items.flatMap((item) => {
@@ -2135,8 +2152,22 @@ http
       const referenceFit = detail.sizeFree
         ? null
         : referenceFitOf(c.id, detail.categoryId, detail.sizeSpecs)
+      // 지난 구매 (BE #1299): 같은 칸에서 이 자녀가 마지막으로 구매확정한 사이즈. AI 답이면 근거에 지난 구매를 더한다
+      const lastPurchasedSize = detail.sizeFree
+        ? null
+        : lastPurchasedSizeOf(c.id, detail.categoryId)
+      const purchaseReason = lastPurchasedSize
+        ? [
+            {
+              type: 'PURCHASE',
+              detail: `지난번 산 옷(${lastPurchasedSize})과 실측이 비슷해요.`,
+              sourceId: null,
+            },
+          ]
+        : []
       return send(res, 200, {
         ...rec,
+        lastPurchasedSize,
         referenceFit,
         itemJudgements: isAi ? itemJudgementsOf(referenceFit, rec.recommendedSize) : [],
         wearPreview: wearPreviewOf(detail, c.heightCm),
@@ -2150,6 +2181,7 @@ http
                 sourceId: null,
               },
               { type: 'RULE_RESULT', detail: '키 기준표 계산과 같은 사이즈예요.', sourceId: null },
+              ...purchaseReason,
             ]
           : [],
       })
