@@ -21,6 +21,7 @@ import {
   useProductQuery,
 } from '@/entities/product'
 import {
+  AiWaitingNotice,
   GARMENT_PART_SPEC,
   referencePartToRegister,
   sizeRangesOf,
@@ -45,6 +46,8 @@ import { StateMessage } from '@/shared/ui/StateMessage'
 import { CompanionProducts } from './CompanionProducts'
 import { ProductReviews } from './ProductReviews'
 import { SizeAdvice } from './SizeAdvice'
+
+const SIZE_AI_WAITING = 'AI가 사이즈를 더 살펴보고 있어요'
 
 export function ShopProductDetailPage() {
   const isChild = useArea() === 'child'
@@ -110,9 +113,13 @@ export function ShopProductDetailPage() {
       : null
   const sizeAdvice = (
     <>
-      {recommendation.isFetching && <StateMessage>추천 계산 중…</StateMessage>}
+      {/* 첫 결과(보통 규칙 결과) 전까지만. 그 뒤 AI 답을 기다리는 동안은 추천을 그린 채 AI 대기를 보인다 */}
+      {recommendation.isLoading && <StateMessage>추천 계산 중…</StateMessage>}
       {recommendation.isError && (
         <StateMessage tone="error">{getErrorMessage(recommendation.error)}</StateMessage>
+      )}
+      {pickedChild && recommendation.data && recommendation.isWaitingForAi && (
+        <AiWaitingNotice message={SIZE_AI_WAITING} />
       )}
       {pickedChild && recommendation.data && (
         <SizeAdvice

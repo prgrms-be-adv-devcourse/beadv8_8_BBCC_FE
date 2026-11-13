@@ -27,6 +27,22 @@ export const recommendationApi = {
         params: { productId, childId },
       })
       .then(expectShape(sizeRecommendationShape)),
+  /**
+   * 사이즈 추천 (SSE): 규칙 결과(rule)가 먼저 오고 AI 답(ai)이 오면 닫힌다. 저장된 답이면 ai만, AI를 쓸 수 없으면 rule만.
+   * data는 JSON 응답(getSize)과 같은 모양. 이벤트가 올 때마다 onEvent를 부른다
+   */
+  streamSize: (
+    productId: string,
+    childId: string,
+    signal?: AbortSignal,
+    onEvent?: (event: StreamEvent<SizeRecommendationDto>) => void,
+  ) =>
+    getEventStream<SizeRecommendationDto>('/recommendations/size', {
+      params: { productId, childId },
+      signal,
+      shape: sizeRecommendationShape,
+      onEvent,
+    }),
   getProducts: (childId: string, params: RecommendedProductsParamsDto) =>
     apiClient
       .get<RecommendedProductPageDto>('/recommendations/products', {

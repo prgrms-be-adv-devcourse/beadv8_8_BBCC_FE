@@ -31,3 +31,14 @@ export function lastPurchaseTextOf({
   const size = lastPurchasedSize?.trim()
   return size ? `지난번 같은 종류는 ${size} 사이즈를 샀어요` : null
 }
+
+/**
+ * 사이즈 추천 스트림에서 받은 결과(도착 순서) 중 그릴 것: 마지막 AI, 없으면 마지막 규칙 결과.
+ * 받은 것이 없으면 undefined (쿼리가 오류로 바꾼다)
+ */
+export function shownSizeOf(received: SizeRecommendation[]): SizeRecommendation | undefined {
+  return (
+    received.findLast((item) => item.source === 'AI') ??
+    received.findLast((item) => item.source === 'RULE')
+  )
+}
