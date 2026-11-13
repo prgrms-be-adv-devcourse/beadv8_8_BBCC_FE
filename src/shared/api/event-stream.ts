@@ -9,6 +9,19 @@ const streamAdapter = axios.getAdapter('fetch')
 
 export type StreamEvent<T> = { event: string; data: T }
 
+/** getEventStream이 흐름 기록 응답 본문에 남기는 모양: 받은 이벤트 순서 · 마지막 data */
+export type StreamLogBody = { events: string[]; data: unknown }
+
+/** 흐름 기록 응답 본문이 스트림 기록이면 그 모양으로, 아니면 null (판정 · 핵심 값이 마지막 data를 읽으려고) */
+export function streamLogOf(body: unknown): StreamLogBody | null {
+  if (typeof body !== 'object' || body === null || !('events' in body) || !('data' in body))
+    return null
+  const { events, data } = body
+  return Array.isArray(events) && events.every((item) => typeof item === 'string')
+    ? { events, data }
+    : null
+}
+
 type GetEventStreamOptions = {
   params?: Record<string, string>
   /** 페이지를 떠나면 끊는다 */

@@ -214,6 +214,17 @@ describe('흐름 확인 판정', () => {
   it('호출이 없으면 대기', () => {
     expect(evaluate(check('order-paid'), []).state).toBe('waiting')
   })
+  // 사이즈 추천은 SSE라 흐름 기록 본문이 { events, data(마지막 이벤트) }다
+  it.each<[string, unknown]>([
+    ['JSON 응답', { recommendedSize: '120', source: 'RULE' }],
+    ['스트림 기록', { events: ['rule', 'ai'], data: { recommendedSize: '120', source: 'AI' } }],
+  ])('사이즈 추천: %s에 추천 사이즈가 있으면 통과', (_, responseBody) => {
+    expect(
+      evaluate(check('size-recommend'), [
+        log({ path: '/recommendations/size?productId=1&childId=2', responseBody }),
+      ]).state,
+    ).toBe('pass')
+  })
   it('판매 시작: PUT sale-status 응답이 ON_SALE이면 통과', () => {
     expect(
       evaluate(check('product-start'), [
