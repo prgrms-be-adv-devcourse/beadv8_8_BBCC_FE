@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import { holdEventStream } from './support/held-event-stream'
 
 // 쇼핑 홈: 위 「자녀에게 맞는 옷」(AI 맛보기 4개 + 이유, 더보기)과 아래 「전체 상품」(페이지 번호)을 나눈다.
 // 맞춤 목록 화면은 탭(전체 + 말단 카테고리)과 「더 보기」로 다음 페이지를 이어 붙인다.
@@ -77,6 +78,30 @@ async function asParentWithChild(page: Page) {
   await page.getByRole('button', { name: '보호자', exact: true }).first().click()
   await expect(page.getByText('보호자 · 회원 1')).toBeVisible()
 }
+
+test('홈 맛보기는 규칙 결과를 먼저 그리고, AI가 고르는 동안 안내를 두다가 AI 답으로 바꾼다', async ({
+  page,
+}) => {
+  const stream = await holdEventStream(page, '/api/v1/recommendations/products/preview')
+  await asParentWithChild(page)
+  const recommended = page.getByRole('region', { name: '맞춤 상품' })
+  const aiWaiting = recommended.getByRole('status', {
+    name: 'AI가 하윤에게 더 잘 맞는 상품을 고르고 있어요',
+  })
+
+  const card = (n: number, reason: string | null) => ({ ...item(n), reason })
+  await stream.send('rule', { source: 'RULE', products: [1, 2, 3, 4].map((n) => card(n, null)) })
+  await expect(recommended.getByText(/^맞춤 상품 \d+$/)).toHaveCount(4)
+  await expect(aiWaiting).toBeVisible()
+
+  await stream.send('ai', {
+    source: 'AI',
+    products: [5, 1, 2, 3].map((n) => card(n, n === 5 ? '맞춤 이유 5: 키에 잘 맞아요.' : null)),
+  })
+  await expect(recommended.getByText('맞춤 이유 5: 키에 잘 맞아요.')).toBeVisible()
+  await expect(aiWaiting).toHaveCount(0)
+  await stream.close()
+})
 
 test('홈 맞춤 영역 4개 → 더보기 → 맞춤 목록 탭 · 더 보기', async ({ page }) => {
   await asParentWithChild(page)

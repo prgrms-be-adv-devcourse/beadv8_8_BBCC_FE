@@ -44,11 +44,12 @@ export {
   growthSpeedTextOf,
   wearablePeriodTextOf,
 } from './model/growth-speed.rules'
-export { hasAiReasons, shownPicksOf } from './model/recommended-picks.rules'
+export { hasAiReasons, isWaitingForAi, shownPicksOf } from './model/recommended-picks.rules'
 export { sizeScaleOf, type SizeScale } from './model/size-scale.rules'
 export { nextRecommendedPageOf } from './model/recommended-page.rules'
 export { FIT_LABEL, SIZE_REASON_LABEL } from './model/recommendation'
 export { AiSentenceNotice } from './ui/AiSentenceNotice'
+export { AiWaitingNotice } from './ui/AiWaitingNotice'
 export { FitBadge } from './ui/FitBadge'
 export { GrowthOutlook } from './ui/GrowthOutlook'
 export { PickReveal } from './ui/PickReveal'

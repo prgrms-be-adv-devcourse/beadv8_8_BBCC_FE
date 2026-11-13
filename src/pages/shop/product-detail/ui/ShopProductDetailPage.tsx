@@ -332,6 +332,7 @@ export function ShopProductDetailPage() {
         childId={recommendedChildId}
         isPending={companions.isPending}
         isError={companions.isError}
+        isWaitingForAi={companions.isWaitingForAi}
         picks={companions.data}
         onRetry={() => void companions.refetch()}
       />

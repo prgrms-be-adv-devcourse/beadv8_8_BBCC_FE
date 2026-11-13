@@ -3,6 +3,7 @@ import { ChildPicker, SizeRulerBar, sizeRulerOf, type Child } from '@/entities/c
 import { ProductTile } from '@/entities/product'
 import {
   AiSentenceNotice,
+  AiWaitingNotice,
   hasAiReasons,
   PickReveal,
   RecommendedPicksLoading,
@@ -29,6 +30,8 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
   if (!child) return null
   const ruler = sizeRulerOf(child.heightCm)
   const waiting = `${child.name}에게 맞는 상품을 고르고 있어요`
+  // 규칙 결과가 빈 목록이어도 AI 답을 기다리는 동안은 로딩을 둔다
+  const isLoading = preview.isPending || (preview.isWaitingForAi && !preview.data)
 
   return (
     <section aria-label="맞춤 상품" className="border-rule space-y-5 rounded-lg border p-4 md:p-6">
@@ -78,7 +81,7 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
         </div>
         <SizeRulerBar ruler={ruler} name={child.name} />
       </div>
-      {preview.isPending && (
+      {isLoading && (
         <div className="space-y-3">
           <p className="text-ink-2 text-[13px]">{waiting}</p>
           <RecommendedPicksLoading message={waiting} />
@@ -89,8 +92,11 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
           {getErrorMessage(preview.error)}
         </RecommendedPicksNotice>
       )}
-      {preview.data === null && (
+      {preview.data === null && !preview.isWaitingForAi && (
         <RecommendedPicksNotice>맞는 사이즈가 판매 중인 상품이 없어요.</RecommendedPicksNotice>
+      )}
+      {preview.data && preview.isWaitingForAi && (
+        <AiWaitingNotice message={`AI가 ${child.name}에게 더 잘 맞는 상품을 고르고 있어요`} />
       )}
       {preview.data && (
         <ul className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-4">
