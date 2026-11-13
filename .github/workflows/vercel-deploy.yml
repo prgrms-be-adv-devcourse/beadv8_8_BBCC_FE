@@ -1,19 +1,18 @@
 name: Vercel Deploy
 
-# FE를 Vercel에 배포한다. 브랜치마다 고정 주소가 하나씩 있다
-# - main 머지    → production  https://kidly-fe.vercel.app      (발표 · 공유용)
-# - develop 머지 → preview + 별칭 https://kidly-fe-dev.vercel.app · https://dev.kidly.kro.kr (개발 확인용)
-# CI(ci.yml)가 main · develop push 에서 성공한 뒤에만 올린다(#271). CI 가 실패한 코드는 올리지 않는다
-# 다시 올려야 하면 Actions에서 해당 브랜치로 수동 실행한다(CI 를 기다리지 않는다). vercel CLI로 로컬 파일을 직접 올리지 않는다
+# FE를 Vercel에 배포한다. develop 머지 → production https://kidly.kro.kr · https://kidly-fe.vercel.app
+# 프론트 주소는 이것 하나다. dev 주소(dev.kidly.kro.kr · kidly-fe-dev.vercel.app)는 없앴다(#431)
+# CI(ci.yml)가 develop push 에서 성공한 뒤에만 올린다(#271). CI 가 실패한 코드는 올리지 않는다
+# 다시 올려야 하면 Actions에서 develop 으로 수동 실행한다(CI 를 기다리지 않는다). vercel CLI로 로컬 파일을 직접 올리지 않는다
 # 필요한 값: Secrets VERCEL_TOKEN, Variables VERCEL_ORG_ID · VERCEL_PROJECT_ID (Settings → Secrets and variables → Actions)
-# 빌드 값(VITE_*)은 Vercel 프로젝트 Settings → Environment Variables에서 정한다. Production = main, Preview = develop
+# 빌드 값(VITE_*)은 Vercel 프로젝트 Settings → Environment Variables 의 Production 값을 쓴다
 # FE 배포는 이 워크플로가 맡는다. GHCR 이미지를 만들던 deploy.yml 은 서버에 반영되지 않아 지웠다(#276)
 
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-    branches: [main, develop]
+    branches: [develop]
   workflow_dispatch:
 
 permissions:
@@ -27,10 +26,10 @@ concurrency:
 
 jobs:
   deploy:
-    # CI 가 main · develop 의 push 에서 성공했을 때(PR 의 CI 는 아님), 또는 main · develop 에서 수동 실행했을 때
+    # CI 가 develop 의 push 에서 성공했을 때(PR 의 CI 는 아님), 또는 develop 에서 수동 실행했을 때
     if: >-
       (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
-      || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'))
+      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
@@ -39,11 +38,6 @@ jobs:
       # 배포할 브랜치 · 커밋. workflow_run 은 기본 브랜치에서 돌므로 CI 가 검사한 커밋을 직접 받는다
       BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
       SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
-      # main = production, develop = preview (+ 고정 별칭)
-      VERCEL_ENV: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'preview' }}
-      DEV_ALIAS: kidly-fe-dev.vercel.app
-      # 개발 도메인. Vercel에서 develop 브랜치 도메인으로 지정해 운영 배포가 가져가지 않는다
-      DEV_DOMAIN: dev.kidly.kro.kr
     steps:
       - name: Vercel 값 확인
         id: ready
@@ -84,8 +78,8 @@ jobs:
           node-version: 24
           cache: npm
 
-      # 빌드 값은 Vercel 환경 변수에서 받는다. vercel pull이 이 배포 환경(production · preview)의 값을 받아 vercel build에 넘긴다
-      # 값을 바꾼 뒤 해당 브랜치로 다시 실행하면 반영된다. 값이 없으면 앱 기본값을 쓴다
+      # 빌드 값은 Vercel 환경 변수에서 받는다. vercel pull이 production 값을 받아 vercel build에 넘긴다
+      # 값을 바꾼 뒤 develop 으로 다시 실행하면 반영된다. 값이 없으면 앱 기본값을 쓴다
       # - VITE_USE_MOCK: false면 백엔드에 없는 API의 목(상품 목록 · 정산 등)을 끈다 (없으면 켜짐)
       # - VITE_API_BASE_URL: 실제 백엔드 주소 (없으면 비움). 그 서버의 CORS에 이 사이트 주소를 허용해야 한다
       # - VITE_DEMO_ROLE_SWITCH: false면 시연 기능(역할 전환 · 시연 콘솔 · API 흐름 · 시연용 문구)을 감춘다 (없으면 켜짐. 개발용 토큰이 없는 백엔드면 false)
@@ -93,40 +87,11 @@ jobs:
       - name: 빌드
         if: steps.ready.outputs.ok == 'true' && steps.latest.outputs.skip != 'true'
         run: |
-          npx --yes vercel@64.2.0 pull --yes --environment="$VERCEL_ENV" --token="$VERCEL_TOKEN"
-          if [ "$VERCEL_ENV" = production ]; then
-            npx --yes vercel@64.2.0 build --prod --token="$VERCEL_TOKEN"
-          else
-            npx --yes vercel@64.2.0 build --token="$VERCEL_TOKEN"
-          fi
+          npx --yes vercel@64.2.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@64.2.0 build --prod --token="$VERCEL_TOKEN"
 
       - name: 배포
         if: steps.ready.outputs.ok == 'true' && steps.latest.outputs.skip != 'true'
         run: |
-          if [ "$VERCEL_ENV" = production ]; then
-            url=$(npx --yes vercel@64.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
-            echo "::notice::production 배포됨 https://kidly-fe.vercel.app ($url)"
-          else
-            url=$(npx --yes vercel@64.2.0 deploy --prebuilt --token="$VERCEL_TOKEN")
-            # 고정 별칭은 API로 붙인다 (vercel alias set은 회원 정보를 먼저 읽는데, 팀 범위 토큰이면 404로 실패한다)
-            api="https://api.vercel.com"
-            auth="Authorization: Bearer $VERCEL_TOKEN"
-            # 실패하면 API 응답 본문이 로그에 남는다
-            found=$(curl -sS --fail-with-body -H "$auth" "$api/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID") ||
-              { echo "$found"; exit 1; }
-            deployment=$(jq -r .id <<< "$found")
-            set_alias() {
-              curl -sS --fail-with-body -X POST -H "$auth" -H "content-type: application/json" \
-                "$api/v2/deployments/$deployment/aliases?teamId=$VERCEL_ORG_ID" \
-                -d "{\"alias\":\"$1\"}" || return 1
-              echo
-            }
-            set_alias "$DEV_ALIAS"
-            echo "::notice::develop 배포됨 https://$DEV_ALIAS ($url)"
-            # 개발 도메인은 DNS 확인(내도메인.한국 TXT · CNAME)이 끝나기 전에는 실패한다. 그동안은 경고만 남기고 배포는 성공으로 둔다
-            if set_alias "$DEV_DOMAIN"; then
-              echo "::notice::개발 도메인 연결됨 https://$DEV_DOMAIN"
-            else
-              echo "::warning::$DEV_DOMAIN 연결 실패 (DNS 확인 전이면 정상). Vercel 프로젝트 Settings → Domains에서 확인한다"
-            fi
-          fi
+          url=$(npx --yes vercel@64.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "::notice::production 배포됨 https://kidly.kro.kr ($url)"

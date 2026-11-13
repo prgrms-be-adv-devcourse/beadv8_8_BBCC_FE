@@ -72,4 +72,4 @@ CI(`.github/workflows/ci.yml`)가 PR마다 모두 돌린다. E2E가 실패하면
 
 ## 배포
 
-CI 를 통과하면 Vercel에 배포된다(develop → https://dev.kidly.kro.kr, main → https://kidly-fe.vercel.app). 빌드 값 · 리허설은 [docs/deploy.md](docs/deploy.md).
+develop 이 CI 를 통과하면 Vercel Production(https://kidly.kro.kr)에 배포된다. 빌드 값 · 리허설은 [docs/deploy.md](docs/deploy.md).
