@@ -70,6 +70,21 @@ export function productImageUrlOf(dto: {
   return toImageUrl(dto.thumbnailUrl) ?? toImageUrl(dto.imageUrls[0])
 }
 
+type LineWithImage = { productId: string | null; thumbnailUrl: string | null }
+
+/** 응답에 사진이 없는 줄의 상품 ID만 (상품 상세로 대표 사진을 대신 읽는다, BE #1328) */
+export function productIdsWithoutImage(lines: readonly LineWithImage[]): (string | null)[] {
+  return lines.filter((line) => !line.thumbnailUrl).map((line) => line.productId)
+}
+
+/** 줄 사진: 응답 사진 → 상품 상세 대표 사진(fallback) → null */
+export function lineImageUrl(
+  line: LineWithImage,
+  fallback: Record<string, string | null>,
+): string | null {
+  return line.thumbnailUrl ?? (line.productId ? (fallback[line.productId] ?? null) : null)
+}
+
 export function toProductDetail(dto: ProductDetailDto, categories: Category[] = []): ProductDetail {
   const sizeAttribute = sizeAttributeOf(dto)
   const sizeNameById = new Map(sizeAttribute?.values.map((value) => [value.valueId, value.value]))

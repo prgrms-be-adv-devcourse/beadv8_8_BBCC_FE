@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { orderProgress, type Order, type OrderDelivery, type OrderItem } from '@/entities/order'
 
 const item = (over: Partial<OrderItem> = {}): OrderItem => ({
+  thumbnailUrl: null,
   id: '1',
   productId: '1',
   optionId: '1',

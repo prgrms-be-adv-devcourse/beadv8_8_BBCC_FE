@@ -1,4 +1,4 @@
-import { labelOf } from '@/shared/lib'
+import { labelOf, toImageUrl } from '@/shared/lib'
 import type { ChildPurchaseDto } from '../api/order.dto'
 
 /** 자녀가 보는 나를 위해 산 상품 한 줄 */
@@ -11,6 +11,8 @@ export type ChildPurchase = {
   quantity: number
   /** PAID · SHIPPING · DELIVERED · CONFIRMED · CANCELLED (모르는 값은 그대로) */
   status: string
+  /** 주문 당시 상품 사진. 없으면 null */
+  thumbnailUrl: string | null
 }
 
 export function toChildPurchase(dto: ChildPurchaseDto): ChildPurchase {
@@ -22,6 +24,7 @@ export function toChildPurchase(dto: ChildPurchaseDto): ChildPurchase {
     optionName: dto.optionName,
     quantity: dto.quantity,
     status: dto.status,
+    thumbnailUrl: toImageUrl(dto.thumbnailUrl),
   }
 }
 

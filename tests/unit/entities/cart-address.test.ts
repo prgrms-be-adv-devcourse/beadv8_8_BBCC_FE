@@ -18,6 +18,7 @@ import {
 } from '@/entities/cart'
 
 const line = (patch: Partial<CartLine>): CartLine => ({
+  thumbnailUrl: null,
   id: '1',
   optionId: '2',
   productId: '1',

@@ -8,6 +8,12 @@ import {
   useOrderTabCountsQuery,
   type OrderTab,
 } from '@/entities/order'
+import {
+  lineImageUrl,
+  ProductImage,
+  productIdsWithoutImage,
+  useProductImageUrls,
+} from '@/entities/product'
 import { getErrorMessage, pageFromSearch } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn, formatDateTime, formatWon } from '@/shared/lib'
@@ -33,6 +39,8 @@ export function ShopOrdersPage() {
     setParams(search, { replace: true })
   }
   const visible = orders.data?.content ?? []
+  // 대표 사진: 응답 사진(BE #1328), 없는 옛 주문만 상품 상세 대표 사진으로
+  const images = useProductImageUrls(productIdsWithoutImage(visible))
 
   return (
     <div className="shop-look space-y-6">
@@ -82,14 +90,21 @@ export function ShopOrdersPage() {
                 to={paths.shop.order(order.id)}
                 className="hover:bg-paper-2 -mx-4 grid gap-x-6 gap-y-2 px-4 py-5 transition-colors md:grid-cols-[minmax(0,1fr)_auto_auto_auto] md:items-center"
               >
-                <div className="min-w-0 space-y-1">
-                  <p className="text-ink-3 flex flex-wrap gap-x-3 text-[13px]">
-                    <span>{formatDateTime(order.orderedAt)}</span>
-                    <span>주문번호 {order.id}</span>
-                  </p>
-                  <p className="text-[15px] font-semibold">
-                    {order.title ?? `주문번호 ${order.id}`}
-                  </p>
+                <div className="flex min-w-0 items-center gap-4">
+                  <ProductImage
+                    src={lineImageUrl(order, images)}
+                    alt={order.title ?? `주문번호 ${order.id}`}
+                    className="rounded-card aspect-[3/4] w-14 shrink-0"
+                  />
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-ink-3 flex flex-wrap gap-x-3 text-[13px]">
+                      <span>{formatDateTime(order.orderedAt)}</span>
+                      <span>주문번호 {order.id}</span>
+                    </p>
+                    <p className="text-[15px] font-semibold">
+                      {order.title ?? `주문번호 ${order.id}`}
+                    </p>
+                  </div>
                 </div>
                 <span className="figure font-bold">{formatWon(order.totalAmount)}</span>
                 <OrderStatusBadge status={order.status} />

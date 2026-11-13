@@ -24,6 +24,8 @@ export type OrderItemDto = {
   unavailableReason?: string | null
   /** 판매자의 지금 상호명 (BE #311). 판매자 정보가 아직 없으면 null */
   sellerName?: string | null
+  /** 주문 당시 상품 사진 (BE #1328). 없으면 null */
+  thumbnailUrl?: string | null
   child: {
     childId: string
     /** 주문 당시 자녀 이름. 회원의 자녀 변경 이벤트에 이름이 없어 null일 수 있다 */
@@ -67,6 +69,10 @@ export type OrderSummaryDto = {
   itemCount: number
   /** 대표 주문상품 판매자의 지금 상호명 (BE #311). 없으면 null */
   sellerName?: string | null
+  /** 대표 주문상품의 상품 ID (BE #1328). 없으면 null */
+  representativeProductId?: string | null
+  /** 대표 주문상품의 주문 당시 사진 (BE #1328). 없으면 null */
+  representativeThumbnailUrl?: string | null
 }
 
 /** POST /orders */
@@ -137,6 +143,8 @@ export type ChildPurchaseDto = {
   quantity: number
   /** PAID · SHIPPING · DELIVERED · CONFIRMED · CANCELLED */
   status: string
+  /** 주문 당시 상품 사진 (BE #1328). 없으면 null */
+  thumbnailUrl?: string | null
 }
 
 /** GET /admin/orders/{orderId}/history 한 줄 (BE OrderStatusHistoryResponse #442). 오래된 것부터 */

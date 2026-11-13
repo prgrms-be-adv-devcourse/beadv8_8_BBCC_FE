@@ -16,8 +16,8 @@ const MESSAGE_MAX = 100
 
 type SendChildWishProps = {
   items: CartLine[]
-  /** 상품 ID → 대표 사진 (모르면 기본 이미지) */
-  imageOf: (productId: string | null) => string | null
+  /** 줄 → 사진 (모르면 기본 이미지) */
+  imageOf: (item: CartLine) => string | null
   renderRemove: (item: CartLine) => ReactNode
 }
 
@@ -66,7 +66,7 @@ export function SendChildWish({ items, imageOf, renderRemove }: SendChildWishPro
                 onChange={() => selection.toggle(item.id)}
               />
               <ProductImage
-                src={imageOf(item.productId)}
+                src={imageOf(item)}
                 alt={item.productName}
                 className="rounded-card aspect-square w-18 shrink-0 object-cover"
               />

@@ -37,6 +37,8 @@ const orderItemShape = obj({
   // BE 예정 필드: 아직 없는 응답도 통과 (nullable은 빠진 필드를 허용), 모르는 값도 받는다
   unavailableReason: nullable(str),
   sellerName: nullable(str),
+  // BE #1328 주문 당시 사진 (nullable은 빠진 필드도 통과)
+  thumbnailUrl: nullable(str),
   child: nullable(
     obj({
       childId: str,
@@ -80,6 +82,8 @@ export const orderPageShape = pageOf(
     representativeProductName: nullable(str),
     itemCount: num,
     sellerName: nullable(str),
+    representativeProductId: nullable(str),
+    representativeThumbnailUrl: nullable(str),
   }),
 )
 
@@ -135,6 +139,7 @@ export const childPurchasePageShape = pageOf(
     optionName: nullable(str),
     quantity: num,
     status: oneOf(['PAID', 'SHIPPING', 'DELIVERED', 'CONFIRMED', 'CANCELLED']),
+    thumbnailUrl: nullable(str),
   }),
 )
 

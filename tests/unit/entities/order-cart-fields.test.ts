@@ -53,6 +53,7 @@ describe('결제 마감 지나 취소 (PAYMENT_EXPIRED)', () => {
 
 describe('장바구니 판매자별 묶음 (BE #243 sellerId)', () => {
   const line = (id: string, sellerId: string | null): CartLine => ({
+    thumbnailUrl: null,
     id,
     optionId: id,
     productId: id,

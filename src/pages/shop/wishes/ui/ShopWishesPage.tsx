@@ -1,6 +1,11 @@
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { useChildrenQuery } from '@/entities/child'
-import { ProductImage, useProductImageUrls } from '@/entities/product'
+import {
+  ProductImage,
+  lineImageUrl,
+  productIdsWithoutImage,
+  useProductImageUrls,
+} from '@/entities/product'
 import {
   filterWishes,
   guardianWishStatusLabel,
@@ -33,11 +38,11 @@ export function ShopWishesPage() {
   const shown = wishesOfChild(all, childId)
   const waiting = filterWishes(shown, 'WAITING')
   const past = filterWishes(shown, 'DONE')
-  const images = useProductImageUrls(shown.flatMap((wish) => wish.items.map((i) => i.productId)))
+  const images = useProductImageUrls(productIdsWithoutImage(shown.flatMap((wish) => wish.items)))
   const nameOf = (id: string) => children.data?.find((child) => child.id === id)?.name ?? '자녀'
   const renderImage = (line: WishRequestLine) => (
     <ProductImage
-      src={line.productId ? (images[line.productId] ?? null) : null}
+      src={lineImageUrl(line, images)}
       alt={line.productName}
       className="size-full object-cover"
     />

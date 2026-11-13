@@ -700,7 +700,14 @@ function scheduleOrder(o, me, stall, clearCart = true) {
       ]
     }, 2000)
 }
-const detailOf = ({ memberId: _m, ...o }) => ({ ...o, orderId: String(o.orderId) })
+// 주문상품 ID가 가장 작은 주문상품 = 대표 (BE #243)
+const representativeOf = (o) =>
+  [...o.items].sort((a, b) => Number(a.orderItemId) - Number(b.orderItemId))[0]
+const detailOf = ({ memberId: _m, ...o }) => ({
+  ...o,
+  orderId: String(o.orderId),
+  items: o.items.map((it) => ({ ...it, thumbnailUrl: it.thumbnailUrl ?? null })),
+})
 function sizeRecommendationOf(detail, c) {
   const base = { productId: detail.productId, childId: String(c.id), lastPurchasedSize: null }
   const none = (code, message) => ({
@@ -789,10 +796,14 @@ function fitCardsOf(items, c) {
   })
 }
 const childOf = ({ memberId: _m, deleted: _d, growth: _g, ...c }) => c
+// BE #1328: 장바구니 · 조르기 줄은 상품의 지금 사진, 주문상품은 주문 당시 사진 (없으면 null)
+const thumbOf = (productId) =>
+  productId ? (productDetailOf(productId)?.thumbnailUrl ?? null) : null
 const lineOf = ({ memberId: _m, ...l }) => ({
   ...l,
   lineAmount: l.unitPrice * l.quantity,
   reserved: isReserved(l),
+  thumbnailUrl: thumbOf(l.productId),
 })
 const myAppOf = (a) => ({
   id: a.id,
@@ -1199,6 +1210,7 @@ http
               optionName: it.optionName,
               quantity: it.quantity,
               status: statusOf(o, it),
+              thumbnailUrl: it.thumbnailUrl ?? null,
             })),
         )
         .sort((a, b) => b.orderedAt.localeCompare(a.orderedAt))
@@ -1342,6 +1354,7 @@ http
             purchasable: l.purchasable,
             saleStatus: 'ON_SALE',
             purchased: false,
+            thumbnailUrl: thumbOf(l.productId),
           })),
           purchases: [],
           paidOrderItemIds: [],
@@ -2593,6 +2606,8 @@ http
           productName: rp.name,
           optionName: rp.optionName,
           size: rp.size,
+          // 주문 당시 사진 (BE #1328: 뒤에 상품 사진이 바뀌어도 그대로)
+          thumbnailUrl: thumbOf(rp.productId),
           // 재고 차감 실패 때만 값 (BE 예정: OUT_OF_STOCK · PRODUCT_NOT_ON_SALE · OPTION_NOT_ON_SALE)
           unavailableReason: null,
           unitPrice: it.unitPrice,
@@ -2672,11 +2687,12 @@ http
               totalAmount: o.totalAmount,
               orderedAt: o.orderedAt,
               // 주문상품 ID가 가장 작은 주문상품의 상품명 · 주문상품 수 (BE #243)
-              representativeProductName:
-                [...o.items].sort((a, b) => Number(a.orderItemId) - Number(b.orderItemId))[0]
-                  ?.productName ?? null,
+              representativeProductName: representativeOf(o)?.productName ?? null,
               itemCount: o.items.length,
               sellerName: o.items[0]?.sellerName ?? null,
+              // BE #1328: 대표 주문상품의 상품 ID · 주문 당시 사진
+              representativeProductId: representativeOf(o)?.productId ?? null,
+              representativeThumbnailUrl: representativeOf(o)?.thumbnailUrl ?? null,
             })),
           url.searchParams,
         ),

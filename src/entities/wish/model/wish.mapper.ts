@@ -1,3 +1,4 @@
+import { toImageUrl } from '@/shared/lib'
 import type { WishRequestDto, WishRequestLineDto, WishTimelineDto } from '../api/wish.dto'
 import type { WishRequest, WishRequestLine, WishTimeline } from './wish'
 
@@ -15,6 +16,7 @@ function toLine(item: WishRequestLineDto, dto: WishRequestDto): WishRequestLine 
     unitPrice: item.unitPrice,
     purchasable: item.purchasable,
     saleStatus: item.saleStatus,
+    thumbnailUrl: toImageUrl(item.thumbnailUrl),
     purchasedQuantity: dto.purchases
       .filter((purchase) => item.cartItemId !== null && purchase.cartItemId === item.cartItemId)
       .reduce((sum, purchase) => sum + purchase.quantity, 0),
