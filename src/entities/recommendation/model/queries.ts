@@ -54,14 +54,16 @@ type OpenStream<T> = (
 /**
  * 추천 스트림(SSE) 쿼리 함수: 이벤트가 올 때마다 지금까지 받은 목록을 캐시에 넣어, 먼저 온 규칙 결과를 바로 그린다.
  * 캐시에 값이 들어가도 스트림이 닫힐 때까지 isFetching이 true라 그동안을 AI 대기 중으로 본다.
- * 화면을 떠나면 스트림을 끊고(signal) 캐시도 부르기 전으로 되돌린다
+ * 다시 부를 때(오래된 캐시)는 이전에 받은 목록 뒤에 이어 붙여, 새 ai가 오기 전까지 이전 AI 결과가 규칙 결과로 덮이지 않게 한다.
+ * 닫히면 이번에 받은 목록만 남긴다. 화면을 떠나면 스트림을 끊고(signal) 캐시도 부르기 전으로 되돌린다
  */
 function streamIntoCache<T>(open: OpenStream<T>) {
   return async ({ signal, client, queryKey }: QueryFunctionContext): Promise<StreamEvent<T>[]> => {
+    const previous = client.getQueryData<StreamEvent<T>[]>(queryKey) ?? []
     const received: StreamEvent<T>[] = []
     const events = await open(signal, (event) => {
       received.push(event)
-      client.setQueryData(queryKey, [...received])
+      client.setQueryData(queryKey, [...previous, ...received])
     })
     return requireEvents(events)
   }
