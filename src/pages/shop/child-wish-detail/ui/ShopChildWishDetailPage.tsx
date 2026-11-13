@@ -1,6 +1,11 @@
 import { Link, useNavigate, useParams } from 'react-router'
 import { useChildQuery } from '@/entities/child'
-import { ProductImage, useProductImageUrls } from '@/entities/product'
+import {
+  ProductImage,
+  lineImageUrl,
+  productIdsWithoutImage,
+  useProductImageUrls,
+} from '@/entities/product'
 import {
   canDecideWish,
   guardianWishStatusLabel,
@@ -28,7 +33,7 @@ export function ShopChildWishDetailPage() {
   const wish = useWishRequestQuery(requestId)
   const timeline = useWishTimelineQuery(requestId)
   const child = useChildQuery(wish.data?.childId ?? routeChildId)
-  const images = useProductImageUrls(wish.data?.items.map((item) => item.productId) ?? [])
+  const images = useProductImageUrls(productIdsWithoutImage(wish.data?.items ?? []))
   if (wish.isPending) return <StateMessage>불러오는 중…</StateMessage>
   if (wish.isError) return <StateMessage tone="error">{getErrorMessage(wish.error)}</StateMessage>
   const data = wish.data
@@ -37,7 +42,7 @@ export function ShopChildWishDetailPage() {
   const childName = child.data?.name ?? '아이'
   const renderImage = (line: WishRequestLine) => (
     <ProductImage
-      src={line.productId ? (images[line.productId] ?? null) : null}
+      src={lineImageUrl(line, images)}
       alt={line.productName}
       className="size-full object-cover"
     />

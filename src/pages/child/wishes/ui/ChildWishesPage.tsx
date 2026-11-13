@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { ProductImage, useProductImageUrls } from '@/entities/product'
+import {
+  ProductImage,
+  lineImageUrl,
+  productIdsWithoutImage,
+  useProductImageUrls,
+} from '@/entities/product'
 import {
   childWishStatusLabel,
   filterWishes,
@@ -25,9 +30,7 @@ export function ChildWishesPage() {
   const wishes = useChildWishRequestsQuery()
   const [filter, setFilter] = useState<WishFilter>('ALL')
   const all = wishes.data ?? []
-  const images = useProductImageUrls(
-    all.flatMap((wish) => wish.items.map((item) => item.productId)),
-  )
+  const images = useProductImageUrls(productIdsWithoutImage(all.flatMap((wish) => wish.items)))
   const shown = filterWishes(all, filter)
   return (
     <section className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
@@ -61,7 +64,7 @@ export function ChildWishesPage() {
           statusLabel={childWishStatusLabel(wish)}
           renderImage={(line) => (
             <ProductImage
-              src={line.productId ? (images[line.productId] ?? null) : null}
+              src={lineImageUrl(line, images)}
               alt={line.productName}
               className="size-full object-cover"
             />

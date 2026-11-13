@@ -1,3 +1,4 @@
+import { toImageUrl } from '@/shared/lib'
 import type { DeliveryStatus } from '@/shared/config'
 import type {
   AdminOrderDto,
@@ -40,6 +41,7 @@ export function toOrder(dto: OrderDetailDto): Order {
       deliveredAt: item.deliveredAt,
       confirmedAt: item.confirmedAt,
       confirmType: item.confirmType as ConfirmType | null,
+      thumbnailUrl: toImageUrl(item.thumbnailUrl),
       unavailableReason: item.unavailableReason ?? null,
       sellerName: item.sellerName?.trim() || null,
       child: item.child && {
@@ -72,6 +74,8 @@ export function toOrderSummary(dto: OrderSummaryDto): OrderSummary {
     orderedAt: dto.orderedAt,
     title: orderTitle(dto.representativeProductName, dto.itemCount),
     sellerName: dto.sellerName?.trim() || null,
+    productId: dto.representativeProductId ?? null,
+    thumbnailUrl: toImageUrl(dto.representativeThumbnailUrl),
   }
 }
 

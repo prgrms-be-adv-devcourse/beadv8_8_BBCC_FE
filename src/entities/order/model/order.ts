@@ -31,6 +31,8 @@ export type OrderItem = {
   deliveredAt: string | null
   confirmedAt: string | null
   confirmType: ConfirmType | null
+  /** 주문 당시 상품 사진. 없으면 null (상품 상세 대표 사진으로 대체) */
+  thumbnailUrl: string | null
   /** 재고 차감 실패로 살 수 없던 이유 (주문상품 단위). 없으면 null → 표시 없음 */
   unavailableReason: string | null
   /** 판매자 상호명. 모르면 null */
@@ -75,6 +77,10 @@ export type OrderSummary = {
   title: string | null
   /** 대표 상품 판매자 상호명. 모르면 null */
   sellerName: string | null
+  /** 대표 상품 ID. 모르면 null */
+  productId: string | null
+  /** 대표 상품의 주문 당시 사진. 없으면 null */
+  thumbnailUrl: string | null
 }
 
 /** 상태 변화 순서 한 줄 */

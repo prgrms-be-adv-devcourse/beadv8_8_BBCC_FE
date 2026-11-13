@@ -33,6 +33,8 @@ describe('나를 위해 산 상품 (BE #1000)', () => {
       optionName: '네이비 / 110',
       quantity: 1,
       status: 'SHIPPING',
+      // BE #1328 전 응답(사진 칸 없음)은 null
+      thumbnailUrl: null,
     })
   })
   it('상품 정보가 없으면 판매가 끝난 상품', () => {

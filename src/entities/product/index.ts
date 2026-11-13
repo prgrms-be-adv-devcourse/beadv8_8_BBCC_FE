@@ -38,6 +38,8 @@ export {
   toCategories,
   toCategoryGroups,
   toCategoryInputs,
+  lineImageUrl,
+  productIdsWithoutImage,
   productImageUrlOf,
   toProductDetail,
   toProductSearchParams,

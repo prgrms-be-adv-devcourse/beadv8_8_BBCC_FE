@@ -1,5 +1,10 @@
 import { Link } from 'react-router'
-import { ProductImage, useProductImageUrls } from '@/entities/product'
+import {
+  ProductImage,
+  lineImageUrl,
+  productIdsWithoutImage,
+  useProductImageUrls,
+} from '@/entities/product'
 import {
   countPendingWishes,
   filterWishes,
@@ -20,7 +25,9 @@ export function ChildWishSection({ childId, childName }: ChildWishSectionProps) 
   const paths = memberPathsOf(useArea())
   const wishes = useWishRequestsQuery(childId)
   const waiting = filterWishes(wishes.data ?? [], 'WAITING')
-  const images = useProductImageUrls(waiting.map((wish) => wish.items[0]?.productId ?? null))
+  const images = useProductImageUrls(
+    productIdsWithoutImage(waiting.flatMap((wish) => wish.items.slice(0, 1))),
+  )
   return (
     <section
       aria-label={`${childName}의 조르기`}
@@ -54,7 +61,7 @@ export function ChildWishSection({ childId, childName }: ChildWishSectionProps) 
             <span className="rounded-card block aspect-square w-12 shrink-0 overflow-hidden bg-white">
               {first && (
                 <ProductImage
-                  src={first.productId ? (images[first.productId] ?? null) : null}
+                  src={lineImageUrl(first, images)}
                   alt={first.productName}
                   className="size-full object-cover"
                 />

@@ -16,6 +16,7 @@ export const cartLineShape = obj({
   purchasable: bool,
   lineAmount: num,
   reserved: bool,
+  thumbnailUrl: nullable(str),
 })
 
 export const cartShape = obj({
