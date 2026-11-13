@@ -81,7 +81,7 @@ export type ItemJudgementDto = {
   allowanceMaxCm: number
 }
 
-/** 사이즈 추천 근거. type은 HEIGHT · BODY_TYPE · PREFERRED_FIT · MEASUREMENT · RULE_RESULT · GROWTH */
+/** 사이즈 추천 근거. type은 HEIGHT · BODY_TYPE · PREFERRED_FIT · MEASUREMENT · RULE_RESULT · GROWTH · PURCHASE(지난 구매, BE #1299) */
 export type SizeReasonDto = {
   type: string
   /** 화면에 그대로 보여 주는 문구 */
