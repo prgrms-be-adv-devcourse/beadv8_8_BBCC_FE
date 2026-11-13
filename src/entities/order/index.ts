@@ -93,3 +93,14 @@ export { OrderStatusBadge } from './ui/OrderStatusBadge'
 export { OrderStatusBanner } from './ui/OrderStatusBanner'
 export { OrderStatusTag } from './ui/OrderStatusTag'
 export { OrderTimeline } from './ui/OrderTimeline'
+export type { DeliveryTracking, DeliveryTrackingEvent } from './model/delivery-tracking'
+export { toDeliveryTracking } from './model/delivery-tracking.mapper'
+export {
+  canTrackDelivery,
+  childNameOf,
+  TRACKING_UNAVAILABLE_MESSAGE,
+  trackingErrorOf,
+  trackingStatusLabel,
+} from './model/delivery-tracking.rules'
+export { useDeliveryTrackingQuery } from './model/queries'
+export { DeliveryTrackingTimeline } from './ui/DeliveryTrackingTimeline'

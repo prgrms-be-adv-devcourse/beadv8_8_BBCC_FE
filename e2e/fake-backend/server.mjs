@@ -2691,6 +2691,50 @@ http
         ? send(res, 200, orderTimelineOf(o))
         : problem(res, 404, '주문을 찾을 수 없습니다', '주문을 찾을 수 없습니다.', req.url)
     }
+    // BE #1320 GET /orders/{orderId}/deliveries/{sellerOrderId}/tracking: 구매자만(아니면 404).
+    // 운송장 없음 · 조회 못 하는 택배사(DUMMY)는 200 + 빈 이력. 택배 조회 결과(최신이 먼저, 한국 시각 · 오프셋 없음)는
+    // 발송 · 배송 완료 시각으로 만든다. 운송장이 「0000」으로 시작하면 택배 조회 불가 503
+    if ((x = r('GET', /^\/orders\/(\d+)\/deliveries\/(\d+)\/tracking$/))) {
+      const o = orders.find((each) => each.orderId === +x[1] && each.memberId === me)
+      const d = o?.deliveries.find((each) => String(each.sellerOrderId) === x[2])
+      if (!d)
+        return problem(
+          res,
+          404,
+          '배송을 찾을 수 없습니다',
+          '내 주문의 배송이 아니거나 없는 배송입니다.',
+          req.url,
+        )
+      if (!d.trackingNumber || d.carrier === 'DUMMY')
+        return send(res, 200, {
+          carrier: d.carrier ?? null,
+          trackingNumber: d.trackingNumber ?? null,
+          events: [],
+        })
+      if (String(d.trackingNumber).startsWith('0000'))
+        return problem(
+          res,
+          503,
+          '택배 조회를 할 수 없습니다',
+          '지금 택배 조회를 할 수 없어요. 잠시 후 다시 시도해 주세요',
+          req.url,
+        )
+      const events = [{ time: d.shippedAt, location: '판매자 출고지', status: 'AT_PICKUP' }]
+      events.unshift({ time: d.shippedAt, location: '대전 HUB', status: 'IN_TRANSIT' })
+      if (d.deliveredAt) {
+        events.unshift({
+          time: d.deliveredAt,
+          location: '받는 분 동네 대리점',
+          status: 'OUT_FOR_DELIVERY',
+        })
+        events.unshift({
+          time: d.deliveredAt,
+          location: '받는 분 동네 대리점',
+          status: 'DELIVERED',
+        })
+      }
+      return send(res, 200, { carrier: d.carrier, trackingNumber: d.trackingNumber, events })
+    }
     // BE OrderService.cancelByBuyer (#354): 결제대기, 또는 모든 배송이 발송 전인 결제완료 주문만. 이미 취소면 그대로 200.
     // 결제완료면 남은 주문상품 금액을 돌려주고(REFUND) 재고를 되돌린다
     if ((x = r('POST', /^\/orders\/(\d+)\/cancel$/))) {

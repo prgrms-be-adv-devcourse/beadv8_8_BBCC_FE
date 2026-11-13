@@ -485,6 +485,37 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await switchRole(page, '보호자')
     await page.goto(orderUrl)
     await expect(page.locator('[aria-current="step"]')).toHaveText('4')
+    // 배송 조회 (BE #1320): 처음 한 번은 택배 조회 불가(503) → 다시 시도하면 이력(최신이 위)
+    let isTrackingDown = true
+    await page.route('**/api/v1/orders/*/deliveries/*/tracking', (route) => {
+      if (!isTrackingDown) return route.fallback()
+      isTrackingDown = false
+      return route.fulfill({
+        status: 503,
+        contentType: 'application/problem+json',
+        json: {
+          type: 'about:blank',
+          title: '택배 조회 불가',
+          status: 503,
+          detail: null,
+          instance: '/',
+        },
+      })
+    })
+    await page.getByRole('button', { name: '배송 조회', exact: true }).click()
+    const trackingPanel = page.getByRole('region', { name: '배송 조회' })
+    await expect(trackingPanel.getByRole('alert')).toHaveText(
+      /지금 택배 조회를 할 수 없어요\. 잠시 후 다시 시도해 주세요/,
+    )
+    await trackingPanel.getByRole('button', { name: '다시 시도' }).click()
+    await expect(trackingPanel.getByText(/CJ대한통운/)).toBeVisible()
+    const trackingEvents = trackingPanel
+      .getByRole('list', { name: '배송 이력' })
+      .getByRole('listitem')
+    await expect(trackingEvents.first()).toContainText('배송 완료')
+    await expect(trackingEvents.last()).toContainText('집화')
+    await page.getByRole('button', { name: '배송 조회 닫기' }).click()
+    await expect(trackingPanel).toHaveCount(0)
     await page.getByRole('button', { name: '구매확정' }).click()
     await expect(page.locator('[aria-current="step"]')).toHaveText('5')
     // 처리 과정 (BE #352 GET /orders/{id}/timeline): 단계별 완료 · 직접 확정 표시

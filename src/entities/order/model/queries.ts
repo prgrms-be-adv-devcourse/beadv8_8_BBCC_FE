@@ -1,5 +1,7 @@
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
+import { deliveryTrackingApi } from '../api/delivery-tracking-api'
 import { orderApi } from '../api/order-api'
+import { toDeliveryTracking } from './delivery-tracking.mapper'
 import { toAdminOrder, toOrder, toOrderSummary } from './order.mapper'
 import { toChildPurchase } from './child-purchase'
 import { toOrderHistory } from './order-history'
@@ -28,6 +30,8 @@ export const orderKeys = {
     ['orders', 'timeline', orderId, revision] as const,
   childPurchases: (page: number) => ['orders', 'child-purchases', page] as const,
   adminHistory: (orderId: string) => ['orders', 'admin-history', orderId] as const,
+  tracking: (orderId: string, deliveryId: string) =>
+    ['orders', 'tracking', orderId, deliveryId] as const,
 }
 
 /** 내 주문 한 페이지 (page는 0부터). status를 주면 서버가 그 상태만 준다 (BE #1280) */
@@ -153,5 +157,24 @@ export function useAdminOrderHistoryQuery(orderId: string) {
     queryKey: orderKeys.adminHistory(orderId),
     queryFn: () => orderApi.adminHistory(orderId),
     select: (rows) => rows.map(toOrderHistory),
+  })
+}
+
+/**
+ * 배송 하나의 택배 진행 이력 (BE #1320). 「배송 조회」를 눌렀을 때만 부른다.
+ * 실패는 자동으로 다시 부르지 않는다 (503은 화면의 다시 시도 버튼, 외부 호출 한도를 아낀다)
+ */
+export function useDeliveryTrackingQuery(
+  orderId: string,
+  deliveryId: string,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: orderKeys.tracking(orderId, deliveryId),
+    queryFn: () => deliveryTrackingApi.get(orderId, deliveryId),
+    select: toDeliveryTracking,
+    enabled: options.enabled ?? true,
+    retry: false,
+    staleTime: 60_000,
   })
 }

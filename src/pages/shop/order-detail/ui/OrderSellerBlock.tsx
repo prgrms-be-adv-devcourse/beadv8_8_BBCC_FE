@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import {
+  canTrackDelivery,
   cancelledRefundOf,
+  childNameOf,
   ITEM_STATUS_LABEL,
   sellerGroupCancelled,
   unavailableLabel,
@@ -10,9 +12,13 @@ import {
 import { ProductImage, useProductImageUrls } from '@/entities/product'
 import { carrierName, DELIVERY_STATUS_LABEL } from '@/shared/config'
 import { cn, formatWon, labelOf, optionLabel } from '@/shared/lib'
+import { DeliveryTrackingPanel } from './DeliveryTrackingPanel'
 
 type OrderSellerBlockProps = {
+  orderId: string
   group: OrderSellerGroup
+  /** 주문에 자녀 이름이 비어 있을 때 쓸 내 자녀 이름 (자녀 ID → 이름) */
+  childNames: Readonly<Record<string, string>>
   /** 취소된 주문이면 주문상품 상태(주문됨)는 감춘다 */
   isCancelled: boolean
   /** 줄마다 오른쪽 동작 (예: 구매확정) */
@@ -20,7 +26,13 @@ type OrderSellerBlockProps = {
 }
 
 /** 판매자 한 곳의 주문 상품: 머리에 상호 · 배송 상태 · 송장, 아래에 상품 줄 */
-export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBlockProps) {
+export function OrderSellerBlock({
+  orderId,
+  group,
+  childNames,
+  isCancelled,
+  action,
+}: OrderSellerBlockProps) {
   // 주문 응답에 사진이 없어 상품 상세의 대표 사진을 읽는다 (판매가 끝나 상세가 없으면 기본 이미지)
   const images = useProductImageUrls(group.items.map((item) => item.productId))
   const { delivery } = group
@@ -56,6 +68,9 @@ export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBloc
           </p>
         )}
       </div>
+      {delivery && canTrackDelivery(delivery) && (
+        <DeliveryTrackingPanel orderId={orderId} deliveryId={delivery.id} />
+      )}
       <ul className="divide-rule divide-y px-4">
         {group.items.map((item) => {
           const unavailable = unavailableLabel(item)
@@ -72,7 +87,7 @@ export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBloc
                 {option && <p className="text-ink-3 text-[13px]">{option}</p>}
                 {item.child && (
                   <p className="text-ink-3 text-[13px]">
-                    입을 아이 {item.child.name ?? `#${item.child.id}`}, 주문 당시{' '}
+                    입을 아이 {childNameOf(item.child, childNames)}, 주문 당시{' '}
                     <span className="figure">{item.child.heightCm}cm</span>
                   </p>
                 )}
