@@ -7,7 +7,7 @@ import {
 } from '@/entities/product'
 import { useSettlementTargetSummaryQuery } from '@/entities/settlement'
 import { SELLER_STATUS_LABEL, useMySellerQuery } from '@/entities/seller'
-import { summarizeSellerOrders, useSellerOrdersQuery } from '@/entities/seller-order'
+import { useSellerOrderTabCountsQuery } from '@/entities/seller-order'
 import { getErrorMessage } from '@/shared/api'
 import { paths, sellerPathsOf } from '@/shared/config'
 import { cn, formatWon, useArea } from '@/shared/lib'
@@ -21,14 +21,14 @@ import { StateMessage } from '@/shared/ui/StateMessage'
  */
 export function CenterHomePage() {
   const sellerPaths = sellerPathsOf(useArea())
-  const orders = useSellerOrdersQuery()
+  // 주문 수치는 배송 상태별 전체 건수 (BE #1280, size 1 요청의 totalElements)
+  const orderCounts = useSellerOrderTabCountsQuery()
   const onSaleCount = useSellerProductCountQuery('ON_SALE').data
   const stoppedCount = useSellerProductCountQuery('STOPPED').data
   const lowStockCount = useSellerProductCountQuery('LOW_STOCK').data
   const productsHref = (tab: SellerProductTab) =>
     `${sellerPaths.products}?${new URLSearchParams(toSellerProductTabSearch(tab))}`
   const seller = useMySellerQuery()
-  const summary = orders.data ? summarizeSellerOrders(orders.data.content) : null
   const pendingSettlement = useSettlementTargetSummaryQuery().data
 
   return (
@@ -75,7 +75,7 @@ export function CenterHomePage() {
         >
           <span className="text-ink text-[15px] font-bold">발송할 주문</span>
           <span className="figure text-signal text-5xl leading-none font-bold tracking-tight">
-            {summary?.toShip ?? '…'}
+            {orderCounts.READY ?? '…'}
           </span>
         </Link>
 
@@ -84,12 +84,12 @@ export function CenterHomePage() {
             <Metric
               to={`${sellerPaths.orders}?tab=SHIPPING`}
               label="배송 중"
-              value={summary?.shipping}
+              value={orderCounts.SHIPPING}
             />
             <Metric
               to={`${sellerPaths.orders}?tab=DELIVERED`}
               label="배송 완료"
-              value={summary?.delivered}
+              value={orderCounts.DELIVERED}
             />
           </MetricGroup>
           <MetricGroup title="상품">

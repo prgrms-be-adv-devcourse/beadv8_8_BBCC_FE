@@ -259,26 +259,9 @@ export const ORDER_TABS: { value: OrderTab; label: string }[] = [
   { value: 'CANCELLED', label: '취소' },
 ]
 
-export function filterOrdersByTab<T extends { status: OrderStatus }>(
-  orders: T[],
-  tab: OrderTab,
-): T[] {
-  return tab === 'ALL' ? orders : orders.filter((order) => order.status === tab)
-}
-
-// 전체는 서버 건수를 쓰고, 상태별 건수는 별도 집계가 생기기 전까지 받은 목록 범위다.
-export function countOrdersByTab(
-  orders: { status: OrderStatus }[],
-  totalElements = orders.length,
-): Record<OrderTab, number> {
-  const counts: Record<OrderTab, number> = {
-    ALL: totalElements,
-    PENDING_PAYMENT: 0,
-    PAID: 0,
-    CANCELLED: 0,
-  }
-  for (const order of orders) counts[order.status] += 1
-  return counts
+/** 탭 → 목록 API status (BE #1280: 응답 status와 같은 값 하나). 전체는 null = status를 보내지 않는다 */
+export function orderStatusOfTab(tab: OrderTab): OrderStatus | null {
+  return tab === 'ALL' ? null : tab
 }
 
 export type ProcessStepState = 'done' | 'active' | 'waiting' | 'failed' | 'skipped'
