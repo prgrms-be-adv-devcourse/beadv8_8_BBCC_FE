@@ -130,6 +130,7 @@ import { favoriteListShape, favoriteSummaryShape } from '@/entities/favorite/api
 import { adminReviewListShape } from '@/entities/review/api/admin-review.shape'
 import { deliveryTrackingShape } from '@/entities/order/api/delivery-tracking.shape'
 import { reviewVisibilityShape } from '@/features/moderate-review'
+import { retryExhaustedShape } from '@/features/retry-review-moderation'
 import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
 import { toWriteReviewRequest } from '@/features/write-review'
@@ -763,6 +764,20 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       mineAfter.data.items.find((item: { reviewId: string }) => item.reviewId === review.id)
         ?.visibility,
     ).toBe('UNDER_REVIEW')
+    // 다시 검사 (BE #1310): 상한에 닿은 리뷰를 검사 대기로 돌리고, 다시 부르면 0
+    const retryPath = '/admin/community/reviews/moderation/retry-exhausted'
+    const restoredAgain = await call('PATCH', visibilityPath, 3, { visibility: 'VISIBLE' })
+    expect(restoredAgain.data.status).toBe('RESTORED')
+    await call('PATCH', `/reviews/${review.id}`, 1, { content: '검사불가 리뷰' })
+    const exhausted = await call('GET', '/admin/community/reviews?status=PENDING', 3)
+    expect(
+      exhausted.data.items.find((item: { reviewId: string }) => item.reviewId === review.id),
+    ).toMatchObject({ attempts: 10, attemptsExhausted: true })
+    expect((await call('POST', retryPath, 1)).status).toBe(403)
+    const retried = await call('POST', retryPath, 3)
+    expectContract(retried.data, retryExhaustedShape)
+    expect(retried.data.resetCount).toBeGreaterThanOrEqual(1)
+    expect((await call('POST', retryPath, 3)).data).toEqual({ resetCount: 0 })
     const unknown = '/admin/community/reviews/99999/visibility'
     expect((await call('PATCH', unknown, 3, { visibility: 'VISIBLE' })).status).toBe(404)
     expect((await call('DELETE', `/reviews/${review.id}`, 2)).status).toBe(403)
