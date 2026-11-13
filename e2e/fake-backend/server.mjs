@@ -717,6 +717,33 @@ function sizeRecommendationOf(detail, c) {
     candidateSizes: candidates.map((s) => s.size),
   }
 }
+/**
+ * 성장 속도 · 입을 수 있는 기간 (BE #1266) 흉내. 키 기록이 둘 이상이면 아이 기록을 40% 섞은 것으로,
+ * 아니면 평균 표 값(한 달 0.55cm)만 쓴 것으로 본다. 기간은 키 기준만: (권장 키 상한 − 키) ÷ 속도, 0 ~ 24개월
+ */
+function growthOf(c, detail) {
+  const records = c.growth ?? []
+  const isBlended = records.length >= 2
+  const cmPerMonth = isBlended ? 0.62 : 0.55
+  const growthSpeed = {
+    cmPerMonth,
+    recentCmPerMonth: null,
+    recordCount: records.length,
+    recordMonths: isBlended ? 3.5 : 0,
+    childSharePercent: isBlended ? 40 : 0,
+    tableCmPerMonth: 0.55,
+    tableSource: '한국아동패널',
+  }
+  if (detail.sizeFree) return { growthSpeed, wearablePeriods: [] }
+  const wearablePeriods = detail.sizeSpecs.map((spec) => {
+    const lengthMonths =
+      spec.maxHeightCm == null
+        ? null
+        : Math.min(24, Math.max(0, Math.floor((spec.maxHeightCm - c.heightCm) / cmPerMonth)))
+    return { size: spec.size, lengthMonths, widthMonths: null, months: lengthMonths }
+  })
+  return { growthSpeed, wearablePeriods }
+}
 /** 자녀에게 맞는 사이즈가 있거나 사이즈 무관인 상품만 맞춤 카드로 (BE RecommendedProductResponse) */
 function fitCardsOf(items, c) {
   return items.flatMap((item) => {
@@ -2113,6 +2140,7 @@ http
         referenceFit,
         itemJudgements: isAi ? itemJudgementsOf(referenceFit, rec.recommendedSize) : [],
         wearPreview: wearPreviewOf(detail, c.heightCm),
+        ...growthOf(c, detail),
         source: isAi ? 'AI' : 'RULE',
         reasons: isAi
           ? [

@@ -32,6 +32,8 @@ export function toSizeRecommendation(dto: SizeRecommendationDto): SizeRecommenda
     referenceFit: toReferenceFit(dto.referenceFit),
     itemJudgements: dto.itemJudgements.map(toItemJudgement),
     wearPreview: toWearPreview(dto.wearPreview),
+    growthSpeed: dto.growthSpeed,
+    wearablePeriods: dto.wearablePeriods,
   }
 }
 

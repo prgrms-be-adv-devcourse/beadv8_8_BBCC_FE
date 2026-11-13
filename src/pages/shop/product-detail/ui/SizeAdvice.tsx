@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import {
   AiSentenceNotice,
   FIT_LABEL,
+  GrowthOutlook,
   referenceFitSummaryOf,
   showsAiSizeNotice,
   SizeReasonList,
@@ -28,7 +29,7 @@ type SizeAdviceProps = {
 /**
  * 사이즈 칩 바로 위 추천 한 줄: 「추천 사이즈 120 · 여유 있음 · 김들희 115cm 기준」 + 「사이즈 자세히」.
  * 그 아래 AI 근거(있으면) · AI 안내 · 기준 옷 등록 안내. 펼치면 백엔드 안내 · 이 상품 사이즈 눈금 · 착용 미리보기.
- * 추천 한 줄 바로 아래(근거 위)에 기준 핏(기준 옷과의 cm 차이)을 둔다. 입을 수 있는 기간도 이 자리에 온다
+ * 추천 한 줄 바로 아래(근거 위)에 입을 수 있는 기간 · 성장 속도(예상치), 그 아래 기준 핏(기준 옷과의 cm 차이)을 둔다
  */
 export function SizeAdvice({
   child,
@@ -89,6 +90,12 @@ export function SizeAdvice({
           </svg>
         </button>
       </div>
+      {/* 사이즈 무관 · 맞는 사이즈 없음이면 예상치를 보이지 않는다 */}
+      {recommendedSize && (
+        <div className="px-3.5 pb-2.5">
+          <GrowthOutlook recommendation={recommendation} />
+        </div>
+      )}
       {fitSummary && recommendedSize && (
         <div className="px-3.5 pb-2.5">
           <ReferenceFitLine summary={fitSummary} size={recommendedSize} />

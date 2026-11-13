@@ -12,6 +12,16 @@ const base = {
   referenceFit: null,
   itemJudgements: [],
   wearPreview: null,
+  growthSpeed: {
+    cmPerMonth: 0.55,
+    recentCmPerMonth: null,
+    recordCount: 0,
+    recordMonths: 0,
+    childSharePercent: 0,
+    tableCmPerMonth: 0.55,
+    tableSource: '한국아동패널',
+  },
+  wearablePeriods: [],
 }
 
 describe('toSizeRecommendation: 사이즈 추천 출처 · 근거 (BE #1162)', () => {
