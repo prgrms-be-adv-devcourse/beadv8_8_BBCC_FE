@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { summarizeOrdersOn } from '@/entities/order'
+import { cancelledFromOf, summarizeOrdersOn } from '@/entities/order'
 import { compareValues, kstDateString, toCsv } from '@/shared/lib'
 
 describe('toCsv', () => {
@@ -35,7 +35,8 @@ describe('kstDateString: 한국 날짜 (UTC 15시 = 다음 날 0시)', () => {
 })
 
 describe('summarizeOrdersOn: 관리자 대시보드 오늘 주문', () => {
-  it('그날 주문 수 · 결제된 금액 · 취소', () => {
+  // 오늘 취소는 취소일 기준이라 주문 목록에서 세지 않는다 (BE #1325 cancelledFrom, #407)
+  it('그날 주문 수 · 결제된 금액', () => {
     const orders = [
       { status: 'PAID' as const, orderedAt: '2026-10-16T09:00:00', totalAmount: 25000 },
       { status: 'CANCELLED' as const, orderedAt: '2026-10-16T10:00:00', totalAmount: 30000 },
@@ -45,7 +46,12 @@ describe('summarizeOrdersOn: 관리자 대시보드 오늘 주문', () => {
     expect(summarizeOrdersOn(orders, '2026-10-16')).toEqual({
       count: 3,
       paidAmount: 25000,
-      cancelled: 1,
     })
+  })
+})
+
+describe('cancelledFromOf: 오늘 취소의 시작 시각 (BE #1325)', () => {
+  it('한국 날짜의 0시, yyyy-MM-ddTHH:mm:ss (오프셋 · 밀리초 없이)', () => {
+    expect(cancelledFromOf('2026-11-13')).toBe('2026-11-13T00:00:00')
   })
 })

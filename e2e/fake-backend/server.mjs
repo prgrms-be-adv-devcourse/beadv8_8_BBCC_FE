@@ -2077,13 +2077,28 @@ http
         return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
       const filter = statusFilterOf(url.searchParams, ORDER_STATUSES)
       if (!filter.ok) return badOrderStatus(res, req.url)
+      // BE #1325: 줄마다 cancelledAt(취소 주문만). cancelledFrom(한국 시간 yyyy-MM-ddTHH:mm:ss, 포함)이면
+      // 그 시각 이후 취소된 주문만(status와 AND), 형식이 틀리면 400
+      const cancelledAtOf = (o) =>
+        o.status === 'CANCELLED' ? (cancelledAt.get(o) ?? o.orderedAt) : null
+      const from = url.searchParams.get('cancelledFrom')
+      if (from !== null && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(from))
+        return problem(
+          res,
+          400,
+          '취소 시각 형식이 맞지 않습니다',
+          'cancelledFrom은 한국 시간 yyyy-MM-ddTHH:mm:ss 형식으로 보내 주세요(예: 2026-11-12T00:00:00).',
+          req.url,
+          'INVALID_CANCELLED_FROM',
+        )
+      const since = (o) => from === null || (cancelledAtOf(o) !== null && cancelledAtOf(o) >= from)
       return send(
         res,
         200,
-        // BE: 최근 주문부터 page · size로 자른다, status(#1280)로 거른다
+        // BE: 최근 주문부터 page · size로 자른다, status(#1280) · cancelledFrom(#1325)으로 거른다
         pageFrom(
           orders
-            .filter(filter.keep)
+            .filter((o) => filter.keep(o) && since(o))
             .slice()
             .reverse()
             .map((o) => ({
@@ -2094,6 +2109,7 @@ http
               totalAmount: o.totalAmount,
               orderedAt: o.orderedAt,
               itemCount: o.items.length,
+              cancelledAt: cancelledAtOf(o),
             })),
           url.searchParams,
         ),

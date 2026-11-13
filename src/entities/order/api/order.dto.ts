@@ -91,6 +91,8 @@ export type AdminOrderDto = {
   totalAmount: number
   orderedAt: string
   itemCount: number
+  /** 취소 시각 (BE #1325, 한국 시각). 취소 주문이 아니면 null */
+  cancelledAt: string | null
 }
 
 /** GET /orders/{orderId}/timeline 단계 안의 한 건 (BE #352). 발송 · 배송 완료는 판매자별, 구매확정은 주문상품별 */

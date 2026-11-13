@@ -105,5 +105,6 @@ export function toAdminOrder(dto: AdminOrderDto): AdminOrder {
     totalAmount: dto.totalAmount,
     orderedAt: dto.orderedAt,
     itemCount: dto.itemCount,
+    cancelledAt: dto.cancelledAt,
   }
 }
