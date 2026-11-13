@@ -306,7 +306,12 @@ export function orderTabOf(value: string | null): OrderTab {
   return ORDER_TABS.some((tab) => tab.value === value) ? (value as OrderTab) : 'ALL'
 }
 
-/** 관리자 대시보드: 그날(KST 날짜 글자) 주문 · 결제된 주문 금액 · 취소 */
+/** 관리자 대시보드 오늘 취소의 시작 시각: 한국 날짜(yyyy-MM-dd)의 0시 (BE #1325 cancelledFrom, 그 시각 포함) */
+export function cancelledFromOf(day: string): string {
+  return `${day}T00:00:00`
+}
+
+/** 관리자 대시보드: 그날(KST 날짜 글자) 주문 · 결제된 주문 금액 (취소는 취소일 기준이라 cancelledFromOf로 따로 센다) */
 export function summarizeOrdersOn(
   orders: { status: OrderStatus; orderedAt: string; totalAmount: number }[],
   day: string,
@@ -317,6 +322,5 @@ export function summarizeOrdersOn(
     paidAmount: today
       .filter((order) => order.status === 'PAID')
       .reduce((sum, order) => sum + order.totalAmount, 0),
-    cancelled: today.filter((order) => order.status === 'CANCELLED').length,
   }
 }

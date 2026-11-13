@@ -21,6 +21,8 @@ export const orderKeys = {
   admin: ['orders', 'admin'] as const,
   adminPage: (status: OrderStatus | null, page: number, size: number) =>
     ['orders', 'admin', status ?? 'ALL', page, size] as const,
+  adminCancelledSince: (cancelledFrom: string) =>
+    ['orders', 'admin', 'cancelled-since', cancelledFrom] as const,
   detail: (orderId: string) => ['orders', 'detail', orderId] as const,
   timeline: (orderId: string, revision: string) =>
     ['orders', 'timeline', orderId, revision] as const,
@@ -93,6 +95,15 @@ export function useAdminOrdersQuery(status: OrderStatus | null, page = 0, size =
     queryFn: () => orderApi.adminList(page, status, size),
     placeholderData: keepPreviousData,
     select: (page) => ({ ...page, content: page.content.map(toAdminOrder) }),
+  })
+}
+
+/** 그 시각(포함) 이후 취소된 주문 수 (BE #1325, size 1 요청의 totalElements). 관리자 대시보드 오늘 취소 */
+export function useAdminCancelledSinceCountQuery(cancelledFrom: string) {
+  return useQuery({
+    queryKey: orderKeys.adminCancelledSince(cancelledFrom),
+    queryFn: () => orderApi.adminList(0, null, 1, cancelledFrom),
+    select: (page) => page.totalElements,
   })
 }
 

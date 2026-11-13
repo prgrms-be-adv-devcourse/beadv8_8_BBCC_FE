@@ -1115,6 +1115,30 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       expect((await call('GET', `/seller/orders?status=${bad}`, 2)).status).toBe(400)
   })
 
+  it('관리자 주문 취소 시각 · 취소일 기준 조회 (BE #1325)', async () => {
+    const all = (await call('GET', '/admin/orders?size=100', 3)).data
+    expectContract(all, adminOrderPageShape)
+    for (const o of all.content as { status: string; cancelledAt: string | null }[])
+      expect(o.cancelledAt === null).toBe(o.status !== 'CANCELLED')
+    const since = (await call('GET', '/admin/orders?cancelledFrom=2000-01-01T00:00:00&size=100', 3))
+      .data
+    expect(since.content.every((o: { status: string }) => o.status === 'CANCELLED')).toBe(true)
+    expect(since.totalElements).toBe(
+      all.content.filter((o: { status: string }) => o.status === 'CANCELLED').length,
+    )
+    expect(
+      (await call('GET', '/admin/orders?status=PAID&cancelledFrom=2000-01-01T00:00:00', 3)).data
+        .totalElements,
+    ).toBe(0)
+    expect(
+      (await call('GET', '/admin/orders?cancelledFrom=2999-01-01T00:00:00', 3)).data.totalElements,
+    ).toBe(0)
+    for (const bad of ['2026-11-13', '', '2026-11-13T00:00:00.000', '2026-11-13T00:00:00+09:00'])
+      expect(
+        (await call('GET', `/admin/orders?cancelledFrom=${encodeURIComponent(bad)}`, 3)).status,
+      ).toBe(400)
+  })
+
   it('결제 · 예치금 목록은 요청한 page · size로 나눈다 (BE PageResponse)', async () => {
     for (const [path, as] of [
       ['/payments', 1],

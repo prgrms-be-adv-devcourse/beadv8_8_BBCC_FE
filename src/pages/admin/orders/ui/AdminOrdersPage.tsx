@@ -42,6 +42,7 @@ const CSV_COLUMNS: CsvColumn<AdminOrder>[] = [
     header: '취소 사유',
     value: (o) => labelOf(CANCEL_REASON_LABEL, o.cancelReason),
   },
+  { header: '취소 시각', value: (o) => (o.cancelledAt ? formatDateTime(o.cancelledAt) : '') },
 ]
 
 /** 관리자 전체 주문 (기획서 8장 보완): 상태 탭(주소 ?status=) · 페이지(?page=) → 주문 표 → 주문을 누르면 주문 상세 */

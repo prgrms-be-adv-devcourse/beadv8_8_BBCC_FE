@@ -44,6 +44,7 @@ export {
   unavailableLabel,
   needsCharge,
   ORDER_TABS,
+  cancelledFromOf,
   orderStatusOfTab,
   orderTabOf,
   summarizeOrdersOn,
@@ -53,6 +54,7 @@ export {
   type OrderTab,
 } from './model/order.rules'
 export {
+  currentCancelledAtOf,
   currentCancelReasonOf,
   currentOrderStatusOf,
   toOrderHistory,
@@ -72,6 +74,7 @@ export {
 export {
   orderKeys,
   paymentPendingMs,
+  useAdminCancelledSinceCountQuery,
   useAdminOrderHistoryQuery,
   useAdminOrdersQuery,
   useAdminOrderTabCountsQuery,

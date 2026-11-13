@@ -144,4 +144,6 @@ export type AdminOrder = {
   totalAmount: number
   orderedAt: string
   itemCount: number
+  /** 취소 시각 (취소 주문만, 아니면 null) */
+  cancelledAt: string | null
 }

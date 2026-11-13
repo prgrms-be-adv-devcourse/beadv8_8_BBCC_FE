@@ -62,6 +62,7 @@ describe('관리자 전체 주문 · 결제 · 정산', () => {
         totalAmount: 25000,
         orderedAt: '2026-10-15T10:00:00',
         itemCount: 1,
+        cancelledAt: null,
       }),
     ).toEqual({
       id: '6',
@@ -71,7 +72,22 @@ describe('관리자 전체 주문 · 결제 · 정산', () => {
       totalAmount: 25000,
       orderedAt: '2026-10-15T10:00:00',
       itemCount: 1,
+      cancelledAt: null,
     })
+  })
+  it('toAdminOrder: 취소 주문은 취소 시각을 함께 (BE #1325)', () => {
+    expect(
+      toAdminOrder({
+        orderId: '7',
+        memberId: '1',
+        status: 'CANCELLED',
+        cancelReason: 'PAYMENT_FAILED',
+        totalAmount: 25000,
+        orderedAt: '2026-11-12T23:50:00',
+        itemCount: 1,
+        cancelledAt: '2026-11-13T00:05:00',
+      }).cancelledAt,
+    ).toBe('2026-11-13T00:05:00')
   })
   it('toAdminPayment: 회원 번호를 함께', () => {
     expect(

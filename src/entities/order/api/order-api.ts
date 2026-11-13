@@ -58,10 +58,16 @@ export const orderApi = {
   confirmItem: (orderId: string, orderItemId: string) =>
     apiClient.post(`/orders/${orderId}/items/${orderItemId}/confirm`),
   /** 모든 회원의 주문을 최근 주문부터 (size 1~100). status(BE #1280)는 내 주문과 같다 */
-  adminList: (page = 0, status: OrderStatus | null = null, size = 100) =>
+  /** cancelledFrom(BE #1325, 한국 시간 yyyy-MM-ddTHH:mm:ss, 포함)을 주면 그 시각 이후 취소된 주문만 */
+  adminList: (
+    page = 0,
+    status: OrderStatus | null = null,
+    size = 100,
+    cancelledFrom: string | null = null,
+  ) =>
     apiClient
       .get<Page<AdminOrderDto>>('/admin/orders', {
-        params: { page, size, ...(status && { status }) },
+        params: { page, size, ...(status && { status }), ...(cancelledFrom && { cancelledFrom }) },
       })
       .then(expectShape(adminOrderPageShape)),
   /** 관리자 주문 상태 이력 (BE #442). 오래된 것부터, 주문이 없으면 404 */
