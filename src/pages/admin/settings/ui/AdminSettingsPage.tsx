@@ -17,7 +17,7 @@ const SETTINGS: {
     title: '시연 데이터',
     object: '시연 데이터를',
     description:
-      '백엔드에 아직 없는 API를 시연용 응답으로 대신해요. 끄면 모든 화면이 실제 서버만 불러요.',
+      '쇼핑 목록에서 사진이 없는 상품에 예시 사진을 보여 줘요. 끄면 기본 이미지를 보여 줘요.',
   },
   {
     key: 'isDemoRoleSwitchEnabled',
@@ -72,7 +72,7 @@ function SettingSwitch({ setting }: { setting: (typeof SETTINGS)[number] }) {
 }
 
 /**
- * 관리자 설정: 시연 데이터(목 응답) · 시연 기능을 켜고 끈다.
+ * 관리자 설정: 시연 데이터(쇼핑 목록의 예시 사진) · 시연 기능을 켜고 끈다.
  * 저장할 백엔드 API가 없어 이 브라우저에만 기억한다 (다른 방문자에게는 적용되지 않는다)
  */
 export function AdminSettingsPage() {

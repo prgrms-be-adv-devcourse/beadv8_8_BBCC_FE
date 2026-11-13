@@ -30,12 +30,10 @@ export {
   cancelledRefundOf,
   canConfirmItem,
   canUseAsReferenceGarment,
-  countOrdersByTab,
   deliveryOf,
   orderSellerGroups,
   sellerGroupCancelled,
   type OrderSellerGroup,
-  filterOrdersByTab,
   isPaymentDelayed,
   needsCartReview,
   orderProcess,
@@ -46,6 +44,8 @@ export {
   unavailableLabel,
   needsCharge,
   ORDER_TABS,
+  cancelledFromOf,
+  orderStatusOfTab,
   orderTabOf,
   summarizeOrdersOn,
   orderProgress,
@@ -54,6 +54,7 @@ export {
   type OrderTab,
 } from './model/order.rules'
 export {
+  currentCancelledAtOf,
   currentCancelReasonOf,
   currentOrderStatusOf,
   toOrderHistory,
@@ -73,12 +74,15 @@ export {
 export {
   orderKeys,
   paymentPendingMs,
+  useAdminCancelledSinceCountQuery,
   useAdminOrderHistoryQuery,
   useAdminOrdersQuery,
+  useAdminOrderTabCountsQuery,
   useChildPurchasesQuery,
   useOrderQuery,
   useOrderTimelineQuery,
   useOrdersQuery,
+  useOrderTabCountsQuery,
 } from './model/queries'
 export { OrderDeliveryList } from './ui/OrderDeliveryList'
 export { OrderHistoryList } from './ui/OrderHistoryList'

@@ -28,6 +28,33 @@ export type SizeRecommendationDto = {
   itemJudgements: ItemJudgementDto[]
   /** 착용 미리보기 (BE #1265). 사이즈 무관 상품 · 모자 · 양말이면 null */
   wearPreview: WearPreviewDto | null
+  // 성장 속도 · 입을 수 있는 기간 (BE #1266)
+  /** 자녀의 키 성장 속도. 늘 오고, 기록이 없으면 평균 표 값을 쓴다 */
+  growthSpeed: GrowthSpeedDto
+  /** 사이즈별로 앞으로 입을 수 있는 개월 수(24 상한). 사이즈 무관 · 모자 · 양말이면 [] */
+  wearablePeriods: WearablePeriodDto[]
+}
+
+/**
+ * 성장 속도. 숫자는 소수 둘째 자리까지 온다. recentCmPerMonth는 최근 3개월 속도이고 기록이 부족하면 null.
+ * childSharePercent는 아이 기록 비중(%, 표 값만 썼으면 0), tableSource는 평균 표 출처(예: 한국아동패널)
+ */
+export type GrowthSpeedDto = {
+  cmPerMonth: number
+  recentCmPerMonth: number | null
+  recordCount: number
+  recordMonths: number
+  childSharePercent: number
+  tableCmPerMonth: number
+  tableSource: string
+}
+
+/** 사이즈 하나의 입을 수 있는 기간. 키 기준 · 너비 기준(기준 옷이 없으면 null) · 둘 중 짧은 값 */
+export type WearablePeriodDto = {
+  size: string
+  lengthMonths: number | null
+  widthMonths: number | null
+  months: number | null
 }
 
 /**
@@ -54,7 +81,7 @@ export type ItemJudgementDto = {
   allowanceMaxCm: number
 }
 
-/** 사이즈 추천 근거. type은 HEIGHT · BODY_TYPE · PREFERRED_FIT · MEASUREMENT · RULE_RESULT · GROWTH */
+/** 사이즈 추천 근거. type은 HEIGHT · BODY_TYPE · PREFERRED_FIT · MEASUREMENT · RULE_RESULT · GROWTH · PURCHASE(지난 구매, BE #1299) */
 export type SizeReasonDto = {
   type: string
   /** 화면에 그대로 보여 주는 문구 */

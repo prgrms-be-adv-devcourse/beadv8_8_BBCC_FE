@@ -17,8 +17,13 @@ import type {
   SizeRecommendation,
 } from './recommendation'
 import type { RecommendedProductsParamsDto } from '../api/recommendation.dto'
+import { SIZE_REASON_LABEL } from './recommendation'
 import { toItemJudgement, toReferenceFit } from './reference-fit.mapper'
 import { toWearPreview } from './wear-preview.mapper'
+
+/** 근거 종류: 아는 종류만 그대로, 모르는 종류는 null (화면에 영어 코드를 보이지 않게) */
+const sizeReasonTypeOf = (type: string): SizeReasonType | null =>
+  Object.hasOwn(SIZE_REASON_LABEL, type) ? (type as SizeReasonType) : null
 
 export function toSizeRecommendation(dto: SizeRecommendationDto): SizeRecommendation {
   return {
@@ -28,10 +33,12 @@ export function toSizeRecommendation(dto: SizeRecommendationDto): SizeRecommenda
     candidateSizes: dto.candidateSizes,
     lastPurchasedSize: dto.lastPurchasedSize,
     source: dto.source,
-    reasons: dto.reasons.map(({ type, detail }) => ({ type: type as SizeReasonType, detail })),
+    reasons: dto.reasons.map(({ type, detail }) => ({ type: sizeReasonTypeOf(type), detail })),
     referenceFit: toReferenceFit(dto.referenceFit),
     itemJudgements: dto.itemJudgements.map(toItemJudgement),
     wearPreview: toWearPreview(dto.wearPreview),
+    growthSpeed: dto.growthSpeed,
+    wearablePeriods: dto.wearablePeriods,
   }
 }
 

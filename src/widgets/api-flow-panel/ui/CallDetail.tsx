@@ -44,7 +44,6 @@ export function CallDetail({ log, onClose }: CallDetailProps) {
         <span>{log.durationMs}ms</span>
         <span>{log.actor ? `회원 ${log.actor}` : '토큰 없음'}</span>
         <span>{new Date(log.startedAt).toLocaleTimeString('ko-KR')}</span>
-        {log.mock && <span className="bg-highlight text-foreground rounded px-1">목 응답</span>}
         {log.expectedReason && <span>예상된 응답 · {log.expectedReason}</span>}
       </p>
       {log.contractIssues.length > 0 ? (

@@ -1,5 +1,5 @@
 // E2E 전용 가짜 백엔드 (실제 백엔드 코드와 무관). 구현된 API의 응답 모양(DTO)만 흉내 낸다.
-// 상품은 등록 · 판매 시작 · 상세 · 카테고리 · 이미지 업로드 주소 발급만 있다(products.mjs). 판매자 상품 목록 · 상세 · 재고 조정 · 판매 중지도 products.mjs. 상품 목록 · 사이즈 추천 · 자녀 맞춤 목록 · 관리자 전체 주문 · 결제 · 정산은 여기서 응답하고, 상품 수정은 FE 목(app/mocks)이 응답한다.
+// 상품은 등록 · 판매 시작 · 상세 · 카테고리 · 이미지 업로드 주소 발급만 있다(products.mjs). 판매자 상품 목록 · 상세 · 재고 조정 · 판매 중지도 products.mjs. 상품 목록 · 사이즈 추천 · 자녀 맞춤 목록 · 관리자 전체 주문 · 결제 · 정산은 여기서 응답한다.
 // 응답 모양이 실제와 달라지면 FE 흐름 패널의 계약 검사로 드러난다.
 import http from 'node:http'
 import {
@@ -432,36 +432,46 @@ function send(res, status, body, headers = {}) {
   })
   res.end(body === undefined ? '' : JSON.stringify(body))
 }
-// 함께 사면 · 홈 맛보기 SSE (BE 계약, FE #290). Accept: text/event-stream이면 흘려보낸다
-// AI 답이고 처음 묻는 요청이면 rule(같은 상품, 이유 없음) → 잠시 뒤 ai, 다시 물으면 저장해 둔 답처럼 ai만, 규칙 답이면 rule만
+// AI 추천 SSE (BE 계약: 함께 사면 · 홈 맛보기 FE #290, 사이즈 추천 FE #401). Accept: text/event-stream이면 흘려보낸다
+// AI 답이고 처음 묻는 요청이면 rule(ruleOf로 만든 규칙 결과) → 잠시 뒤 ai, 다시 물으면 저장해 둔 답처럼 ai만, 규칙 답이면 rule만
 const answeredStreams = new Set()
 const STREAM_AI_WAIT_MS = 300
-function sendPicks(req, res, picks) {
-  if (!String(req.headers.accept ?? '').includes('text/event-stream')) return send(res, 200, picks)
+function sendStream(req, res, ruleOf, answer) {
+  if (!String(req.headers.accept ?? '').includes('text/event-stream')) return send(res, 200, answer)
   res.writeHead(200, {
     'content-type': 'text/event-stream',
     'cache-control': 'no-cache',
     'x-accel-buffering': 'no',
   })
   const write = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-  if (picks.source === 'RULE') {
-    write('rule', picks)
+  if (answer.source === 'RULE') {
+    write('rule', answer)
     return res.end()
   }
   if (answeredStreams.has(req.url)) {
-    write('ai', picks)
+    write('ai', answer)
     return res.end()
   }
   answeredStreams.add(req.url)
-  write('rule', {
-    source: 'RULE',
-    products: picks.products.map((product) => ({ ...product, reason: null })),
-  })
+  write('rule', ruleOf(answer))
   setTimeout(() => {
-    write('ai', picks)
+    write('ai', answer)
     res.end()
   }, STREAM_AI_WAIT_MS)
 }
+/** 함께 사면 · 홈 맛보기: 규칙 결과는 같은 상품에 이유가 없다 */
+const sendPicks = (req, res, picks) =>
+  sendStream(
+    req,
+    res,
+    (ai) => ({
+      source: 'RULE',
+      products: ai.products.map((product) => ({ ...product, reason: null })),
+    }),
+    picks,
+  )
+/** 사이즈 추천: 규칙 결과는 같은 사이즈에 근거 · 항목 판단이 없다 */
+const sizeRuleOf = (ai) => ({ ...ai, source: 'RULE', reasons: [], itemJudgements: [] })
 const page = (content) => ({
   content,
   page: 0,
@@ -470,6 +480,34 @@ const page = (content) => ({
   totalPages: 1,
   hasNext: false,
 })
+// 목록 status 거르기 (BE #1280): 응답 status와 같은 대문자 값 하나만. 없으면 전체, 그 밖(빈 값 · 소문자 · 여러 값)은 400
+const ORDER_STATUSES = ['PENDING_PAYMENT', 'PAID', 'CANCELLED']
+const DELIVERY_STATUSES = ['READY', 'SHIPPING', 'DELIVERED', 'CANCELLED']
+const statusFilterOf = (query, allowed) => {
+  if (!query.has('status')) return { ok: true, keep: () => true }
+  const status = query.get('status')
+  return allowed.includes(status)
+    ? { ok: true, keep: (row) => row.status === status }
+    : { ok: false }
+}
+const badOrderStatus = (res, instance) =>
+  problem(
+    res,
+    400,
+    '지원하지 않는 주문 상태입니다',
+    'status는 PENDING_PAYMENT · PAID · CANCELLED 중 하나를 대문자 그대로 보내 주세요. 전체는 status를 빼고 보내 주세요.',
+    instance,
+    'INVALID_ORDER_STATUS',
+  )
+const badDeliveryStatus = (res, instance) =>
+  problem(
+    res,
+    400,
+    '지원하지 않는 판매 주문 상태입니다',
+    'status는 READY · SHIPPING · DELIVERED · CANCELLED 중 하나를 대문자 그대로 보내 주세요. 전체는 status를 빼고 보내 주세요.',
+    instance,
+    'INVALID_DELIVERY_STATUS',
+  )
 /** 요청의 page · size(기본 0 · 20)로 자른 PageResponse (BE PageResponse) */
 const pageFrom = (content, query) => {
   const number = Math.max(0, Number(query.get('page') ?? 0))
@@ -688,6 +726,50 @@ function sizeRecommendationOf(detail, c) {
     notices: [],
     candidateSizes: candidates.map((s) => s.size),
   }
+}
+/**
+ * 성장 속도 · 입을 수 있는 기간 (BE #1266) 흉내. 키 기록이 둘 이상이면 아이 기록을 40% 섞은 것으로,
+ * 아니면 평균 표 값(한 달 0.55cm)만 쓴 것으로 본다. 기간은 키 기준만: (권장 키 상한 − 키) ÷ 속도, 0 ~ 24개월
+ */
+function growthOf(c, detail) {
+  const records = c.growth ?? []
+  const isBlended = records.length >= 2
+  const cmPerMonth = isBlended ? 0.62 : 0.55
+  const growthSpeed = {
+    cmPerMonth,
+    recentCmPerMonth: null,
+    recordCount: records.length,
+    recordMonths: isBlended ? 3.5 : 0,
+    childSharePercent: isBlended ? 40 : 0,
+    tableCmPerMonth: 0.55,
+    tableSource: '한국아동패널',
+  }
+  if (detail.sizeFree) return { growthSpeed, wearablePeriods: [] }
+  const wearablePeriods = detail.sizeSpecs.map((spec) => {
+    const lengthMonths =
+      spec.maxHeightCm == null
+        ? null
+        : Math.min(24, Math.max(0, Math.floor((spec.maxHeightCm - c.heightCm) / cmPerMonth)))
+    return { size: spec.size, lengthMonths, widthMonths: null, months: lengthMonths }
+  })
+  return { growthSpeed, wearablePeriods }
+}
+/**
+ * 지난 구매 사이즈 (BE #1299) 흉내: 이 자녀에게 구매확정한 주문상품 중 지금 상품과 같은 기준 옷 칸에서
+ * 확정이 가장 늦은 것의 사이즈. 칸이 없거나(모자 · 양말) 산 적이 없으면 null (가짜는 12개월 기간을 따지지 않는다)
+ */
+function lastPurchasedSizeOf(childId, categoryId) {
+  const part = garmentPartOfCategory(categoryId)
+  if (!part) return null
+  const last = orders
+    .flatMap((o) => o.items)
+    .filter((it) => it.status === 'CONFIRMED' && it.size && it.child?.childId === String(childId))
+    .filter((it) => {
+      const bought = productDetailOf(it.productId)
+      return bought && garmentPartOfCategory(bought.categoryId) === part
+    })
+    .sort((a, b) => b.confirmedAt.localeCompare(a.confirmedAt))[0]
+  return last?.size ?? null
 }
 /** 자녀에게 맞는 사이즈가 있거나 사이즈 무관인 상품만 맞춤 카드로 (BE RecommendedProductResponse) */
 function fitCardsOf(items, c) {
@@ -1625,6 +1707,18 @@ http
         ? send(res, 200, run)
         : problem(res, 404, '찾을 수 없습니다', '정산 실행을 찾을 수 없습니다.', req.url)
     }
+    // 실행 복구: BE는 실행 중(RUNNING)으로 남은 실행만 정리한다. 가짜 실행은 바로 끝나 실행 중이 없으므로 409
+    if ((x = r('POST', /^\/admin\/settlement-runs\/(\d+)\/recover$/))) {
+      return !settlementRuns.some((run) => run.runId === +x[1])
+        ? problem(res, 404, '찾을 수 없습니다', '정산 실행을 찾을 수 없습니다.', req.url)
+        : problem(
+            res,
+            409,
+            '정리할 수 없는 정산 실행입니다',
+            '실행 중으로 남은 정산 실행만 정리할 수 있습니다.',
+            req.url,
+          )
+    }
     // 기준 옷 「산 옷에서 고르기」 (BE #1168): 이 자녀의 구매확정된 주문상품, 확정이 늦은 순서.
     // 상품 정보가 없으면 이름 · 카테고리 · 칸 · 실측이 null, 산 사이즈의 실측이 없으면 실측만 null
     if ((x = r('GET', /^\/recommendations\/children\/(\d+)\/purchases$/))) {
@@ -1981,11 +2075,30 @@ http
     if (r('GET', /^\/admin\/orders$/)) {
       if (!isAdmin(u))
         return problem(res, 403, '권한이 없습니다', '관리자만 볼 수 있습니다.', req.url)
+      const filter = statusFilterOf(url.searchParams, ORDER_STATUSES)
+      if (!filter.ok) return badOrderStatus(res, req.url)
+      // BE #1325: 줄마다 cancelledAt(취소 주문만). cancelledFrom(한국 시간 yyyy-MM-ddTHH:mm:ss, 포함)이면
+      // 그 시각 이후 취소된 주문만(status와 AND), 형식이 틀리면 400
+      const cancelledAtOf = (o) =>
+        o.status === 'CANCELLED' ? (cancelledAt.get(o) ?? o.orderedAt) : null
+      const from = url.searchParams.get('cancelledFrom')
+      if (from !== null && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(from))
+        return problem(
+          res,
+          400,
+          '취소 시각 형식이 맞지 않습니다',
+          'cancelledFrom은 한국 시간 yyyy-MM-ddTHH:mm:ss 형식으로 보내 주세요(예: 2026-11-12T00:00:00).',
+          req.url,
+          'INVALID_CANCELLED_FROM',
+        )
+      const since = (o) => from === null || (cancelledAtOf(o) !== null && cancelledAtOf(o) >= from)
       return send(
         res,
         200,
-        page(
+        // BE: 최근 주문부터 page · size로 자른다, status(#1280) · cancelledFrom(#1325)으로 거른다
+        pageFrom(
           orders
+            .filter((o) => filter.keep(o) && since(o))
             .slice()
             .reverse()
             .map((o) => ({
@@ -1996,7 +2109,9 @@ http
               totalAmount: o.totalAmount,
               orderedAt: o.orderedAt,
               itemCount: o.items.length,
+              cancelledAt: cancelledAtOf(o),
             })),
+          url.searchParams,
         ),
       )
     }
@@ -2044,7 +2159,7 @@ http
         ),
       )
     }
-    // 사이즈 추천 (BE #262 · #681). 규칙은 단순화: 키가 권장 키 ±2cm 안이면 후보, 둘 이상이면 체형 · 선호 핏으로 고름
+    // 사이즈 추천 (BE #262 · #681, SSE FE #401). 규칙은 단순화: 키가 권장 키 ±2cm 안이면 후보, 둘 이상이면 체형 · 선호 핏으로 고름
     if (r('GET', /^\/recommendations\/size$/)) {
       const productId = url.searchParams.get('productId')
       const childId = url.searchParams.get('childId')
@@ -2063,11 +2178,26 @@ http
       const referenceFit = detail.sizeFree
         ? null
         : referenceFitOf(c.id, detail.categoryId, detail.sizeSpecs)
-      return send(res, 200, {
+      // 지난 구매 (BE #1299): 같은 칸에서 이 자녀가 마지막으로 구매확정한 사이즈. AI 답이면 근거에 지난 구매를 더한다
+      const lastPurchasedSize = detail.sizeFree
+        ? null
+        : lastPurchasedSizeOf(c.id, detail.categoryId)
+      const purchaseReason = lastPurchasedSize
+        ? [
+            {
+              type: 'PURCHASE',
+              detail: `지난번 산 옷(${lastPurchasedSize})과 실측이 비슷해요.`,
+              sourceId: null,
+            },
+          ]
+        : []
+      return sendStream(req, res, sizeRuleOf, {
         ...rec,
+        lastPurchasedSize,
         referenceFit,
         itemJudgements: isAi ? itemJudgementsOf(referenceFit, rec.recommendedSize) : [],
         wearPreview: wearPreviewOf(detail, c.heightCm),
+        ...growthOf(c, detail),
         source: isAi ? 'AI' : 'RULE',
         reasons: isAi
           ? [
@@ -2077,6 +2207,7 @@ http
                 sourceId: null,
               },
               { type: 'RULE_RESULT', detail: '키 기준표 계산과 같은 사이즈예요.', sourceId: null },
+              ...purchaseReason,
             ]
           : [],
       })
@@ -2203,6 +2334,25 @@ http
       const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
       if (!c) return problem(res, 404, '찾을 수 없습니다', '자녀 없음', req.url)
       return send(res, 200, c.growth)
+    }
+    if ((x = r('DELETE', /^\/children\/(\d+)\/growth-records\/(\d+)$/))) {
+      const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
+      const index = c?.growth.findIndex((record) => record.id === +x[2]) ?? -1
+      if (!c || index < 0) return problem(res, 404, '찾을 수 없습니다', '성장 기록 없음', req.url)
+      if (c.growth.length === 1)
+        return problem(
+          res,
+          409,
+          '지울 수 없는 기록입니다',
+          '성장 기록이 하나뿐이면 지울 수 없습니다.',
+          req.url,
+        )
+      const isLatest = index === c.growth.length - 1
+      c.growth.splice(index, 1)
+      const latest = c.growth.at(-1)
+      if (isLatest) Object.assign(c, { heightCm: latest.heightCm, bodyType: latest.bodyType })
+      Object.assign(c, { growthRecordCount: c.growth.length, lastRecordedAt: latest.recordedAt })
+      return send(res, 204)
     }
     if (r('PATCH', /^\/members\/me$/))
       return send(res, 200, {
@@ -2504,14 +2654,16 @@ http
       scheduleOrder(o, me, stall)
       return send(res, 201, detailOf(o))
     }
-    if (r('GET', /^\/orders$/))
+    if (r('GET', /^\/orders$/)) {
+      const filter = statusFilterOf(url.searchParams, ORDER_STATUSES)
+      if (!filter.ok) return badOrderStatus(res, req.url)
       return send(
         res,
         200,
-        // BE: 최근 주문부터 page · size로 자른다
+        // BE: 최근 주문부터 page · size로 자른다, status(#1280)로 거른다
         pageFrom(
           orders
-            .filter((o) => o.memberId === me)
+            .filter((o) => o.memberId === me && filter.keep(o))
             .slice()
             .reverse()
             .map((o) => ({
@@ -2529,6 +2681,7 @@ http
           url.searchParams,
         ),
       )
+    }
     if ((x = r('GET', /^\/orders\/(\d+)$/)))
       return send(res, 200, detailOf(orders.find((o) => o.orderId === +x[1])))
     // BE OrderController GET /orders/{orderId}/timeline (#352): 본인 주문만, 아니면 404
@@ -2653,13 +2806,16 @@ http
       return send(res, 200, it)
     }
     const sellerOrders = () => orders.flatMap((o) => o.deliveries.map((d) => ({ d, o })))
-    if (r('GET', /^\/seller\/orders$/))
+    if (r('GET', /^\/seller\/orders$/)) {
+      const filter = statusFilterOf(url.searchParams, DELIVERY_STATUSES)
+      if (!filter.ok) return badDeliveryStatus(res, req.url)
       return send(
         res,
         200,
-        // BE DeliveryRepository.findAllBySellerIdOrderByIdDesc: 최근 배송부터 page · size로 자른다
+        // BE DeliveryRepository.findAllBySellerIdOrderByIdDesc: 최근 배송부터 page · size로 자른다, status(#1280)는 배송 상태
         pageFrom(
           sellerOrders()
+            .filter(({ d }) => filter.keep(d))
             .slice()
             .reverse()
             .map(({ d, o }) => ({
@@ -2674,6 +2830,7 @@ http
           url.searchParams,
         ),
       )
+    }
     if ((x = r('POST', /^\/seller\/orders\/(\d+)\/ship$/))) {
       const { d, o } = sellerOrders().find(({ d }) => d.sellerOrderId === x[1])
       // BE ShipRequest · OrderErrorCode: 택배사는 코드만(대문자 정확히), 송장 1~50자, 발송은 한 번
@@ -2829,7 +2986,10 @@ http
       return send(res, 201, myAppOf(a))
     }
     if (
-      (x = r('GET', /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters$/))
+      (x = r(
+        'GET',
+        /^\/admin\/(auth-|member-|seller-|child-profile-|notification-|settlement-|community\/)dead-letters$/,
+      ))
     ) {
       const status = url.searchParams.get('status') ?? 'OPEN'
       // BE @Pattern(OPEN|REPROCESSED)
@@ -2844,7 +3004,7 @@ http
     if (
       (x = r(
         'GET',
-        /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters\/(\d+)$/,
+        /^\/admin\/(auth-|member-|seller-|child-profile-|notification-|settlement-|community\/)dead-letters\/(\d+)$/,
       ))
     ) {
       const d = deadLetters.find((d) => d.module === dltModule(x[1]) && d.deadLetterId === x[2])
@@ -2856,7 +3016,7 @@ http
     if (
       (x = r(
         'POST',
-        /^\/admin\/(auth-|member-|seller-|child-profile-|community\/)dead-letters\/(\d+)\/reprocess$/,
+        /^\/admin\/(auth-|member-|seller-|child-profile-|notification-|settlement-|community\/)dead-letters\/(\d+)\/reprocess$/,
       ))
     ) {
       const d = deadLetters.find((d) => d.module === dltModule(x[1]) && d.deadLetterId === x[2])

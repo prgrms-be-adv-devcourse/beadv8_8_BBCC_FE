@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { deliveryTrackingApi } from '../api/delivery-tracking-api'
 import { orderApi } from '../api/order-api'
 import { toDeliveryTracking } from './delivery-tracking.mapper'
@@ -6,11 +6,25 @@ import { toAdminOrder, toOrder, toOrderSummary } from './order.mapper'
 import { toChildPurchase } from './child-purchase'
 import { toOrderHistory } from './order-history'
 import { toOrderTimeline } from './order-timeline'
-import { isAwaitingPayment, paymentPollInterval } from './order.rules'
+import type { OrderStatus } from './order'
+import {
+  isAwaitingPayment,
+  ORDER_TABS,
+  orderStatusOfTab,
+  paymentPollInterval,
+  type OrderTab,
+} from './order.rules'
 
 export const orderKeys = {
   list: ['orders', 'list'] as const,
-  listPage: (page: number) => ['orders', 'list', page] as const,
+  listPage: (status: OrderStatus | null, page: number) =>
+    ['orders', 'list', status ?? 'ALL', page] as const,
+  count: (status: OrderStatus | null) => ['orders', 'list', 'count', status ?? 'ALL'] as const,
+  admin: ['orders', 'admin'] as const,
+  adminPage: (status: OrderStatus | null, page: number, size: number) =>
+    ['orders', 'admin', status ?? 'ALL', page, size] as const,
+  adminCancelledSince: (cancelledFrom: string) =>
+    ['orders', 'admin', 'cancelled-since', cancelledFrom] as const,
   detail: (orderId: string) => ['orders', 'detail', orderId] as const,
   timeline: (orderId: string, revision: string) =>
     ['orders', 'timeline', orderId, revision] as const,
@@ -20,13 +34,31 @@ export const orderKeys = {
     ['orders', 'tracking', orderId, deliveryId] as const,
 }
 
-/** 내 주문 한 페이지 (page는 0부터, 기본 첫 페이지) */
-export function useOrdersQuery(page = 0) {
+/** 내 주문 한 페이지 (page는 0부터). status를 주면 서버가 그 상태만 준다 (BE #1280) */
+export function useOrdersQuery(page = 0, status: OrderStatus | null = null) {
   return useQuery({
-    queryKey: orderKeys.listPage(page),
-    queryFn: () => orderApi.list(page),
+    queryKey: orderKeys.listPage(status, page),
+    queryFn: () => orderApi.list(page, status),
     placeholderData: keepPreviousData,
     select: (page) => ({ ...page, content: page.content.map(toOrderSummary) }),
+  })
+}
+
+/** 내 주문 탭별 전체 건수 (size 1 요청의 totalElements). 아직 못 받은 탭은 undefined */
+export function useOrderTabCountsQuery(): Record<OrderTab, number | undefined> {
+  return useQueries({
+    queries: ORDER_TABS.map((tab) => {
+      const status = orderStatusOfTab(tab.value)
+      return {
+        queryKey: orderKeys.count(status),
+        queryFn: () => orderApi.list(0, status, 1),
+        select: (page: { totalElements: number }) => page.totalElements,
+      }
+    }),
+    combine: (results) =>
+      Object.fromEntries(
+        ORDER_TABS.map((tab, index) => [tab.value, results[index].data]),
+      ) as Record<OrderTab, number | undefined>,
   })
 }
 
@@ -60,17 +92,40 @@ export function useOrderQuery(orderId: string) {
   })
 }
 
-export function useAdminOrdersQuery(status: string | null) {
+/** 관리자 전체 주문 한 페이지 (기본 최근 100건). status를 주면 서버가 그 상태만 준다 (BE #1280) */
+export function useAdminOrdersQuery(status: OrderStatus | null, page = 0, size = 100) {
   return useQuery({
-    queryKey: ['orders', 'admin'] as const,
-    queryFn: () => orderApi.adminList(),
-    // BE는 상태로 거르지 않는다 (최근 100건 안에서 화면이 거른다)
-    select: (page) => ({
-      ...page,
-      content: page.content
-        .map(toAdminOrder)
-        .filter((order) => status === null || order.status === status),
+    queryKey: orderKeys.adminPage(status, page, size),
+    queryFn: () => orderApi.adminList(page, status, size),
+    placeholderData: keepPreviousData,
+    select: (page) => ({ ...page, content: page.content.map(toAdminOrder) }),
+  })
+}
+
+/** 그 시각(포함) 이후 취소된 주문 수 (BE #1325, size 1 요청의 totalElements). 관리자 대시보드 오늘 취소 */
+export function useAdminCancelledSinceCountQuery(cancelledFrom: string) {
+  return useQuery({
+    queryKey: orderKeys.adminCancelledSince(cancelledFrom),
+    queryFn: () => orderApi.adminList(0, null, 1, cancelledFrom),
+    select: (page) => page.totalElements,
+  })
+}
+
+/** 관리자 탭별 전체 건수: 전체(null) + 주문 상태별 (size 1 요청의 totalElements) */
+export function useAdminOrderTabCountsQuery(): Record<OrderTab, number | undefined> {
+  return useQueries({
+    queries: ORDER_TABS.map((tab) => {
+      const status = orderStatusOfTab(tab.value)
+      return {
+        queryKey: orderKeys.adminPage(status, 0, 1),
+        queryFn: () => orderApi.adminList(0, status, 1),
+        select: (page: { totalElements: number }) => page.totalElements,
+      }
     }),
+    combine: (results) =>
+      Object.fromEntries(
+        ORDER_TABS.map((tab, index) => [tab.value, results[index].data]),
+      ) as Record<OrderTab, number | undefined>,
   })
 }
 

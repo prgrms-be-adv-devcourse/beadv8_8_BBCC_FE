@@ -12,6 +12,3 @@ export {
   useFavoriteSummaryQuery,
   useMyFavoritesQuery,
 } from './model/queries'
-
-// 목 응답 · 가짜 백엔드 계약 작성 전용
-export type { FavoriteListDto as MockFavoriteListDto } from './api/favorite.dto'

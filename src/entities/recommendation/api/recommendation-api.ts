@@ -1,4 +1,4 @@
-import { apiClient, expectShape, getEventStream, type Page } from '@/shared/api'
+import { apiClient, expectShape, getEventStream, type Page, type StreamEvent } from '@/shared/api'
 import type { PurchasedGarmentDto } from './purchased-garment.dto'
 import { purchasedGarmentPageShape } from './purchased-garment.shape'
 import type {
@@ -27,6 +27,22 @@ export const recommendationApi = {
         params: { productId, childId },
       })
       .then(expectShape(sizeRecommendationShape)),
+  /**
+   * 사이즈 추천 (SSE): 규칙 결과(rule)가 먼저 오고 AI 답(ai)이 오면 닫힌다. 저장된 답이면 ai만, AI를 쓸 수 없으면 rule만.
+   * data는 JSON 응답(getSize)과 같은 모양. 이벤트가 올 때마다 onEvent를 부른다
+   */
+  streamSize: (
+    productId: string,
+    childId: string,
+    signal?: AbortSignal,
+    onEvent?: (event: StreamEvent<SizeRecommendationDto>) => void,
+  ) =>
+    getEventStream<SizeRecommendationDto>('/recommendations/size', {
+      params: { productId, childId },
+      signal,
+      shape: sizeRecommendationShape,
+      onEvent,
+    }),
   getProducts: (childId: string, params: RecommendedProductsParamsDto) =>
     apiClient
       .get<RecommendedProductPageDto>('/recommendations/products', {
@@ -35,22 +51,33 @@ export const recommendationApi = {
       .then(expectShape(recommendedProductPageShape)),
   /**
    * 홈 맛보기 4개 (SSE): 규칙 결과(rule)가 먼저 오고 AI 답(ai)이 오면 닫힌다. 후보가 없으면 products는 [].
-   * 없는 자녀 · 남의 자녀면 스트림을 열기 전에 404
+   * 없는 자녀 · 남의 자녀면 스트림을 열기 전에 404. 이벤트가 올 때마다 onEvent를 부른다
    */
-  streamPreview: (childId: string, signal?: AbortSignal) =>
+  streamPreview: (
+    childId: string,
+    signal?: AbortSignal,
+    onEvent?: (event: StreamEvent<HomePreviewDto>) => void,
+  ) =>
     getEventStream<HomePreviewDto>('/recommendations/products/preview', {
       params: { childId },
       signal,
       shape: homePreviewShape,
+      onEvent,
     }),
   /**
    * 함께 사면 좋은 상품 4개까지 (SSE, 맛보기와 같은 순서). 없는 상품 · 자녀 · 남의 자녀면 스트림을 열기 전에 404
    */
-  streamCompanions: (productId: string, childId: string, signal?: AbortSignal) =>
+  streamCompanions: (
+    productId: string,
+    childId: string,
+    signal?: AbortSignal,
+    onEvent?: (event: StreamEvent<CompanionProductsDto>) => void,
+  ) =>
     getEventStream<CompanionProductsDto>('/recommendations/companions', {
       params: { productId, childId },
       signal,
       shape: companionProductsShape,
+      onEvent,
     }),
   /** 자녀의 기준 옷 (상의 → 하의, 없으면 []). 남의 자녀면 403, 없는 자녀면 404 */
   referenceGarments: (childId: string) =>

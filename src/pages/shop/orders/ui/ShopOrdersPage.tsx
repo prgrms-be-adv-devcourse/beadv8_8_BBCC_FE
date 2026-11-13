@@ -1,11 +1,11 @@
 import { Link, useSearchParams } from 'react-router'
 import {
-  countOrdersByTab,
-  filterOrdersByTab,
   ORDER_TABS,
+  orderStatusOfTab,
   orderTabOf,
   OrderStatusBadge,
   useOrdersQuery,
+  useOrderTabCountsQuery,
   type OrderTab,
 } from '@/entities/order'
 import { getErrorMessage, pageFromSearch } from '@/shared/api'
@@ -21,7 +21,9 @@ export function ShopOrdersPage() {
   const [params, setParams] = useSearchParams()
   const tab = orderTabOf(params.get('tab'))
   const page = pageFromSearch(params.get('page'))
-  const orders = useOrdersQuery(page)
+  // 탭은 서버가 거른다 (BE #1280). 건수는 탭마다 size 1 요청의 전체 건수
+  const orders = useOrdersQuery(page, orderStatusOfTab(tab))
+  const counts = useOrderTabCountsQuery()
   const setTab = (next: OrderTab) =>
     setParams(next === 'ALL' ? {} : { tab: next }, { replace: true })
   const setPage = (next: number) => {
@@ -30,9 +32,7 @@ export function ShopOrdersPage() {
     else search.delete('page')
     setParams(search, { replace: true })
   }
-  const all = orders.data?.content ?? []
-  const counts = countOrdersByTab(all, orders.data?.totalElements)
-  const visible = filterOrdersByTab(all, tab)
+  const visible = orders.data?.content ?? []
 
   return (
     <div className="shop-look space-y-6">
@@ -56,7 +56,7 @@ export function ShopOrdersPage() {
                 : 'text-ink-3 hover:text-ink border-transparent',
             )}
           >
-            {item.label} <span className="figure text-sm">{counts[item.value]}</span>
+            {item.label} <span className="figure text-sm">{counts[item.value] ?? '…'}</span>
           </button>
         ))}
       </div>

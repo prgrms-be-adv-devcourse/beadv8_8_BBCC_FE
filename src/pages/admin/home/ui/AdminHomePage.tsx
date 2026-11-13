@@ -1,7 +1,12 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useAdminMembersQuery } from '@/entities/member'
-import { summarizeOrdersOn, useAdminOrdersQuery } from '@/entities/order'
+import {
+  cancelledFromOf,
+  summarizeOrdersOn,
+  useAdminCancelledSinceCountQuery,
+  useAdminOrdersQuery,
+} from '@/entities/order'
 import { paidOn, useAdminPaymentSummaryQuery } from '@/entities/payment'
 import { useSellerApplicationsQuery } from '@/entities/seller'
 import { paths } from '@/shared/config'
@@ -10,7 +15,8 @@ import { PageHeader } from '@/shared/ui/PageHeader'
 
 /**
  * 관리자 첫 화면: 처리할 일(심사 대기 판매자 신청)을 가장 크게 두고,
- * 나머지 수치는 거래 · 회원 묶음으로 실선 사이에 둔다 (주문 수치는 주문 목록 API로 계산,
+ * 나머지 수치는 거래 · 회원 묶음으로 실선 사이에 둔다 (오늘 주문은 주문 목록 API로 계산,
+ * 오늘 취소는 취소일 기준 건수(BE #1325 cancelledFrom),
  * 결제 수치는 결제 요약 API: 결제일 기준 금액 · 환불 있는 결제 수).
  * 누르면 그 목록으로 (주소 ?status=)
  */
@@ -21,6 +27,8 @@ export function AdminHomePage() {
   const today = kstDateString()
   const payments = useAdminPaymentSummaryQuery(today, today)
   const summary = orders.data ? summarizeOrdersOn(orders.data.content, today) : null
+  // 어제 만든 주문을 오늘 취소해도 들어가게 취소 시각으로 센다
+  const cancelledToday = useAdminCancelledSinceCountQuery(cancelledFromOf(today)).data
   const pending = applications.data?.totalElements
   const suspended = members.data?.totalElements
   const paidToday = payments.data ? paidOn(payments.data, today) : null
@@ -63,7 +71,7 @@ export function AdminHomePage() {
             <Metric
               to={`${paths.admin.orders}?status=CANCELLED`}
               label="오늘 취소"
-              value={summary?.cancelled}
+              value={cancelledToday}
             />
             <Metric to={paths.admin.payments} label="환불 있는 결제" value={refunds} />
           </MetricGroup>

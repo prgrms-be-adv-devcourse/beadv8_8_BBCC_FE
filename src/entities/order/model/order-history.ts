@@ -102,6 +102,12 @@ export function currentOrderStatusOf(history: readonly OrderHistoryEntry[]): Ord
     : null
 }
 
+/** 지금 취소 시각: 마지막 주문 이력이 취소일 때만 그 시각. 아니면 null (관리자 주문 상세 API가 없어 이력에서 읽는다) */
+export function currentCancelledAtOf(history: readonly OrderHistoryEntry[]): string | null {
+  const last = history.findLast((entry) => entry.targetType === 'ORDER')
+  return last?.toCode === 'CANCELLED' ? last.occurredAt : null
+}
+
 /** 지금 취소 사유: 마지막 주문 이력이 취소일 때만 그 사유 (한글). 아니면 null */
 export function currentCancelReasonOf(history: readonly OrderHistoryEntry[]): string | null {
   const last = history.findLast((entry) => entry.targetType === 'ORDER')

@@ -92,6 +92,7 @@ export const adminOrderPageShape = pageOf(
     totalAmount: num,
     orderedAt: str,
     itemCount: num,
+    cancelledAt: nullable(str),
   }),
 )
 

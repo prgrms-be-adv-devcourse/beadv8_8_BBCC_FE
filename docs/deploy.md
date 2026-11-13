@@ -35,6 +35,7 @@
 | `VITE_TOSS_CLIENT_KEY`    | 토스 테스트 클라이언트 키                        | 결제 담당에게                                                                              |
 | `VITE_KAKAO_CLIENT_ID`    | 카카오 REST API 키                               | 회원 담당에게                                                                              |
 | `VITE_KAKAO_REDIRECT_URI` | `https://도메인/oauth/kakao/callback`            | 백엔드 `KAKAO_REDIRECT_URI`와 같게                                                         |
+| `VITE_FIREBASE_*` 6개     | Firebase 웹 앱 설정 · VAPID 공개 키              | 웹 푸시. 하나라도 비우면 알림 받기를 끈다 (알림 담당에게)                                  |
 
 실행 환경 값: `API_UPSTREAM`(백엔드 주소, 기본 `http://app:8080`), `NGINX_RESOLVER`(기본 Docker DNS `127.0.0.11`).
 
@@ -75,7 +76,7 @@ GitHub Variables가 아니라 **Vercel 환경 변수**에서 받는다. Producti
 
 | 이름                      | Production (main)                                  | Preview (develop)                                      | 넣지 않으면                       |
 | ------------------------- | -------------------------------------------------- | ------------------------------------------------------ | --------------------------------- |
-| `VITE_USE_MOCK`           | 백엔드에 API가 다 생기면 `false`                   | 같음                                                   | 목 켜짐                           |
+| `VITE_USE_MOCK`           | 쇼핑 목록 예시 사진을 끄려면 `false`               | 같음                                                   | 예시 사진 켜짐                    |
 | `VITE_API_BASE_URL`       | 아래 "백엔드 연결" 참고                            | 같음                                                   | 비움 (로그인 · 주문 · 결제 안 됨) |
 | `VITE_DEMO_ROLE_SWITCH`   | 연결한 백엔드에 개발 토큰이 없으면 `false`         | 같음                                                   | 켜짐                              |
 | `VITE_TOSS_CLIENT_KEY`    | 토스 테스트 클라이언트 키 (결제 담당)              | 같음                                                   | 충전 안 됨                        |

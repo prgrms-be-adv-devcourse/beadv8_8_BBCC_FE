@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { useAddressesQuery } from '@/entities/address'
 import { sizeBandOf, useChildrenQuery } from '@/entities/child'
-import { countOrdersByTab, ORDER_TABS, useOrdersQuery } from '@/entities/order'
+import { ORDER_TABS, useOrderTabCountsQuery } from '@/entities/order'
 import { PAYMENT_STATUS_LABEL, usePaymentsQuery } from '@/entities/payment'
 import { hasRole, ROLE_LABEL, useSessionStore } from '@/entities/session'
 import { useWalletQuery } from '@/entities/wallet'
@@ -21,7 +21,7 @@ export function ShopMyPage() {
   const addresses = useAddressesQuery()
   const wallet = useWalletQuery()
   const payments = usePaymentsQuery({ enabled: Boolean(user) })
-  const orders = useOrdersQuery()
+  const counts = useOrderTabCountsQuery()
 
   if (!user) {
     return (
@@ -34,7 +34,6 @@ export function ShopMyPage() {
     )
   }
 
-  const counts = countOrdersByTab(orders.data?.content ?? [], orders.data?.totalElements)
   return (
     <div className="shop-look space-y-10">
       <h1 className="sr-only">마이페이지</h1>
@@ -109,11 +108,11 @@ export function ShopMyPage() {
               <p
                 className={cn(
                   'figure text-2xl font-bold transition-colors',
-                  orders.data && counts[tab.value] > 0 ? 'text-ink' : 'text-ink-3',
+                  (counts[tab.value] ?? 0) > 0 ? 'text-ink' : 'text-ink-3',
                   'group-hover:text-signal',
                 )}
               >
-                {orders.data ? counts[tab.value] : '…'}
+                {counts[tab.value] ?? '…'}
               </p>
               <p className="text-ink-2 text-xs">{tab.label}</p>
             </Link>

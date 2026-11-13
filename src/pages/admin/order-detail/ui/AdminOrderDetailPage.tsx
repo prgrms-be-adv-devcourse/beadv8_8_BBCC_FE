@@ -1,6 +1,7 @@
 import { Link, useLocation, useParams } from 'react-router'
 import {
   CANCEL_REASON_LABEL,
+  currentCancelledAtOf,
   currentCancelReasonOf,
   currentOrderStatusOf,
   ORDER_STATUS_LABEL,
@@ -32,6 +33,8 @@ export function AdminOrderDetailPage() {
   const cancelReason = order
     ? order.cancelReason && labelOf(CANCEL_REASON_LABEL, order.cancelReason)
     : currentCancelReasonOf(entries)
+  // 관리자 주문 상세 API는 없어 취소 시각은 이력의 취소 줄 시각 (목록 요약은 최근 100건 안에서만 찾으므로)
+  const cancelledAt = currentCancelledAtOf(entries)
   const related = payments.data?.content.filter((payment) => payment.orderId === orderId) ?? []
 
   return (
@@ -53,7 +56,6 @@ export function AdminOrderDetailPage() {
         전체 주문
       </Link>
       <PageHeader
-        mockEndpoints={['GET /admin/orders', 'GET /admin/payments']}
         title={`주문 ${orderId}`}
         note="GET /admin/orders/{orderId}/history (BE #442)로 상태 이력을 읽고, GET /admin/orders (BE #323)에서 요약을, GET /admin/payments (BE #326)에서 이 주문의 결제를 모은다."
       />
@@ -69,6 +71,11 @@ export function AdminOrderDetailPage() {
               {status ? labelOf(ORDER_STATUS_LABEL, status) : '상태 기록 없음'}
             </h2>
             {cancelReason && <p className="text-ink-2 text-sm">{cancelReason}</p>}
+            {cancelledAt && (
+              <p className="text-ink-3 figure text-[13px]">
+                {formatDateTime(cancelledAt)}에 취소됐어요
+              </p>
+            )}
           </section>
 
           {/* 넓은 화면: 왼쪽 상태 이력 · 이 주문의 결제, 오른쪽 주문 정보 */}

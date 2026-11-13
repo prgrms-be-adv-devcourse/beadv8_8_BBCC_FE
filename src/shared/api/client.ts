@@ -2,7 +2,6 @@ import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axio
 import { env } from '@/shared/config'
 import { useApiFlowLog } from './api-flow-log'
 import { expectedReasonOf, type ExpectedResponse } from './call-outcome'
-import { createMockAdapter, defaultAdapter } from './mock-adapter'
 import { isSessionRejected } from './problem-detail'
 
 declare module 'axios' {
@@ -16,8 +15,6 @@ declare module 'axios' {
     logId?: number
     /** 정상 흐름에서도 오는 오류 응답. 흐름 패널에 "예상됨"으로 표시하고 실패로 세지 않는다 */
     expected?: ExpectedResponse
-    /** true면 목 핸들러를 건너뛰고 실제 서버로 보낸다 (연결 점검) */
-    skipMock?: boolean
     /** 붙일 토큰의 주체. 회원 · 자녀가 같이 쓰는 경로(/cart · /wish/requests)에서 자녀 화면이 'child'로 정한다 */
     principal?: Principal
   }
@@ -70,7 +67,6 @@ export const apiClient = axios.create({
   timeout: 10_000,
   // Refresh Token이 HttpOnly 쿠키라 로그인 · 재발급 · 로그아웃에 쿠키가 실려야 한다
   withCredentials: true,
-  adapter: createMockAdapter(defaultAdapter),
 })
 
 const reissuing: Record<Principal, Promise<string> | null> = {
@@ -136,7 +132,6 @@ function record(config: InternalAxiosRequestConfig, response: AxiosResponse | un
     expectedReason: expectedReasonOf(response?.status ?? null, config.expected),
     durationMs: Math.round(performance.now() - startedAt),
     startedAt: new Date(performance.timeOrigin + startedAt).toISOString(),
-    mock: response?.headers['x-mock'] === 'true',
     requestBody: parseBody(config.data),
     // 스트림은 아직 읽기 전이라 비워 두고, 다 읽은 뒤 getEventStream이 채운다
     responseBody: config.responseType === 'stream' ? null : (response?.data ?? null),

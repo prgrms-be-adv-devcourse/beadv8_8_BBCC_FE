@@ -38,7 +38,6 @@ export function AdminPaymentDetailPage() {
         전체 결제
       </Link>
       <PageHeader
-        mockEndpoints={['GET /admin/payments', 'GET /admin/orders']}
         title={`결제 ${paymentId}`}
         note="GET /admin/payments (BE #326)에서 이 결제를 찾고, GET /admin/orders (BE #323)에서 결제한 주문을 찾는다."
       />

@@ -14,7 +14,6 @@ export function AdminProductsPage() {
   return (
     <div className="shop-look space-y-6">
       <PageHeader
-        mockEndpoints={['GET /products']}
         title="상품 관리"
         description="판매 중인 상품을 보고, 정책을 어긴 상품은 판매를 중지해요."
         note="PUT /admin/products/{id}/sale-status (STOPPED), DELETE /admin/products/{id}/delisting(등록 취소 되돌리기 → STOPPED, 관리자 상품 목록 API가 없어 번호로 부른다). 관리자가 중지한 상품은 판매자가 다시 판매할 수 없어요. 판매 중지 사유는 백엔드가 받지 않아요."

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { currentCancelReasonOf, currentOrderStatusOf, toOrderHistory } from '@/entities/order'
+import {
+  currentCancelledAtOf,
+  currentCancelReasonOf,
+  currentOrderStatusOf,
+  toOrderHistory,
+} from '@/entities/order'
 import { validate } from '@/shared/api/contract'
 import { orderHistoryShape } from '@/entities/order/api/order.shape'
 
@@ -108,5 +113,17 @@ describe('관리자 주문 상태 이력 (BE #442)', () => {
       '결제 마감 시간이 지나 주문이 자동으로 취소됐어요.',
     )
     expect(currentCancelReasonOf([toOrderHistory(placed)])).toBeNull()
+  })
+  // 관리자 주문 상세 API는 없어서, 취소 시각은 이력의 마지막 주문 취소 줄 시각을 쓴다 (BE #1325 안내)
+  it('지금 취소 시각: 마지막 주문 이력이 취소일 때만 그 시각', () => {
+    const cancelled = toOrderHistory({
+      ...placed,
+      historyId: '2',
+      toStatus: 'CANCELLED',
+      reason: 'PAYMENT_EXPIRED',
+      occurredAt: '2026-11-12T10:30:00',
+    })
+    expect(currentCancelledAtOf([toOrderHistory(placed), cancelled])).toBe('2026-11-12T10:30:00')
+    expect(currentCancelledAtOf([toOrderHistory(placed)])).toBeNull()
   })
 })

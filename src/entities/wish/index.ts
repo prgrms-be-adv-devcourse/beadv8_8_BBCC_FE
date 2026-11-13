@@ -40,5 +40,5 @@ export {
 } from './model/queries'
 export { WishSummaryCard } from './ui/WishSummaryCard'
 
-// 목 응답 작성 전용
+// 단위 테스트 입력용 (tests/unit)
 export type { WishRequestDto as MockWishRequestDto } from './api/wish.dto'

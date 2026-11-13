@@ -280,7 +280,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByText('기본', { exact: true }).first()).toBeVisible()
   })
 
-  await test.step('마이페이지: 자녀 수정 → 성장 이력 · 이력 수정(목) · 배송지 수정', async () => {
+  await test.step('마이페이지: 자녀 수정 → 성장 이력 삭제 · 배송지 수정', async () => {
     await page.goto('/my/children')
     await page
       .getByRole('link', { name: /테스트 상세/ })
@@ -296,10 +296,24 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
       page.getByRole('img', { name: /키 기록 \d+개, 지금 118cm는 120 사이즈 구간/ }),
     ).toBeVisible()
     await expect(page.getByText(/한 달에 한 번 키를 기록해 주세요/)).toBeVisible()
-    await page.getByRole('listitem').getByRole('button', { name: '수정' }).first().click()
-    await page.getByLabel('기록 키').fill('117')
-    await page.getByRole('button', { name: '저장', exact: true }).click()
-    await expect(page.getByText(/117\.0cm/)).toBeVisible()
+    await page.removeLocatorHandler(page.getByRole('alertdialog'))
+    const growth = page.getByRole('region', { name: '성장 이력' })
+    const latest = growth.getByRole('listitem').first()
+    await latest.getByRole('button', { name: '삭제' }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: '취소' }).click()
+    await expect(latest).toContainText('118.0cm')
+    await latest.getByRole('button', { name: '삭제' }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: '삭제' }).click()
+    await expect(growth.getByText('118.0cm')).toHaveCount(0)
+    await expect(page.getByRole('img', { name: /지금 115cm/ })).toBeVisible()
+    await expect(growth.getByRole('button', { name: '삭제' })).toBeDisabled()
+    await expect(growth.getByText('기록이 하나뿐이면 지울 수 없어요.')).toBeVisible()
+    await acceptConfirms(page)
+    // 삭제로 자녀 현재 키가 115로 돌아갔으니, 뒤 단계가 쓰는 118로 다시 저장한다
+    await page.getByLabel('키 (cm)').fill('118')
+    await page.getByRole('button', { name: '저장하기' }).click()
+    // 앞 저장의 토스트가 아직 떠 있을 수 있어 토스트 대신 저장 결과를 본다
+    await expect(page.getByRole('img', { name: /지금 118cm/ })).toBeVisible()
 
     await page.goto('/my/addresses')
     await page.getByRole('button', { name: '수정' }).first().click()
@@ -713,8 +727,6 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await expect(page.getByRole('button', { name: '판매자 자격 정지' })).toHaveCount(0)
 
     await page.getByRole('link', { name: '상품 관리' }).click()
-    // 목록은 실제 GET /products(BE #288), 관리자 판매 중지는 아직 목 → 버튼 옆 준비 중(목) 배지.
-    // 목 판매 중지는 실제 목록에 반영되지 않으므로 오류 없이 요청이 끝나는 것까지만 본다
     // 관리자 판매 중지는 실제 API(BE #315) → 판매 중 목록에서 빠진다. 이 흐름에서 등록한 상품으로 확인
     const onSale = page
       .getByRole('table', { name: '판매 중 상품' })
@@ -756,7 +768,7 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByLabel(/닉네임/).fill('보호자맘')
     await page.getByRole('button', { name: '닉네임 바꾸기' }).click()
     await expect(page.getByText('보호자맘 · 회원 1').first()).toBeVisible()
-    // 목이 아니라 서버로 탈퇴하고, 이어서 로그아웃으로 Refresh Token 쿠키를 지운다 (BE MemberController)
+    // 서버로 탈퇴하고, 이어서 로그아웃으로 Refresh Token 쿠키를 지운다 (BE MemberController)
     const withdrawn = page.waitForResponse(
       (response) =>
         response.request().method() === 'DELETE' && response.url().endsWith('/api/v1/members/me'),
