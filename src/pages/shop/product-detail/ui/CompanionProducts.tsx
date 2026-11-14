@@ -1,3 +1,4 @@
+import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { ProductTile } from '@/entities/product'
 import {
   AiWaitingNotice,
@@ -6,6 +7,7 @@ import {
   RecommendedPicksNotice,
   type RecommendedPicks,
 } from '@/entities/recommendation'
+import { FavoriteButton } from '@/features/toggle-favorite'
 import { paths } from '@/shared/config'
 import { QuickAdd } from '@/widgets/quick-add'
 
@@ -38,6 +40,10 @@ export function CompanionProducts({
   picks,
   onRetry,
 }: CompanionProductsProps) {
+  // 자녀를 고른 보호자에게만 그리는 영역이라 찜 조회도 그때만 한다
+  const favoritedIds = useFavoritedIdsQuery(picks?.products.map((product) => product.id) ?? [], {
+    enabled: Boolean(childId),
+  })
   if (!childId) return null
   // 규칙 결과가 빈 목록이어도 AI 답을 기다리는 동안은 로딩을 둔다
   const isLoading = isPending || (isWaitingForAi && !picks)
@@ -75,7 +81,16 @@ export function CompanionProducts({
                     : { text: '사이즈 무관' }
                 }
                 action={
-                  <QuickAdd productId={product.id} productName={product.name} childId={childId} />
+                  <>
+                    <FavoriteButton
+                      productId={product.id}
+                      isFavorited={favoritedIds.data?.has(product.id) ?? false}
+                      isLoading={favoritedIds.isPending}
+                      isSelling
+                      isCompact
+                    />
+                    <QuickAdd productId={product.id} productName={product.name} childId={childId} />
+                  </>
                 }
               />
               {product.reason && (
