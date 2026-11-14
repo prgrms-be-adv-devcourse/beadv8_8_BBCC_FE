@@ -33,7 +33,14 @@ test('상품 칸 담기: 보호자는 팝업에서 사이즈를 골라 장바구
   await expect(page.getByText('보호자 · 회원 1')).toBeVisible()
 
   const list = page.getByRole('region', { name: '전체 상품' })
+  // 팝업을 열면 상세 진입과 구분되는 조회(QUICK)로 기록한다
+  const viewed = page.waitForRequest(
+    (request) =>
+      request.url().endsWith('/recommendations/product-views') &&
+      request.postDataJSON()?.viewType === 'QUICK',
+  )
   await list.getByRole('button', { name: `${PRODUCT} 담기` }).click()
+  await viewed
   const dialog = page.getByRole('dialog', { name: '옵션 고르고 담기' })
   const add = dialog.getByRole('button', { name: '장바구니 담기' })
   // 값이 하나뿐인 색상은 고르는 단계 없이 고정 줄로 보인다
