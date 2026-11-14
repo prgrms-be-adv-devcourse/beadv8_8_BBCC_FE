@@ -39,7 +39,7 @@ export function ProductImage({
         aria-label={`${alt} (이미지 준비 중)`}
         className={cn('bg-paper-2 text-ink flex w-full items-center justify-center', className)}
       >
-        <CategoryIcon icon={doodle} className="size-[46%] max-w-28" />
+        <CategoryIcon icon={doodle} className="size-[44%] max-w-44" />
       </span>
     )
 

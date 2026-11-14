@@ -112,6 +112,14 @@
   --fit-soft: var(--shop-marker);
   --focus: var(--shop-ink);
   --radius: 0rem;
+  /* --radius-sm ~ 4xl은 :root에서 이미 계산된 값이 내려오므로 여기서 하나씩 다시 정한다 */
+  --radius-sm: 0rem;
+  --radius-md: 0rem;
+  --radius-lg: 0rem;
+  --radius-xl: 0rem;
+  --radius-2xl: 0rem;
+  --radius-3xl: 0rem;
+  --radius-4xl: 0rem;
   --radius-card: 0rem;
   --radius-input: 0rem;
   --radius-pill: 0rem;
@@ -248,6 +256,12 @@ body:has([data-area='shop']) {
 
 [data-area='shop'] [data-slot='button'][data-variant='outline'] {
   border-color: var(--ink);
+}
+
+/* 사진 넘기기 버튼: 쇼핑 영역에서는 그림자 대신 먹색 테두리 */
+[data-area='shop'] [data-slot='gallery-arrow'] {
+  border: 1.5px solid var(--ink);
+  box-shadow: none;
 }
 
 /* 공용 이름표: 쇼핑 영역에서는 각진 칸 */

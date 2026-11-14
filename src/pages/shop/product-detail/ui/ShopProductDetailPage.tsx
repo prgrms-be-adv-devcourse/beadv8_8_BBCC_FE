@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY, useChildCartQuery } from '@/entities/cart'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
+  ALL_CATEGORIES_ICON,
+  categoryIconOf,
   detailImagesOf,
   isOnSale,
   ProductDescription,
@@ -106,7 +108,8 @@ export function ShopProductDetailPage() {
   const isSelling = isOnSale(detail)
   // 추천 한 줄은 사이즈 칩 바로 위에 (사이즈 항목이 없는 상품이면 옵션 맨 위)
   const sizeAttributeId = detail.optionAttributes.find((attribute) => attribute.isSize)?.id ?? null
-  const categoryPath = categories.data?.find((c) => c.id === detail.categoryId)?.path ?? null
+  const category = categories.data?.find((c) => c.id === detail.categoryId) ?? null
+  const categoryPath = category?.path ?? null
   const partToRegister =
     pickedChild && garments.data
       ? referencePartToRegister(categoryPath, detail.sizeFree, garments.data)
@@ -168,7 +171,7 @@ export function ShopProductDetailPage() {
       <section aria-label={detail.name} className="space-y-4">
         <Link
           to={isChild ? paths.child.products : paths.shop.home}
-          className="text-ink-3 hover:text-ink inline-flex items-center gap-1 rounded-md text-[13px] font-semibold transition-colors"
+          className="text-ink inline-flex items-center gap-1 text-xs font-bold underline-offset-[3px] hover:underline"
         >
           <svg
             viewBox="0 0 24 24"
@@ -186,7 +189,8 @@ export function ShopProductDetailPage() {
           <ProductGallery
             images={detail.imageUrls}
             alt={detail.name}
-            className="rounded-card min-w-0 max-lg:aspect-[4/3]"
+            className="border-ink min-w-0 border-[1.5px] max-lg:aspect-[4/3]"
+            doodle={(category && categoryIconOf(category.name)) || ALL_CATEGORIES_ICON}
           />
 
           {/* min-w-0: 실측표처럼 넓은 표가 열을 넓혀 가격 · 담기 버튼을 화면 밖으로 밀지 않게 (표만 가로로 민다) */}
@@ -215,7 +219,9 @@ export function ShopProductDetailPage() {
                 </div>
               )}
               {detail.minPrice !== null && (
-                <p className="figure pt-1 text-2xl font-bold">{formatWon(detail.minPrice)}~</p>
+                <p className="figure border-ink border-b-[1.5px] pt-1 pb-3.5 text-[30px] leading-none font-bold">
+                  {formatWon(detail.minPrice)}~
+                </p>
               )}
             </div>
 
@@ -223,7 +229,7 @@ export function ShopProductDetailPage() {
             <div ref={optionsRef} className="scroll-mt-24 space-y-3">
               {!isChild && (
                 <div className="space-y-1.5">
-                  <p className="text-sm font-semibold">누가 입나요?</p>
+                  <p className="text-[13px] font-bold">누가 입나요?</p>
                   {!user ? (
                     <Link to={loginPath(returnPath())} className="shop-link text-sm">
                       로그인하고 맞는 사이즈 보기
@@ -249,6 +255,7 @@ export function ShopProductDetailPage() {
                   setPicks(pickOptionValue(detail, picks, attributeId, valueId))
                 }
                 aboveRow={sizeAttributeId ? { [sizeAttributeId]: sizeAdvice } : undefined}
+                colorLook="detail"
               />
               {selected && (
                 <p className="text-ink-2 text-sm">
@@ -263,9 +270,9 @@ export function ShopProductDetailPage() {
             </div>
 
             {/* 휴대폰에서는 수량 · 금액 · 담기를 화면 아래에 고정한다 */}
-            <div className="border-rule bg-paper/95 sticky bottom-0 -mx-4 space-y-3 border-t px-4 pt-3 pb-3 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pt-4 md:pb-0 md:backdrop-blur-none">
+            <div className="border-ink bg-paper/95 sticky bottom-0 -mx-4 space-y-3 border-t-[1.5px] px-4 pt-3 pb-3 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pt-4 md:pb-0 md:backdrop-blur-none">
               <div className="flex items-center gap-3">
-                <span className="text-ink-2 text-sm">수량</span>
+                <span className="text-[13px] font-bold">수량</span>
                 <Input
                   type="number"
                   min={MIN_QUANTITY}
