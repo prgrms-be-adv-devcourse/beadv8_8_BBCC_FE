@@ -1909,6 +1909,31 @@ it.each([
   expect(viewed.data.detail).toBe(detail)
 })
 
+it.each(['QUICK', 'DETAIL'] as const)(
+  '조회 기록: viewType %s는 204 (BE #1366, QUICK은 담기 팝업을 연 것)',
+  async (viewType) => {
+    const viewed = await call(
+      'POST',
+      '/recommendations/product-views',
+      1,
+      toProductViewRequest('1', null, viewType),
+    )
+    expect(viewed.status).toBe(204)
+  },
+)
+
+it.each(['POPUP', 'quick'])(
+  '조회 기록: 모르는 viewType %s는 400 (대소문자를 가린다, BE #1366)',
+  async (viewType) => {
+    const viewed = await call('POST', '/recommendations/product-views', 1, {
+      productId: '1',
+      viewType,
+    })
+    expect(viewed.status).toBe(400)
+    expect(viewed.data.detail).toBe('요청 값을 확인해 주세요.')
+  },
+)
+
 it('맞춤 목록: 1쪽 응답의 기준 시각 asOf를 2쪽에 넘기면 그대로 돌려주고, 지금보다 늦으면 400 (BE #1151)', async () => {
   const child = await call('POST', '/children', 1, {
     ...toChildRequest(DEMO_CHILD),

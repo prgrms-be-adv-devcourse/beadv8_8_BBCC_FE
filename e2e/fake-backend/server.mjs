@@ -1778,8 +1778,12 @@ http
         ? problem(res, result.status, result.title, result.detail, req.url)
         : send(res, result.status, result.body)
     }
-    // 상세 진입 기록 (BE #1112): 추천이 회원 활동으로 센다. 기록은 흉내 내지 않고 상품 · 자녀만 검사한다
+    // 조회 기록 (BE #1112 · #1366): 추천이 회원 활동으로 센다. 기록은 흉내 내지 않고 조회 종류 · 상품 · 자녀만 검사한다
     if (r('POST', /^\/recommendations\/product-views$/)) {
+      // viewType (BE #1366): 없으면 상세 진입, QUICK은 담기 팝업을 연 것. 모르는 값은 본문을 읽는 단계에서 400 (대소문자를 가린다)
+      const viewType = body?.viewType
+      if (viewType !== undefined && viewType !== null && !['DETAIL', 'QUICK'].includes(viewType))
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
       const productId = body?.productId
       if (productId === undefined || productId === null)
         return problem(res, 400, '잘못된 요청입니다', 'productId: 상품 ID가 필요합니다.', req.url)

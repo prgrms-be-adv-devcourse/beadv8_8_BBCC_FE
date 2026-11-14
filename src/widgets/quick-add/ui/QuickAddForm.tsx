@@ -16,6 +16,7 @@ import {
 } from '@/entities/product'
 import { useSizeRecommendationQuery } from '@/entities/recommendation'
 import { useSessionStore } from '@/entities/session'
+import { useRecordProductView } from '@/features/record-product-view'
 import { getErrorMessage } from '@/shared/api'
 import { loginPath, paths } from '@/shared/config'
 import { formatWon, useArea } from '@/shared/lib'
@@ -33,7 +34,7 @@ const PHOTO = 'border-ink aspect-[4/5] border-[1.5px]'
 
 /**
  * 담기 팝업의 옵션 고르기: 사진 · 이름 · 가격 → 누가 입나요 → 추천 한 줄 → 색 · 사이즈 → 소재 · 실측표 → 수량 · 담기.
- * 추천 사이즈는 칩에 표시만 하고 대신 고르지 않는다. 팝업을 연 것은 조회로 기록하지 않는다
+ * 추천 사이즈는 칩에 표시만 하고 대신 고르지 않는다. 팝업을 열면 조회(QUICK)로 기록한다
  */
 export function QuickAddForm({ detail, initialChildId, onClose }: QuickAddFormProps) {
   const isChild = useArea() === 'child'
@@ -47,6 +48,8 @@ export function QuickAddForm({ detail, initialChildId, onClose }: QuickAddFormPr
   const recommendation = useSizeRecommendationQuery(detail.id, recommendedChildId)
   const options = useOptionPicks(detail)
   const [quantity, setQuantity] = useState(MIN_QUANTITY)
+  // 팝업을 연 것은 상세 진입보다 낮은 무게의 조회로 기록한다. 보호자 회원만 (자녀 화면은 자녀 토큰이라 부르지 않음)
+  useRecordProductView(detail.id, childId, Boolean(user) && !isChild, 'QUICK')
 
   const pickedChild = children.data?.find((item) => item.id === childId) ?? null
   const category = categories.data?.find((item) => item.id === detail.categoryId) ?? null
