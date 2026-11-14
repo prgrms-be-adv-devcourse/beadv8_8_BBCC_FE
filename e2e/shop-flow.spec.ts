@@ -291,9 +291,14 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByRole('button', { name: '저장하기' }).click()
     await expect(page.getByText(/저장했어요/)).toBeVisible()
     await expect(page.getByText(/처음보다 \+3\.0cm/)).toBeVisible()
-    // 성장 그래프: 지금 키의 사이즈 구간 (기록이 같은 날뿐이라 다음 사이즈 예고는 아직 없음)
+    // 성장 그래프: 지금 키의 사이즈 구간. 기록이 같은 날뿐이라 속도는 또래 평균이고 키 기록을 권한다
     await expect(
       page.getByRole('img', { name: /키 기록 \d+개, 지금 118cm는 120 사이즈 구간/ }),
+    ).toBeVisible()
+    await expect(
+      page.getByText(
+        '또래 평균으로 보면 한 달에 약 0.6cm씩 클 것으로 예상해요 · 기록이 한 달 넘게 쌓이면 반영해요',
+      ),
     ).toBeVisible()
     await expect(page.getByText(/한 달에 한 번 키를 기록해 주세요/)).toBeVisible()
     await page.removeLocatorHandler(page.getByRole('alertdialog'))
