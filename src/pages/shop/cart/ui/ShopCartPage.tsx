@@ -46,7 +46,7 @@ export function ShopCartPage() {
 
   return (
     <div className="shop-look space-y-6">
-      <h1 className="text-page">장바구니</h1>
+      <h1 className="text-page border-ink border-b-[3px] pb-3.5">장바구니</h1>
       {cart.isPending && <ListSkeleton />}
       {cart.isError && <StateMessage tone="error">{getErrorMessage(cart.error)}</StateMessage>}
       {cart.data?.lines.length === 0 && (

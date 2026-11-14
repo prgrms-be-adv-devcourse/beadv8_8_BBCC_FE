@@ -14,7 +14,7 @@ export function ChildCartPage() {
   const images = useProductImageUrls(productIdsWithoutImage(cart.data?.lines ?? []))
   return (
     <section className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
-      <h1 className="text-page">내 장바구니</h1>
+      <h1 className="text-page border-ink border-b-[3px] pb-3.5">내 장바구니</h1>
       {cart.isPending && <StateMessage>불러오는 중</StateMessage>}
       {cart.isError && <StateMessage tone="error">{getErrorMessage(cart.error)}</StateMessage>}
       {cart.data?.lines.length === 0 && (

@@ -44,11 +44,11 @@ export function ShopOrdersPage() {
 
   return (
     <div className="shop-look space-y-6">
-      <h1 className="text-page">주문 내역</h1>
+      <h1 className="text-page border-ink border-b-[3px] pb-3.5">주문 내역</h1>
       <div
         role="tablist"
         aria-label="주문 상태"
-        className="border-rule flex gap-6 overflow-x-auto border-b"
+        className="border-rule flex gap-6 overflow-x-auto overflow-y-hidden border-b"
       >
         {ORDER_TABS.map((item) => (
           <button

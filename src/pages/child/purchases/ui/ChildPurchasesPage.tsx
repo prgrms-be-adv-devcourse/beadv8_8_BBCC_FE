@@ -17,7 +17,7 @@ export function ChildPurchasesPage() {
   const wishes = useChildWishRequestsQuery()
   return (
     <section className="space-y-4">
-      <h1>나를 위해 산 것</h1>
+      <h1 className="text-page border-ink border-b-[3px] pb-3.5">나를 위해 산 것</h1>
       {purchases.isPending && <StateMessage>불러오는 중</StateMessage>}
       {purchases.isError && (
         <StateMessage tone="error">{getErrorMessage(purchases.error)}</StateMessage>
