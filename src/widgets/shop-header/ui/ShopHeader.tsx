@@ -151,7 +151,7 @@ export function ShopHeader() {
           <Link
             to={paths.shop.home}
             aria-label="Kidly"
-            className="font-display text-ink hover:text-signal shrink-0 text-[28px] leading-none"
+            className="font-logo text-ink hover:text-signal shrink-0 text-[28px] leading-none"
           >
             kidly
           </Link>
