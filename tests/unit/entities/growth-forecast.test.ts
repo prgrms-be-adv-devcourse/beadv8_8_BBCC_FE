@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { forecastGrowth, type GrowthRecord, sizeBandOf } from '@/entities/child'
-
-const record = (recordedAt: string, heightCm: number): GrowthRecord => ({
-  id: recordedAt,
-  heightCm,
-  bodyType: null,
-  recordedAt,
-})
+import { forecastGrowth, sizeBandOf } from '@/entities/child'
 
 describe('사이즈 구간 (아동복 일반 표기: 호칭 = 키)', () => {
   it('120 = 115 이상 125 미만', () => {
@@ -16,30 +9,60 @@ describe('사이즈 구간 (아동복 일반 표기: 호칭 = 키)', () => {
   })
 })
 
-describe('다음 사이즈 예고 (아이 기록 추정)', () => {
-  it('한 달 이상 떨어진 기록 2개 이상이면 속도와 남은 달', () => {
-    // 6개월에 3cm → 한 달 0.5cm, 지금 118 → 125까지 7cm → 약 14개월
-    const forecast = forecastGrowth(
-      [record('2026-04-15T10:00:00', 115), record('2026-10-15T10:00:00', 118)],
-      118,
-    )
-    expect(forecast.cmPerMonth).toBe(0.5)
-    expect(forecast.monthsToNext).toBe(14)
-    expect(forecast.band.size).toBe(120)
+describe('다음 사이즈 예고 (받은 성장 속도로 계산)', () => {
+  it.each([
+    // 125까지 7cm ÷ 0.5
+    [118, 0.5, 14],
+    // 12.7개월 → 0.5 단위
+    [118, 0.55, 12.5],
+    // 0.2개월 → 가장 작은 값 0.5
+    [124.9, 0.5, 0.5],
+    // 9cm ÷ 0.25 = 36개월 (상한 포함)
+    [116, 0.25, 36],
+  ])('지금 키 %scm, 한 달 %scm이면 다음 사이즈까지 약 %s개월', (heightCm, cmPerMonth, months) => {
+    expect(forecastGrowth(heightCm, cmPerMonth).monthsToNext).toBe(months)
   })
-  it('기록이 하나뿐이거나 한 달이 안 되면 추정하지 않는다', () => {
-    expect(forecastGrowth([record('2026-10-15T10:00:00', 118)], 118).cmPerMonth).toBeNull()
-    expect(
-      forecastGrowth([record('2026-10-01T10:00:00', 117), record('2026-10-15T10:00:00', 118)], 118)
-        .monthsToNext,
-    ).toBeNull()
+
+  it.each([
+    // 37.5개월
+    [116, 0.24],
+    // 140개월
+    [118, 0.05],
+  ])(
+    '지금 키 %scm, 한 달 %scm처럼 36개월을 넘으면 한참 남은 것으로 본다',
+    (heightCm, cmPerMonth) => {
+      expect(forecastGrowth(heightCm, cmPerMonth)).toMatchObject({
+        monthsToNext: null,
+        isFarAway: true,
+      })
+    },
+  )
+
+  it.each([0, 0.04])(
+    '한 달 %scm처럼 0.0cm로 반올림되는 속도면 남은 달을 내지 않는다',
+    (cmPerMonth) => {
+      expect(forecastGrowth(118, cmPerMonth)).toMatchObject({
+        cmPerMonth: 0,
+        monthsToNext: null,
+        isFarAway: false,
+      })
+    },
+  )
+
+  it('속도를 아직 받지 못했으면(null) 속도도 남은 달도 없다', () => {
+    expect(forecastGrowth(118, null)).toMatchObject({
+      band: { size: 120, minCm: 115, maxCm: 125 },
+      cmPerMonth: null,
+      monthsToNext: null,
+      isFarAway: false,
+    })
   })
-  it('키가 줄었거나 3년 넘게 걸리면 남은 달은 null', () => {
-    expect(
-      forecastGrowth([record('2026-01-01', 120), record('2026-10-01', 119)], 119).monthsToNext,
-    ).toBeNull()
-    expect(
-      forecastGrowth([record('2025-10-01', 115), record('2026-10-01', 115.5)], 115.5).monthsToNext,
-    ).toBeNull()
+
+  it.each([
+    [0.5, 0.5],
+    [0.55, 0.6],
+    [0.62, 0.6],
+  ])('한 달 %scm은 소수 첫째 자리 %s로 보여 준다', (cmPerMonth, shown) => {
+    expect(forecastGrowth(118, cmPerMonth).cmPerMonth).toBe(shown)
   })
 })

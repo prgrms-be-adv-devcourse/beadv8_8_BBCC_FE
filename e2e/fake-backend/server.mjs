@@ -734,16 +734,23 @@ function sizeRecommendationOf(detail, c) {
     candidateSizes: candidates.map((s) => s.size),
   }
 }
+/** 첫 기록과 마지막 기록이 달력으로 한 달 이상 떨어져 있는지 (BE는 이때만 아이 기록을 속도에 섞는다) */
+function coversMonth(records) {
+  if (records.length < 2) return false
+  const days = records.map((record) => record.recordedAt.slice(0, 10)).sort()
+  const monthLater = new Date(`${days[0]}T00:00:00Z`)
+  monthLater.setUTCMonth(monthLater.getUTCMonth() + 1)
+  return monthLater.toISOString().slice(0, 10) <= days.at(-1)
+}
 /**
- * 성장 속도 · 입을 수 있는 기간 (BE #1266) 흉내. 키 기록이 둘 이상이면 아이 기록을 40% 섞은 것으로,
- * 아니면 평균 표 값(한 달 0.55cm)만 쓴 것으로 본다. 기간은 키 기준만: (권장 키 상한 − 키) ÷ 속도, 0 ~ 24개월
+ * 성장 속도 (BE #1266 · #1367) 흉내. 한 달 이상 떨어진 키 기록이 있으면 아이 기록을 40% 섞은 것으로,
+ * 아니면 평균 표 값(한 달 0.55cm)만 쓴 것으로 본다. 사이즈 추천과 자녀 성장 속도 조회가 같이 쓴다
  */
-function growthOf(c, detail) {
+function growthSpeedOf(c) {
   const records = c.growth ?? []
-  const isBlended = records.length >= 2
-  const cmPerMonth = isBlended ? 0.62 : 0.55
-  const growthSpeed = {
-    cmPerMonth,
+  const isBlended = coversMonth(records)
+  return {
+    cmPerMonth: isBlended ? 0.62 : 0.55,
     recentCmPerMonth: null,
     recordCount: records.length,
     recordMonths: isBlended ? 3.5 : 0,
@@ -751,6 +758,11 @@ function growthOf(c, detail) {
     tableCmPerMonth: 0.55,
     tableSource: '한국아동패널',
   }
+}
+/** 성장 속도 · 입을 수 있는 기간 (BE #1266) 흉내. 기간은 키 기준만: (권장 키 상한 − 키) ÷ 속도, 0 ~ 24개월 */
+function growthOf(c, detail) {
+  const growthSpeed = growthSpeedOf(c)
+  const { cmPerMonth } = growthSpeed
   if (detail.sizeFree) return { growthSpeed, wearablePeriods: [] }
   const wearablePeriods = detail.sizeSpecs.map((spec) => {
     const lengthMonths =
@@ -1765,6 +1777,13 @@ http
           }
         })
       return send(res, 200, pageFrom(content, url.searchParams))
+    }
+    // 자녀의 키 성장 속도 (BE #1367): 사이즈 추천의 growthSpeed와 같은 값. 없는 자녀 · 남의 자녀 · 삭제된 자녀는 모두 404
+    if ((x = r('GET', /^\/recommendations\/children\/(\d+)\/growth-speed$/))) {
+      const c = children.find((c) => c.id === +x[1] && c.memberId === me && !c.deleted)
+      if (!c)
+        return problem(res, 404, '자녀를 찾을 수 없습니다', '자녀를 찾을 수 없습니다.', req.url)
+      return send(res, 200, growthSpeedOf(c))
     }
     // 추천 기준 옷 (reference-garments.mjs): 남의 자녀는 403, 없거나 지운 자녀는 404
     const garment = referenceGarmentRoute(m, p, body, (childId) => {

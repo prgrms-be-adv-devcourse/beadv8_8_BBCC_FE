@@ -28,6 +28,7 @@ export {
 export {
   recommendationKeys,
   useCompanionProductsQuery,
+  useGrowthSpeedQuery,
   useHomePreviewQuery,
   usePurchasedGarmentsInfiniteQuery,
   useRecommendedProductsInfiniteQuery,
@@ -45,6 +46,7 @@ export { type ItemJudgement, type ReferenceFit, type ReferenceFitItem } from './
 export { referenceFitSummaryOf, type ReferenceFitSummary } from './model/reference-fit.rules'
 export { type GrowthSpeed, type WearablePeriod } from './model/growth-speed'
 export {
+  growthRecordPromptOf,
   growthSourceLinesOf,
   growthSpeedTextOf,
   wearablePeriodTextOf,

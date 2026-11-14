@@ -3,6 +3,7 @@ import type { PurchasedGarmentDto } from './purchased-garment.dto'
 import { purchasedGarmentPageShape } from './purchased-garment.shape'
 import type {
   CompanionProductsDto,
+  GrowthSpeedDto,
   HomePreviewDto,
   RecommendedProductPageDto,
   RecommendedProductsParamsDto,
@@ -10,6 +11,7 @@ import type {
 } from './recommendation.dto'
 import {
   companionProductsShape,
+  growthSpeedShape,
   homePreviewShape,
   recommendedProductPageShape,
   sizeRecommendationShape,
@@ -97,6 +99,14 @@ export const recommendationApi = {
     apiClient
       .get<Page<PurchasedGarmentDto>>(`/recommendations/children/${childId}/purchases`, { params })
       .then(expectShape(purchasedGarmentPageShape)),
+  /**
+   * 자녀의 키 성장 속도 (BE #1367). 칸과 값이 사이즈 추천의 growthSpeed와 같고, 기록이 모자라면 또래 평균 값이 온다.
+   * 없는 자녀 · 남의 자녀 · 삭제된 자녀면 404
+   */
+  growthSpeed: (childId: string) =>
+    apiClient
+      .get<GrowthSpeedDto>(`/recommendations/children/${childId}/growth-speed`)
+      .then(expectShape(growthSpeedShape)),
   /** 기준 옷 지우기 (204, 이미 없어도 204) */
   deleteReferenceGarment: (childId: string, part: string) =>
     apiClient.delete<void>(`${referenceGarments(childId)}/${part}`).then(() => undefined),

@@ -72,6 +72,7 @@ import {
 import { purchasedGarmentPageShape } from '@/entities/recommendation/api/purchased-garment.shape'
 import {
   companionProductsShape,
+  growthSpeedShape,
   homePreviewShape,
   recommendedProductPageShape,
   sizeRecommendationShape,
@@ -1737,6 +1738,28 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     expect(list.data.content[0].measurements).not.toBeNull()
     expect((await call('GET', url, 2)).status).toBe(403)
     expect((await call('GET', '/recommendations/children/999999/purchases', 1)).status).toBe(404)
+  })
+
+  it('자녀 성장 속도: 사이즈 추천의 growthSpeed와 칸 · 값이 같다 (BE #1367)', async () => {
+    const child = await call('POST', '/children', 1, {
+      ...toChildRequest(DEMO_CHILD),
+      requiredConsent: true,
+      optionalConsent: true,
+    })
+    const url = `/recommendations/children/${child.data.id}/growth-speed`
+    const speed = await call('GET', url, 1)
+    expect(speed.status).toBe(200)
+    expectContract(speed.data, growthSpeedShape)
+    // 한 달 이상 떨어진 기록이 없으면 또래 평균 값만 쓴다
+    expect(speed.data).toMatchObject({ childSharePercent: 0, recentCmPerMonth: null })
+    expect(speed.data.cmPerMonth).toBe(speed.data.tableCmPerMonth)
+    const size = await call('GET', `/recommendations/size?productId=1&childId=${child.data.id}`, 1)
+    expect(size.data.growthSpeed).toEqual(speed.data)
+    // 없는 자녀 · 남의 자녀 · 삭제된 자녀는 모두 404
+    expect((await call('GET', url, 2)).status).toBe(404)
+    expect((await call('GET', '/recommendations/children/999999/growth-speed', 1)).status).toBe(404)
+    await call('DELETE', `/children/${child.data.id}`, 1)
+    expect((await call('GET', url, 1)).status).toBe(404)
   })
 
   it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {

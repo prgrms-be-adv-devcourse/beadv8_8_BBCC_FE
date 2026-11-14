@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { childApi, childKeys, toChildRequest, type ChildForm } from '@/entities/child'
+import { recommendationKeys } from '@/entities/recommendation'
 import { toast } from '@/shared/lib'
 import { runWithAction } from '@/shared/api'
 
@@ -11,6 +12,7 @@ export function useUpdateChild(childId: string) {
       runWithAction('자녀 수정', () => childApi.update(childId, toChildRequest(form))),
     onSuccess: () => {
       toast('저장했어요 · 키 · 체형이 바뀌었으면 성장 이력에 쌓여요')
+      void queryClient.invalidateQueries({ queryKey: recommendationKeys.growthSpeed(childId) })
       return queryClient.invalidateQueries({ queryKey: childKeys.all })
     },
   })
@@ -33,6 +35,10 @@ export function useDeleteGrowthRecord(childId: string) {
   return useMutation({
     mutationFn: (recordId: string) =>
       runWithAction('성장 기록 삭제', () => childApi.removeGrowthRecord(childId, recordId)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: childKeys.all }),
+    // 성장 기록이 바뀌면 성장 속도도 다시 받는다
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: recommendationKeys.growthSpeed(childId) })
+      return queryClient.invalidateQueries({ queryKey: childKeys.all })
+    },
   })
 }

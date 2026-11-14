@@ -9,6 +9,12 @@ import {
   useGrowthRecordsQuery,
 } from '@/entities/child'
 import { accountOfChild, useChildAccountsQuery } from '@/entities/child-account'
+import {
+  growthRecordPromptOf,
+  growthSourceLinesOf,
+  growthSpeedTextOf,
+  useGrowthSpeedQuery,
+} from '@/entities/recommendation'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { ManageChildAccount } from '@/features/manage-child-account'
 import { DeleteChildButton, EditChildForm, DeleteGrowthRecordButton } from '@/features/edit-child'
@@ -27,6 +33,7 @@ export function ShopChildDetailPage() {
   const memberPaths = memberPathsOf(useArea())
   const child = useChildQuery(childId)
   const growth = useGrowthRecordsQuery(childId)
+  const speed = useGrowthSpeedQuery(childId)
   const user = useSessionStore((state) => state.user)
   const isBuyer = hasRole(user, 'BUYER')
   const accounts = useChildAccountsQuery(isBuyer)
@@ -98,7 +105,23 @@ export function ShopChildDetailPage() {
               <StateMessage tone="error">{getErrorMessage(growth.error)}</StateMessage>
             )}
             {growth.data && (
-              <GrowthChart records={growth.data} currentHeightCm={child.data.heightCm} />
+              <GrowthChart
+                records={growth.data}
+                currentHeightCm={child.data.heightCm}
+                speed={
+                  speed.data
+                    ? {
+                        cmPerMonth: speed.data.cmPerMonth,
+                        text: growthSpeedTextOf(speed.data),
+                        recordPrompt: growthRecordPromptOf(speed.data),
+                        sourceLines: growthSourceLinesOf(speed.data),
+                      }
+                    : null
+                }
+              />
+            )}
+            {speed.isError && (
+              <StateMessage tone="error">{getErrorMessage(speed.error)}</StateMessage>
             )}
             {growth.data && (
               <GrowthRecordList

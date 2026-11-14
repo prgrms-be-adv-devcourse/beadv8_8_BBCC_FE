@@ -35,17 +35,20 @@ const REFERENCE_FIT = {
   ),
 }
 
+/** 성장 속도 (BE #1266). 자녀 성장 속도 조회(BE #1367)의 응답도 같은 모양이다 */
+export const growthSpeedShape = obj({
+  cmPerMonth: num,
+  recentCmPerMonth: nullable(num),
+  recordCount: num,
+  recordMonths: num,
+  childSharePercent: num,
+  tableCmPerMonth: num,
+  tableSource: str,
+})
+
 /** 성장 속도 · 입을 수 있는 기간 (BE #1266) */
 const GROWTH = {
-  growthSpeed: obj({
-    cmPerMonth: num,
-    recentCmPerMonth: nullable(num),
-    recordCount: num,
-    recordMonths: num,
-    childSharePercent: num,
-    tableCmPerMonth: num,
-    tableSource: str,
-  }),
+  growthSpeed: growthSpeedShape,
   wearablePeriods: arr(
     obj({
       size: str,

@@ -12,6 +12,7 @@ import { nextRecommendedPageOf, type RecommendedPageParam } from './recommended-
 import { shownSizeOf } from './size-recommendation.rules'
 import {
   toCompanionProducts,
+  toGrowthSpeed,
   toHomePreview,
   toRecommendedProduct,
   toRecommendedProductsParams,
@@ -25,6 +26,7 @@ export const recommendationKeys = {
   referenceGarments: (childId: string) =>
     ['recommendation', 'reference-garments', childId] as const,
   purchases: (childId: string) => ['recommendation', 'purchases', childId] as const,
+  growthSpeed: (childId: string) => ['recommendation', 'growth-speed', childId] as const,
   size: (productId: string, childId: string) =>
     ['recommendation', 'size', productId, childId] as const,
   products: (childId: string, query: RecommendedProductsQuery) =>
@@ -179,5 +181,14 @@ export function usePurchasedGarmentsInfiniteQuery(childId: string, size = 10) {
       garments: data.pages.flatMap((page) => page.content.map(toPurchasedGarment)),
       totalElements: data.pages[0]?.totalElements ?? 0,
     }),
+  })
+}
+
+/** 자녀의 키 성장 속도 (자녀 상세의 성장 그래프). 사이즈 추천이 쓰는 값과 같다 */
+export function useGrowthSpeedQuery(childId: string) {
+  return useQuery({
+    queryKey: recommendationKeys.growthSpeed(childId),
+    queryFn: () => recommendationApi.growthSpeed(childId),
+    select: toGrowthSpeed,
   })
 }

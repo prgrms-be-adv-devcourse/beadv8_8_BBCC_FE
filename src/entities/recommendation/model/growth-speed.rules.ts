@@ -60,3 +60,15 @@ export function growthSourceLinesOf(speed: GrowthSpeed): string[] {
       : []
   return [table, ...records, GROWTH_DISCLAIMER]
 }
+
+const GROWTH_RECORD_PROMPT =
+  '한 달에 한 번 키를 기록해 주세요. 한 달 이상 떨어진 기록이 2개 넘게 쌓이면 우리 아이 기록으로 계산해 더 정확해져요.'
+
+/**
+ * 자녀 상세 성장 그래프 아래의 기록 권유 문장. 성장 속도에 아이 기록이 전혀 반영되지 않았을 때만
+ * (비중 0 = 한 달 이상 떨어진 기록이 2개가 안 됨) 보이고, 반영됐으면 null
+ */
+export const growthRecordPromptOf = ({
+  childSharePercent,
+}: Pick<GrowthSpeed, 'childSharePercent'>): string | null =>
+  childSharePercent === 0 ? GROWTH_RECORD_PROMPT : null
