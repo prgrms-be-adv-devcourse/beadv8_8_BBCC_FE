@@ -296,6 +296,15 @@ body:has([data-area='shop']) {
   color: var(--ink);
 }
 
+/* 아이가 쓴 조르기 한마디: 쇼핑 영역에서는 손글씨 */
+[data-area='shop'] [data-slot='wish-message'] {
+  color: var(--ink);
+  font-family: var(--font-hand);
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
 /* 공용 이름표: 쇼핑 영역에서는 각진 칸 */
 [data-area='shop'] [data-slot='badge'] {
   border-radius: 0;
