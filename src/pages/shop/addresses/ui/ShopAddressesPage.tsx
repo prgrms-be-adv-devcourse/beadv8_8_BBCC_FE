@@ -41,14 +41,14 @@ export function ShopAddressesPage() {
           <StateMessage>등록한 배송지가 없어요. 주문하려면 배송지를 추가해 주세요.</StateMessage>
         )}
         {addresses.data && addresses.data.length > 0 && (
-          <ul className="border-rule divide-rule divide-y border-y">
+          <ul className="border-ink divide-rule divide-y border-y-[1.5px]">
             {defaultFirst(addresses.data).map((address) => (
               <li key={address.id} className="space-y-3 py-5">
                 <div className="space-y-1">
                   <p className="flex items-center gap-2">
                     <span className="text-[15px] font-bold">{address.recipientName}</span>
                     {address.isDefault && (
-                      <span className="bg-signal-soft text-signal inline-flex h-5 items-center rounded-sm px-1.5 text-[11px] font-semibold">
+                      <span className="bg-signal-soft text-ink inline-flex h-5 items-center px-1.5 text-[11px] font-bold">
                         기본
                       </span>
                     )}

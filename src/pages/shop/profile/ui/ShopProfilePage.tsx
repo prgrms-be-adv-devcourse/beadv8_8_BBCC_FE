@@ -38,7 +38,7 @@ export function ShopProfilePage() {
       <section aria-label="프로필" className="flex items-center gap-4">
         <span
           aria-hidden
-          className="bg-signal-soft text-signal rounded-pill flex size-16 shrink-0 items-center justify-center text-2xl font-bold"
+          className="bg-signal-soft text-ink border-ink rounded-pill flex size-16 shrink-0 items-center justify-center border text-2xl font-bold"
         >
           {user.nickname.slice(0, 1)}
         </span>
@@ -57,7 +57,7 @@ export function ShopProfilePage() {
                 type="button"
                 aria-expanded={editing}
                 onClick={() => setEditingFor(editing ? null : user.nickname)}
-                className="border-rule text-ink-2 hover:border-field-edge rounded-pill inline-flex h-8 items-center border px-3 text-[13px] font-semibold transition-colors"
+                className="border-ink text-ink hover:bg-marker inline-flex h-8 items-center border-[1.5px] px-3 text-[13px] font-bold transition-colors"
               >
                 {editing ? '취소' : '변경'}
               </button>
@@ -80,7 +80,7 @@ export function ShopProfilePage() {
             {user.roles.map((role) => (
               <span
                 key={role}
-                className="bg-paper-2 text-ink-2 inline-flex h-6 items-center rounded-sm px-2 text-xs font-semibold"
+                className="border-ink text-ink inline-flex h-6 items-center border px-2 text-xs font-bold"
               >
                 {ROLE_LABEL[role]}
               </span>
@@ -142,9 +142,7 @@ function InfoSection({ title, children }: InfoSectionProps) {
   return (
     <section aria-label={title} className="space-y-3">
       <h2 className="text-section">{title}</h2>
-      <dl className="border-rule divide-rule divide-y overflow-hidden rounded-xl border">
-        {children}
-      </dl>
+      <dl className="border-ink divide-rule divide-y overflow-hidden border-[1.5px]">{children}</dl>
     </section>
   )
 }

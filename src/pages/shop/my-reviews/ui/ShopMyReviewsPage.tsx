@@ -28,7 +28,7 @@ export function ShopMyReviewsPage() {
             리뷰를 쓸 수 있는 상품이 없어요. 구매확정한 상품에 리뷰를 남길 수 있어요.
           </StateMessage>
         ) : (
-          <ul className="border-rule divide-rule divide-y rounded-lg border px-4">
+          <ul className="border-ink divide-rule divide-y border-[1.5px] px-4">
             {reviewable.data.map((item) => (
               <li key={item.orderItemId} className="flex flex-wrap items-center gap-3 py-3">
                 <div className="min-w-0 flex-1 space-y-0.5">
@@ -59,7 +59,7 @@ export function ShopMyReviewsPage() {
           <StateMessage>아직 쓴 리뷰가 없어요.</StateMessage>
         ) : (
           <>
-            <ul className="border-rule divide-rule divide-y rounded-lg border px-4">
+            <ul className="border-ink divide-rule divide-y border-[1.5px] px-4">
               {mine.data.map((review) => (
                 <li key={review.id}>
                   <MyReviewItem review={review} />

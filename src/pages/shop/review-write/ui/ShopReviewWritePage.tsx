@@ -75,7 +75,7 @@ export function ShopReviewWritePage() {
         title="리뷰 쓰기"
         note="POST /reviews → 커뮤니티가 구매확정 자격을 확인하고 리뷰를 저장, 상품 리뷰 수 · 평균 별점을 같은 트랜잭션에서 올린다"
       />
-      <section aria-label="리뷰할 상품" className="border-rule space-y-1 rounded-lg border p-4">
+      <section aria-label="리뷰할 상품" className="border-ink space-y-1 border-[1.5px] p-4">
         <p className="font-semibold">{item.productName ?? `상품 #${item.productId}`}</p>
         <p className="text-ink-3 flex flex-wrap gap-x-3 text-[13px]">
           {item.size && <span>구매 사이즈 {item.size}</span>}
@@ -115,7 +115,7 @@ function WrittenReview({ review }: WrittenReviewProps) {
   return (
     <div className="shop-look mx-auto max-w-2xl space-y-4">
       <PageHeader title="리뷰를 남겼어요" />
-      <section aria-label="남긴 리뷰" className="border-rule rounded-lg border px-4">
+      <section aria-label="남긴 리뷰" className="border-ink border-[1.5px] px-4">
         <ReviewCard review={review} />
       </section>
       <p className="flex flex-wrap gap-x-6 gap-y-2 text-sm">

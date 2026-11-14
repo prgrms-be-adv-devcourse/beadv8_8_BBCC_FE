@@ -67,7 +67,7 @@ export function ShopChildNewPage() {
             ))}
           </ol>
         </div>
-        <div className="border-rule rounded-xl border p-5 md:p-8">
+        <div className="border-ink border-[1.5px] p-5 md:p-8">
           {verification.isPending && <StateMessage>불러오는 중…</StateMessage>}
           {verification.isError && (
             <StateMessage tone="error">{getErrorMessage(verification.error)}</StateMessage>

@@ -44,8 +44,8 @@ export function ChildWishesPage() {
               aria-pressed={filter === key}
               onClick={() => setFilter(key)}
               className={cn(
-                'rounded-pill inline-flex min-h-10 items-center border px-4 text-sm font-semibold',
-                filter === key ? 'border-ink bg-ink text-white' : 'border-rule text-ink-2',
+                'border-ink inline-flex min-h-10 items-center border-[1.5px] px-4 text-sm font-bold',
+                filter === key ? 'bg-ink text-paper' : 'text-ink hover:bg-marker',
               )}
             >
               {WISH_FILTER_LABEL[key]}{' '}
