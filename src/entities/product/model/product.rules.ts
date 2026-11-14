@@ -22,6 +22,19 @@ export function productMeta(product: { categoryName: string; brand: string | nul
   return [product.categoryName, product.brand].filter(Boolean).join(' · ')
 }
 
+/**
+ * 옵션 거르기에서 고른 색 이름 (항목의 값 순서대로). 색은 견본만 보이므로 항목 이름 옆에 적는다.
+ * 고른 값 키는 「항목 코드:값 ID」이고, 색 값이 없는 값은 이름 칸으로 보이므로 넣지 않는다
+ */
+export function pickedColorNamesOf(
+  attribute: Pick<InputAttribute, 'code' | 'values'>,
+  selectedKeys: ReadonlySet<string>,
+): string[] {
+  return attribute.values
+    .filter((value) => value.colorCode && selectedKeys.has(`${attribute.code}:${value.id}`))
+    .map((value) => value.name)
+}
+
 /** 옵션 가격이 서로 다르면 가격 뒤에 「~」를 붙인다. 모두 같으면 그 가격 하나만 보인다 */
 export function hasPriceRange(options: { price: number }[]): boolean {
   return new Set(options.map((option) => option.price)).size > 1

@@ -64,6 +64,7 @@ export {
   categoryNameOf,
   isFreeSize,
   hasPriceRange,
+  pickedColorNamesOf,
   isOnSale,
   optionCombos,
   priceGroups,
