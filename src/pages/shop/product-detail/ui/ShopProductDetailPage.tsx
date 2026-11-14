@@ -6,6 +6,7 @@ import {
   ALL_CATEGORIES_ICON,
   categoryIconOf,
   detailImagesOf,
+  hasPriceRange,
   isOnSale,
   ProductDescription,
   ProductGallery,
@@ -220,7 +221,8 @@ export function ShopProductDetailPage() {
               )}
               {detail.minPrice !== null && (
                 <p className="figure border-ink border-b-[1.5px] pt-1 pb-3.5 text-[30px] leading-none font-bold">
-                  {formatWon(detail.minPrice)}~
+                  {formatWon(detail.minPrice)}
+                  {hasPriceRange(detail.options) && '~'}
                 </p>
               )}
             </div>
