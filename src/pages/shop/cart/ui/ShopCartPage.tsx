@@ -2,9 +2,10 @@ import { Link, useNavigate } from 'react-router'
 import { groupBySeller, orderableLines, sellerGroupLabel, sumLineAmount } from '@/entities/cart'
 import { findChild, useChildrenQuery } from '@/entities/child'
 import {
-  ProductImage,
+  ALL_CATEGORIES_ICON,
   lineImageUrl,
   productIdsWithoutImage,
+  ProductImage,
   useProductImageUrls,
 } from '@/entities/product'
 import { CartItemControls, RemoveSelectedButton } from '@/features/edit-cart-item'
@@ -62,7 +63,7 @@ export function ShopCartPage() {
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="flex min-h-11 items-center gap-3 font-semibold">
+              <label className="flex min-h-11 items-center gap-3 text-sm font-bold">
                 <input
                   type="checkbox"
                   className="accent-signal size-5"
@@ -78,14 +79,14 @@ export function ShopCartPage() {
               <section
                 key={group.sellerId ?? 'unknown'}
                 aria-label={sellerGroupLabel(group)}
-                className="border-rule rounded-card border"
+                className="border-ink border-[1.5px]"
               >
                 {/* 상점 묶음 머리: 상점 이름 · 담은 수 · 합계 */}
-                <div className="border-rule flex items-baseline justify-between gap-4 border-b px-4 py-3">
+                <div className="border-ink flex items-baseline justify-between gap-4 border-b-[1.5px] px-4 py-3">
                   <span className="text-[15px] font-bold">{sellerGroupLabel(group)}</span>
-                  <span className="text-ink-3 figure flex gap-3 text-[13px]">
+                  <span className="text-ink-2 figure flex gap-3 text-sm">
                     <span>{group.lines.length}개</span>
-                    <span className="text-ink font-semibold">
+                    <span className="text-ink font-bold">
                       {formatWon(sumLineAmount(group.lines))}
                     </span>
                   </span>
@@ -107,14 +108,15 @@ export function ShopCartPage() {
                       <ProductImage
                         src={lineImageUrl(line, images)}
                         alt={line.productName}
-                        className="rounded-card aspect-[3/4] w-16 shrink-0"
+                        doodle={ALL_CATEGORIES_ICON}
+                        className="border-ink aspect-[4/5] w-[72px] shrink-0 border"
                       />
                       <div className="min-w-0 flex-1 basis-48 space-y-1">
-                        <p className="text-sm font-semibold">
+                        <p className="text-[15px] font-bold">
                           {line.productName}{' '}
                           {!line.purchasable && <Badge variant="destructive">구매 불가</Badge>}
                         </p>
-                        <p className="text-ink-3 flex flex-wrap gap-x-3 text-[13px]">
+                        <p className="text-ink-2 flex flex-wrap gap-x-3 text-[13px]">
                           {[
                             optionLabel(line),
                             line.childId &&
@@ -125,7 +127,7 @@ export function ShopCartPage() {
                               <span key={String(text)}>{text}</span>
                             ))}
                         </p>
-                        <p className="figure text-[15px] font-bold">{formatWon(line.lineAmount)}</p>
+                        <p className="figure text-[17px] font-bold">{formatWon(line.lineAmount)}</p>
                       </div>
                       <div className="ml-auto">
                         <CartItemControls line={line} />
@@ -140,11 +142,13 @@ export function ShopCartPage() {
           {/* 배송지 · 예치금 잔액은 행동 분석 녹화에서 가린다 */}
           <aside
             data-clarity-mask="true"
-            className="bg-paper-2 rounded-card space-y-5 p-5 lg:sticky lg:top-32"
+            className="bg-sheet space-y-5 px-5 pt-[22px] pb-5 lg:sticky lg:top-32"
           >
-            <h2 className="text-lg font-bold">주문서</h2>
+            <h2 className="font-display border-ink border-b-4 border-double pb-3 text-3xl leading-none">
+              주문서
+            </h2>
             <div className="space-y-2">
-              <p className="text-ink-2 text-sm">배송지</p>
+              <p className="text-xs font-bold">배송지</p>
               {addresses.data?.length === 0 ? (
                 <Link to={paths.shop.addresses} className="shop-link text-sm">
                   배송지를 먼저 등록해 주세요
@@ -159,7 +163,7 @@ export function ShopCartPage() {
                 </Select>
               )}
             </div>
-            <div className="border-rule figure space-y-2 border-t pt-4 text-sm">
+            <div className="figure divide-ink divide-y divide-dashed text-sm [&>div]:py-2">
               <div className="flex justify-between">
                 <span>선택한 상품 {lines.length}개</span>
                 <span>{formatWon(orderAmount)}</span>
@@ -178,11 +182,9 @@ export function ShopCartPage() {
                       : '…'}
                 </span>
               </div>
-              <div className="border-rule flex items-baseline justify-between border-t pt-3">
-                <span className="text-base font-semibold">결제 금액</span>
-                <span className="text-signal figure text-lg font-bold">
-                  {formatWon(orderAmount)}
-                </span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-base font-bold">결제 금액</span>
+                <span className="figure text-xl font-bold">{formatWon(orderAmount)}</span>
               </div>
             </div>
             {shortage > 0 && (
