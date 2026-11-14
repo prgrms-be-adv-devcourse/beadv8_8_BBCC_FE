@@ -126,6 +126,7 @@ export { ALL_CATEGORIES_ICON, type CategoryDoodle } from './config/category-icon
 export { categoryIconOf } from './model/category-icon.rules'
 export { visibleCategoryIdOf } from './model/visible-category.rules'
 export { CategoryIcon } from './ui/CategoryIcon'
+export { ColorSwatch } from './ui/ColorOptionChip'
 export { HOME_HERO_PHOTO } from './config/sample-photos'
 export {
   optionStockStateOf,
