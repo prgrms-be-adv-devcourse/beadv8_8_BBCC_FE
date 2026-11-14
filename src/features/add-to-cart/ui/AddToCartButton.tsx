@@ -14,6 +14,8 @@ type AddToCartButtonProps = {
   cartHref: string
   /** 담은 뒤 "계속 쇼핑" 주소 (없으면 안 보임) */
   continueHref?: string
+  /** 담은 뒤 "계속 쇼핑"을 누르면 할 일 (팝업 닫기처럼 주소로 가지 않을 때). continueHref보다 앞선다 */
+  onContinue?: () => void
 }
 
 export function AddToCartButton({
@@ -23,6 +25,7 @@ export function AddToCartButton({
   disabled,
   cartHref,
   continueHref,
+  onContinue,
 }: AddToCartButtonProps) {
   const add = useAddToCart()
 
@@ -43,13 +46,22 @@ export function AddToCartButton({
           <Link to={cartHref} className="text-primary underline">
             장바구니 보기
           </Link>
-          {continueHref && (
+          {onContinue ? (
             <>
               {' · '}
-              <Link to={continueHref} className="text-primary underline">
+              <button type="button" className="text-primary underline" onClick={onContinue}>
                 계속 쇼핑
-              </Link>
+              </button>
             </>
+          ) : (
+            continueHref && (
+              <>
+                {' · '}
+                <Link to={continueHref} className="text-primary underline">
+                  계속 쇼핑
+                </Link>
+              </>
+            )
           )}
         </StateMessage>
       )}

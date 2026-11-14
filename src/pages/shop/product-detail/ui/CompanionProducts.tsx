@@ -7,6 +7,7 @@ import {
   type RecommendedPicks,
 } from '@/entities/recommendation'
 import { paths } from '@/shared/config'
+import { QuickAdd } from '@/widgets/quick-add'
 
 const WAITING = '함께 입기 좋은 상품을 고르고 있어요'
 const AI_WAITING = 'AI가 더 잘 어울리는 상품을 고르고 있어요'
@@ -72,6 +73,9 @@ export function CompanionProducts({
                   product.recommendedSize
                     ? { text: `${product.recommendedSize} 잘 맞아요`, fit: true }
                     : { text: '사이즈 무관' }
+                }
+                action={
+                  <QuickAdd productId={product.id} productName={product.name} childId={childId} />
                 }
               />
               {product.reason && (

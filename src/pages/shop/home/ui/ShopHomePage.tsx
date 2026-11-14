@@ -20,6 +20,7 @@ import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { QuickHeightForm } from '@/features/edit-child'
 import { useRecordSearchClick } from '@/features/record-search-click'
+import { QuickAdd } from '@/widgets/quick-add'
 import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
@@ -199,15 +200,18 @@ export function ShopHomePage() {
                 isSoldOut={product.soldOut}
                 tag={product.sizeFree ? { text: '사이즈 무관' } : undefined}
                 action={
-                  isBuyer ? (
-                    <FavoriteButton
-                      productId={product.id}
-                      isFavorited={favoritedIds.data?.has(product.id) ?? false}
-                      isLoading={favoritedIds.isPending}
-                      isSelling
-                      isCompact
-                    />
-                  ) : undefined
+                  <>
+                    {isBuyer && (
+                      <FavoriteButton
+                        productId={product.id}
+                        isFavorited={favoritedIds.data?.has(product.id) ?? false}
+                        isLoading={favoritedIds.isPending}
+                        isSelling
+                        isCompact
+                      />
+                    )}
+                    <QuickAdd productId={product.id} productName={product.name} />
+                  </>
                 }
                 onClick={
                   keyword && !isChild

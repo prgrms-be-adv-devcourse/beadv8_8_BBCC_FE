@@ -12,6 +12,7 @@ import {
 } from '@/entities/recommendation'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
+import { QuickAdd } from '@/widgets/quick-add'
 
 type RecommendedPreviewProps = {
   kids: Child[]
@@ -119,6 +120,9 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
                   product.recommendedSize
                     ? { text: `${product.recommendedSize} 잘 맞아요`, fit: true }
                     : { text: '사이즈 무관' }
+                }
+                action={
+                  <QuickAdd productId={product.id} productName={product.name} childId={child.id} />
                 }
               />
               {/* 이유가 없으면(규칙으로 채운 상품) 칸을 그리지 않는다. 길이 제한이 없어 2줄에서 자르고 전문은 title로 */}
