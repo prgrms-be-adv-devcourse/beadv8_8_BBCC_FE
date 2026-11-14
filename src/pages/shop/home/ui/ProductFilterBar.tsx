@@ -31,7 +31,7 @@ export function ProductFilterBar({ search, onChange }: ProductFilterBarProps) {
         aria-expanded={isOpen}
         aria-controls="product-filter-chips"
         onClick={() => setIsOpen((open) => !open)}
-        className="border-rule bg-paper text-ink flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold md:hidden"
+        className="border-ink bg-paper text-ink flex h-11 items-center gap-1.5 border-[1.5px] px-4 text-sm font-bold md:hidden"
       >
         필터{selected.size > 0 && <span className="text-signal figure">{selected.size}</span>}
         <span aria-hidden>{isOpen ? '▴' : '▾'}</span>
@@ -47,7 +47,7 @@ export function ProductFilterBar({ search, onChange }: ProductFilterBarProps) {
             aria-label={`${attribute.name} 거르기`}
             className="flex flex-wrap items-center gap-2"
           >
-            <span className="text-ink-3 mr-1 text-[13px]">{attribute.name}</span>
+            <span className="text-ink mr-1 text-xs font-bold">{attribute.name}</span>
             {attribute.values.map((value) => {
               const key = `${attribute.code}:${value.id}`
               const on = selected.has(key)
@@ -58,16 +58,14 @@ export function ProductFilterBar({ search, onChange }: ProductFilterBarProps) {
                   aria-pressed={on}
                   onClick={() => toggle(key)}
                   className={cn(
-                    'flex h-11 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-colors md:h-8 md:px-3',
-                    on
-                      ? 'border-ink bg-ink text-paper'
-                      : 'border-rule bg-paper text-ink-2 hover:border-field-edge',
+                    'border-ink flex h-11 items-center gap-1.5 border-[1.5px] px-3.5 text-[13px] font-bold transition-colors md:h-8 md:px-3',
+                    on ? 'bg-ink text-paper' : 'bg-paper text-ink hover:bg-marker',
                   )}
                 >
                   {value.colorCode && (
                     <span
                       aria-hidden
-                      className="border-rule size-3.5 rounded-full border"
+                      className="border-ink size-3.5 border"
                       style={{ backgroundColor: value.colorCode }}
                     />
                   )}

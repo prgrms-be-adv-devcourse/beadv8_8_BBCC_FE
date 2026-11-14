@@ -13,7 +13,7 @@ function seasonOf(month: number): string {
   return 'FALL'
 }
 
-/** 홈 첫 칸 (확정 시안 6번 브랜드 퍼플): 큰 계절 이름 + 우리 아이 사이즈, 옆에 사진 (Unsplash) */
+/** 홈 첫 칸: 큰 계절 이름 + 형광펜을 그은 우리 아이 사이즈, 옆에 먹색 테두리 사진 (Unsplash) */
 export function HomeHero({ size }: HomeHeroProps) {
   const season = seasonOf(new Date().getMonth() + 1)
   return (
@@ -29,11 +29,13 @@ export function HomeHero({ size }: HomeHeroProps) {
         {size && (
           <>
             <br />
-            <span className="text-signal">{size}</span>
+            <span className="bg-[linear-gradient(transparent_55%,var(--fit)_55%)] px-[0.06em]">
+              {size}
+            </span>
           </>
         )}
       </p>
-      <div className="bg-paper relative h-44 w-full min-w-0 overflow-hidden rounded-lg md:h-60 md:flex-1">
+      <div className="border-ink bg-paper-2 relative h-44 w-full min-w-0 overflow-hidden border-[1.5px] md:h-60 md:flex-1">
         <img
           src={HOME_HERO_PHOTO}
           alt=""

@@ -138,11 +138,13 @@ export function ShopHomePage() {
         className="scroll-mt-6 space-y-4 md:scroll-mt-44"
       >
         {/* 목록 머리: 제목 · 개수 · 검색어 왼쪽, 정렬 오른쪽. 카테고리를 고르면 아래에 옵션 거르기 */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-            <h2 className="text-section">{title}</h2>
+        <div className="border-ink flex items-end justify-between gap-4 border-b-[3px] pb-3">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <h2 className="font-display text-[clamp(1.75rem,3.4vw,3.125rem)] leading-none">
+              {title}
+            </h2>
             {all.data && !isStale && (
-              <span className="text-ink-3 figure text-sm">{all.data.totalElements}</span>
+              <span className="text-ink-2 figure text-lg font-bold">{all.data.totalElements}</span>
             )}
             {keyword && (
               <Link
@@ -181,7 +183,7 @@ export function ShopHomePage() {
         <div
           aria-busy={isStale}
           className={cn(
-            'grid grid-cols-2 gap-x-3 gap-y-8 transition-opacity sm:grid-cols-3 md:gap-x-4 lg:grid-cols-4',
+            'grid grid-cols-2 gap-x-3 gap-y-7 pt-1.5 transition-opacity sm:grid-cols-3 md:gap-x-[18px] md:gap-y-[34px] lg:grid-cols-5',
             isStale && 'pointer-events-none opacity-40',
           )}
         >
@@ -230,7 +232,7 @@ export function ShopHomePage() {
       </section>
 
       {child && (
-        <section className="bg-paper-2 rounded-card grid gap-5 p-5 md:p-7 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center">
+        <section className="border-ink bg-paper-2 grid gap-5 border-[1.5px] p-5 md:p-7 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center">
           <div className="space-y-1.5">
             <h2 className="text-section">작아진 옷, 키만 알려주세요</h2>
             <p className="text-ink-2 max-w-[44ch] text-sm">
