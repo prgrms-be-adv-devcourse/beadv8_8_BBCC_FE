@@ -9,6 +9,7 @@ import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { CardGridSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { QuickAdd } from '@/widgets/quick-add'
 
 /**
  * 자녀 맞춤 목록 (홈 「더보기」): 키에 맞는 사이즈가 판매 중인 상품, 신상품순 고정.
@@ -118,6 +119,9 @@ export function ShopRecommendedPage() {
               product.recommendedSize
                 ? { text: `${product.recommendedSize} 잘 맞아요`, fit: true }
                 : { text: '사이즈 무관' }
+            }
+            action={
+              <QuickAdd productId={product.id} productName={product.name} childId={childId} />
             }
           />
         ))}

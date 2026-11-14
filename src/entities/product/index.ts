@@ -121,6 +121,7 @@ export {
   pickOptionValue,
   picksOfOption,
 } from './model/option-picker.rules'
+export { useOptionPicks } from './model/use-option-picks'
 export { ALL_CATEGORIES_ICON, type CategoryDoodle } from './config/category-icons'
 export { categoryIconOf } from './model/category-icon.rules'
 export { visibleCategoryIdOf } from './model/visible-category.rules'
