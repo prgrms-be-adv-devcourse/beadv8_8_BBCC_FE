@@ -29,7 +29,7 @@ function HeaderSearch({ className }: { className?: string }) {
       role="search"
       onSubmit={submit}
       className={cn(
-        'bg-paper-2 has-[input:focus-visible]:outline-signal flex h-11 min-w-0 items-center rounded-full pr-1.5 pl-4 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2',
+        'border-ink has-[input:focus-visible]:outline-signal flex h-10 min-w-0 items-center border-[1.5px] pr-0.5 pl-3 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2',
         className,
       )}
     >
@@ -43,7 +43,7 @@ function HeaderSearch({ className }: { className?: string }) {
       <button
         type="submit"
         aria-label="검색"
-        className="text-ink-3 hover:text-signal focus-visible:outline-signal flex size-9 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 active:translate-y-px"
+        className="text-ink hover:bg-marker focus-visible:outline-signal flex size-8 shrink-0 items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 active:translate-y-px"
       >
         <svg
           viewBox="0 0 24 24"
@@ -78,8 +78,8 @@ function UtilityLink({ to, label, ariaLabel, count, children }: UtilityLinkProps
       aria-label={ariaLabel ?? label}
       className={({ isActive }) =>
         cn(
-          'hover:text-signal relative flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-full text-[13px] font-semibold transition-colors active:translate-y-px md:min-w-0 md:px-2',
-          isActive ? 'text-signal' : 'text-ink',
+          'text-ink relative flex min-h-11 min-w-11 items-center justify-center gap-1 text-[13px] font-semibold underline-offset-4 hover:underline active:translate-y-px md:min-w-0 md:px-2',
+          isActive && 'underline decoration-2',
         )
       }
     >
@@ -88,7 +88,7 @@ function UtilityLink({ to, label, ariaLabel, count, children }: UtilityLinkProps
       {count ? (
         <span
           aria-hidden
-          className="bg-signal text-signal-ink flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[11px] font-bold max-md:absolute max-md:top-1 max-md:right-0.5"
+          className="bg-ink text-paper font-label flex h-[18px] min-w-[18px] items-center justify-center px-1 text-xs font-bold max-md:absolute max-md:top-1 max-md:right-0.5"
         >
           {count > 99 ? '99+' : count}
         </span>
@@ -98,7 +98,7 @@ function UtilityLink({ to, label, ariaLabel, count, children }: UtilityLinkProps
 }
 
 const ACCOUNT_BOX =
-  'border-rule text-ink hover:border-signal flex h-8 items-center rounded-full border px-3 text-[13px] font-semibold transition-colors'
+  'border-ink text-ink hover:bg-marker flex h-8 items-center border-[1.5px] px-3 text-[13px] font-bold transition-colors'
 
 /** 로그인 · 회원가입(카카오 로그인 한 번으로 가입까지) 또는 로그아웃 */
 function AccountAction() {
@@ -134,7 +134,7 @@ function AccountAction() {
 }
 
 /**
- * 쇼핑 영역 머리말 (확정 시안 11-09): 로고와 둥근 검색 · 판매자센터 · 알림 · 장바구니 · 마이페이지 · 로그인 한 줄.
+ * 쇼핑 영역 머리말: 로고와 각진 검색 칸 · 판매자센터 · 알림 · 장바구니 · 마이페이지 · 로그인 한 줄, 아래는 먹색 실선.
  * 탭 메뉴는 두지 않는다 (홈은 로고, 자녀 프로필 · 주문 내역은 마이페이지 메뉴에 있다).
  * 화면을 열 때 API를 부르지 않는다 (흐름 기록을 화면 동작만으로 남기려고). 로그아웃은 누를 때만 부른다
  */
@@ -144,14 +144,14 @@ export function ShopHeader() {
   const unreadCount = useUnreadNotificationCount()
   return (
     // 휴대폰에서는 고정하지 않는다 (머리말이 화면을 덮지 않게)
-    <header className="bg-paper border-rule z-30 border-b md:sticky md:top-0">
+    <header className="bg-paper border-ink z-30 border-b-[1.5px] md:sticky md:top-0">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
         {/* 휴대폰은 검색 칸을 아래 줄로 내려 가로로 넘치지 않게 한다 */}
         <div className="flex flex-wrap items-center gap-x-8 gap-y-2 py-3 md:h-17 md:flex-nowrap md:py-0">
           <Link
             to={paths.shop.home}
             aria-label="Kidly"
-            className="font-logo text-ink hover:text-signal shrink-0 text-[28px] leading-none"
+            className="font-logo text-ink shrink-0 text-[28px] leading-none md:text-[34px]"
           >
             kidly
           </Link>
