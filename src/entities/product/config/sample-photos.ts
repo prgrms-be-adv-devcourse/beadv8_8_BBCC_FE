@@ -17,9 +17,6 @@ const SAMPLE_PHOTO_IDS = [
   'photo-1628215529991-72aa205333f5', // 검정 패딩
 ] as const
 
-/** 홈 첫 칸 사진 (눈밭의 아이) */
-export const HOME_HERO_PHOTO = `${UNSPLASH}/photo-1606946185142-7b30e9a7abcc?w=1600&q=80&auto=format&fit=crop`
-
 /** 같은 상품은 늘 같은 사진이 나오게 이름(또는 ID)으로 고른다 */
 export function samplePhotoOf(key: string, width = 600): string {
   // FNV-1a: 끝 글자만 다른 이름(「상품 A」 · 「상품 B」)도 다른 사진이 나오게 고르게 섞는다
