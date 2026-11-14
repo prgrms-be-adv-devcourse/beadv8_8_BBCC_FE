@@ -12,7 +12,7 @@ type CategoryChipsProps = {
   onSelect: (categoryId: string | null) => void
 }
 
-/** 카테고리 바로가기: 낙서 아이콘 위 · 이름 아래. 아이콘이 없는 카테고리는 첫 글자 칸. 고른 것은 이름을 먹색으로 채운다. 좁으면 가로로 민다 */
+/** 카테고리 바로가기: 낙서 아이콘 위 · 이름 아래. 아이콘이 없는 카테고리는 첫 글자 칸. 고른 것은 이름을 먹색으로 채운다. 가운데에 놓고, 폭보다 많으면 가로로 민다 */
 export function CategoryChips({ categories, selectedId, onSelect }: CategoryChipsProps) {
   const items = [
     { id: null, name: '전체', label: '전체 카테고리', icon: ALL_CATEGORIES_ICON },
@@ -28,7 +28,7 @@ export function CategoryChips({ categories, selectedId, onSelect }: CategoryChip
       aria-label="카테고리"
       className="-mx-4 [scrollbar-width:none] overflow-x-auto px-4 md:-mx-1 md:px-1"
     >
-      <div className="flex w-max gap-3.5 py-2 md:gap-5">
+      <div className="mx-auto flex w-max gap-3.5 py-2 md:gap-5">
         {items.map((item) => {
           const active = selectedId === item.id
           return (
