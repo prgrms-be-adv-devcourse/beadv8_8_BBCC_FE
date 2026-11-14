@@ -110,11 +110,7 @@ export function ShopHomePage() {
   }
 
   return (
-    // data-shop-home: 홈만 브랜드 퍼플 바탕 (shop.css). 자녀 영역 홈은 그대로
-    <div
-      data-shop-home={isChild ? undefined : ''}
-      className="shop-look flex flex-col gap-8 md:gap-10"
-    >
+    <div className="shop-look flex flex-col gap-8 md:gap-10">
       {!isChild && !keyword && (
         <HomeHero size={child ? sizeRulerOf(child.heightCm).band.size : null} />
       )}
