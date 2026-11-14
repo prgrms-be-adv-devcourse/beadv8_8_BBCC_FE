@@ -1,20 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { cn } from '@/shared/lib'
-import type { HomeBanner, HomeBannerTone } from '../model/home-banners'
+import { ALL_CATEGORIES_ICON, ProductImage } from '@/entities/product'
+import type { HomeBanner } from '../model/home-banners.rules'
 
-type HomeBannersProps = {
-  banners: HomeBanner[]
-  /** 사진을 까는 배너에 쓸 사진 주소 */
-  photoUrl: string
-}
-
-const TONE: Record<HomeBannerTone, string> = {
-  sheet: 'bg-sheet text-ink',
-  marker: 'bg-marker text-ink',
-  ink: 'bg-ink text-paper',
-  paper: 'bg-paper text-ink',
-}
+type HomeBannersProps = { banners: HomeBanner[] }
 
 const NAV_BUTTON =
   'border-ink hover:bg-marker flex h-9 w-10 items-center justify-center border-[1.5px] text-[15px]'
@@ -38,10 +27,11 @@ function positionOf(track: HTMLElement): { index: number; last: number } | null 
 }
 
 /**
- * 홈 첫 칸의 배너: 넓은 화면은 두 장, 휴대폰은 한 장씩 보이고 좌우로 넘긴다 (끝에서 누르면 처음으로 돌아온다).
+ * 홈 첫 칸의 배너: 사진이 칸을 가득 채우고 아래쪽에 문구 두 줄과 작은 글자 한 줄을 얹는다.
+ * 넓은 화면은 세 장(그보다 적으면 폭을 나눠 채운다), 휴대폰은 한 장씩 보이고 좌우로 넘긴다 (끝에서 누르면 처음으로 돌아온다).
  * 손가락으로 밀어도 넘어간다. 한 화면에 다 보이면 넘기는 버튼을 그리지 않는다
  */
-export function HomeBanners({ banners, photoUrl }: HomeBannersProps) {
+export function HomeBanners({ banners }: HomeBannersProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState({ index: 0, last: 0 })
 
@@ -76,35 +66,29 @@ export function HomeBanners({ banners, photoUrl }: HomeBannersProps) {
           <Link
             key={banner.id}
             to={banner.to}
-            className={cn(
-              'group border-ink relative flex min-h-[220px] shrink-0 basis-full snap-start flex-col items-start justify-end gap-1.5 overflow-hidden border-[1.5px] p-5 md:min-h-[clamp(240px,26vw,340px)] md:basis-[calc(50%-0.5rem)] md:p-7',
-              TONE[banner.tone],
-            )}
+            className="group border-ink bg-paper-2 relative aspect-[4/5] shrink-0 basis-full snap-start overflow-hidden border-[1.5px] md:aspect-auto md:h-[clamp(320px,36vw,460px)] md:grow md:basis-[calc((100%-2rem)/3)]"
           >
-            {banner.hasPhoto && (
-              <img
-                src={photoUrl}
-                alt=""
-                className="absolute inset-0 size-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-[1.03]"
-                fetchPriority="high"
-              />
-            )}
-            {/* 사진 위에서도 읽히게 글자 뒤를 배너 바탕색으로 채운다 */}
-            <strong
-              className={cn(
-                'font-display relative max-w-[85%] px-2 py-0.5 text-[clamp(1.875rem,3.8vw,3.5rem)] leading-[1.08] font-normal [word-break:keep-all]',
-                TONE[banner.tone],
-              )}
-            >
-              {banner.title}
-            </strong>
+            <ProductImage
+              src={banner.imageUrl}
+              alt={banner.alt}
+              allowSample
+              doodle={ALL_CATEGORIES_ICON}
+              className="absolute inset-0 h-full transition-transform duration-500 motion-safe:group-hover:scale-[1.03]"
+            />
+            {/* 사진 위 글자가 읽히게 아래쪽만 어둡게 누른다 */}
             <span
-              className={cn(
-                'relative max-w-full px-2 py-0.5 text-sm font-medium',
-                TONE[banner.tone],
-              )}
-            >
-              {banner.line}
+              aria-hidden
+              className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/75 via-black/30 to-transparent"
+            />
+            <span className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-5 text-white md:p-6">
+              <strong className="font-display text-[clamp(1.5rem,2vw,1.875rem)] leading-[1.25] font-normal [word-break:keep-all]">
+                {banner.lines[0]}
+                <br />
+                {banner.lines[1]}
+              </strong>
+              <span className="text-[13px] font-bold underline-offset-[3px] group-hover:underline">
+                {banner.caption}
+              </span>
             </span>
           </Link>
         ))}

@@ -15,7 +15,6 @@ import {
   visibleCategoryIdOf,
   useProductsQuery,
   type ProductSearch,
-  HOME_HERO_PHOTO,
 } from '@/entities/product'
 import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { hasRole, useSessionStore } from '@/entities/session'
@@ -80,6 +79,8 @@ export function ShopHomePage() {
   const all = useProductsQuery(search, page, {
     enabled: !(searchesAsBuyer && children.isPending),
   })
+  // 배너에 깔 사진: 거르지 않은 새 상품 첫 쪽 (거르기 · 검색과 상관없이 같은 상품을 쓴다)
+  const bannerProducts = useProductsQuery(undefined, 0, { enabled: !isChild && !keyword })
   // 보이는 쪽의 상품 중 내가 찜한 것: 한 쪽에 한 번 (GET /favorites?productIds=)
   const favoritedIds = useFavoritedIdsQuery(all.data?.content.map((product) => product.id) ?? [], {
     enabled: isBuyer,
@@ -115,17 +116,16 @@ export function ShopHomePage() {
     <div className="shop-look flex flex-col gap-8 md:gap-10">
       {!isChild && !keyword && (
         <HomeBanners
-          photoUrl={HOME_HERO_PHOTO}
           banners={homeBannersOf({
             season: seasonOf(new Date().getMonth() + 1),
             loginHref: loginPath(paths.shop.home),
             isLoggedIn: Boolean(user),
-            isBuyer,
             child: child && {
               id: child.id,
               name: child.name,
               size: sizeRulerOf(child.heightCm).band.size,
             },
+            products: bannerProducts.data?.content ?? [],
           })}
         />
       )}
