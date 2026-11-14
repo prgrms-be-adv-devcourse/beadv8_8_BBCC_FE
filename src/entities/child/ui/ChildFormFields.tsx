@@ -196,7 +196,7 @@ function ChoiceRow<T extends string>({
             aria-pressed={isPicked}
             onClick={() => onPick(isPicked && canClear ? null : option)}
             className={cn(
-              'h-9 min-w-14 rounded-full border px-4 text-sm font-semibold transition-colors',
+              'rounded-pill h-9 min-w-14 border px-4 text-sm font-semibold transition-colors',
               isPicked
                 ? 'border-signal bg-signal text-paper'
                 : 'border-rule bg-paper text-ink-2 hover:border-field-edge',

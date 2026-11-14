@@ -25,7 +25,7 @@ export function ChildCard({ child }: ChildCardProps) {
       <div className="flex items-center gap-3">
         <span
           aria-hidden
-          className="bg-signal-soft text-signal flex size-11 shrink-0 items-center justify-center rounded-full text-lg font-bold"
+          className="bg-signal-soft text-signal rounded-pill flex size-11 shrink-0 items-center justify-center text-lg font-bold"
         >
           {child.name.slice(0, 1)}
         </span>

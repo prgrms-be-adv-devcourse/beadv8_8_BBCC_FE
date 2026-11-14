@@ -27,7 +27,7 @@ export function OptionValuePicker({ attribute, selected, onToggle }: OptionValue
             {value.colorCode && (
               <span
                 aria-hidden
-                className="border-rule size-3.5 rounded-full border"
+                className="border-rule rounded-pill size-3.5 border"
                 style={{ backgroundColor: value.colorCode }}
               />
             )}

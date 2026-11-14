@@ -23,7 +23,7 @@ export function ShopWalletChargePage() {
         <Link
           to={walletPaths.wallet}
           aria-label="예치금으로 돌아가기"
-          className="text-ink hover:bg-paper-2 -ml-2 flex size-10 items-center justify-center rounded-full transition-colors"
+          className="text-ink hover:bg-paper-2 rounded-pill -ml-2 flex size-10 items-center justify-center transition-colors"
         >
           <svg
             viewBox="0 0 24 24"

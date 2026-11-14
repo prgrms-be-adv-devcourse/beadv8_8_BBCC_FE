@@ -136,7 +136,7 @@ export function WearPreview({
             aria-pressed={item.size === wear.size}
             onClick={() => setPicked(item.size)}
             className={cn(
-              'focus-visible:outline-primary h-7 min-w-11 rounded-full border px-2.5 font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 active:translate-y-px disabled:opacity-50',
+              'focus-visible:outline-primary rounded-pill h-7 min-w-11 border px-2.5 font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 active:translate-y-px disabled:opacity-50',
               item.size === wear.size
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'bg-card text-muted-foreground hover:text-foreground',

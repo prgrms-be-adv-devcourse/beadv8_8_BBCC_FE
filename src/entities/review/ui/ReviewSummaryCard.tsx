@@ -29,9 +29,9 @@ export function ReviewSummaryCard({ summary }: ReviewSummaryCardProps) {
                 className="grid grid-cols-[4.5rem_minmax(0,1fr)_3rem] items-center gap-2 text-[13px]"
               >
                 <span className="text-ink-2">{share.label}</span>
-                <span className="bg-paper-2 h-2 overflow-hidden rounded-full">
+                <span className="bg-paper-2 rounded-pill h-2 overflow-hidden">
                   <span
-                    className="bg-primary block h-full rounded-full"
+                    className="bg-primary rounded-pill block h-full"
                     style={{ width: `${share.percent}%` }}
                   />
                 </span>
