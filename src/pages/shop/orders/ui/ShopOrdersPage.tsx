@@ -10,6 +10,7 @@ import {
 } from '@/entities/order'
 import {
   lineImageUrl,
+  ALL_CATEGORIES_ICON,
   ProductImage,
   productIdsWithoutImage,
   useProductImageUrls,
@@ -71,7 +72,7 @@ export function ShopOrdersPage() {
       {orders.isPending && <ListSkeleton />}
       {orders.isError && <StateMessage tone="error">{getErrorMessage(orders.error)}</StateMessage>}
       {orders.data && visible.length === 0 && (
-        <div className="bg-paper-2 rounded-card space-y-3 py-16 text-center">
+        <div className="bg-paper-2 space-y-3 py-16 text-center">
           <p className="text-ink-2 text-base">
             {tab === 'ALL' ? '주문한 상품이 없어요.' : '이 상태의 주문이 없어요.'}
           </p>
@@ -83,7 +84,7 @@ export function ShopOrdersPage() {
         </div>
       )}
       {visible.length > 0 && (
-        <ul className="divide-rule border-rule divide-y border-b">
+        <ul className="divide-rule border-ink divide-y border-b-[1.5px]">
           {visible.map((order) => (
             <li key={order.id}>
               <Link
@@ -94,21 +95,22 @@ export function ShopOrdersPage() {
                   <ProductImage
                     src={lineImageUrl(order, images)}
                     alt={order.title ?? `주문번호 ${order.id}`}
-                    className="rounded-card aspect-[3/4] w-14 shrink-0"
+                    doodle={ALL_CATEGORIES_ICON}
+                    className="border-ink aspect-[4/5] w-16 shrink-0 border"
                   />
                   <div className="min-w-0 space-y-1">
-                    <p className="text-ink-3 flex flex-wrap gap-x-3 text-[13px]">
+                    <p className="text-ink-2 flex flex-wrap gap-x-3 text-[13px]">
                       <span>{formatDateTime(order.orderedAt)}</span>
                       <span>주문번호 {order.id}</span>
                     </p>
-                    <p className="text-[15px] font-semibold">
-                      {order.title ?? `주문번호 ${order.id}`}
-                    </p>
+                    <p className="text-[15px] font-bold">{order.title ?? `주문번호 ${order.id}`}</p>
                   </div>
                 </div>
-                <span className="figure font-bold">{formatWon(order.totalAmount)}</span>
+                <span className="figure text-[17px] font-bold">{formatWon(order.totalAmount)}</span>
                 <OrderStatusBadge status={order.status} />
-                <span className="text-ink-3 text-[13px] font-semibold">상세</span>
+                <span className="text-ink text-[13px] font-bold underline underline-offset-[3px]">
+                  상세
+                </span>
               </Link>
             </li>
           ))}

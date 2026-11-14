@@ -65,7 +65,7 @@ export function ShopOrderDetailPage() {
     <div className="shop-look space-y-6">
       <Link
         to={paths.shop.orders}
-        className="text-ink-3 hover:text-ink inline-flex items-center gap-1 rounded-md text-[13px] font-semibold transition-colors"
+        className="text-ink inline-flex items-center gap-1 text-xs font-bold underline-offset-[3px] hover:underline"
       >
         <svg
           viewBox="0 0 24 24"
@@ -80,10 +80,7 @@ export function ShopOrderDetailPage() {
         주문 내역
       </Link>
       {/* 주문 상태: 지금 단계를 제목으로, 아래에 진행 막대 (금액은 오른쪽 결제 정보에) */}
-      <section
-        aria-label="주문 상태"
-        className="border-rule space-y-7 rounded-xl border p-5 md:p-7"
-      >
+      <section aria-label="주문 상태" className="border-ink space-y-7 border-[1.5px] p-5 md:p-7">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-1">
             <p className="text-ink-3 flex flex-wrap gap-x-3 text-[13px]">
@@ -99,7 +96,7 @@ export function ShopOrderDetailPage() {
         {/* 결제 처리 중: 서버 처리 단계 (취소면 아래 처리 과정이 멈춘 곳을 보여 준다) */}
         {order.status === 'PENDING_PAYMENT' && <OrderProcessSteps order={order} />}
         {order.status === 'PENDING_PAYMENT' && (
-          <p className="text-signal font-semibold">
+          <p className="text-ink font-bold">
             예치금으로 결제하는 중이에요… 잠시만 기다려 주세요
             {deadline && (
               <span className="text-ink-2 block text-sm font-normal">
@@ -219,9 +216,9 @@ export function ShopOrderDetailPage() {
           <section
             aria-label="배송지"
             data-clarity-mask="true"
-            className="border-rule space-y-2 rounded-lg border p-5 text-sm"
+            className="border-ink space-y-2 border-[1.5px] p-5 text-sm"
           >
-            <h2 className="text-[15px] font-bold">배송지</h2>
+            <h2 className="text-xs font-bold">배송지</h2>
             <p className="flex flex-wrap gap-x-3">
               <span className="font-semibold">{order.shippingAddress.recipientName}</span>
               <span className="text-ink-2 figure">{order.shippingAddress.phone}</span>

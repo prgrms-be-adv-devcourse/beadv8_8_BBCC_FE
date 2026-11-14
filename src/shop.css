@@ -310,6 +310,11 @@ body:has([data-area='shop']) {
   box-shadow: none;
 }
 
+/* 쇼핑 영역의 카드는 각지게 (위 규칙의 둥근 모서리는 판매자 센터 · 관리자용) */
+[data-area='shop'] [data-slot='card'] {
+  border-radius: 0;
+}
+
 .shop-look [data-slot='card-title'] {
   font-size: 1.0625rem;
   font-weight: 700;

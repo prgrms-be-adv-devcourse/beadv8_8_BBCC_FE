@@ -32,8 +32,10 @@ export function PaymentSummary({
   error,
 }: PaymentSummaryProps) {
   return (
-    <section aria-label="결제 정보" className="border-rule space-y-4 rounded-lg border p-5">
-      <h2 className="text-[15px] font-bold">결제 정보</h2>
+    <section aria-label="결제 정보" className="bg-sheet space-y-4 px-5 pt-[22px] pb-5">
+      <h2 className="font-display border-ink border-b-4 border-double pb-3 text-[26px] leading-none">
+        결제 정보
+      </h2>
       <dl className="space-y-2 text-sm">
         <div className="flex justify-between gap-4">
           <dt className="text-ink-3">결제 수단</dt>
@@ -60,7 +62,7 @@ export function PaymentSummary({
             )}
           </>
         )}
-        <div className="border-rule flex items-baseline justify-between gap-4 border-t pt-3">
+        <div className="border-ink flex items-baseline justify-between gap-4 border-t border-dashed pt-3">
           <dt className="font-semibold">결제 금액</dt>
           <dd className="figure text-xl font-bold">{formatWon(totalAmount)}</dd>
         </div>
@@ -72,7 +74,7 @@ export function PaymentSummary({
           role="status"
           aria-label="결제 확인"
           className={cn(
-            'bg-paper-2 rounded-md px-3 py-2 text-xs',
+            'bg-paper/70 px-3 py-2 text-xs',
             check.result === 'MISMATCH' ? 'text-destructive' : 'text-ink-2',
           )}
         >
