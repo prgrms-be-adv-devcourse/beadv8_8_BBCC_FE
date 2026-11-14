@@ -15,22 +15,23 @@ import {
   visibleCategoryIdOf,
   useProductsQuery,
   type ProductSearch,
+  HOME_HERO_PHOTO,
 } from '@/entities/product'
 import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { QuickHeightForm } from '@/features/edit-child'
 import { useRecordSearchClick } from '@/features/record-search-click'
+import { HomeBanners, homeBannersOf, seasonOf } from '@/widgets/home-banners'
 import { QuickAdd } from '@/widgets/quick-add'
 import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
-import { paths } from '@/shared/config'
+import { loginPath, paths } from '@/shared/config'
 import { cn, useArea } from '@/shared/lib'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Button } from '@/shared/ui/button'
 import { CardGridSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { CategoryChips } from './CategoryChips'
-import { HomeHero } from './HomeHero'
 import { ProductFilterBar } from './ProductFilterBar'
 import { ProductSortSelect } from './ProductSortSelect'
 import { RecommendedPreview } from './RecommendedPreview'
@@ -113,7 +114,20 @@ export function ShopHomePage() {
   return (
     <div className="shop-look flex flex-col gap-8 md:gap-10">
       {!isChild && !keyword && (
-        <HomeHero size={child ? sizeRulerOf(child.heightCm).band.size : null} />
+        <HomeBanners
+          photoUrl={HOME_HERO_PHOTO}
+          banners={homeBannersOf({
+            season: seasonOf(new Date().getMonth() + 1),
+            loginHref: loginPath(paths.shop.home),
+            isLoggedIn: Boolean(user),
+            isBuyer,
+            child: child && {
+              id: child.id,
+              name: child.name,
+              size: sizeRulerOf(child.heightCm).band.size,
+            },
+          })}
+        />
       )}
       <CategoryChips
         categories={categories.data ?? []}
