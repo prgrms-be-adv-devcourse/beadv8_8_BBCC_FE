@@ -34,7 +34,7 @@ export function ChildWishesPage() {
   const shown = filterWishes(all, filter)
   return (
     <section className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
-      <h1 className="text-page">내 조르기</h1>
+      <h1 className="text-page border-ink border-b-[3px] pb-3.5">내 조르기</h1>
       {wishes.data && (
         <div role="group" aria-label="조르기 거르기" className="flex flex-wrap gap-2">
           {FILTERS.map((key) => (

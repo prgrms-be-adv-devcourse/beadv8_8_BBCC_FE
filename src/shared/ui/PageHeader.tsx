@@ -16,7 +16,7 @@ type PageHeaderProps = {
 export function PageHeader({ title, step, description, note, actions }: PageHeaderProps) {
   const inConsole = useArea() === 'console'
   return (
-    <div className="mb-4 flex items-start justify-between gap-4">
+    <div data-slot="page-header" className="mb-4 flex items-start justify-between gap-4">
       <div>
         <h1 className="text-xl font-bold">
           {inConsole && step && <span className="text-primary mr-1">{step}</span>}

@@ -50,7 +50,7 @@ export function ShopRecommendedPage() {
         </svg>
         홈
       </Link>
-      <header className="border-rule grid gap-x-10 gap-y-4 rounded-lg border p-5 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:items-end md:p-6">
+      <header className="bg-sheet -mx-4 grid gap-x-10 gap-y-4 px-4 py-6 md:mx-0 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:items-end md:p-7">
         <div className="space-y-1">
           <h1 className="text-page">{child.data ? `${child.data.name}에게 맞는 옷` : '맞는 옷'}</h1>
           {child.data && (
@@ -59,7 +59,7 @@ export function ShopRecommendedPage() {
           {child.isError && (
             <StateMessage tone="error">{getErrorMessage(child.error)}</StateMessage>
           )}
-          <p className="text-ink-3 text-[13px]">
+          <p className="text-ink-2 text-[13px]">
             키에 맞는 사이즈가 판매 중인 상품만, 새로 나온 순서로 보여 드려요.
           </p>
           <Link

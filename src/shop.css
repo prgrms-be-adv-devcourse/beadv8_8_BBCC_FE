@@ -190,7 +190,7 @@ body:has([data-area='shop']) {
 
 /* 쇼핑 화면은 바닥까지 종이색: 끝까지 내리거나 당겨도 앱 기본 바탕(크림)이 비치지 않게 */
 html:has([data-area='shop']) {
-  scrollbar-color: var(--shop-ink) var(--shop-paper);
+  scrollbar-color: color-mix(in oklab, var(--shop-ink) 45%, var(--shop-paper)) var(--shop-paper);
   background: var(--shop-paper);
 }
 
@@ -239,6 +239,22 @@ body:has([data-area='shop']) {
 
 [data-area='shop'] p {
   text-wrap: pretty;
+}
+
+/* 공용 화면 머리(PageHeader): 쇼핑 영역에서는 큰 제목 아래 굵은 먹색 줄 */
+[data-area='shop'] [data-slot='page-header'] {
+  align-items: end;
+  margin-bottom: 1.75rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 3px solid var(--ink);
+}
+
+[data-area='shop'] [data-slot='page-header'] h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-page);
+  font-weight: 400;
+  line-height: var(--text-page--line-height);
+  letter-spacing: 0;
 }
 
 /* 숫자(가격 · 수량 · 치수)는 좁은 글꼴 */

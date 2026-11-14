@@ -20,8 +20,11 @@ export function ChildLayout() {
     <div className="bg-paper min-h-svh">
       <DemoBarWithFlowDrawer />
       <div data-area="shop" className="shop-look">
-        <header className="border-rule flex items-center gap-4 border-b p-4">
-          <Link to={paths.child.home} className="text-section">
+        <header className="border-ink flex flex-wrap items-center gap-x-4 gap-y-1 border-b-[1.5px] px-4 py-3 text-[13px] font-semibold [&_a]:underline-offset-4 [&_a:hover]:underline">
+          <Link
+            to={paths.child.home}
+            className="font-logo text-[28px] leading-none font-normal hover:no-underline"
+          >
             Kidly
           </Link>
           <Link to={paths.child.home} className="ml-auto">
