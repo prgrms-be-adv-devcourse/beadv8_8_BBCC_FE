@@ -26,7 +26,7 @@ export function ShopChildrenPage() {
         actions={
           <Link
             to={memberPaths.childNew}
-            className="bg-signal text-signal-ink hover:bg-signal-deep inline-flex h-9 items-center gap-1 rounded-full px-4 text-[13px] font-semibold transition-colors active:translate-y-px"
+            className="bg-signal text-signal-ink hover:bg-signal-deep rounded-pill inline-flex h-9 items-center gap-1 px-4 text-[13px] font-semibold transition-colors active:translate-y-px"
           >
             <svg
               viewBox="0 0 24 24"

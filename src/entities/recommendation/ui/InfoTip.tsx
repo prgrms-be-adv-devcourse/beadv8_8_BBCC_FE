@@ -47,7 +47,7 @@ export function InfoTip({ label, children }: InfoTipProps) {
         onClick={() => setIsOpen(true)}
         onFocus={() => setIsOpen(true)}
         onBlur={() => setIsOpen(false)}
-        className="text-ink-3 hover:text-ink inline-flex size-6 items-center justify-center rounded-full"
+        className="text-ink-3 hover:text-ink rounded-pill inline-flex size-6 items-center justify-center"
       >
         <svg
           viewBox="0 0 24 24"

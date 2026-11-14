@@ -42,7 +42,7 @@ export function ShopMyPage() {
         <div className="flex flex-wrap items-center gap-4 p-5 md:p-6">
           <span
             aria-hidden
-            className="bg-signal-soft text-signal flex size-14 shrink-0 items-center justify-center rounded-full text-xl font-bold"
+            className="bg-signal-soft text-signal rounded-pill flex size-14 shrink-0 items-center justify-center text-xl font-bold"
           >
             {user.nickname.slice(0, 1)}
           </span>
@@ -62,7 +62,7 @@ export function ShopMyPage() {
           </div>
           <Link
             to={paths.shop.profile}
-            className="border-rule text-ink-2 hover:border-field-edge inline-flex h-9 items-center rounded-full border px-3.5 text-[13px] font-semibold transition-colors"
+            className="border-rule text-ink-2 hover:border-field-edge rounded-pill inline-flex h-9 items-center border px-3.5 text-[13px] font-semibold transition-colors"
           >
             내 정보 수정
           </Link>
@@ -144,7 +144,7 @@ export function ShopMyPage() {
                 >
                   <span
                     aria-hidden
-                    className="bg-signal-soft text-signal flex size-10 shrink-0 items-center justify-center rounded-full font-bold"
+                    className="bg-signal-soft text-signal rounded-pill flex size-10 shrink-0 items-center justify-center font-bold"
                   >
                     {child.name.slice(0, 1)}
                   </span>

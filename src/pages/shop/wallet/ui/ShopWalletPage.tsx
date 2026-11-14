@@ -48,7 +48,7 @@ export function ShopWalletPage() {
             <p className="flex items-center gap-1.5 text-[13px] font-bold">
               <span
                 aria-hidden
-                className="bg-signal text-signal-ink flex size-5 items-center justify-center rounded-full text-[11px]"
+                className="bg-signal text-signal-ink rounded-pill flex size-5 items-center justify-center text-[11px]"
               >
                 K
               </span>

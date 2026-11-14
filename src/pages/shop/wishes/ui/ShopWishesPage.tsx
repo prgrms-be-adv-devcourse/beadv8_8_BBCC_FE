@@ -68,7 +68,7 @@ export function ShopWishesPage() {
               aria-pressed={childId === option.id}
               onClick={() => pick(option.id)}
               className={cn(
-                'inline-flex min-h-10 items-center rounded-full border px-4 text-sm font-semibold',
+                'rounded-pill inline-flex min-h-10 items-center border px-4 text-sm font-semibold',
                 childId === option.id ? 'border-ink bg-ink text-white' : 'border-rule text-ink-2',
               )}
             >

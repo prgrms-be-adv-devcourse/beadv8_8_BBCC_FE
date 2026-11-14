@@ -82,6 +82,8 @@
   --text-section--line-height: 1.4;
   --radius-card: 0.25rem;
   --radius-input: 0.375rem;
+  /* 알약 · 동그라미 칸: 쇼핑 영역에서만 각지게 다시 정한다 */
+  --radius-pill: 9999px;
 }
 
 /* 쇼핑 영역만 종이 · 먹 · 분홍 색지 · 형광펜 네 색으로 다시 정한다.
@@ -112,6 +114,7 @@
   --radius: 0rem;
   --radius-card: 0rem;
   --radius-input: 0rem;
+  --radius-pill: 0rem;
   /* shadcn 변수도 같은 네 색을 가리킨다 (테마 바꿔 보기의 --primary는 쇼핑 영역 밖에만 닿는다) */
   --background: var(--paper);
   --foreground: var(--ink);
@@ -245,6 +248,12 @@ body:has([data-area='shop']) {
 
 [data-area='shop'] [data-slot='button'][data-variant='outline'] {
   border-color: var(--ink);
+}
+
+/* 공용 이름표: 쇼핑 영역에서는 각진 칸 */
+[data-area='shop'] [data-slot='badge'] {
+  border-radius: 0;
+  font-weight: 700;
 }
 
 /* 흰 카드 대신 같은 바탕 + 실선 하나 (그림자와 테두리를 같이 쓰지 않는다) */

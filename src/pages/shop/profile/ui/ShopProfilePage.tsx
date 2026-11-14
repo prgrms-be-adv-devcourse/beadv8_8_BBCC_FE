@@ -38,7 +38,7 @@ export function ShopProfilePage() {
       <section aria-label="프로필" className="flex items-center gap-4">
         <span
           aria-hidden
-          className="bg-signal-soft text-signal flex size-16 shrink-0 items-center justify-center rounded-full text-2xl font-bold"
+          className="bg-signal-soft text-signal rounded-pill flex size-16 shrink-0 items-center justify-center text-2xl font-bold"
         >
           {user.nickname.slice(0, 1)}
         </span>
@@ -57,7 +57,7 @@ export function ShopProfilePage() {
                 type="button"
                 aria-expanded={editing}
                 onClick={() => setEditingFor(editing ? null : user.nickname)}
-                className="border-rule text-ink-2 hover:border-field-edge inline-flex h-8 items-center rounded-full border px-3 text-[13px] font-semibold transition-colors"
+                className="border-rule text-ink-2 hover:border-field-edge rounded-pill inline-flex h-8 items-center border px-3 text-[13px] font-semibold transition-colors"
               >
                 {editing ? '취소' : '변경'}
               </button>

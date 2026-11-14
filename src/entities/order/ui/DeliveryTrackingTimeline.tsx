@@ -27,8 +27,8 @@ export function DeliveryTrackingTimeline({ tracking }: DeliveryTrackingTimelineP
                 aria-hidden
                 className={
                   index === 0
-                    ? 'bg-signal absolute top-3.5 -left-[5px] size-2.5 rounded-full'
-                    : 'bg-rule absolute top-3.5 -left-[4px] size-2 rounded-full'
+                    ? 'bg-signal rounded-pill absolute top-3.5 -left-[5px] size-2.5'
+                    : 'bg-rule rounded-pill absolute top-3.5 -left-[4px] size-2'
                 }
               />
               <span className="text-ink-3 figure">{event.time}</span>

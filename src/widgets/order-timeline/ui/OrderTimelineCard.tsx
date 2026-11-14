@@ -73,7 +73,7 @@ export function OrderTimelineCard({ order }: OrderTimelineCardProps) {
                 )}
                 <span
                   aria-hidden
-                  className={cn('z-10 mt-1.5 size-2.5 shrink-0 rounded-full', dotOf(step))}
+                  className={cn('rounded-pill z-10 mt-1.5 size-2.5 shrink-0', dotOf(step))}
                 />
                 <div className="min-w-0 flex-1 space-y-1 text-sm">
                   <div className="flex flex-wrap items-baseline gap-x-2">
