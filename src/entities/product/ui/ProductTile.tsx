@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { cn, formatWon } from '@/shared/lib'
+import { ALL_CATEGORIES_ICON } from '../config/category-icons'
+import { categoryIconOf } from '../model/category-icon.rules'
 import { ProductImage } from './ProductImage'
 
 type ProductTileProps = {
@@ -10,19 +12,24 @@ type ProductTileProps = {
   seller: string | null
   /** 옵션이 없으면 null */
   price: number | null
-  /** 대표 이미지 (S3). 없으면 기본 이미지 */
+  /** 대표 이미지 (S3). 없으면 카테고리 낙서 아이콘 */
   imageUrl: string | null
+  /** 사진이 없을 때 그릴 아이콘을 고른다. 모르면 옷걸이 */
+  categoryName?: string | null
   isSoldOut?: boolean
-  /** 가격 아래 작은 꼬리표 (예: 「120 잘 맞아요」 · 「사이즈 무관」). fit이면 코랄 */
+  /** 사진 왼쪽 위 꼬리표 (예: 「120 잘 맞아요」 · 「사이즈 무관」). fit이면 형광펜 바탕 */
   tag?: { text: string; fit?: boolean }
   /** 누를 때 (예: 검색 결과 클릭 기록). 상세로 가는 이동은 그대로 */
   onClick?: () => void
-  /** 사진 오른쪽 위에 겹쳐 두는 동작 (예: 찜 하트). 링크 밖에 그린다 */
+  /** 사진 오른쪽 아래에 겹쳐 두는 동작 (예: 찜 하트). 링크 밖에 그린다 */
   action?: ReactNode
 }
 
+/** 사진 비율. 동작 칸을 사진 위에 겹칠 때도 같은 값을 쓴다 */
+const PHOTO_RATIO = 'aspect-[4/5]'
+
 /**
- * 쇼핑 상품 칸 (확정 시안 11-09): 3:4 사진(꼬리표는 사진 왼쪽 아래) · 상점 이름 · 상품명 · 가격.
+ * 쇼핑 상품 칸: 4:5 각진 사진(꼬리표는 왼쪽 위, 동작은 오른쪽 아래) · 상점 이름 · 상품명 · 가격.
  * 카드 테두리 없이 사진과 글자만 둔다 (ProductCard는 시연 콘솔용)
  */
 export function ProductTile({
@@ -31,41 +38,48 @@ export function ProductTile({
   seller,
   price,
   imageUrl,
+  categoryName,
   isSoldOut = false,
   tag,
   onClick,
   action,
 }: ProductTileProps) {
   const tile = (
-    <Link to={to} className="group rounded-card block" onClick={onClick}>
-      {/* 확정 시안: 홈(브랜드 퍼플)은 둥근 사진, 나머지 화면은 각진 사진 */}
-      <div className="rounded-card bg-paper-2 relative overflow-hidden [[data-shop-home]_&]:rounded-[20px]">
+    <Link to={to} className="group block" onClick={onClick}>
+      <div className="bg-paper-2 relative overflow-hidden">
         <ProductImage
           src={imageUrl}
           alt={name}
           allowSample
-          className="aspect-[3/4] transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
+          doodle={(categoryName && categoryIconOf(categoryName)) || ALL_CATEGORIES_ICON}
+          className={cn(
+            PHOTO_RATIO,
+            'transition-transform duration-300 motion-safe:group-hover:scale-[1.04]',
+            isSoldOut && 'opacity-45',
+          )}
         />
         {isSoldOut && (
-          <span className="bg-ink/45 text-paper absolute inset-0 flex items-center justify-center text-sm font-bold">
+          <span className="border-ink bg-paper/85 text-ink font-display absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-[14deg] border-[2.5px] px-3.5 py-0.5 text-xl whitespace-nowrap">
             품절
           </span>
         )}
         {tag && (
           <span
             className={cn(
-              'absolute bottom-2.5 left-2.5 inline-flex h-[26px] items-center rounded-full px-2.5 text-xs font-bold',
-              tag.fit ? 'bg-fit-soft text-fit-ink' : 'bg-paper text-signal',
+              'border-ink text-ink absolute top-0 left-0 inline-flex h-7 items-center border-r-[1.5px] border-b-[1.5px] px-2 text-xs font-bold',
+              tag.fit ? 'bg-marker' : 'bg-paper',
             )}
           >
             {tag.text}
           </span>
         )}
       </div>
-      <div className="mt-2.5 space-y-0.5">
-        {seller && <p className="text-ink-3 truncate text-[13px] font-semibold">{seller}</p>}
-        <p className="text-ink line-clamp-2 text-sm leading-snug group-hover:underline">{name}</p>
-        <p className="figure text-ink pt-0.5 text-[15px] font-bold">
+      <div className="mt-2.5 space-y-1">
+        {seller && <p className="text-ink-3 truncate text-xs">{seller}</p>}
+        <p className="text-ink line-clamp-2 text-sm leading-snug font-bold underline-offset-[3px] group-hover:underline">
+          {name}
+        </p>
+        <p className="figure text-ink text-lg leading-tight font-bold">
           {price === null ? '—' : formatWon(price)}
         </p>
       </div>
@@ -75,7 +89,10 @@ export function ProductTile({
   return (
     <div className="relative">
       {tile}
-      <div className="absolute top-2 right-2">{action}</div>
+      {/* 사진과 같은 비율의 투명한 판을 겹쳐 사진 오른쪽 아래에 맞춘다 */}
+      <div className={cn(PHOTO_RATIO, 'pointer-events-none absolute inset-x-0 top-0')}>
+        <div className="pointer-events-auto absolute right-2 bottom-2 flex gap-1.5">{action}</div>
+      </div>
     </div>
   )
 }
