@@ -51,10 +51,11 @@ export function ShopLayout() {
             </Link>
           </div>
         </footer>
+        {/* 확인 창 · 알림 띠도 쇼핑 영역의 색 · 모서리를 따르게 영역 안에 둔다 */}
+        <Overlays />
       </div>
       {/* 테마 바꿔 보기는 시연 기능. 상품 상세에서는 휴대폰 하단 담기 바를 가리지 않게 올린다 */}
       {demoRoleSwitch && <ThemeLab raised={matchPath('/products/:productId', pathname) !== null} />}
-      <Overlays />
       <BehaviorRecording />
     </div>
   )

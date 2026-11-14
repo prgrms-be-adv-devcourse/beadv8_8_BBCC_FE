@@ -15,12 +15,13 @@ export function Toaster() {
       {toasts.map((item) => (
         <div
           key={item.id}
-          className="bg-foreground pointer-events-auto flex max-w-md items-center gap-3 rounded-full py-2.5 pr-3 pl-4 text-sm text-white shadow-xl"
+          className="bg-foreground rounded-pill pointer-events-auto flex max-w-md items-center gap-3 py-2.5 pr-3 pl-4 text-sm text-white shadow-xl"
         >
           <span
             aria-hidden
+            data-slot="toast-mark"
             className={cn(
-              'flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+              'rounded-pill flex size-5 shrink-0 items-center justify-center text-xs font-bold',
               item.tone === 'error' ? 'bg-destructive' : 'bg-growth text-foreground',
             )}
           >
