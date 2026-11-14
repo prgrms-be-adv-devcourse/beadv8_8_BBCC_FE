@@ -42,7 +42,7 @@ export function ShopWalletPage() {
       />
 
       {/* 잔액 카드: 잔액 · 이용 내역 | 충전하기 · 충전 내역 줄 */}
-      <section aria-label="예치금 잔액" className="border-rule rounded-xl border">
+      <section aria-label="예치금 잔액" className="border-ink border-[1.5px]">
         <div className="space-y-4 p-5 md:p-6">
           <div className="space-y-1">
             <p className="flex items-center gap-1.5 text-[13px] font-bold">
@@ -59,7 +59,7 @@ export function ShopWalletPage() {
               <StateMessage tone="error">{getErrorMessage(wallet.error)}</StateMessage>
             )}
             {wallet.data && (
-              <p className="figure text-ink text-[30px] font-bold tracking-tight">
+              <p className="font-display text-ink text-[clamp(2rem,4vw,3rem)] leading-none">
                 {formatWon(wallet.data.balance)}
               </p>
             )}
@@ -81,7 +81,7 @@ export function ShopWalletPage() {
         </div>
         <Link
           to={`${walletPaths.history}?tab=charges`}
-          className="border-rule text-ink-2 hover:bg-paper-2 flex items-center justify-between border-t px-5 py-3.5 text-[13px] transition-colors md:px-6"
+          className="border-ink text-ink hover:bg-fit-soft flex items-center justify-between border-t-[1.5px] px-5 py-3.5 text-[13px] font-bold transition-colors md:px-6"
         >
           충전 내역
           <svg
@@ -100,7 +100,7 @@ export function ShopWalletPage() {
       {awaiting.length > 0 && (
         <section
           aria-label="끝나지 않은 충전"
-          className="border-rule space-y-2 rounded-lg border p-4 md:p-5"
+          className="border-ink space-y-2 border-[1.5px] p-4 md:p-5"
         >
           <h2 className="text-[15px] font-bold">결제가 끝나지 않은 충전이 있어요</h2>
           <p className="text-ink-3 text-xs">

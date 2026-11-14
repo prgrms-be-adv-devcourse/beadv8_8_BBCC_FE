@@ -26,7 +26,7 @@ export function ChildPurchasesPage() {
         <StateMessage>아직 나를 위해 산 상품이 없어요.</StateMessage>
       )}
       {purchases.data?.content.map((item) => (
-        <article key={item.id} className="space-y-1 border p-4">
+        <article key={item.id} className="border-ink space-y-1 border-[1.5px] p-4">
           <p className="font-semibold">{item.productName}</p>
           <p className="text-ink-2 text-sm">
             {[item.optionName, `${item.quantity}개`].filter(Boolean).join(' · ')}
