@@ -47,6 +47,11 @@ test('내 찜: 마이페이지 메뉴에서 열고, 판매 상태 배지를 보�
   if (await unfavorited.isVisible()) await unfavorited.click()
   await expect(favorited).toHaveAttribute('aria-pressed', 'true')
 
+  // 머리말의 찜 바로가기로도 바로 간다
+  await page.getByRole('banner').getByRole('link', { name: '찜', exact: true }).click()
+  await expect(page).toHaveURL(/\/my\/favorites$/)
+  await expect(page.getByRole('heading', { name: '내 찜' })).toBeVisible()
+
   await page.goto('/my')
   await page.getByRole('link', { name: '내 찜', exact: true }).click()
   await expect(page.getByRole('heading', { name: '내 찜' })).toBeVisible()

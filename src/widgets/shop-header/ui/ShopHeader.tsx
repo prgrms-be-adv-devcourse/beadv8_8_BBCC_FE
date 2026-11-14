@@ -67,11 +67,12 @@ type UtilityLinkProps = {
   ariaLabel?: string
   /** 개수 표시: 휴대폰은 아이콘 위, 넓은 화면은 글자 뒤 */
   count?: number | null
+  className?: string
   children: ReactNode
 }
 
 /** 머리말 오른쪽 바로가기: 휴대폰은 아이콘만, 넓은 화면은 아이콘 + 글자 */
-function UtilityLink({ to, label, ariaLabel, count, children }: UtilityLinkProps) {
+function UtilityLink({ to, label, ariaLabel, count, className, children }: UtilityLinkProps) {
   return (
     <NavLink
       to={to}
@@ -80,6 +81,7 @@ function UtilityLink({ to, label, ariaLabel, count, children }: UtilityLinkProps
         cn(
           'text-ink relative flex min-h-11 min-w-11 items-center justify-center gap-1 text-[13px] font-semibold underline-offset-4 hover:underline active:translate-y-px md:min-w-0 md:px-2',
           isActive && 'underline decoration-2',
+          className,
         )
       }
     >
@@ -134,7 +136,7 @@ function AccountAction() {
 }
 
 /**
- * 쇼핑 영역 머리말: 로고와 각진 검색 칸 · 판매자센터 · 알림 · 장바구니 · 마이페이지 · 로그인 한 줄, 아래는 먹색 실선.
+ * 쇼핑 영역 머리말: 로고와 각진 검색 칸 · 판매자센터 · 알림 · 찜 · 장바구니 · 마이페이지 · 로그인 한 줄, 아래는 먹색 실선.
  * 탭 메뉴는 두지 않는다 (홈은 로고, 자녀 프로필 · 주문 내역은 마이페이지 메뉴에 있다).
  * 화면을 열 때 API를 부르지 않는다 (흐름 기록을 화면 동작만으로 남기려고). 로그아웃은 누를 때만 부른다
  */
@@ -147,7 +149,7 @@ export function ShopHeader() {
     <header className="bg-paper border-ink z-30 border-b-[1.5px] md:sticky md:top-0">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
         {/* 휴대폰은 검색 칸을 아래 줄로 내려 가로로 넘치지 않게 한다 */}
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-2 py-3 md:h-17 md:flex-nowrap md:py-0">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3 md:h-17 md:flex-nowrap md:gap-x-8 md:py-0">
           <Link
             to={paths.shop.home}
             aria-label="Kidly"
@@ -157,7 +159,8 @@ export function ShopHeader() {
           </Link>
           <HeaderSearch className="order-last basis-full md:order-none md:max-w-xl md:flex-1 md:basis-auto" />
           <div className="ml-auto flex shrink-0 items-center md:gap-1">
-            <UtilityLink to={paths.center.home} label="판매자센터">
+            {/* 휴대폰에서는 줄이 넘치지 않게 뺀다 (판매자 입점은 바닥글, 영역 전환은 시연 막대에 있다) */}
+            <UtilityLink to={paths.center.home} label="판매자센터" className="max-md:hidden">
               <svg
                 viewBox="0 0 24 24"
                 className="size-6 md:size-5"
@@ -188,6 +191,19 @@ export function ShopHeader() {
               >
                 <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16Z" />
                 <path d="M10 20.5a2 2 0 0 0 4 0" />
+              </svg>
+            </UtilityLink>
+            <UtilityLink to={paths.shop.favorites} label="찜">
+              <svg
+                viewBox="0 0 24 24"
+                className="size-6 md:size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.5 2.4C19.5 15.4 12 20 12 20Z" />
               </svg>
             </UtilityLink>
             <UtilityLink
