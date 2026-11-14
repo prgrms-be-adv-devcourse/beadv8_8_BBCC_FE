@@ -22,6 +22,11 @@ export function productMeta(product: { categoryName: string; brand: string | nul
   return [product.categoryName, product.brand].filter(Boolean).join(' · ')
 }
 
+/** 옵션 가격이 서로 다르면 가격 뒤에 「~」를 붙인다. 모두 같으면 그 가격 하나만 보인다 */
+export function hasPriceRange(options: { price: number }[]): boolean {
+  return new Set(options.map((option) => option.price)).size > 1
+}
+
 export function isOnSale(product: { status: string }): boolean {
   return product.status === 'ON_SALE'
 }

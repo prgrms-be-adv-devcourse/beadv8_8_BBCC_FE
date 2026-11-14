@@ -63,6 +63,7 @@ export {
   canStopSale,
   categoryNameOf,
   isFreeSize,
+  hasPriceRange,
   isOnSale,
   optionCombos,
   priceGroups,
