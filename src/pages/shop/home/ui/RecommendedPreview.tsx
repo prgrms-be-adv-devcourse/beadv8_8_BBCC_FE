@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { ChildPicker, SizeRulerBar, sizeRulerOf, type Child } from '@/entities/child'
+import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { ProductTile } from '@/entities/product'
 import {
   AiSentenceNotice,
@@ -10,6 +11,7 @@ import {
   RecommendedPicksNotice,
   useHomePreviewQuery,
 } from '@/entities/recommendation'
+import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { QuickAdd } from '@/widgets/quick-add'
@@ -27,6 +29,9 @@ type RecommendedPreviewProps = {
 export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPreviewProps) {
   // 맛보기 4개는 AI가 맞춤 상위 20개 중에서 고르고 이유를 쓴다(SSE). 나머지는 「더보기」(맞춤 목록 화면)에서 본다
   const preview = useHomePreviewQuery(child?.id ?? null)
+  const favoritedIds = useFavoritedIdsQuery(
+    preview.data?.products.map((product) => product.id) ?? [],
+  )
 
   if (!child) return null
   const ruler = sizeRulerOf(child.heightCm)
@@ -122,7 +127,20 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
                     : { text: '사이즈 무관' }
                 }
                 action={
-                  <QuickAdd productId={product.id} productName={product.name} childId={child.id} />
+                  <>
+                    <FavoriteButton
+                      productId={product.id}
+                      isFavorited={favoritedIds.data?.has(product.id) ?? false}
+                      isLoading={favoritedIds.isPending}
+                      isSelling
+                      isCompact
+                    />
+                    <QuickAdd
+                      productId={product.id}
+                      productName={product.name}
+                      childId={child.id}
+                    />
+                  </>
                 }
               />
               {/* 이유가 없으면(규칙으로 채운 상품) 칸을 그리지 않는다. 길이 제한이 없어 2줄에서 자르고 전문은 title로 */}

@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { childProfileLine, SizeRulerBar, sizeRulerOf, useChildQuery } from '@/entities/child'
+import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { ProductTile, useCategoriesQuery, visibleCategoryIdOf } from '@/entities/product'
 import { useRecommendedProductsInfiniteQuery } from '@/entities/recommendation'
+import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn } from '@/shared/lib'
@@ -29,6 +31,8 @@ export function ShopRecommendedPage() {
     if (visibleCategoryId !== categoryId) setParams({}, { replace: true })
   }, [visibleCategoryId, categoryId, setParams])
   const list = useRecommendedProductsInfiniteQuery(childId, categoryId)
+  // 보이는 상품 중 내가 찜한 것 (GET /favorites?productIds=)
+  const favoritedIds = useFavoritedIdsQuery(list.data?.products.map((product) => product.id) ?? [])
 
   const selectTab = (next: string | null) => setParams(next ? { cat: next } : {}, { replace: true })
 
@@ -77,7 +81,7 @@ export function ShopRecommendedPage() {
       <div
         role="tablist"
         aria-label="카테고리"
-        className="border-rule flex gap-6 overflow-x-auto border-b"
+        className="border-rule flex gap-6 overflow-x-auto overflow-y-hidden border-b"
       >
         {[{ id: null, name: '전체' }, ...(categories.data ?? [])].map((tab) => (
           <button
@@ -121,7 +125,16 @@ export function ShopRecommendedPage() {
                 : { text: '사이즈 무관' }
             }
             action={
-              <QuickAdd productId={product.id} productName={product.name} childId={childId} />
+              <>
+                <FavoriteButton
+                  productId={product.id}
+                  isFavorited={favoritedIds.data?.has(product.id) ?? false}
+                  isLoading={favoritedIds.isPending}
+                  isSelling
+                  isCompact
+                />
+                <QuickAdd productId={product.id} productName={product.name} childId={childId} />
+              </>
             }
           />
         ))}

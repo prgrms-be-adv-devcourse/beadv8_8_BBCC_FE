@@ -109,6 +109,8 @@ test('홈 맞춤 영역 4개 → 더보기 → 맞춤 목록 탭 · 더 보기',
   await expect(recommended.getByRole('heading', { name: /하윤에게 맞는 옷/ })).toBeVisible()
   await expect(recommended.getByText(/^맞춤 상품 \d+$/)).toHaveCount(4)
   await expect(recommended.getByText('120 잘 맞아요').first()).toBeVisible()
+  // 맞춤 카드에도 담기 옆에 찜 버튼이 있다
+  await expect(recommended.getByRole('button', { name: '찜하기' })).toHaveCount(4)
   // 이유가 있는 카드만 이유 칸을 그린다 (null이면 기본 문구 없이 숨김)
   await expect(recommended.getByText(/^맞춤 이유 \d: 키에 잘 맞아요\.$/)).toHaveCount(2)
   // AI가 쓴 이유가 보이면 카드 아래에 안내를 단다 (BE가 이유 길이를 검사하지 않음)
@@ -123,6 +125,7 @@ test('홈 맞춤 영역 4개 → 더보기 → 맞춤 목록 탭 · 더 보기',
   // 2쪽은 1쪽 응답의 asOf를 그대로 보낸다 (같은 기준 시각이어야 쪽 사이 순서가 지켜진다)
   const names = page.getByText(/^맞춤 상품 \d+$/)
   await expect(names).toHaveCount(20)
+  await expect(page.getByRole('button', { name: '찜하기' })).toHaveCount(20)
   const secondPage = page.waitForRequest(
     (request) =>
       request.url().includes('/recommendations/products') &&
