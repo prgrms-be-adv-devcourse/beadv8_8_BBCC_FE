@@ -9,6 +9,7 @@ import { SessionGate } from './SessionGate'
 import { ShopLoginRedirect } from './ShopLoginRedirect'
 import { BehaviorRecording } from './BehaviorRecording'
 import { Overlays } from './Overlays'
+import { ScrollToTop } from './ScrollToTop'
 
 /** 쇼핑(보호자): 일반 쇼핑몰 화면. API 흐름은 시연 막대의 버튼으로 연다 */
 export function ShopLayout() {
@@ -24,6 +25,7 @@ export function ShopLayout() {
     <div className="bg-paper flex min-h-svh flex-col">
       <DemoBarWithFlowDrawer />
       <TopProgressBar />
+      <ScrollToTop />
       {/* 쇼핑 영역 색 · 글자 (shop.css의 data-area): 시연 막대는 빼고 머리말 · 본문 · 바닥글에만 */}
       <div data-area="shop" className="flex flex-1 flex-col">
         <ShopHeader />
