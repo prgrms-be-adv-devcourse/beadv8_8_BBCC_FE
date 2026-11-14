@@ -13,7 +13,7 @@ export function ProductSortSelect({ sort, options, onChange }: ProductSortSelect
   return (
     <select
       aria-label="정렬"
-      className="text-ink rounded-input border-field-edge bg-paper hover:bg-paper-2 h-9 cursor-pointer border px-2.5 text-sm font-semibold"
+      className="text-ink rounded-input border-field-edge bg-paper hover:bg-paper-2 h-9 cursor-pointer border-[1.5px] px-2.5 text-sm font-bold"
       value={sort}
       onChange={(e) => onChange(e.target.value as ProductSort)}
     >

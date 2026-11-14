@@ -20,7 +20,7 @@ type RecommendedPreviewProps = {
 }
 
 /**
- * 홈 「{자녀}에게 맞는 옷」: 가는 테두리 안에 키 · 추천 사이즈 문장 · 키 눈금자 · 자녀 칩 · 맞춤 상품 4개 · 더보기.
+ * 홈 「{자녀}에게 맞는 옷」: 분홍 색지 바탕에 키 · 추천 사이즈 문장 · 키 눈금자 · 자녀 칩 · 맞춤 상품 4개 · 더보기.
  * 자녀가 없으면 그리지 않는다 (안내는 머리말 띠)
  */
 export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPreviewProps) {
@@ -34,14 +34,21 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
   const isLoading = preview.isPending || (preview.isWaitingForAi && !preview.data)
 
   return (
-    <section aria-label="맞춤 상품" className="border-rule space-y-5 rounded-lg border p-4 md:p-6">
+    <section
+      aria-label="맞춤 상품"
+      className="bg-sheet -mx-4 space-y-6 px-4 py-7 md:mx-0 md:px-8 md:py-9"
+    >
       <div className="flex items-start justify-between gap-4">
-        <div data-clarity-mask="true" className="space-y-1">
-          <h2 className="text-section">{child.name}에게 맞는 옷</h2>
-          <p className="text-ink-2 text-[13px]">
+        <div data-clarity-mask="true" className="space-y-2.5">
+          <h2 className="font-display text-[clamp(1.875rem,4vw,3.5rem)] leading-[1.1]">
+            {child.name}에게 맞는 옷
+          </h2>
+          <p className="text-ink text-[15px]">
             키 <span className="figure">{child.heightCm}cm</span>에는{' '}
-            <strong className="text-fit-ink figure font-bold">{ruler.band.size}</strong> 사이즈가
-            맞아요.
+            <strong className="font-display bg-[linear-gradient(transparent_55%,var(--fit)_55%)] px-[0.12em] text-[1.7em] leading-none font-normal">
+              {ruler.band.size}
+            </strong>{' '}
+            사이즈가 맞아요.
             {ruler.roomCm > 0 && (
               <>
                 {' '}
@@ -52,7 +59,7 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
         </div>
         <Link
           to={paths.shop.recommended(child.id)}
-          className="text-ink-2 hover:text-ink flex min-h-11 shrink-0 items-center gap-0.5 text-[13px] font-semibold transition-colors"
+          className="text-ink flex min-h-11 shrink-0 items-center gap-0.5 text-sm font-bold underline underline-offset-[3px]"
         >
           더보기
           <svg
@@ -99,7 +106,7 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
         <AiWaitingNotice message={`AI가 ${child.name}에게 더 잘 맞는 상품을 고르고 있어요`} />
       )}
       {preview.data && (
-        <ul className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-4">
+        <ul className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-[18px]">
           {preview.data.products.map((product, index) => (
             <PickReveal key={product.id} index={index} className="space-y-2">
               <ProductTile
@@ -118,7 +125,7 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
               {product.reason && (
                 <p
                   title={product.reason}
-                  className="text-ink-2 bg-paper-2 line-clamp-2 rounded-md px-2.5 py-2 text-[13px] leading-snug"
+                  className="text-ink bg-paper/70 line-clamp-2 px-2.5 py-2 text-[13px] leading-snug"
                 >
                   {product.reason}
                 </p>

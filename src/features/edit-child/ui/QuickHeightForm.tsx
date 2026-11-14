@@ -33,12 +33,12 @@ export function QuickHeightForm({ child, className }: QuickHeightFormProps) {
           placeholder={`키 (cm) · 지금 ${child.heightCm}`}
           value={height}
           onChange={(e) => setHeight(e.target.value)}
-          className="focus:border-growth h-11 min-w-0 flex-1 rounded-full border bg-white px-4 text-sm outline-none"
+          className="rounded-input border-field-edge bg-paper focus:border-growth h-11 min-w-0 flex-1 border-[1.5px] px-3.5 text-sm outline-none"
         />
         <button
           type="submit"
           disabled={invalid || update.isPending}
-          className="bg-growth-deep h-11 shrink-0 rounded-full px-5 text-sm font-semibold text-white disabled:opacity-50"
+          className="rounded-input bg-growth-deep text-growth-foreground h-11 shrink-0 px-5 text-sm font-bold disabled:opacity-50"
         >
           기록하기
         </button>
