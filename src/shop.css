@@ -280,6 +280,22 @@ body:has([data-area='shop']) {
   box-shadow: none;
 }
 
+/* 확인 창: 쇼핑 영역에서는 그림자 대신 먹색 테두리 */
+[data-area='shop'] [data-slot='confirm'] {
+  border: 1.5px solid var(--ink);
+  box-shadow: none;
+}
+
+[data-area='shop'] [data-slot='confirm'] button {
+  border-color: var(--ink);
+}
+
+/* 알림 띠의 표시: 쇼핑 영역은 바탕 · 성장 색이 모두 먹색이라 형광펜으로 구분한다 */
+[data-area='shop'] [data-slot='toast-mark']:not(.bg-destructive) {
+  background: var(--shop-marker);
+  color: var(--ink);
+}
+
 /* 공용 이름표: 쇼핑 영역에서는 각진 칸 */
 [data-area='shop'] [data-slot='badge'] {
   border-radius: 0;

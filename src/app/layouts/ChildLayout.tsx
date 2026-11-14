@@ -55,8 +55,9 @@ export function ChildLayout() {
             <Outlet />
           </ChildGate>
         </main>
+        {/* 확인 창 · 알림 띠도 쇼핑 영역의 색 · 모서리를 따르게 영역 안에 둔다 */}
+        <Overlays />
       </div>
-      <Overlays />
       <BehaviorRecording />
     </div>
   )
