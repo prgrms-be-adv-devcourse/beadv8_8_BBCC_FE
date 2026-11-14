@@ -9,6 +9,7 @@ import { ChildGate } from './ChildGate'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { BehaviorRecording } from './BehaviorRecording'
 import { Overlays } from './Overlays'
+import { ScrollToTop } from './ScrollToTop'
 
 export function ChildLayout() {
   const accessToken = useChildSessionStore((state) => state.accessToken)
@@ -19,6 +20,7 @@ export function ChildLayout() {
   return (
     <div className="bg-paper min-h-svh">
       <DemoBarWithFlowDrawer />
+      <ScrollToTop />
       <div data-area="shop" className="shop-look">
         <header className="border-ink flex flex-wrap items-center gap-x-4 gap-y-1 border-b-[1.5px] px-4 py-3 text-[13px] font-semibold [&_a]:underline-offset-4 [&_a:hover]:underline">
           <Link
