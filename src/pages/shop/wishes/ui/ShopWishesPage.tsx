@@ -68,8 +68,8 @@ export function ShopWishesPage() {
               aria-pressed={childId === option.id}
               onClick={() => pick(option.id)}
               className={cn(
-                'rounded-pill inline-flex min-h-10 items-center border px-4 text-sm font-semibold',
-                childId === option.id ? 'border-ink bg-ink text-white' : 'border-rule text-ink-2',
+                'border-ink inline-flex min-h-10 items-center border-[1.5px] px-4 text-sm font-bold',
+                childId === option.id ? 'bg-ink text-paper' : 'text-ink hover:bg-marker',
               )}
             >
               {option.label}
@@ -106,7 +106,11 @@ export function ShopWishesPage() {
                 statusLabel={guardianWishStatusLabel(wish)}
                 renderImage={renderImage}
                 leading={<strong className="text-ink text-sm">{nameOf(wish.childId)}</strong>}
-                action={<span className="text-signal text-sm font-semibold">답하러 가기 ›</span>}
+                action={
+                  <span className="text-ink text-sm font-bold underline underline-offset-[3px]">
+                    답하러 가기 ›
+                  </span>
+                }
               />
             </Link>
           ))}
@@ -115,14 +119,14 @@ export function ShopWishesPage() {
       {past.length > 0 && (
         <section aria-label="지난 조르기" className="space-y-2">
           <h2 className="text-section">지난 조르기</h2>
-          <ul className="divide-rule border-rule divide-y border-y">
+          <ul className="divide-rule border-ink divide-y border-y-[1.5px]">
             {past.map((wish) => (
               <li key={wish.requestId}>
                 <Link
                   to={paths.childWish(wish.childId, wish.requestId)}
                   className="flex items-center gap-3 py-3"
                 >
-                  <span className="rounded-card block aspect-square w-12 shrink-0 overflow-hidden">
+                  <span className="border-ink block aspect-square w-12 shrink-0 overflow-hidden border">
                     {wish.items[0] && renderImage(wish.items[0])}
                   </span>
                   <span className="min-w-0 flex-1 space-y-0.5">
