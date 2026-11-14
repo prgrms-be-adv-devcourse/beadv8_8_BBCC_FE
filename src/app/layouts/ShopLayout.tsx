@@ -39,18 +39,16 @@ export function ShopLayout() {
             </ShopLoginRedirect>
           </SessionGate>
         </main>
-        <footer className="bg-paper-2 mt-10">
-          <div className="text-ink-3 mx-auto max-w-6xl space-y-3 px-4 py-10 text-[13px] md:px-6">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <span className="font-logo text-ink-2 text-xl">kidly</span>
-              <Link to={paths.center.apply} className="text-ink-2 hover:text-ink font-semibold">
-                판매자 입점
-              </Link>
-            </div>
-            <p>
+        <footer className="border-ink mt-16 border-t-[3px]">
+          <div className="text-ink-2 mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-3 px-4 pt-6 pb-20 text-[13px] md:px-6">
+            <span className="font-logo text-ink text-[26px] leading-none">kidly</span>
+            <p className="min-w-0 basis-full max-md:order-last md:flex-1 md:basis-0">
               키즈 패션 마켓 Kidly는 여러 판매자가 직접 상품을 올리고 파는 곳이에요. 팀
               블루블랙치킨고양이{demoRoleSwitch && ', 세미 프로젝트 시연용'}
             </p>
+            <Link to={paths.center.apply} className="shop-link">
+              판매자 입점
+            </Link>
           </div>
         </footer>
       </div>
