@@ -5,8 +5,26 @@ import type { HomeBanner } from '../model/home-banners.rules'
 
 type HomeBannersProps = { banners: HomeBanner[] }
 
+// 사진 위 양옆 가운데에 뜨는 둥근 버튼. 휴대폰은 손가락으로 밀므로 그리지 않는다
 const NAV_BUTTON =
-  'border-ink hover:bg-marker flex h-9 w-10 items-center justify-center border-[1.5px] text-[15px]'
+  'bg-paper text-ink hover:bg-marker absolute top-1/2 z-10 flex size-12 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_1px_6px_rgb(0_0_0/0.25)] max-md:hidden'
+
+function NavArrow({ direction }: { direction: 'prev' | 'next' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d={direction === 'prev' ? 'm15 18-6-6 6-6' : 'm9 18 6-6-6-6'} />
+    </svg>
+  )
+}
 
 /** 배너 한 장 너비 + 사이 간격 */
 function stepOf(track: HTMLElement): number {
@@ -29,7 +47,7 @@ function positionOf(track: HTMLElement): { index: number; last: number } | null 
 /**
  * 홈 첫 칸의 배너: 사진이 칸을 가득 채우고 아래쪽에 문구 두 줄과 작은 글자 한 줄을 얹는다.
  * 본문 폭을 벗어나 화면 끝까지 넓힌다 (스크롤 막대만큼 넘치는 폭은 쇼핑 레이아웃이 잘라 낸다).
- * 넓은 화면은 세 장을 간격 없이 이어 붙이고(그보다 적으면 폭을 나눠 채운다) 더 있으면 버튼으로 넘긴다 (끝에서 누르면 처음으로).
+ * 넓은 화면은 세 장을 간격 없이 이어 붙이고(그보다 적으면 폭을 나눠 채운다) 더 있으면 사진 위 양옆의 버튼으로 넘긴다 (끝에서 누르면 처음으로).
  * 휴대폰은 다음 장이 오른쪽에 조금 보이고 손가락으로 밀어 넘긴다 (버튼 없음)
  */
 export function HomeBanners({ banners }: HomeBannersProps) {
@@ -54,7 +72,7 @@ export function HomeBanners({ banners }: HomeBannersProps) {
   }
 
   return (
-    <section aria-label="바로가기 배너" className="mx-[calc(50%-50vw)] -mt-6 space-y-2.5 md:-mt-8">
+    <section aria-label="바로가기 배너" className="relative mx-[calc(50%-50vw)] -mt-6 md:-mt-8">
       <div
         ref={trackRef}
         onScroll={(event) => {
@@ -95,27 +113,24 @@ export function HomeBanners({ banners }: HomeBannersProps) {
         ))}
       </div>
       {position.last > 0 && (
-        <div className="mx-auto flex w-full max-w-6xl justify-end px-6 max-md:hidden">
+        <>
           <button
             type="button"
             aria-label="이전 배너"
-            className={NAV_BUTTON}
+            className={`${NAV_BUTTON} left-4`}
             onClick={() => move(-1)}
           >
-            ←
+            <NavArrow direction="prev" />
           </button>
-          <span className="border-ink figure flex h-9 items-center border-y-[1.5px] px-3.5 text-sm font-bold">
-            {position.index + 1} / {position.last + 1}
-          </span>
           <button
             type="button"
             aria-label="다음 배너"
-            className={NAV_BUTTON}
+            className={`${NAV_BUTTON} right-4`}
             onClick={() => move(1)}
           >
-            →
+            <NavArrow direction="next" />
           </button>
-        </div>
+        </>
       )}
     </section>
   )
