@@ -25,7 +25,10 @@ export function QuickSizeLine({
   if (!recommendation) return null
   const { recommendedSize, fit, notices } = recommendation
   return (
-    <div data-clarity-mask="true" className="bg-signal-soft space-y-1.5 px-3.5 py-2.5">
+    <div
+      data-clarity-mask="true"
+      className="border-ink bg-paper border-l-sheet space-y-1.5 border-[1.5px] border-l-[10px] px-3.5 py-2.5"
+    >
       {recommendedSize ? (
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
           <span className="font-bold">추천 사이즈</span>
