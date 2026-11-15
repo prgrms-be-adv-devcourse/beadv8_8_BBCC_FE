@@ -50,7 +50,10 @@ export function DecideWish({ wish, addressesPath, renderImage, onApproved }: Dec
   }
 
   return (
-    <section aria-label="조르기 답하기" className="bg-sheet space-y-4 p-4 md:p-5">
+    <section
+      aria-label="조르기 답하기"
+      className="border-ink bg-paper border-l-sheet space-y-4 border-[1.5px] border-l-[10px] p-4 md:p-5"
+    >
       <h2 className="text-section border-ink border-b-4 border-double pb-3">조르기 답하기</h2>
       {selection.approvableCount > 0 && (
         <label className="flex min-h-11 items-center gap-2 text-sm font-semibold">

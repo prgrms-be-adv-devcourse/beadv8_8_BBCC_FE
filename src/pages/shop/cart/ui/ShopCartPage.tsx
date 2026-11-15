@@ -142,7 +142,7 @@ export function ShopCartPage() {
           {/* 배송지 · 예치금 잔액은 행동 분석 녹화에서 가린다 */}
           <aside
             data-clarity-mask="true"
-            className="bg-sheet space-y-5 px-5 pt-[22px] pb-5 lg:sticky lg:top-32"
+            className="border-ink bg-paper border-l-sheet space-y-5 border-[1.5px] border-l-[10px] px-5 pt-[22px] pb-5 lg:sticky lg:top-32"
           >
             <h2 className="font-display border-ink border-b-4 border-double pb-3 text-3xl leading-none">
               주문서

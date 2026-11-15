@@ -56,7 +56,7 @@ export function ChildWishSection({ childId, childName }: ChildWishSectionProps) 
           <Link
             key={wish.requestId}
             to={paths.childWish(childId, wish.requestId)}
-            className="bg-signal-soft flex items-center gap-3 rounded-lg p-3"
+            className="border-ink bg-paper border-l-sheet flex items-center gap-3 border-[1.5px] border-l-[10px] p-3"
           >
             <span className="rounded-card block aspect-square w-12 shrink-0 overflow-hidden bg-white">
               {first && (
