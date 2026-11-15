@@ -44,6 +44,8 @@
   --shop-ink: #1c1b19;
   --shop-sheet: #f1b5c1;
   --shop-marker: #f3d84a;
+  /* 크라프트지: 홈 맞춤 구획의 옷 태그에만 쓴다 */
+  --shop-kraft: #cfb48a;
   --dur-micro: 120ms;
   --dur-short: 220ms;
   --ease-arrive: cubic-bezier(0.16, 1, 0.3, 1);

@@ -33,7 +33,6 @@ export {
 } from './model/queries'
 export { ChildCard } from './ui/ChildCard'
 export { ChildFitTitle } from './ui/ChildFitTitle'
-export { ChildPortrait } from './ui/ChildPortrait'
 export { ChildFormFields } from './ui/ChildFormFields'
 export { ChildPicker } from './ui/ChildPicker'
 export { GrowthRecordList } from './ui/GrowthRecordList'

@@ -178,3 +178,34 @@ test('홈 전체 상품: 페이지 번호로 다음 페이지를 부르고 주�
   await page.getByRole('button', { name: '상의', exact: true }).click()
   await expect(page).not.toHaveURL(/[?&]page=/)
 })
+
+test('홈 맞춤 영역: 자녀가 둘이면 태그의 이름을 눌러 다른 자녀로 바꾼다', async ({ page }) => {
+  const SECOND = { ...CHILD, id: 502, name: '서준', heightCm: 104 }
+  await page.route('**/api/v1/recommendations/products/preview?childId=502', (route) =>
+    route.fulfill({ json: { source: 'RULE', products: [item(9)] } }),
+  )
+  await asParentWithChild(page)
+  // 자녀 목록을 둘로 바꿔 다시 받는다
+  await page.route('**/api/v1/children', (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({ json: [CHILD, SECOND] })
+      : route.fallback(),
+  )
+  await page.reload()
+
+  const recommended = page.getByRole('region', { name: '맞춤 상품' })
+  await expect(recommended.getByRole('heading', { name: /하윤에게 맞는 옷/ })).toBeVisible()
+  // 추천 사이즈는 작은 태그에만 적는다
+  await expect(recommended.getByText('추천 사이즈')).toBeVisible()
+
+  await recommended.getByRole('button', { name: '자녀 바꾸기, 지금 하윤' }).click()
+  await expect(page.getByRole('menuitemradio', { name: /하윤/ })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  )
+  await page.getByRole('menuitemradio', { name: /서준/ }).click()
+
+  await expect(page).toHaveURL(/child=502/)
+  await expect(recommended.getByRole('heading', { name: /서준에게 맞는 옷/ })).toBeVisible()
+  await expect(recommended.getByText('맞춤 상품 9')).toBeVisible()
+})
