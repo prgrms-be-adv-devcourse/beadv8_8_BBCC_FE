@@ -1,13 +1,8 @@
 import { useEffect } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
-import {
-  ChildFitTitle,
-  childProfileLine,
-  SizeRulerBar,
-  sizeRulerOf,
-  useChildQuery,
-} from '@/entities/child'
+import { ChildFitTitle, childProfileLine, useChildQuery } from '@/entities/child'
 import { useFavoritedIdsQuery } from '@/entities/favorite'
+import { recentShopsOf, useOrdersQuery } from '@/entities/order'
 import { ProductTile, useCategoriesQuery, visibleCategoryIdOf } from '@/entities/product'
 import { useRecommendedProductsInfiniteQuery } from '@/entities/recommendation'
 import { FavoriteButton } from '@/features/toggle-favorite'
@@ -18,6 +13,7 @@ import { Button } from '@/shared/ui/button'
 import { CardGridSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { QuickAdd } from '@/widgets/quick-add'
+import { RecentShops } from './RecentShops'
 
 /**
  * 자녀 맞춤 목록 (홈 「더보기」): 키에 맞는 사이즈가 판매 중인 상품, 신상품순 고정.
@@ -40,6 +36,10 @@ export function ShopRecommendedPage() {
   // 보이는 상품 중 내가 찜한 것 (GET /favorites?productIds=)
   const favoritedIds = useFavoritedIdsQuery(list.data?.products.map((product) => product.id) ?? [])
 
+  // 머리의 빈 자리에 최근에 산 상점 (내 주문 첫 쪽의 대표 상점을 센다)
+  const orders = useOrdersQuery()
+  const shops = recentShopsOf(orders.data?.content ?? [])
+
   const selectTab = (next: string | null) => setParams(next ? { cat: next } : {}, { replace: true })
 
   return (
@@ -60,7 +60,7 @@ export function ShopRecommendedPage() {
         </svg>
         홈
       </Link>
-      <header className="border-ink bg-paper border-l-sheet grid gap-x-10 gap-y-4 border-[1.5px] border-l-[10px] px-4 py-6 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:items-end md:p-7">
+      <header className="border-ink bg-paper border-l-sheet grid gap-x-10 gap-y-4 border-[1.5px] border-l-[10px] px-4 py-6 md:items-end md:p-7 lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-x-16">
         <div className="space-y-1">
           {child.data ? (
             <ChildFitTitle name={child.data.name} />
@@ -83,9 +83,7 @@ export function ShopRecommendedPage() {
             잘 맞는 옷(기준 옷) 적기
           </Link>
         </div>
-        {child.data && (
-          <SizeRulerBar ruler={sizeRulerOf(child.data.heightCm)} name={child.data.name} />
-        )}
+        {shops.length > 0 && <RecentShops shops={shops} />}
       </header>
 
       <div

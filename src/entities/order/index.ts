@@ -53,6 +53,7 @@ export {
   paymentPollInterval,
   type OrderTab,
 } from './model/order.rules'
+export { recentShopsOf, type RecentShop } from './model/recent-shops.rules'
 export {
   currentCancelledAtOf,
   currentCancelReasonOf,
