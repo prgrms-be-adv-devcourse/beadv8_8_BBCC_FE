@@ -32,6 +32,7 @@ export {
   useOwnChildProfileQuery,
 } from './model/queries'
 export { ChildCard } from './ui/ChildCard'
+export { ChildFitTitle } from './ui/ChildFitTitle'
 export { ChildFormFields } from './ui/ChildFormFields'
 export { ChildPicker } from './ui/ChildPicker'
 export { GrowthRecordList } from './ui/GrowthRecordList'
