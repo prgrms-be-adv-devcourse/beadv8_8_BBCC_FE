@@ -3,7 +3,6 @@ import { KakaoLoginButton } from '@/features/auth-kakao-login'
 import { SwitchDemoRole } from '@/features/switch-demo-role'
 import { paths, useDemoRoleSwitch } from '@/shared/config'
 import { safeReturnPath } from '@/shared/lib'
-import { Card } from '@/shared/ui/card'
 import { PageHeader } from '@/shared/ui/PageHeader'
 
 export function LoginPage() {
@@ -14,23 +13,23 @@ export function LoginPage() {
   const next = safeReturnPath(search.get('next'))
 
   return (
-    <div className="space-y-4">
+    <div className="shop-look space-y-4">
       <PageHeader
         title="로그인"
         description="처음 로그인하면 자동으로 가입되고 예치금 지갑이 만들어져요."
       />
       {next && <p className="text-muted-foreground text-sm">로그인하면 보던 화면으로 돌아가요.</p>}
-      <Card className="space-y-3">
+      <div className="border-ink space-y-3 border-[1.5px] p-4">
         <KakaoLoginButton next={next} />
-      </Card>
-      <Link to={paths.child.home} className="text-primary underline">
+      </div>
+      <Link to={paths.child.home} className="text-primary inline-block underline">
         자녀 로그인
       </Link>
       {demoRoleSwitch && (
-        <Card className="space-y-2">
+        <div className="border-ink space-y-2 border-[1.5px] p-4">
           <p className="text-sm font-medium">시연용 로그인 (local 전용 개발용 토큰)</p>
           <SwitchDemoRole onSwitched={() => navigate(next ?? paths.shop.home, { replace: true })} />
-        </Card>
+        </div>
       )}
     </div>
   )
