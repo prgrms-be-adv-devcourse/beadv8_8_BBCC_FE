@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { ChildPicker, SizeRulerBar, sizeRulerOf, type Child } from '@/entities/child'
+import { ChildFitTitle, ChildPicker, SizeRulerBar, sizeRulerOf, type Child } from '@/entities/child'
 import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { ProductTile } from '@/entities/product'
 import {
@@ -46,9 +46,7 @@ export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPr
     >
       <div className="flex items-start justify-between gap-4">
         <div data-clarity-mask="true" className="space-y-2.5">
-          <h2 className="font-display text-[clamp(1.875rem,4vw,3.5rem)] leading-[1.1]">
-            {child.name}에게 맞는 옷
-          </h2>
+          <ChildFitTitle name={child.name} as="h2" />
           <p className="text-ink text-[15px]">
             키 <span className="figure">{child.heightCm}cm</span>에는{' '}
             <strong className="font-display bg-[linear-gradient(transparent_55%,var(--fit)_55%)] px-[0.12em] text-[1.7em] leading-none font-normal">

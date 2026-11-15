@@ -1,6 +1,12 @@
 import { useEffect } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
-import { childProfileLine, SizeRulerBar, sizeRulerOf, useChildQuery } from '@/entities/child'
+import {
+  ChildFitTitle,
+  childProfileLine,
+  SizeRulerBar,
+  sizeRulerOf,
+  useChildQuery,
+} from '@/entities/child'
 import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { ProductTile, useCategoriesQuery, visibleCategoryIdOf } from '@/entities/product'
 import { useRecommendedProductsInfiniteQuery } from '@/entities/recommendation'
@@ -56,7 +62,11 @@ export function ShopRecommendedPage() {
       </Link>
       <header className="bg-sheet -mx-4 grid gap-x-10 gap-y-4 px-4 py-6 md:mx-0 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:items-end md:p-7">
         <div className="space-y-1">
-          <h1 className="text-page">{child.data ? `${child.data.name}에게 맞는 옷` : '맞는 옷'}</h1>
+          {child.data ? (
+            <ChildFitTitle name={child.data.name} />
+          ) : (
+            <h1 className="text-page">맞는 옷</h1>
+          )}
           {child.data && (
             <p className="text-ink text-sm font-semibold">{childProfileLine(child.data)}</p>
           )}
