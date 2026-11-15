@@ -36,7 +36,7 @@ import { ProductSortSelect } from './ProductSortSelect'
 import { RecommendedPreview } from './RecommendedPreview'
 
 /**
- * 쇼핑 첫 화면 (확정 시안 6번 브랜드 퍼플): 계절 · 사이즈 첫 칸 · 카테고리 칩 · 자녀 맞춤 상품(자녀가 있을 때) · 전체 상품 · 키 기록.
+ * 쇼핑 첫 화면 (확정 시안 6번 브랜드 퍼플): 배너 · 자녀 맞춤 상품(자녀가 있을 때) · 카테고리 · 전체 상품 · 키 기록.
  * 자녀 등록 안내는 머리말 띠 하나만 둔다.
  * 검색어는 머리말 검색창이 주소(?q=)에 싣는다. 검색 중에는 전체 상품 검색 결과만 보인다
  */
@@ -129,6 +129,10 @@ export function ShopHomePage() {
           })}
         />
       )}
+      {showsRecommended && (
+        <RecommendedPreview kids={kids} child={child} onSelectChild={setChildId} />
+      )}
+
       <CategoryChips
         categories={categories.data ?? []}
         selectedId={filters.categoryId}
@@ -141,10 +145,6 @@ export function ShopHomePage() {
             다시 시도
           </Button>
         </div>
-      )}
-
-      {showsRecommended && (
-        <RecommendedPreview kids={kids} child={child} onSelectChild={setChildId} />
       )}
 
       <section
