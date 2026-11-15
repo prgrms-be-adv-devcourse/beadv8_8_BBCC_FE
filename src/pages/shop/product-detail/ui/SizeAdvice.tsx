@@ -46,7 +46,7 @@ export function SizeAdvice({
   const lastPurchaseText = lastPurchaseTextOf(recommendation)
 
   return (
-    <div className="bg-signal-soft">
+    <div className="border-ink bg-paper border-l-sheet border-[1.5px] border-l-[10px]">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3.5 py-2.5">
         {recommendedSize ? (
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">

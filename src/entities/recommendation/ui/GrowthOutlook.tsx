@@ -17,11 +17,18 @@ type GrowthOutlookProps = {
 export function GrowthOutlook({ recommendation }: GrowthOutlookProps) {
   const periodText = wearablePeriodTextOf(recommendation)
   const { growthSpeed } = recommendation
+  // 「… 예상해요 · 아직 성장 기록이 없어요」: 가운뎃점 뒤 마디는 중간에서 끊기지 않고 통째로 다음 줄로 넘어간다
+  const [speedText, ...speedNotes] = growthSpeedTextOf(growthSpeed).split(' · ')
   return (
     <div className="text-ink-2 space-y-0.5 text-[13px]">
       {periodText && <p>{periodText}</p>}
       <p>
-        {growthSpeedTextOf(growthSpeed)}{' '}
+        {speedText}{' '}
+        {speedNotes.map((note) => (
+          <span key={note} className="inline-block">
+            · {note}
+          </span>
+        ))}{' '}
         <InfoTip label="성장 속도 안내">
           {growthSourceLinesOf(growthSpeed).map((line) => (
             <span key={line} className="block">

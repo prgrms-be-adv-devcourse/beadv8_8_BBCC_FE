@@ -11,10 +11,18 @@ type ProductGalleryProps = {
   className?: string
   /** 사진이 한 장도 없을 때 기본 이미지 대신 그릴 낙서 아이콘 (쇼핑 영역) */
   doodle?: CategoryDoodle
+  /** 넓은 화면에서 정사각형 대신 부모 높이를 채운다 (옆 칸과 높이를 맞출 때) */
+  fillsHeight?: boolean
 }
 
 /** 상품 사진: 큰 사진은 좌우로 밀어 넘기고(scroll-snap), 작은 사진 줄을 누르면 그 사진으로 간다 */
-export function ProductGallery({ images, alt, className, doodle }: ProductGalleryProps) {
+export function ProductGallery({
+  images,
+  alt,
+  className,
+  doodle,
+  fillsHeight = false,
+}: ProductGalleryProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [index, setIndex] = useState(0)
 
@@ -24,7 +32,7 @@ export function ProductGallery({ images, alt, className, doodle }: ProductGaller
         src={images[0] ?? null}
         alt={alt}
         doodle={doodle}
-        className={cn('aspect-square', className)}
+        className={cn('aspect-square', fillsHeight && 'lg:aspect-auto lg:h-full', className)}
       />
     )
   }
@@ -41,8 +49,8 @@ export function ProductGallery({ images, alt, className, doodle }: ProductGaller
   }
 
   return (
-    <div className="min-w-0 space-y-2">
-      <div className="relative">
+    <div className={cn('min-w-0 space-y-2', fillsHeight && 'lg:flex lg:h-full lg:flex-col')}>
+      <div className={cn('relative', fillsHeight && 'lg:min-h-0 lg:flex-1')}>
         <div
           ref={trackRef}
           onScroll={handleScroll}
@@ -50,6 +58,7 @@ export function ProductGallery({ images, alt, className, doodle }: ProductGaller
           aria-label={`${alt} 사진 ${images.length}장`}
           className={cn(
             'flex snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto',
+            fillsHeight && 'lg:h-full',
             className,
           )}
         >
@@ -58,7 +67,10 @@ export function ProductGallery({ images, alt, className, doodle }: ProductGaller
               key={src}
               src={src}
               alt={`${alt} 사진 ${i + 1}`}
-              className="aspect-square shrink-0 snap-center"
+              className={cn(
+                'aspect-square shrink-0 snap-center',
+                fillsHeight && 'lg:aspect-auto lg:h-full',
+              )}
             />
           ))}
         </div>
