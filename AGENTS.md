@@ -168,6 +168,7 @@ React 커뮤니티에서 가장 흔한 관례(컴포넌트 PascalCase · 그 밖
 
 ## 5. 디자인
 
+- 쇼핑 영역(보호자 · 자녀 화면, `data-area="shop"`)은 `docs/design-system.md`를 따른다. 아래 규칙은 판매자 센터 · 관리자 · 시연 콘솔의 것이다.
 - shadcn 기본 컴포넌트 + `index.css` 색상 토큰만 쓴다. 새 컴포넌트 디자인 · 이미지 · 애니메이션 작업은 하지 않는다.
 - 색상: primary `#681078` · 강조 `#F4D35E` · 성장(추천 · 자녀 영역만) `#A9B77D` · 배경 `#FFF9EC` · 본문 `#29242B`.
 - 컴포넌트 추가는 `npx shadcn@latest add <name>` (→ `src/shared/ui`). 생성된 파일은 고치지 않는다. 레지스트리에 접속할 수 없는 환경에서는 같은 모양으로 직접 두고 파일 맨 위에 그 사실을 적는다 (`input` · `label` · `card` · `badge` · `page-header`).
