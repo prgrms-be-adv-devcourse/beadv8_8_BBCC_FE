@@ -209,3 +209,54 @@ test('홈 맞춤 영역: 자녀가 둘이면 태그의 이름을 눌러 다른 �
   await expect(recommended.getByRole('heading', { name: /서준에게 맞는 옷/ })).toBeVisible()
   await expect(recommended.getByText('맞춤 상품 9')).toBeVisible()
 })
+
+test('맞춤 목록 머리: 최근 주문의 대표 상점을 많이 산 순서로 보여 준다', async ({ page }) => {
+  const order = (n: number, sellerName: string, status = 'PAID') => ({
+    orderId: `order-${n}`,
+    status,
+    totalAmount: 20000,
+    orderedAt: `2026-11-0${n}T10:00:00`,
+    representativeProductName: `상품 ${n}`,
+    itemCount: 1,
+    sellerName,
+    representativeProductId: String(9000 + n),
+    representativeThumbnailUrl: null,
+    cancelledAt: null,
+  })
+  const orders = [
+    order(4, '코코리본'),
+    order(3, '무무즈'),
+    order(2, '취소상점', 'CANCELLED'),
+    order(1, '무무즈'),
+  ]
+  await page.route(
+    (url) => url.pathname.endsWith('/api/v1/orders'),
+    (route) =>
+      route.fulfill({
+        json: {
+          content: orders,
+          page: 0,
+          size: 20,
+          totalElements: orders.length,
+          totalPages: 1,
+          hasNext: false,
+        },
+      }),
+  )
+  await asParentWithChild(page)
+  await page.goto('/recommended/501')
+
+  const shops = page.getByRole('region', { name: '최근에 산 상점' })
+  await expect(shops.getByRole('listitem')).toHaveText([
+    /무무즈.*최근 주문 2건/,
+    /코코리본.*최근 주문 1건/,
+  ])
+  if (process.env.SHOT_DIR) {
+    await page.setViewportSize({ width: 1440, height: 700 })
+    await page.screenshot({ path: `${process.env.SHOT_DIR}/rec-wide.png` })
+    await page.setViewportSize({ width: 1024, height: 700 })
+    await page.screenshot({ path: `${process.env.SHOT_DIR}/rec-mid.png` })
+    await page.setViewportSize({ width: 375, height: 760 })
+    await page.screenshot({ path: `${process.env.SHOT_DIR}/rec-phone.png` })
+  }
+})
