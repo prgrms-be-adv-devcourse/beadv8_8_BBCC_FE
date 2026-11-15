@@ -370,9 +370,17 @@ test('사용자 화면: 상품 등록 → 쇼핑 주문 → 발송 → 구매확
     await page.getByRole('link', { name: 'Kidly', exact: true }).click()
     // 홈 위 맞춤 영역: 자녀에게 맞는 사이즈가 있는 상품 (GET /recommendations/products?childId=)
     const recommended = page.getByRole('region', { name: '맞춤 상품' })
-    const testKid = recommended.getByRole('button', { name: /^테스트 \(/ })
-    if ((await testKid.count()) > 0) await testKid.first().click()
-    await expect(recommended.getByRole('heading', { name: /테스트에게 맞는 옷/ })).toBeVisible()
+    const heading = recommended.getByRole('heading', { name: /테스트에게 맞는 옷/ })
+    // 앞 테스트가 남긴 자녀가 있으면 태그의 이름을 눌러 「테스트」로 바꾼다 (자녀가 하나면 버튼이 없다)
+    await expect(recommended.getByRole('heading', { name: /에게 맞는 옷/ })).toBeVisible()
+    if ((await heading.count()) === 0) {
+      await recommended.getByRole('button', { name: /^자녀 바꾸기/ }).click()
+      await page
+        .getByRole('menuitemradio', { name: /^테스트/ })
+        .first()
+        .click()
+    }
+    await expect(heading).toBeVisible()
     // 상세에 들어가면 고른 자녀로 상세 진입을 한 번 기록한다 (추천이 회원 활동으로 셈)
     const viewed = page.waitForRequest(
       (request) =>
