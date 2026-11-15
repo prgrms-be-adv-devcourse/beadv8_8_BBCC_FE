@@ -27,7 +27,8 @@ export function ShopLayout() {
       <TopProgressBar />
       <ScrollToTop />
       {/* 쇼핑 영역 색 · 글자 (shop.css의 data-area): 시연 막대는 빼고 머리말 · 본문 · 바닥글에만 */}
-      <div data-area="shop" className="flex flex-1 flex-col">
+      {/* overflow-x-clip: 화면 폭(100vw)으로 넓힌 홈 배너가 세로 스크롤 막대만큼 넘쳐도 가로 스크롤이 생기지 않게 */}
+      <div data-area="shop" className="flex flex-1 flex-col overflow-x-clip">
         <ShopHeader />
         {/* 회원 정보 · 배송지 · 자녀 · 예치금 화면은 행동 분석 녹화에서 통째로 가린다 */}
         <main
