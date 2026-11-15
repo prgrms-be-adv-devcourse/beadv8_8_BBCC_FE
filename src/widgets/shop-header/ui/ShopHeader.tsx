@@ -6,6 +6,7 @@ import { useSessionStore } from '@/entities/session'
 import { useLogout } from '@/features/logout'
 import { loginPath, paths, shopNeedsLogin } from '@/shared/config'
 import { cn } from '@/shared/lib'
+import { KidlyLogo } from '@/shared/ui/KidlyLogo'
 
 /** 검색어는 주소(?q=)에 싣는다 → 홈 상품 목록이 읽는다 */
 function HeaderSearch({ className }: { className?: string }) {
@@ -150,12 +151,8 @@ export function ShopHeader() {
       <div className="mx-auto max-w-6xl px-4 md:px-6">
         {/* 휴대폰은 검색 칸을 아래 줄로 내려 가로로 넘치지 않게 한다 */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3 md:h-17 md:flex-nowrap md:gap-x-8 md:py-0">
-          <Link
-            to={paths.shop.home}
-            aria-label="Kidly"
-            className="font-logo text-ink shrink-0 text-[28px] leading-none md:text-[34px]"
-          >
-            kidly
+          <Link to={paths.shop.home} aria-label="Kidly" className="text-ink shrink-0">
+            <KidlyLogo className="h-8 md:h-10" />
           </Link>
           <HeaderSearch className="order-last basis-full md:order-none md:max-w-xl md:flex-1 md:basis-auto" />
           <div className="ml-auto flex shrink-0 items-center md:gap-1">

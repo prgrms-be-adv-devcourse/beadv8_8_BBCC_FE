@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation } from 'react-router'
 import { useUnreadCountStream, useUnreadNotificationCountQuery } from '@/entities/notification'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { paths, shopMasksWholePage, useDemoRoleSwitch } from '@/shared/config'
+import { KidlyLogo } from '@/shared/ui/KidlyLogo'
 import { ShopHeader } from '@/widgets/shop-header'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { TopProgressBar } from './TopProgressBar'
@@ -43,7 +44,7 @@ export function ShopLayout() {
         </main>
         <footer className="border-ink mt-16 border-t-[3px]">
           <div className="text-ink-2 mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-3 px-4 pt-6 pb-20 text-[13px] md:px-6">
-            <span className="font-logo text-ink text-[26px] leading-none">kidly</span>
+            <KidlyLogo className="text-ink h-8" />
             <p className="min-w-0 basis-full max-md:order-last md:flex-1 md:basis-0">
               키즈 패션 마켓 Kidly는 여러 판매자가 직접 상품을 올리고 파는 곳이에요. 팀
               블루블랙치킨고양이{demoRoleSwitch && ', 세미 프로젝트 시연용'}

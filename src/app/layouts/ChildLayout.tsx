@@ -4,6 +4,7 @@ import { useChildSessionStore } from '@/entities/session'
 import { useChildLogout } from '@/features/logout'
 import { paths } from '@/shared/config'
 import { Badge } from '@/shared/ui/badge'
+import { KidlyLogo } from '@/shared/ui/KidlyLogo'
 import { Button } from '@/shared/ui/button'
 import { ChildGate } from './ChildGate'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
@@ -23,11 +24,8 @@ export function ChildLayout() {
       <ScrollToTop />
       <div data-area="shop" className="shop-look">
         <header className="border-ink flex flex-wrap items-center gap-x-4 gap-y-1 border-b-[1.5px] px-4 py-3 text-[13px] font-semibold [&_a]:underline-offset-4 [&_a:hover]:underline">
-          <Link
-            to={paths.child.home}
-            className="font-logo text-[28px] leading-none font-normal hover:no-underline"
-          >
-            Kidly
+          <Link to={paths.child.home} className="hover:no-underline">
+            <KidlyLogo className="h-8" />
           </Link>
           <Link to={paths.child.home} className="ml-auto">
             내 프로필
