@@ -32,6 +32,7 @@ export function ProductGallery({
         src={images[0] ?? null}
         alt={alt}
         doodle={doodle}
+        showsWhole={fillsHeight}
         className={cn('aspect-square', fillsHeight && 'lg:aspect-auto lg:h-full', className)}
       />
     )
@@ -67,6 +68,7 @@ export function ProductGallery({
               key={src}
               src={src}
               alt={`${alt} 사진 ${i + 1}`}
+              showsWhole={fillsHeight}
               className={cn(
                 'aspect-square shrink-0 snap-center',
                 fillsHeight && 'lg:aspect-auto lg:h-full',

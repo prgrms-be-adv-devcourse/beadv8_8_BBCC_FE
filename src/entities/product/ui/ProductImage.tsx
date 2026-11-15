@@ -15,6 +15,11 @@ type ProductImageProps = {
   allowSample?: boolean
   /** 사진이 없을 때 기본 이미지 대신 그릴 낙서 아이콘 (쇼핑 영역). 없으면 기본 이미지 */
   doodle?: CategoryDoodle
+  /**
+   * 넓은 화면에서 사진을 자르지 않고 전부 보여 준다. 칸과 비율이 달라 남는 자리에는
+   * 같은 사진을 흐리게 키워 깔아 빈 칸으로 보이지 않게 한다 (좁은 화면은 그대로 칸을 채운다)
+   */
+  showsWhole?: boolean
 }
 
 /** 상품 대표 이미지. 주소가 없거나 불러오지 못하면 (쇼핑 목록이고 시연 데이터가 켜져 있으면 샘플 사진, 아니면) 기본 이미지 */
@@ -24,6 +29,7 @@ export function ProductImage({
   className,
   allowSample = false,
   doodle,
+  showsWhole = false,
 }: ProductImageProps) {
   const isMockEnabled = useAppSettings((state) => state.isMockEnabled)
   // 주소가 바뀌면 다시 시도한다 (실패 표시는 그 주소에만 적용)
@@ -40,6 +46,25 @@ export function ProductImage({
         className={cn('bg-paper-2 text-ink flex w-full items-center justify-center', className)}
       >
         <CategoryIcon icon={doodle} className="size-[44%] max-w-44" />
+      </span>
+    )
+
+  if (usable && showsWhole)
+    return (
+      <span className={cn('bg-muted relative block w-full overflow-hidden', className)}>
+        <img
+          src={candidate}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 size-full scale-125 object-cover blur-2xl max-lg:hidden"
+        />
+        <img
+          src={candidate}
+          alt={alt}
+          loading="lazy"
+          onError={() => setFailedSrc(candidate)}
+          className="relative size-full object-cover lg:object-contain"
+        />
       </span>
     )
 
