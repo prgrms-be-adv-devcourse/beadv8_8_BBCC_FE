@@ -28,13 +28,12 @@ export function ShopLayout() {
       <TopProgressBar />
       <ScrollToTop />
       {/* 쇼핑 영역 색 · 글자 (shop.css의 data-area): 시연 막대는 빼고 머리말 · 본문 · 바닥글에만 */}
-      {/* overflow-x-clip: 화면 폭(100vw)으로 넓힌 홈 배너가 세로 스크롤 막대만큼 넘쳐도 가로 스크롤이 생기지 않게 */}
-      <div data-area="shop" className="flex flex-1 flex-col overflow-x-clip">
+      <div data-area="shop" className="flex flex-1 flex-col">
         <ShopHeader />
         {/* 회원 정보 · 배송지 · 자녀 · 예치금 화면은 행동 분석 녹화에서 통째로 가린다 */}
         <main
           data-clarity-mask={shopMasksWholePage(pathname) || undefined}
-          className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6 md:py-8"
+          className="max-w-shop mx-auto w-full flex-1 px-4 py-6 md:px-6 md:py-8"
         >
           <SessionGate>
             <ShopLoginRedirect>
@@ -43,7 +42,7 @@ export function ShopLayout() {
           </SessionGate>
         </main>
         <footer className="border-ink mt-16 border-t-[3px]">
-          <div className="text-ink-2 mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-3 px-4 pt-6 pb-20 text-[13px] md:px-6">
+          <div className="text-ink-2 max-w-shop mx-auto flex flex-wrap items-center justify-between gap-x-8 gap-y-3 px-4 pt-6 pb-20 text-[13px] md:px-6">
             <KidlyLogo className="text-ink h-8" />
             <p className="min-w-0 basis-full max-md:order-last md:flex-1 md:basis-0">
               키즈 패션 마켓 Kidly는 여러 판매자가 직접 상품을 올리고 파는 곳이에요. 팀

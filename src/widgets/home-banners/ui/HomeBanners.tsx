@@ -46,8 +46,7 @@ function positionOf(track: HTMLElement): { index: number; last: number } | null 
 
 /**
  * 홈 첫 칸의 배너: 사진이 칸을 가득 채우고 아래쪽에 문구 두 줄과 작은 글자 한 줄을 얹는다.
- * 본문 폭을 벗어나 화면 끝까지 넓힌다 (스크롤 막대만큼 넘치는 폭은 쇼핑 레이아웃이 잘라 낸다).
- * 넓은 화면은 세 장을 간격 없이 이어 붙이고(그보다 적으면 폭을 나눠 채운다) 더 있으면 사진 위 양옆의 버튼으로 넘긴다 (끝에서 누르면 처음으로).
+ * 넓은 화면은 본문 폭 안에 세 장을 나란히 두고(그보다 적으면 폭을 나눠 채운다) 더 있으면 사진 위 양옆의 버튼으로 넘긴다 (끝에서 누르면 처음으로).
  * 휴대폰은 다음 장이 오른쪽에 조금 보이고 손가락으로 밀어 넘긴다 (버튼 없음)
  */
 export function HomeBanners({ banners }: HomeBannersProps) {
@@ -72,20 +71,20 @@ export function HomeBanners({ banners }: HomeBannersProps) {
   }
 
   return (
-    <section aria-label="바로가기 배너" className="relative mx-[calc(50%-50vw)] -mt-6 md:-mt-8">
+    <section aria-label="바로가기 배너" className="relative -mx-4 md:mx-0">
       <div
         ref={trackRef}
         onScroll={(event) => {
           const next = positionOf(event.currentTarget)
           if (next) setPosition(next)
         }}
-        className="flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-2 overflow-x-auto px-4 motion-safe:scroll-smooth md:scroll-px-0 md:gap-0 md:px-0 [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-2 overflow-x-auto px-4 motion-safe:scroll-smooth md:scroll-px-0 md:px-0 [&::-webkit-scrollbar]:hidden"
       >
         {banners.map((banner) => (
           <Link
             key={banner.id}
             to={banner.to}
-            className="group bg-paper-2 relative aspect-[4/5] shrink-0 basis-[86%] snap-start overflow-hidden md:aspect-auto md:h-[clamp(400px,40vw,620px)] md:grow md:basis-1/3"
+            className="group bg-paper-2 relative aspect-[4/5] shrink-0 basis-[86%] snap-start overflow-hidden md:aspect-auto md:h-[clamp(280px,27vw,400px)] md:grow md:basis-[calc((100%-1rem)/3)]"
           >
             <ProductImage
               src={banner.imageUrl}
@@ -117,7 +116,7 @@ export function HomeBanners({ banners }: HomeBannersProps) {
           <button
             type="button"
             aria-label="이전 배너"
-            className={`${NAV_BUTTON} left-4`}
+            className={`${NAV_BUTTON} left-3`}
             onClick={() => move(-1)}
           >
             <NavArrow direction="prev" />
@@ -125,7 +124,7 @@ export function HomeBanners({ banners }: HomeBannersProps) {
           <button
             type="button"
             aria-label="다음 배너"
-            className={`${NAV_BUTTON} right-4`}
+            className={`${NAV_BUTTON} right-3`}
             onClick={() => move(1)}
           >
             <NavArrow direction="next" />

@@ -13,7 +13,7 @@ export function ChildFitTitle({ name, as: Heading = 'h1' }: ChildFitTitleProps) 
   return (
     <Heading
       aria-label={`${name}에게 맞는 옷`}
-      className="flex flex-wrap items-baseline gap-x-[0.3em] gap-y-1 text-[clamp(1.375rem,3vw,2.5rem)] leading-[1.1] font-extrabold"
+      className="flex flex-wrap items-baseline gap-x-[0.3em] gap-y-1 text-[clamp(1.25rem,2.2vw,1.875rem)] leading-[1.1] font-extrabold"
     >
       <span className="font-hand max-w-full -rotate-3 bg-[linear-gradient(transparent_60%,var(--shop-marker)_60%)] px-[0.06em] text-[2.6em] leading-[0.9] font-bold break-all">
         {name}

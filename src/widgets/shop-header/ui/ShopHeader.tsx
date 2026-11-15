@@ -148,7 +148,7 @@ export function ShopHeader() {
   return (
     // 휴대폰에서는 고정하지 않는다 (머리말이 화면을 덮지 않게)
     <header className="bg-paper border-ink z-30 border-b-[1.5px] md:sticky md:top-0">
-      <div className="mx-auto max-w-6xl px-4 md:px-6">
+      <div className="max-w-shop mx-auto px-4 md:px-6">
         {/* 휴대폰은 검색 칸을 아래 줄로 내려 가로로 넘치지 않게 한다 */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3 md:h-17 md:flex-nowrap md:gap-x-8 md:py-0">
           <Link to={paths.shop.home} aria-label="Kidly" className="text-ink shrink-0">
