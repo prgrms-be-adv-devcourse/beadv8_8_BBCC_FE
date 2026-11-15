@@ -186,13 +186,19 @@ export function ShopProductDetailPage() {
           </svg>
           상품 목록
         </Link>
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
-          <ProductGallery
-            images={detail.imageUrls}
-            alt={detail.name}
-            className="border-ink min-w-0 border-[1.5px] max-lg:aspect-[4/3]"
-            doodle={(category && categoryIconOf(category.name)) || ALL_CATEGORIES_ICON}
-          />
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+          {/* 넓은 화면: 사진 높이를 옆 정보 칸에 맞춘다 (정보가 길어도 620px까지만) */}
+          <div className="relative min-w-0 lg:min-h-[26rem]">
+            <div className="lg:absolute lg:inset-0 lg:max-h-[620px]">
+              <ProductGallery
+                images={detail.imageUrls}
+                alt={detail.name}
+                className="border-ink min-w-0 border-[1.5px] max-lg:aspect-[4/3]"
+                doodle={(category && categoryIconOf(category.name)) || ALL_CATEGORIES_ICON}
+                fillsHeight
+              />
+            </div>
+          </div>
 
           {/* min-w-0: 실측표처럼 넓은 표가 열을 넓혀 가격 · 담기 버튼을 화면 밖으로 밀지 않게 (표만 가로로 민다) */}
           <div className="shop-offer min-w-0 space-y-5">

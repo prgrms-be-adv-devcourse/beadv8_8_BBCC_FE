@@ -415,3 +415,8 @@ body:has([data-area='shop']) {
     }
   }
 }
+
+/* 문단 끝에 낱말 하나만 남는 줄바꿈을 줄인다 */
+[data-area='shop'] :is(p, dd, li) {
+  text-wrap: pretty;
+}
