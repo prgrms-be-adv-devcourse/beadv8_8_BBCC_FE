@@ -32,7 +32,10 @@ export function PaymentSummary({
   error,
 }: PaymentSummaryProps) {
   return (
-    <section aria-label="결제 정보" className="bg-sheet space-y-4 px-5 pt-[22px] pb-5">
+    <section
+      aria-label="결제 정보"
+      className="border-ink bg-paper border-l-sheet space-y-4 border-[1.5px] border-l-[10px] px-5 pt-[22px] pb-5"
+    >
       <h2 className="font-display border-ink border-b-4 border-double pb-3 text-[26px] leading-none">
         결제 정보
       </h2>
@@ -74,7 +77,7 @@ export function PaymentSummary({
           role="status"
           aria-label="결제 확인"
           className={cn(
-            'bg-paper/70 px-3 py-2 text-xs',
+            'bg-paper-2 px-3 py-2 text-xs',
             check.result === 'MISMATCH' ? 'text-destructive' : 'text-ink-2',
           )}
         >

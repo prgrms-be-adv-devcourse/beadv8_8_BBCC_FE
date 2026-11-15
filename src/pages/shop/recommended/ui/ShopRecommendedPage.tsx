@@ -60,7 +60,7 @@ export function ShopRecommendedPage() {
         </svg>
         홈
       </Link>
-      <header className="bg-sheet -mx-4 grid gap-x-10 gap-y-4 px-4 py-6 md:mx-0 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:items-end md:p-7">
+      <header className="border-ink bg-paper border-l-sheet grid gap-x-10 gap-y-4 border-[1.5px] border-l-[10px] px-4 py-6 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:items-end md:p-7">
         <div className="space-y-1">
           {child.data ? (
             <ChildFitTitle name={child.data.name} />
