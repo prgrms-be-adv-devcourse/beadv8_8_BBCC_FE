@@ -251,6 +251,13 @@ test('맞춤 목록 머리: 최근 주문의 대표 상점을 많이 산 순서�
     /무무즈.*최근 주문 2건/,
     /코코리본.*최근 주문 1건/,
   ])
+  // 세는 기준은 안내 아이콘에 올렸을 때만 보인다
+  const note = shops.getByRole('tooltip')
+  await expect(note).toBeHidden()
+  await shops.getByRole('button', { name: '최근에 산 상점 기준' }).hover()
+  await expect(note).toContainText('최근 주문 20건')
+  if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/rec-tip.png` })
+  await page.mouse.move(0, 0)
   if (process.env.SHOT_DIR) {
     await page.setViewportSize({ width: 1440, height: 700 })
     await page.screenshot({ path: `${process.env.SHOT_DIR}/rec-wide.png` })
