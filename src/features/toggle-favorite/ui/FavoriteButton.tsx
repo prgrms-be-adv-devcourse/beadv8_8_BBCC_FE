@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { canToggleFavorite } from '@/entities/favorite'
+import { canToggleFavorite, type FavoriteOwnerPrincipal } from '@/entities/favorite'
 import { cn } from '@/shared/lib'
 import { useToggleFavorite } from '../model/use-toggle-favorite'
 
@@ -14,6 +14,8 @@ type FavoriteButtonProps = {
   loginHref?: string | null
   /** 찜 여부를 아직 모르면 true. 누르지 못하게 막는다 (이미 찜한 상품에 찜하기가 나가지 않게) */
   isLoading?: boolean
+  /** 누구의 찜인지. 자녀 화면은 'child' (자녀 토큰) */
+  owner?: FavoriteOwnerPrincipal
   /** 상품 목록 칸 위에 겹쳐 둘 작은 각진 하트 칸 (찜 수 없음) */
   isCompact?: boolean
   className?: string
@@ -48,10 +50,11 @@ export function FavoriteButton({
   isSelling,
   loginHref,
   isLoading = false,
+  owner = 'member',
   isCompact = false,
   className,
 }: FavoriteButtonProps) {
-  const toggle = useToggleFavorite(productId)
+  const toggle = useToggleFavorite(productId, owner)
   const box = isCompact ? COMPACT_BOX : BOX
   const countLabel =
     count === undefined || isCompact ? null : (

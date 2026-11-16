@@ -235,6 +235,26 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('DELETE', `/children/${orphan.data.id}`, 1)).status).toBe(204)
     expect((await call('GET', '/child/onboarding', 5)).status).toBe(404)
     expect((await call('POST', '/child/onboarding/notice', 5)).status).toBe(404)
+    // 자녀 찜 (BE #1377): 같은 /favorites를 자녀 토큰으로. 목록 · 하트는 본인 것만, 찜 수는 회원과 합친 값
+    const countOf = async () =>
+      (await call('GET', '/favorites/summary?productId=1', null)).data.favoriteCount as number
+    const before = await countOf()
+    const guardianItems = async () =>
+      (await call('GET', '/favorites?productIds=1', 1)).data.items.length as number
+    const guardianBefore = await guardianItems()
+    expect((await call('PUT', '/favorites/1', 4)).status).toBe(204)
+    const childAmong = await call('GET', '/favorites?productIds=1', 4)
+    expectContract(childAmong.data, favoriteListShape)
+    expect(childAmong.data.items.map((item: { productId: string }) => item.productId)).toEqual([
+      '1',
+    ])
+    expectContract((await call('GET', '/favorites?size=5', 4)).data, favoriteListShape)
+    expect(await countOf()).toBe(before + 1)
+    // 보호자에게는 자녀의 찜이 보이지 않는다
+    expect(await guardianItems()).toBe(guardianBefore)
+    expect((await call('PUT', '/favorites/1', 5)).status).toBe(403)
+    expect((await call('DELETE', '/favorites/1', 4)).status).toBe(204)
+    expect(await countOf()).toBe(before)
     expectContract((await call('GET', '/child/profile', 4)).data, childShape)
     // 자녀 장바구니 = /cart (자녀 토큰, BE #998). 입을 아이는 자기로 고정
     const added = await call('POST', '/cart/items', 4, { optionId: 1, childId: null, quantity: 1 })

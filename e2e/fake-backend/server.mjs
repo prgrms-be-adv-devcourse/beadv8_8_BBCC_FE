@@ -1228,6 +1228,27 @@ http
         .sort((a, b) => b.orderedAt.localeCompare(a.orderedAt))
       return send(res, 200, page(rows))
     }
+    // 찜은 자녀 토큰도 받는다 (BE #1377): 찜 · 해제 · 내 찜은 자녀 본인 것만. 지워진 자녀 계정은 403
+    if (isChild && /^\/favorites(\/|$)/.test(p) && p !== '/favorites/summary') {
+      const account = childAccounts.find(
+        (a) => `child:${a.id}` === u.sub && a.version === u.version,
+      )
+      if (!account)
+        return problem(res, 401, '로그인이 만료되었습니다', '로그인이 만료되었습니다.', req.url)
+      if (!children.some((c) => c.id === account.childProfileId && !c.deleted))
+        return problem(
+          res,
+          403,
+          '삭제된 자녀 계정입니다',
+          '삭제된 자녀 계정은 찜을 쓸 수 없습니다. 보호자에게 문의해 주세요.',
+          req.url,
+        )
+      const childFavorite = memberFavoriteRoute(m, p, url.searchParams, {
+        memberId: `child:${account.id}`,
+        productView: favoriteProductView,
+      })
+      if (childFavorite) return reviewResult(res, childFavorite, req.url)
+    }
     // 장바구니 · 조르기는 회원과 자녀(자녀 토큰)를 함께 받는다 (BE @CartCaller · @WishCaller, #998 · #999)
     if (/^\/(cart|wish\/requests)(\/|$)/.test(p)) {
       let actor

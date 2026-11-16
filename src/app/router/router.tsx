@@ -321,6 +321,14 @@ export const router = createBrowserRouter(
           ),
         },
         {
+          path: rel(paths.child.home, paths.child.favorites),
+          ...page(() =>
+            import('@/pages/shop/my-favorites').then((m) => ({
+              Component: m.ShopMyFavoritesPage,
+            })),
+          ),
+        },
+        {
           path: rel(paths.child.home, paths.child.notifications),
           ...page(() =>
             import('@/pages/child/notifications').then((m) => ({

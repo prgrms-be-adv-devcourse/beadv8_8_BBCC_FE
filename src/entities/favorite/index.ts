@@ -1,4 +1,5 @@
 export type { FavoriteDisplayStatus, FavoriteItem, FavoriteSummary } from './model/favorite'
+export type { FavoriteOwnerPrincipal } from './api/favorite-api'
 export { toFavoritedIds, toFavoriteItem, toFavoriteSummary } from './model/favorite.mapper'
 export {
   canQuickAddFavorite,
