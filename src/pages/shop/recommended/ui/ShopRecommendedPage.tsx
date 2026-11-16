@@ -60,30 +60,56 @@ export function ShopRecommendedPage() {
         </svg>
         홈
       </Link>
-      <header className="border-ink bg-paper border-l-sheet grid gap-x-10 gap-y-4 border-[1.5px] border-l-[10px] px-4 py-6 md:items-end md:p-7 lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-x-16">
-        <div className="space-y-1">
-          {child.data ? (
-            <ChildFitTitle name={child.data.name} />
-          ) : (
-            <h1 className="text-page">맞는 옷</h1>
-          )}
-          {child.data && (
-            <p className="text-ink text-sm font-semibold">{childProfileLine(child.data)}</p>
-          )}
-          {child.isError && (
-            <StateMessage tone="error">{getErrorMessage(child.error)}</StateMessage>
-          )}
-          <p className="text-ink-2 text-[13px]">
-            키에 맞는 사이즈가 판매 중인 상품만, 새로 나온 순서로 보여 드려요.
-          </p>
+      <header
+        className={cn(
+          'border-ink bg-paper border-l-sheet grid gap-x-8 gap-y-4 border-[1.5px] border-l-[10px] px-4 py-6 md:p-7',
+          shops.length > 0 && 'xl:grid-cols-[minmax(0,1fr)_38rem]',
+        )}
+      >
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+          <div className="space-y-1">
+            {child.data ? (
+              <ChildFitTitle name={child.data.name} />
+            ) : (
+              <h1 className="text-page">맞는 옷</h1>
+            )}
+            {child.data && (
+              <p className="text-ink text-sm font-semibold">{childProfileLine(child.data)}</p>
+            )}
+            {child.isError && (
+              <StateMessage tone="error">{getErrorMessage(child.error)}</StateMessage>
+            )}
+            <p className="text-ink-2 text-[13px]">
+              키에 맞는 사이즈가 판매 중인 상품만, 새로 나온 순서로 보여 드려요.
+            </p>
+          </div>
           <Link
             to={paths.shop.childReferenceGarments(childId)}
-            className="text-signal inline-flex min-h-10 items-center text-[13px] font-semibold hover:underline"
+            className="group font-hand text-ink ml-auto inline-flex min-h-10 -rotate-1 items-center gap-2 text-[22px] leading-none font-bold"
           >
-            잘 맞는 옷(기준 옷) 적기
+            <svg
+              viewBox="0 0 24 24"
+              className="size-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M4 20l1-4.5L16.5 4a2.1 2.1 0 0 1 3 3L8 18.5 4 20z" />
+              <path d="M14.5 6l3 3" />
+            </svg>
+            <span className="bg-[linear-gradient(transparent_62%,var(--shop-sheet)_62%)] px-0.5 group-hover:bg-[linear-gradient(transparent_35%,var(--shop-sheet)_35%)]">
+              잘 맞는 옷(기준 옷) 적기
+            </span>
           </Link>
         </div>
-        {shops.length > 0 && <RecentShops shops={shops} />}
+        {shops.length > 0 && (
+          <div className="border-ink flex flex-col justify-center border-t-[1.5px] border-dashed pt-4 xl:border-t-0 xl:border-l-[1.5px] xl:pt-0 xl:pl-8">
+            <RecentShops shops={shops} />
+          </div>
+        )}
       </header>
 
       <div
