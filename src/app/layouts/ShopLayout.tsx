@@ -1,7 +1,8 @@
-import { Link, Outlet, useLocation } from 'react-router'
+import { Link, matchPath, Outlet, useLocation } from 'react-router'
 import { useUnreadCountStream, useUnreadNotificationCountQuery } from '@/entities/notification'
 import { hasRole, useSessionStore } from '@/entities/session'
-import { paths, shopMasksWholePage, useDemoRoleSwitch } from '@/shared/config'
+import { ChatbotWidget } from '@/features/ask-chatbot'
+import { loginPath, paths, shopMasksWholePage, useDemoRoleSwitch } from '@/shared/config'
 import { KidlyLogo } from '@/shared/ui/KidlyLogo'
 import { ShopHeader } from '@/widgets/shop-header'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
@@ -17,8 +18,10 @@ export function ShopLayout() {
   const demoRoleSwitch = useDemoRoleSwitch()
   const { pathname } = useLocation()
   const user = useSessionStore((state) => state.user)
+  const sessionStatus = useSessionStore((state) => state.status)
   const accessToken = useSessionStore((state) => state.accessToken)
   const isBuyer = hasRole(user, 'BUYER')
+  const isProductDetail = matchPath('/products/:productId', pathname) !== null
   // 머리말 알림 배지: 레이아웃이 API를 부르는 예외 (AGENTS.md 2절)
   useUnreadNotificationCountQuery('member', isBuyer)
   useUnreadCountStream('member', isBuyer ? accessToken : null)
@@ -53,6 +56,15 @@ export function ShopLayout() {
             </Link>
           </div>
         </footer>
+        {/* 챗봇: 회원 API라 로그인 회원이 바뀌면 대화를 새로 시작한다. 질문할 때만 API를 부른다 */}
+        <ChatbotWidget
+          key={user?.memberId ?? 'guest'}
+          isSignedIn={user !== null}
+          isRestoring={sessionStatus === 'restoring'}
+          loginHref={loginPath(pathname)}
+          productHref={(productId) => paths.shop.product(productId)}
+          raised={isProductDetail}
+        />
         {/* 확인 창 · 알림 띠도 쇼핑 영역의 색 · 모서리를 따르게 영역 안에 둔다 */}
         <Overlays />
       </div>

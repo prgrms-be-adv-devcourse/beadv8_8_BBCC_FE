@@ -9,9 +9,11 @@ export type DomainId =
   | 'settlement'
   | 'community'
   | 'notification'
+  | 'chatbot'
   | 'toss'
   | 'kakao'
   | 's3'
+  | 'openai'
 
 export const DOMAINS: { id: DomainId; name: string; external?: boolean }[] = [
   { id: 'member', name: '회원' },
@@ -22,9 +24,11 @@ export const DOMAINS: { id: DomainId; name: string; external?: boolean }[] = [
   { id: 'settlement', name: '정산' },
   { id: 'community', name: '커뮤니티' },
   { id: 'notification', name: '알림' },
+  { id: 'chatbot', name: '챗봇' },
   { id: 'kakao', name: '카카오', external: true },
   { id: 'toss', name: '토스', external: true },
   { id: 's3', name: 'S3', external: true },
+  { id: 'openai', name: 'OpenAI', external: true },
 ]
 
 /** API 경로 → 처리하는 도메인. 위에서부터 먼저 맞는 것 */
@@ -32,6 +36,8 @@ const PATH_DOMAINS: [RegExp, DomainId][] = [
   // 브라우저가 서명된 주소로 직접 올리는 S3
   [/^https:\/\/[^/]+\.amazonaws\.com\//, 's3'],
   [/^\/recommendations\//, 'recommend'],
+  // 챗봇 질문 · 관리자 답변 문서 (관리자 규칙보다 먼저)
+  [/^\/(admin\/)?chatbot\//, 'chatbot'],
   [/^\/((seller|admin)\/)?(products|product-images)|^\/categories/, 'product'],
   // 검색 결과 클릭 기록 (상품 목록과 같은 검색 서비스)
   [/^\/search\//, 'product'],
@@ -68,7 +74,55 @@ export type FlowStep = {
   kind: 'event' | 'external'
 }
 
+/** 챗봇 문서를 저장 · 수정하면 본문 조각을 임베딩한다 */
+const CHATBOT_DOCUMENT_EMBEDDING: FlowStep[] = [
+  {
+    name: 'OpenAI 임베딩',
+    from: 'chatbot',
+    to: ['openai'],
+    description:
+      '본문을 문단 단위 800자 안팎 조각으로 나눠 임베딩해 둔다. 실패하면 503이고 저장 · 수정되지 않는다',
+    kind: 'external',
+  },
+]
+
 const FLOWS: { method: string; pattern: RegExp; steps: FlowStep[] }[] = [
+  {
+    method: 'POST',
+    pattern: /^\/chatbot\/messages$/,
+    steps: [
+      {
+        name: '상품 검색 (필요할 때)',
+        from: 'chatbot',
+        to: ['product'],
+        description:
+          '상품을 찾는 질문이면 AI가 검색 도구로 검색 서비스(GET /internal/products/search)를 동기 호출한다. 검색어 · 가격만 보낸다',
+        kind: 'external',
+      },
+      {
+        name: '내 주문 조회 (필요할 때)',
+        from: 'chatbot',
+        to: ['order'],
+        description:
+          '주문 · 배송을 묻는 질문이면 로그인 회원의 최근 주문을 주문 서비스(GET /internal/members/{id}/orders)에서 동기로 읽는다',
+        kind: 'external',
+      },
+      {
+        name: 'OpenAI 답변 생성',
+        from: 'chatbot',
+        to: ['openai'],
+        description:
+          '질문 임베딩으로 관리자 문서 조각을 골라 넣고 답을 만든다. 대화는 저장하지 않는다. 실패하면 503',
+        kind: 'external',
+      },
+    ],
+  },
+  { method: 'POST', pattern: /^\/admin\/chatbot\/documents$/, steps: CHATBOT_DOCUMENT_EMBEDDING },
+  {
+    method: 'PUT',
+    pattern: /^\/admin\/chatbot\/documents\/[^/]+$/,
+    steps: CHATBOT_DOCUMENT_EMBEDDING,
+  },
   {
     method: 'POST',
     pattern: /^\/auth\/login\/kakao$/,

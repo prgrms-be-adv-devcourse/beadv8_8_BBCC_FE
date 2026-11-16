@@ -27,6 +27,7 @@ export {
   getErrorMessage,
   getErrorStatus,
   getErrorTitle,
+  getRetryAfterSeconds,
   isErrorCode,
   isSessionRejected,
   isTimeoutError,

@@ -9,9 +9,11 @@ const DOMAIN_NAME: Record<DomainId, string> = {
   settlement: '정산',
   community: '커뮤니티',
   notification: '알림',
+  chatbot: '챗봇',
   toss: '토스',
   kakao: '카카오',
   s3: 'S3',
+  openai: 'OpenAI',
 }
 
 type FlowStepsProps = { steps: FlowStep[] }
