@@ -10,7 +10,7 @@ import { ALL_CATEGORIES_ICON, ProductImage } from '@/entities/product'
 import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { cn, formatDateTime } from '@/shared/lib'
+import { cn, formatDateTime, useArea } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { PageHeader } from '@/shared/ui/PageHeader'
@@ -24,9 +24,15 @@ const BADGE_VARIANT = {
   SALE_ENDED: 'muted',
 } as const satisfies Record<FavoriteDisplayStatus, string>
 
-/** 내 찜: 최신순, 상품마다 판매 상태(판매 중 · 품절 · 판매 종료)와 찜 취소. 판매 중이면 담기 팝업을 열 수 있고, 아니면 사진에 도장을 찍는다 */
+/**
+ * 내 찜: 최신순, 상품마다 판매 상태(판매 중 · 품절 · 판매 종료)와 찜 취소. 판매 중이면 담기 팝업을 열 수 있고, 아니면 사진에 도장을 찍는다.
+ * 자녀 화면(/child/favorites)에도 같은 화면을 연다: 자녀 본인의 찜만 (자녀 토큰, BE #1377)
+ */
 export function ShopMyFavoritesPage() {
-  const favorites = useMyFavoritesQuery()
+  const isChild = useArea() === 'child'
+  const owner = isChild ? 'child' : 'member'
+  const productPath = isChild ? paths.child.product : paths.shop.product
+  const favorites = useMyFavoritesQuery(owner)
 
   return (
     <div className="shop-look space-y-6">
@@ -39,7 +45,7 @@ export function ShopMyFavoritesPage() {
         <div className="bg-paper-2 space-y-2 p-8 text-center">
           <p className="font-semibold">아직 찜한 상품이 없어요</p>
           <p className="text-ink-2 text-[13px]">상품 상세에서 하트를 누르면 여기에 모여요.</p>
-          <Link to={paths.shop.home} className="shop-link text-sm">
+          <Link to={isChild ? paths.child.products : paths.shop.home} className="shop-link text-sm">
             상품 보러 가기
           </Link>
         </div>
@@ -54,7 +60,7 @@ export function ShopMyFavoritesPage() {
               const stamp = favoriteStampOf(item.displayStatus)
               return (
                 <li key={item.productId} className="flex items-center gap-3 py-3">
-                  <Link to={paths.shop.product(item.productId)} className="relative flex-none">
+                  <Link to={productPath(item.productId)} className="relative flex-none">
                     <ProductImage
                       src={item.thumbnailUrl}
                       alt={name}
@@ -75,7 +81,7 @@ export function ShopMyFavoritesPage() {
                   </Link>
                   <div className="min-w-0 flex-1 space-y-1">
                     <Link
-                      to={paths.shop.product(item.productId)}
+                      to={productPath(item.productId)}
                       className="block truncate text-[15px] font-bold underline-offset-[3px] hover:underline"
                     >
                       {name}
@@ -92,7 +98,12 @@ export function ShopMyFavoritesPage() {
                   {canQuickAddFavorite(item.displayStatus) && (
                     <QuickAdd productId={item.productId} productName={name} />
                   )}
-                  <FavoriteButton productId={item.productId} isFavorited isSelling={false} />
+                  <FavoriteButton
+                    productId={item.productId}
+                    owner={owner}
+                    isFavorited
+                    isSelling={false}
+                  />
                 </li>
               )
             })}

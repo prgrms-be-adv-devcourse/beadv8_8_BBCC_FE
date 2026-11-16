@@ -82,8 +82,12 @@ export function ShopHomePage() {
   // 배너에 깔 사진: 거르지 않은 새 상품 첫 쪽 (거르기 · 검색과 상관없이 같은 상품을 쓴다)
   const bannerProducts = useProductsQuery(undefined, 0, { enabled: !isChild && !keyword })
   // 보이는 쪽의 상품 중 내가 찜한 것: 한 쪽에 한 번 (GET /favorites?productIds=)
+  // 자녀 화면은 자녀 본인의 찜 (자녀 토큰, BE #1377)
+  const canFavorite = isBuyer || isChild
+  const favoriteOwner = isChild ? 'child' : 'member'
   const favoritedIds = useFavoritedIdsQuery(all.data?.content.map((product) => product.id) ?? [], {
-    enabled: isBuyer,
+    enabled: canFavorite,
+    owner: favoriteOwner,
   })
   // 보호자가 고른(보이는) 자녀의 성별에 맞는 카테고리만 (남아면 원피스 · 치마가 빠진다)
   const categories = useCategoriesQuery(isBuyer ? (child?.gender ?? null) : null)
@@ -215,9 +219,10 @@ export function ShopHomePage() {
                 tag={product.sizeFree ? { text: '사이즈 무관' } : undefined}
                 action={
                   <>
-                    {isBuyer && (
+                    {canFavorite && (
                       <FavoriteButton
                         productId={product.id}
+                        owner={favoriteOwner}
                         isFavorited={favoritedIds.data?.has(product.id) ?? false}
                         isLoading={favoritedIds.isPending}
                         isSelling

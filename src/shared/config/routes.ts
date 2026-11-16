@@ -42,6 +42,8 @@ export const paths = {
     wishes: '/child/wishes',
     /** 나를 위해 산 것 (BE #1000) */
     purchases: '/child/purchases',
+    /** 자녀 본인의 찜 (보호자 「내 찜」과 같은 화면) */
+    favorites: '/child/favorites',
     notifications: '/child/notifications',
   },
   kakaoCallback: '/oauth/kakao/callback',
