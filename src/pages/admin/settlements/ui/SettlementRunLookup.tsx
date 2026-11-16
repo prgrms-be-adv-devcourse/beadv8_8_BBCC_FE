@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { SettlementRunSummary, useSettlementRunQuery } from '@/entities/settlement'
+import { RecoverSettlementRunButton } from '@/features/recover-settlement-run'
 import { getErrorMessage } from '@/shared/api'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
@@ -33,7 +34,12 @@ export function SettlementRunLookup() {
         </button>
       </form>
       {run.isError && <StateMessage tone="error">{getErrorMessage(run.error)}</StateMessage>}
-      {run.data && <SettlementRunSummary run={run.data} />}
+      {run.data && (
+        <SettlementRunSummary
+          run={run.data}
+          action={<RecoverSettlementRunButton run={run.data} />}
+        />
+      )}
     </div>
   )
 }

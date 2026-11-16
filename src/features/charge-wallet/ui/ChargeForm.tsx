@@ -51,7 +51,7 @@ export function ChargeForm({
         <li className="flex items-center gap-3">
           <span
             aria-hidden
-            className="bg-muted text-foreground flex size-8 items-center justify-center rounded-full text-xs font-bold"
+            className="bg-muted text-foreground rounded-pill flex size-8 items-center justify-center text-xs font-bold"
           >
             T
           </span>
@@ -65,7 +65,7 @@ export function ChargeForm({
         <li className="flex items-center gap-3">
           <span
             aria-hidden
-            className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-full text-xs font-bold"
+            className="bg-primary text-primary-foreground rounded-pill flex size-8 items-center justify-center text-xs font-bold"
           >
             K
           </span>

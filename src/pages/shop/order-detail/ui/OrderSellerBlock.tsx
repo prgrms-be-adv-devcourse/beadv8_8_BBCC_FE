@@ -1,18 +1,30 @@
 import type { ReactNode } from 'react'
 import {
+  canTrackDelivery,
   cancelledRefundOf,
+  childNameOf,
   ITEM_STATUS_LABEL,
   sellerGroupCancelled,
   unavailableLabel,
   type OrderItem,
   type OrderSellerGroup,
 } from '@/entities/order'
-import { ProductImage } from '@/entities/product'
+import {
+  ALL_CATEGORIES_ICON,
+  ProductImage,
+  lineImageUrl,
+  productIdsWithoutImage,
+  useProductImageUrls,
+} from '@/entities/product'
 import { carrierName, DELIVERY_STATUS_LABEL } from '@/shared/config'
 import { cn, formatWon, labelOf, optionLabel } from '@/shared/lib'
+import { DeliveryTrackingPanel } from './DeliveryTrackingPanel'
 
 type OrderSellerBlockProps = {
+  orderId: string
   group: OrderSellerGroup
+  /** 주문에 자녀 이름이 비어 있을 때 쓸 내 자녀 이름 (자녀 ID → 이름) */
+  childNames: Readonly<Record<string, string>>
   /** 취소된 주문이면 주문상품 상태(주문됨)는 감춘다 */
   isCancelled: boolean
   /** 줄마다 오른쪽 동작 (예: 구매확정) */
@@ -20,11 +32,19 @@ type OrderSellerBlockProps = {
 }
 
 /** 판매자 한 곳의 주문 상품: 머리에 상호 · 배송 상태 · 송장, 아래에 상품 줄 */
-export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBlockProps) {
+export function OrderSellerBlock({
+  orderId,
+  group,
+  childNames,
+  isCancelled,
+  action,
+}: OrderSellerBlockProps) {
+  // 주문 응답에 사진이 없어 상품 상세의 대표 사진을 읽는다 (판매가 끝나 상세가 없으면 기본 이미지)
+  const images = useProductImageUrls(productIdsWithoutImage(group.items))
   const { delivery } = group
   return (
-    <section aria-label={`${group.sellerName} 주문 상품`} className="border-rule rounded-lg border">
-      <div className="border-rule flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b px-4 py-3">
+    <section aria-label={`${group.sellerName} 주문 상품`} className="border-ink border-[1.5px]">
+      <div className="border-ink flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b-[1.5px] px-4 py-3">
         <p className="flex items-center gap-1.5 text-[15px] font-bold">
           <svg
             viewBox="0 0 24 24"
@@ -43,7 +63,7 @@ export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBloc
         </p>
         {delivery && (
           <p className="flex flex-wrap items-center gap-x-2 text-[13px]">
-            <span className="bg-signal-soft text-signal inline-flex h-6 items-center rounded-sm px-2 text-xs font-semibold">
+            <span className="border-ink bg-paper inline-flex h-6 items-center border px-2 text-xs font-bold">
               {labelOf(DELIVERY_STATUS_LABEL, delivery.status)}
             </span>
             {delivery.trackingNumber && (
@@ -54,6 +74,9 @@ export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBloc
           </p>
         )}
       </div>
+      {delivery && canTrackDelivery(delivery) && (
+        <DeliveryTrackingPanel orderId={orderId} deliveryId={delivery.id} />
+      )}
       <ul className="divide-rule divide-y px-4">
         {group.items.map((item) => {
           const unavailable = unavailableLabel(item)
@@ -61,16 +84,17 @@ export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBloc
           return (
             <li key={item.id} className="flex flex-wrap items-center gap-4 py-4 sm:flex-nowrap">
               <ProductImage
-                src={null}
+                src={lineImageUrl(item, images)}
                 alt={item.productName}
-                className="rounded-card aspect-[3/4] w-16 shrink-0"
+                doodle={ALL_CATEGORIES_ICON}
+                className="border-ink aspect-[4/5] w-[72px] shrink-0 border"
               />
               <div className="min-w-0 flex-1 basis-48 space-y-1">
-                <p className="text-sm font-semibold">{item.productName}</p>
-                {option && <p className="text-ink-3 text-[13px]">{option}</p>}
+                <p className="text-[15px] font-bold">{item.productName}</p>
+                {option && <p className="text-ink-2 text-[13px]">{option}</p>}
                 {item.child && (
                   <p className="text-ink-3 text-[13px]">
-                    입을 아이 {item.child.name ?? `#${item.child.id}`}, 주문 당시{' '}
+                    입을 아이 {childNameOf(item.child, childNames)}, 주문 당시{' '}
                     <span className="figure">{item.child.heightCm}cm</span>
                   </p>
                 )}
@@ -82,9 +106,9 @@ export function OrderSellerBlock({ group, isCancelled, action }: OrderSellerBloc
                   {!isCancelled && (
                     <span
                       className={cn(
-                        'inline-flex h-5 items-center rounded-sm px-1.5 text-[11px] font-semibold',
+                        'inline-flex h-5 items-center px-1.5 text-[11px] font-bold',
                         item.status === 'CONFIRMED'
-                          ? 'bg-signal-soft text-signal'
+                          ? 'bg-fit-soft text-ink'
                           : 'bg-paper-2 text-ink-2',
                       )}
                     >

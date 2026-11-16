@@ -1,5 +1,3 @@
-/** 목 응답 작성 전용 (app/mocks) */
-export type { ChildProfileDto, GrowthRecordDto } from './api/child.dto'
 export { childApi } from './api/child-api'
 export {
   BODY_TYPE_LABEL,
@@ -17,6 +15,7 @@ export { toChildForm, toChildRequest, toGrowthRecord } from './model/child.mappe
 export {
   ageOf,
   canRegisterChild,
+  canDeleteGrowthRecord,
   childProfileLine,
   findChild,
   growthMonths,
@@ -33,6 +32,7 @@ export {
   useOwnChildProfileQuery,
 } from './model/queries'
 export { ChildCard } from './ui/ChildCard'
+export { ChildFitTitle } from './ui/ChildFitTitle'
 export { ChildFormFields } from './ui/ChildFormFields'
 export { ChildPicker } from './ui/ChildPicker'
 export { GrowthRecordList } from './ui/GrowthRecordList'

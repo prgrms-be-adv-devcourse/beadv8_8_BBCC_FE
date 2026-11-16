@@ -55,7 +55,7 @@ export function ShopChildNewPage() {
               <li key={step.title} className="flex gap-3.5">
                 <span
                   aria-hidden
-                  className="border-signal text-signal figure flex size-7 shrink-0 items-center justify-center rounded-full border text-[13px] font-bold"
+                  className="border-signal text-signal figure rounded-pill flex size-7 shrink-0 items-center justify-center border text-[13px] font-bold"
                 >
                   {index + 1}
                 </span>
@@ -67,7 +67,7 @@ export function ShopChildNewPage() {
             ))}
           </ol>
         </div>
-        <div className="border-rule rounded-xl border p-5 md:p-8">
+        <div className="border-ink border-[1.5px] p-5 md:p-8">
           {verification.isPending && <StateMessage>불러오는 중…</StateMessage>}
           {verification.isError && (
             <StateMessage tone="error">{getErrorMessage(verification.error)}</StateMessage>

@@ -1,3 +1,4 @@
+import { toImageUrl } from '@/shared/lib'
 import type { AddCartItemRequestDto, CartDto } from '../api/cart.dto'
 import type { Cart } from './cart'
 
@@ -21,6 +22,7 @@ export function toCart(dto: CartDto): Cart {
       purchasable: item.purchasable,
       lineAmount: item.lineAmount,
       reserved: item.reserved,
+      thumbnailUrl: toImageUrl(item.thumbnailUrl),
     })),
     totalAmount: dto.totalAmount,
   }

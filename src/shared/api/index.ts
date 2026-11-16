@@ -28,29 +28,19 @@ export {
   getErrorStatus,
   getErrorTitle,
   getRetryAfterSeconds,
+  isErrorCode,
   isSessionRejected,
   isTimeoutError,
   type ProblemDetail,
 } from './problem-detail'
 export type { Page } from './types'
 export { putToPresignedUrl, UploadError } from './presigned-upload'
+export { nextPageOf, pageFromSearch, pageNumbersOf } from './paging'
 export {
-  registerMockHandlers,
-  isMockActive,
-  registerMockObservers,
-  type MockHandler,
-  type MockObserver,
-  type MockRequest,
-  type MockResult,
-  type MockStreamEvent,
-} from './mock-adapter'
-export { activeMockDomains, useMockSettings } from './mock-settings'
-export {
-  endpointOf,
-  MOCK_ENDPOINTS,
-  type EndpointSource,
-  type MockEndpoint,
-} from './mock-endpoints'
-export { nextPageOf, pageNumbersOf } from './paging'
-export { getEventStream, type StreamEvent } from './event-stream'
-export { readSseEvents, type SseEvent } from './sse'
+  getEventStream,
+  openEventStream,
+  streamLogOf,
+  type StreamEvent,
+  type StreamLogBody,
+} from './event-stream'
+export { readSse, readSseEvents, type SseEvent } from './sse'

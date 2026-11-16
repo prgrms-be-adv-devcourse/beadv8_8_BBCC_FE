@@ -1,10 +1,24 @@
 import type { GrowthRecord } from '../model/child'
 import { forecastGrowth, sizeBandOf } from '../model/growth-forecast'
 
+/** 성장 속도와 그 설명. 추천 쪽이 계산한 값과 문구를 화면이 넘긴다 */
+type GrowthChartSpeed = {
+  /** 한 달에 자라는 키 (cm). 아이 기록이 모자라면 또래 평균 값 */
+  cmPerMonth: number
+  /** 무엇으로 본 속도인지 (예: 「또래 평균으로 보면 …」) */
+  text: string
+  /** 키 기록을 권하는 문장. 권할 일이 없으면 null */
+  recordPrompt: string | null
+  /** 또래 평균 출처 · 실제와 다를 수 있다는 안내 */
+  sourceLines: string[]
+}
+
 type GrowthChartProps = {
   records: GrowthRecord[]
   /** 지금 키 (자녀 정보). 기록이 없을 때도 구간을 보여 준다 */
   currentHeightCm: number
+  /** 아직 받지 못했으면 null (속도 · 다음 사이즈 칸은 —) */
+  speed: GrowthChartSpeed | null
 }
 
 const W = 560
@@ -12,9 +26,9 @@ const H = 230
 const PAD = { left: 40, right: 64, top: 18, bottom: 28 }
 
 /** 키 기록 선 그래프 + 아동복 사이즈 구간 띠 + 다음 사이즈 예고(추정) */
-export function GrowthChart({ records, currentHeightCm }: GrowthChartProps) {
+export function GrowthChart({ records, currentHeightCm, speed }: GrowthChartProps) {
   const sorted = [...records].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt))
-  const forecast = forecastGrowth(sorted, currentHeightCm)
+  const forecast = forecastGrowth(currentHeightCm, speed?.cmPerMonth ?? null)
   const heights = [currentHeightCm, ...sorted.map((record) => record.heightCm)]
   // 위아래로 한 구간씩 더 보여 지금 구간이 어디쯤인지 보이게 한다
   const low = sizeBandOf(Math.min(...heights)).minCm - 10
@@ -171,7 +185,7 @@ export function GrowthChart({ records, currentHeightCm }: GrowthChartProps) {
                   약 {forecast.monthsToNext}
                   <span className="ml-0.5 text-[13px] font-medium">개월 뒤</span>
                 </>
-              ) : forecast.cmPerMonth !== null ? (
+              ) : forecast.isFarAway ? (
                 <span className="text-[15px]">한참 남았어요</span>
               ) : (
                 '—'
@@ -179,15 +193,18 @@ export function GrowthChart({ records, currentHeightCm }: GrowthChartProps) {
             </dd>
           </div>
         </dl>
-        {/* 성장 속도는 한 달 넘게 쌓인 기록으로 낸다 (그 전에는 평균값) → 기록을 권한다 */}
-        <p className="text-sm">
-          {forecast.cmPerMonth === null
-            ? '한 달에 한 번 키를 기록해 주세요. 한 달 이상 떨어진 기록이 2개 넘게 쌓이면 다음 사이즈 시기를 알려 드리고 추천도 더 정확해져요.'
-            : '한 달에 한 번 키를 기록하면 추천이 정확해져요.'}
-        </p>
+        {/* 무엇으로 본 속도인지 밝히고, 아이 기록이 아직 반영되지 않았으면 기록을 권한다 */}
+        {speed && <p className="text-sm">{speed.text}</p>}
+        {speed?.recordPrompt && <p className="text-sm">{speed.recordPrompt}</p>}
         <p className="text-muted-foreground text-xs">
-          아이 기록으로 낸 추정이에요. 사이즈 구간은 아동복 일반 표기(호칭 = 키) 기준이고 브랜드마다
-          다를 수 있어요.
+          {speed?.sourceLines.map((line) => (
+            <span key={line} className="block">
+              {line}
+            </span>
+          ))}
+          <span className="block">
+            사이즈 구간은 아동복 일반 표기(호칭 = 키) 기준이고 브랜드마다 다를 수 있어요.
+          </span>
         </p>
       </figcaption>
     </figure>

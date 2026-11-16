@@ -11,6 +11,17 @@ describe('toProductViewRequest: 상세 진입 기록 요청 (BE productId · chi
   })
 })
 
+describe('toProductViewRequest: 담기 팝업을 연 것은 viewType QUICK으로 보낸다', () => {
+  it.each([
+    ['7', '501', 'QUICK' as const, { productId: '7', childId: '501', viewType: 'QUICK' }],
+    ['7', null, 'QUICK' as const, { productId: '7', viewType: 'QUICK' }],
+    // 상세 진입은 칸을 넣지 않는다 (백엔드가 없으면 상세 진입으로 본다)
+    ['7', '501', 'DETAIL' as const, { productId: '7', childId: '501' }],
+  ])('상품 %s · 자녀 %s · %s → %j', (productId, childId, viewType, expected) => {
+    expect(toProductViewRequest(productId, childId, viewType)).toEqual(expected)
+  })
+})
+
 describe('추천 API는 흐름도의 추천 도메인으로 잇는다', () => {
   it.each([
     '/recommendations/product-views',

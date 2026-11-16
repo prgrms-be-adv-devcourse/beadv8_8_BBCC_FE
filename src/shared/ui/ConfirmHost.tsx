@@ -25,11 +25,12 @@ export function ConfirmHost() {
     >
       <div
         role="alertdialog"
+        data-slot="confirm"
         aria-modal="true"
         aria-labelledby="confirm-title"
         aria-describedby={current.description ? 'confirm-description' : undefined}
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow-2xl"
+        className="bg-card w-full max-w-sm space-y-4 rounded-2xl p-6 shadow-2xl"
       >
         <h2 id="confirm-title" className="text-lg font-bold">
           {current.title}
@@ -43,7 +44,7 @@ export function ConfirmHost() {
           <button
             type="button"
             onClick={() => close(false)}
-            className="rounded-full border px-4 py-2 text-sm"
+            className="rounded-pill border px-4 py-2 text-sm"
           >
             취소
           </button>
@@ -53,7 +54,7 @@ export function ConfirmHost() {
             data-confirm
             onClick={() => close(true)}
             className={cn(
-              'rounded-full px-5 py-2 text-sm font-semibold',
+              'rounded-pill px-5 py-2 text-sm font-semibold',
               current.tone === 'danger'
                 ? 'bg-destructive text-white'
                 : 'bg-primary text-primary-foreground',

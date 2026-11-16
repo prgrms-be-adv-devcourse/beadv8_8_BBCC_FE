@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { orderSellerGroups, type Order, type OrderDelivery, type OrderItem } from '@/entities/order'
 
 const item = (id: string, sellerId: string, sellerName: string | null): OrderItem => ({
+  thumbnailUrl: null,
   id,
   productId: '1',
   optionId: id,

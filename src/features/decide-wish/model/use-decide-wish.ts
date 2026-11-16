@@ -17,6 +17,7 @@ export function useDecideWish(wish: Pick<WishRequest, 'requestId' | 'childId'>) 
         wishKeys.request(wish.requestId),
         wishKeys.timeline(wish.requestId),
         wishKeys.requests(wish.childId),
+        wishKeys.allRequests,
       ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
     )
   const refreshOnConflict = (error: unknown) => {

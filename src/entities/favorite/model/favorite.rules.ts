@@ -9,6 +9,16 @@ export const FAVORITE_DISPLAY_STATUS_LABEL: Record<FavoriteDisplayStatus, string
   SALE_ENDED: '판매 종료',
 }
 
+/** 내 찜 목록의 사진 위 도장: 품절 · 판매 종료면 그 이름. 판매 중이거나 상태를 모르면 찍지 않는다 */
+export function favoriteStampOf(status: FavoriteDisplayStatus | null): string | null {
+  return status && status !== 'ON_SALE' ? FAVORITE_DISPLAY_STATUS_LABEL[status] : null
+}
+
+/** 내 찜 목록에서 바로 담을 수 있는지: 판매 중일 때만 (상태를 모르면 막는다) */
+export function canQuickAddFavorite(status: FavoriteDisplayStatus | null): boolean {
+  return status === 'ON_SALE'
+}
+
 /** 중복을 빼고 정렬해 50개씩 나눈다 (정렬: 같은 상품 묶음이면 쿼리 키가 같도록) */
 export function favoriteIdChunks(productIds: readonly string[]): string[][] {
   const unique = [...new Set(productIds)].sort(

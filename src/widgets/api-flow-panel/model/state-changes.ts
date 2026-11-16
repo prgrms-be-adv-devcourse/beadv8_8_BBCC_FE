@@ -89,7 +89,9 @@ function observe(log: ApiCallLog): Observation[] {
     }))
   }
   const deadLetters =
-    /^\/admin\/(auth|member|seller|child-profile)-dead-letters(\/[^/]+(\/reprocess)?)?$/.exec(path)
+    /^\/admin\/(auth|member|seller|child-profile|notification|settlement)-dead-letters(\/[^/]+(\/reprocess)?)?$/.exec(
+      path,
+    )
   if (deadLetters) {
     const name = `${DEAD_LETTER_MODULES[deadLetterModuleOf(deadLetters[1])].label} 처리 실패 메시지`
     const rows = Array.isArray(body.content) ? (body.content as Json[]) : [body]

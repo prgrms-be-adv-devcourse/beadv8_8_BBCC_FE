@@ -38,8 +38,8 @@ const childNew = page(() =>
 const childDetail = page(() =>
   import('@/pages/shop/child-detail').then((m) => ({ Component: m.ShopChildDetailPage })),
 )
-const childWishes = page(() =>
-  import('@/pages/shop/child-wishes').then((m) => ({ Component: m.ShopChildWishesPage })),
+const wishes = page(() =>
+  import('@/pages/shop/wishes').then((m) => ({ Component: m.ShopWishesPage })),
 )
 const childWishDetail = page(() =>
   import('@/pages/shop/child-wish-detail').then((m) => ({ Component: m.ShopChildWishDetailPage })),
@@ -122,6 +122,9 @@ const adminWallets = page(() =>
 )
 const adminSettings = page(() =>
   import('@/pages/admin/settings').then((m) => ({ Component: m.AdminSettingsPage })),
+)
+const adminRateLimit = page(() =>
+  import('@/pages/admin/rate-limit').then((m) => ({ Component: m.AdminRateLimitPage })),
 )
 const adminOrderOps = page(() =>
   import('@/pages/admin/order-operation').then((m) => ({ Component: m.AdminOrderOpsPage })),
@@ -241,7 +244,8 @@ export const router = createBrowserRouter(
         { path: rel('', paths.shop.children), ...children },
         { path: rel('', paths.shop.childNew), ...childNew },
         { path: 'my/children/:childId', ...childDetail },
-        { path: rel('', paths.shop.childWishes(':childId')), ...childWishes },
+        { path: rel('', paths.shop.wishes), ...wishes },
+        { path: rel('', paths.shop.childWishes(':childId')), ...wishes },
         { path: rel('', paths.shop.childWish(':childId', ':requestId')), ...childWishDetail },
         // 리뷰 쓰기 · 충전은 메뉴 없이 한 가지 일만 (마이페이지 묶음 밖)
         {
@@ -320,6 +324,14 @@ export const router = createBrowserRouter(
           ),
         },
         {
+          path: rel(paths.child.home, paths.child.favorites),
+          ...page(() =>
+            import('@/pages/shop/my-favorites').then((m) => ({
+              Component: m.ShopMyFavoritesPage,
+            })),
+          ),
+        },
+        {
           path: rel(paths.child.home, paths.child.notifications),
           ...page(() =>
             import('@/pages/child/notifications').then((m) => ({
@@ -360,6 +372,7 @@ export const router = createBrowserRouter(
           ),
         },
         { path: rel(paths.admin.home, paths.admin.settings), ...adminSettings },
+        { path: rel(paths.admin.home, paths.admin.rateLimit), ...adminRateLimit },
         { path: rel(paths.admin.home, paths.admin.accounts), ...adminAccounts },
         { path: 'dead-letters/:module/:deadLetterId', ...adminDeadLetterDetail },
         // 상품 기준 데이터: 종류마다 목록 · 만들기 (관리자에만 있다)
@@ -509,7 +522,8 @@ export const router = createBrowserRouter(
         { path: rel(paths.console.home, paths.console.children), ...children },
         { path: rel(paths.console.home, paths.console.childNew), ...childNew },
         { path: 'children/:childId', ...childDetail },
-        { path: rel(paths.console.home, paths.console.childWishes(':childId')), ...childWishes },
+        { path: rel(paths.console.home, paths.console.wishes), ...wishes },
+        { path: rel(paths.console.home, paths.console.childWishes(':childId')), ...wishes },
         {
           path: rel(paths.console.home, paths.console.childWish(':childId', ':requestId')),
           ...childWishDetail,

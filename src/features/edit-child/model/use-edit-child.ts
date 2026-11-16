@@ -1,12 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  childApi,
-  childKeys,
-  toChildRequest,
-  type BodyType,
-  type ChildForm,
-  type GrowthRecordDto,
-} from '@/entities/child'
+import { childApi, childKeys, toChildRequest, type ChildForm } from '@/entities/child'
+import { recommendationKeys } from '@/entities/recommendation'
 import { toast } from '@/shared/lib'
 import { runWithAction } from '@/shared/api'
 
@@ -18,6 +12,7 @@ export function useUpdateChild(childId: string) {
       runWithAction('자녀 수정', () => childApi.update(childId, toChildRequest(form))),
     onSuccess: () => {
       toast('저장했어요 · 키 · 체형이 바뀌었으면 성장 이력에 쌓여요')
+      void queryClient.invalidateQueries({ queryKey: recommendationKeys.growthSpeed(childId) })
       return queryClient.invalidateQueries({ queryKey: childKeys.all })
     },
   })
@@ -35,25 +30,15 @@ export function useDeleteChild(childId: string, { onDeleted }: { onDeleted: () =
   })
 }
 
-/** 성장 이력 수정 (목). 응답으로 목록 캐시만 고친다 — 다시 조회하면 서버 값 */
-export function useUpdateGrowthRecord(childId: string) {
+export function useDeleteGrowthRecord(childId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      recordId,
-      heightCm,
-      bodyType,
-    }: {
-      recordId: string
-      heightCm: number
-      bodyType: BodyType | null
-    }) =>
-      runWithAction('성장 이력 수정', () =>
-        childApi.updateGrowthRecord(childId, recordId, { heightCm, bodyType }),
-      ),
-    onSuccess: (updated) =>
-      queryClient.setQueryData<GrowthRecordDto[]>(childKeys.growth(childId), (list) =>
-        list?.map((record) => (record.id === updated.id ? updated : record)),
-      ),
+    mutationFn: (recordId: string) =>
+      runWithAction('성장 기록 삭제', () => childApi.removeGrowthRecord(childId, recordId)),
+    // 성장 기록이 바뀌면 성장 속도도 다시 받는다
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: recommendationKeys.growthSpeed(childId) })
+      return queryClient.invalidateQueries({ queryKey: childKeys.all })
+    },
   })
 }

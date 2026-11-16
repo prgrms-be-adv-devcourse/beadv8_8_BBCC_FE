@@ -26,7 +26,7 @@ export function ShopChildrenPage() {
         actions={
           <Link
             to={memberPaths.childNew}
-            className="bg-signal text-signal-ink hover:bg-signal-deep inline-flex h-9 items-center gap-1 rounded-full px-4 text-[13px] font-semibold transition-colors active:translate-y-px"
+            className="border-ink bg-signal text-signal-ink hover:bg-marker hover:text-ink inline-flex h-9 items-center gap-1 border-[1.5px] px-4 text-[13px] font-bold transition-colors active:translate-y-px"
           >
             <svg
               viewBox="0 0 24 24"
@@ -49,7 +49,7 @@ export function ShopChildrenPage() {
           <StateMessage tone="error">{getErrorMessage(children.error)}</StateMessage>
         )}
         {children.data?.length === 0 && (
-          <div className="border-rule space-y-3 rounded-lg border border-dashed px-6 py-14 text-center">
+          <div className="border-ink space-y-3 border-[1.5px] border-dashed px-6 py-14 text-center">
             <p className="text-ink-2 text-sm">
               아직 등록한 자녀가 없어요. 키만 알려 주시면 맞는 사이즈를 골라 드려요.
             </p>

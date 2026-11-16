@@ -46,6 +46,7 @@ import {
 } from '@/entities/notification/api/notification.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import {
+  adminOrderPageShape,
   orderDetailShape,
   orderHistoryShape,
   orderPageShape,
@@ -71,6 +72,7 @@ import {
 import { purchasedGarmentPageShape } from '@/entities/recommendation/api/purchased-garment.shape'
 import {
   companionProductsShape,
+  growthSpeedShape,
   homePreviewShape,
   recommendedProductPageShape,
   sizeRecommendationShape,
@@ -127,13 +129,17 @@ import {
 } from '@/entities/review/api/review.shape'
 import { favoriteListShape, favoriteSummaryShape } from '@/entities/favorite/api/favorite.shape'
 import { adminReviewListShape } from '@/entities/review/api/admin-review.shape'
+import { deliveryTrackingShape } from '@/entities/order/api/delivery-tracking.shape'
 import { reviewVisibilityShape } from '@/features/moderate-review'
+import { retryExhaustedShape } from '@/features/retry-review-moderation'
 import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
 import { toWriteReviewRequest } from '@/features/write-review'
 import { adminPageShape, adminShape } from '@/entities/admin-account/api/admin-account.shape'
+import { rateLimitSettingsShape } from '@/entities/rate-limit/api/rate-limit.shape'
+import { toRateLimitRequest } from '@/features/change-rate-limit'
 import { toReview } from '@/entities/review'
-import { arr, readSseEvents, validate, type Shape } from '@/shared/api'
+import { arr, readSse, readSseEvents, validate, type SseEvent, type Shape } from '@/shared/api'
 
 // E2E가 쓰는 가짜 백엔드의 응답이 FE 계약(응답 모양)과 같은지 확인한다.
 // 어긋나면 E2E가 아니라 여기서 먼저, 어느 필드인지까지 드러난다.
@@ -231,6 +237,26 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('DELETE', `/children/${orphan.data.id}`, 1)).status).toBe(204)
     expect((await call('GET', '/child/onboarding', 5)).status).toBe(404)
     expect((await call('POST', '/child/onboarding/notice', 5)).status).toBe(404)
+    // 자녀 찜 (BE #1377): 같은 /favorites를 자녀 토큰으로. 목록 · 하트는 본인 것만, 찜 수는 회원과 합친 값
+    const countOf = async () =>
+      (await call('GET', '/favorites/summary?productId=1', null)).data.favoriteCount as number
+    const before = await countOf()
+    const guardianItems = async () =>
+      (await call('GET', '/favorites?productIds=1', 1)).data.items.length as number
+    const guardianBefore = await guardianItems()
+    expect((await call('PUT', '/favorites/1', 4)).status).toBe(204)
+    const childAmong = await call('GET', '/favorites?productIds=1', 4)
+    expectContract(childAmong.data, favoriteListShape)
+    expect(childAmong.data.items.map((item: { productId: string }) => item.productId)).toEqual([
+      '1',
+    ])
+    expectContract((await call('GET', '/favorites?size=5', 4)).data, favoriteListShape)
+    expect(await countOf()).toBe(before + 1)
+    // 보호자에게는 자녀의 찜이 보이지 않는다
+    expect(await guardianItems()).toBe(guardianBefore)
+    expect((await call('PUT', '/favorites/1', 5)).status).toBe(403)
+    expect((await call('DELETE', '/favorites/1', 4)).status).toBe(204)
+    expect(await countOf()).toBe(before)
     expectContract((await call('GET', '/child/profile', 4)).data, childShape)
     // 자녀 장바구니 = /cart (자녀 토큰, BE #998). 입을 아이는 자기로 고정
     const added = await call('POST', '/cart/items', 4, { optionId: 1, childId: null, quantity: 1 })
@@ -337,8 +363,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       const unread = await call('GET', `${base}/unread-count`, as)
       expectContract(unread.data, unreadCountShape)
       expect(unread.data.count).toBe(list.data.content.length)
+      const live = await openStream(`${base}/stream`, as)
+      expect(await live.next()).toEqual({ event: 'unread-count', data: unread.data })
       const first = list.data.content[0].notificationId
       expect((await call('PATCH', `${base}/${first}/read`, as)).status).toBe(204)
+      expect(await live.next()).toEqual({
+        event: 'unread-count',
+        data: { count: unread.data.count - 1 },
+      })
+      live.close()
       expect((await call('PATCH', `${base}/${first}/read`, as)).status).toBe(204)
       expect((await call('GET', `${base}/unread-count`, as)).data.count).toBe(unread.data.count - 1)
       expect((await call('PATCH', `${base}/999999/read`, as)).status).toBe(404)
@@ -403,6 +436,35 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     })
     expect((await call('DELETE', `/children/${extra.data.id}`, 1)).status).toBe(204)
     expect((await call('GET', `/children/${extra.data.id}`, 1)).status).toBe(404)
+  })
+  it('성장 기록 삭제는 마지막 기록을 보호하고 현재 프로필을 복원한다', async () => {
+    const form = toChildRequest(DEMO_CHILD)
+    const child = (
+      await call('POST', '/children', 1, {
+        ...form,
+        requiredConsent: true,
+        optionalConsent: true,
+      })
+    ).data
+    await call('PATCH', `/children/${child.id}`, 1, { ...form, heightCm: 118 })
+    const records = (await call('GET', `/children/${child.id}/growth-records`, 1)).data
+    expect(records).toHaveLength(2)
+    const deleted = await call('DELETE', `/children/${child.id}/growth-records/${records[1].id}`, 1)
+    expect(deleted).toEqual({ status: 204, data: null })
+    expect((await call('GET', `/children/${child.id}`, 1)).data).toMatchObject({
+      heightCm: records[0].heightCm,
+      bodyType: records[0].bodyType,
+      growthRecordCount: 1,
+    })
+    const last = await call('DELETE', `/children/${child.id}/growth-records/${records[0].id}`, 1)
+    expect(last.status).toBe(409)
+    expect(last.data).toMatchObject({
+      title: '지울 수 없는 기록입니다',
+      detail: '성장 기록이 하나뿐이면 지울 수 없습니다.',
+    })
+    expect((await call('GET', `/children/${child.id}/growth-records`, 1)).data).toEqual([
+      records[0],
+    ])
   })
   it('자녀 등록과 수정에서 동의와 나이를 검사한다', async () => {
     const form = toChildRequest(DEMO_CHILD)
@@ -494,6 +556,14 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       size: 1,
     })
     expectContract((await call('GET', '/seller/me', 2)).data, sellerShape)
+    const updated = await call('PATCH', '/seller/me', 2, { businessName: '새 상호명' })
+    expect(updated.status).toBe(200)
+    expectContract(updated.data, sellerShape)
+    expect((await call('GET', '/seller/me', 2)).data.businessName).toBe('새 상호명')
+    expect((await call('PATCH', '/seller/me', 2, { businessName: '   ' })).status).toBe(400)
+    expect((await call('PATCH', '/seller/me', 2, { businessName: '가'.repeat(51) })).status).toBe(
+      400,
+    )
   })
 
   it('장바구니 → 주문 → 결제 완료 → 발송 · 배송 완료 → 구매확정', async () => {
@@ -572,6 +642,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const sellerOrders = await call('GET', '/seller/orders', 2)
     expectContract(sellerOrders.data, sellerOrderPageShape)
     const sellerOrderId = sellerOrders.data.content[0].sellerOrderId
+    // 발송 전(운송장 없음) 배송 조회는 200 + 빈 이력 (BE #1320)
+    const beforeShip = await call(
+      'GET',
+      `/orders/${orderId}/deliveries/${sellerOrderId}/tracking`,
+      1,
+    )
+    expect(beforeShip.status).toBe(200)
+    expectContract(beforeShip.data, deliveryTrackingShape)
+    expect(beforeShip.data).toEqual({ carrier: null, trackingNumber: null, events: [] })
     const shipped = await call('POST', `/seller/orders/${sellerOrderId}/ship`, 2, {
       carrier: 'CJ',
       trackingNumber: '1234',
@@ -580,6 +659,14 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const delivered = await call('POST', `/seller/orders/${sellerOrderId}/deliver`, 2)
     expectContract(delivered.data, deliveryShape)
     expect(delivered.data.status).toBe('DELIVERED')
+    // 배송 조회 (BE #1320): 구매자만, 최신이 먼저
+    const trackingPath = `/orders/${orderId}/deliveries/${sellerOrderId}/tracking`
+    const tracking = await call('GET', trackingPath, 1)
+    expectContract(tracking.data, deliveryTrackingShape)
+    expect(tracking.data).toMatchObject({ carrier: 'CJ', trackingNumber: '1234' })
+    expect(tracking.data.events[0].status).toBe('DELIVERED')
+    expect((await call('GET', trackingPath, 2)).status).toBe(404)
+    expect((await call('GET', `/orders/${orderId}/deliveries/99999/tracking`, 1)).status).toBe(404)
     expectContract((await call('GET', '/seller/orders', 2)).data, sellerOrderPageShape)
 
     const itemId = order.data.items[0].orderItemId
@@ -700,6 +787,20 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       mineAfter.data.items.find((item: { reviewId: string }) => item.reviewId === review.id)
         ?.visibility,
     ).toBe('UNDER_REVIEW')
+    // 다시 검사 (BE #1310): 상한에 닿은 리뷰를 검사 대기로 돌리고, 다시 부르면 0
+    const retryPath = '/admin/community/reviews/moderation/retry-exhausted'
+    const restoredAgain = await call('PATCH', visibilityPath, 3, { visibility: 'VISIBLE' })
+    expect(restoredAgain.data.status).toBe('RESTORED')
+    await call('PATCH', `/reviews/${review.id}`, 1, { content: '검사불가 리뷰' })
+    const exhausted = await call('GET', '/admin/community/reviews?status=PENDING', 3)
+    expect(
+      exhausted.data.items.find((item: { reviewId: string }) => item.reviewId === review.id),
+    ).toMatchObject({ attempts: 10, attemptsExhausted: true })
+    expect((await call('POST', retryPath, 1)).status).toBe(403)
+    const retried = await call('POST', retryPath, 3)
+    expectContract(retried.data, retryExhaustedShape)
+    expect(retried.data.resetCount).toBeGreaterThanOrEqual(1)
+    expect((await call('POST', retryPath, 3)).data).toEqual({ resetCount: 0 })
     const unknown = '/admin/community/reviews/99999/visibility'
     expect((await call('PATCH', unknown, 3, { visibility: 'VISIBLE' })).status).toBe(404)
     expect((await call('DELETE', `/reviews/${review.id}`, 2)).status).toBe(403)
@@ -718,6 +819,11 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const found = await call('GET', `/admin/settlement-runs/${run.data.runId}`, 3)
     expectContract(found.data, settlementRunShape)
     expect((await call('GET', '/admin/settlement-runs/99999', 3)).status).toBe(404)
+    // 실행 복구: 끝난 실행은 409, 없는 실행은 404
+    expect((await call('POST', `/admin/settlement-runs/${run.data.runId}/recover`, 3)).status).toBe(
+      409,
+    )
+    expect((await call('POST', '/admin/settlement-runs/99999/recover', 3)).status).toBe(404)
 
     const list = await call('GET', '/admin/settlements?status=PAID', 3)
     expectContract(list.data, adminSettlementPageShape)
@@ -853,6 +959,47 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('POST', '/admin/admins', 1, member)).status).toBe(403)
   })
 
+  it('요청 수 제한 설정: 조회 · 보낸 칸만 변경 · 잘못된 값 400 · 회원 403 (BE #1421)', async () => {
+    const before = await call('GET', '/admin/gateway/rate-limit', 3)
+    expect(before.status).toBe(200)
+    expectContract(before.data, rateLimitSettingsShape)
+
+    const request = toRateLimitRequest({
+      target: 'total',
+      limit: { capacity: 800, periodMs: 60_000 },
+    })
+    const changed = await call('PUT', '/admin/gateway/rate-limit', 3, request)
+    expect(changed.status).toBe(200)
+    expectContract(changed.data, rateLimitSettingsShape)
+    expect(changed.data).toEqual({
+      ...before.data,
+      total: { capacity: 800, period: 'PT1M' },
+    })
+    const fraction = toRateLimitRequest({
+      target: 'client',
+      limit: { capacity: 3, periodMs: 1500 },
+    })
+    expect((await call('PUT', '/admin/gateway/rate-limit', 3, fraction)).data.client).toEqual({
+      capacity: 3,
+      period: 'PT1.5S',
+    })
+    expect((await call('GET', '/admin/gateway/rate-limit', 3)).data.total.capacity).toBe(800)
+
+    for (const invalid of [
+      {},
+      { total: { capacity: 0, period: 'PT1S' } },
+      { total: { capacity: 1 } },
+      { total: { capacity: 1, period: 'PT0S' } },
+      { total: { capacity: 1, period: '1s' } },
+    ])
+      expect((await call('PUT', '/admin/gateway/rate-limit', 3, invalid)).status).toBe(400)
+    expect((await call('GET', '/admin/gateway/rate-limit', 1)).status).toBe(403)
+    await call('PUT', '/admin/gateway/rate-limit', 3, {
+      client: before.data.client,
+      total: before.data.total,
+    })
+  })
+
   it('관리자 목록 · 비활성화: ID 내림차순 · 상태 거르기, 204 · 자기 자신 409 · 없으면 404 (BE AdminAccountController)', async () => {
     const created = await call('POST', '/admin/admins', 3, {
       email: 'disable-me@kidly.test',
@@ -893,13 +1040,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('POST', disablePath, 1)).status).toBe(403)
   })
 
-  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티, 같은 칸)', async () => {
+  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티 · 알림 · 정산, 같은 칸)', async () => {
     for (const base of [
       'auth-dead-letters',
       'member-dead-letters',
       'seller-dead-letters',
       'child-profile-dead-letters',
       'community/dead-letters',
+      'notification-dead-letters',
+      'settlement-dead-letters',
     ]) {
       for (const status of ['OPEN', 'REPROCESSED']) {
         const list = await call('GET', `/admin/${base}?status=${status}`, 3)
@@ -943,6 +1092,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       replayCount: 1,
       lastReplayFailureType: 'java.lang.IllegalStateException',
     })
+
+    for (const module of ['notification', 'settlement']) {
+      const one = await call('POST', '/__fake/dead-letters', null, { module })
+      const base = `/admin/${module}-dead-letters/${one.data.deadLetterId}`
+      expectContract((await call('GET', base, 3)).data, deadLetterShape)
+      expect((await call('POST', `${base}/reprocess`, 3)).data).toMatchObject({
+        status: 'REPROCESSED',
+      })
+    }
 
     // 다른 모듈의 번호로는 찾지 못한다
     expect((await call('GET', `/admin/auth-dead-letters/${ok.data.deadLetterId}`, 3)).status).toBe(
@@ -1023,6 +1181,80 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       { type: 'CHARGE_CANCEL', amount: -50000, refId: 77 },
       { type: 'CHARGE', amount: 50000, refId: 77 },
     ])
+  })
+
+  it('주문 목록 status 거르기 (BE #1280): 대문자 값 하나, 모르는 값 · 소문자 · 빈 값은 400', async () => {
+    const all = (await call('GET', '/orders?size=100', 1)).data
+    const paid = (await call('GET', '/orders?status=PAID&size=100', 1)).data
+    expectContract(paid, orderPageShape)
+    expect(paid.content.every((o: { status: string }) => o.status === 'PAID')).toBe(true)
+    expect(paid.totalElements).toBe(
+      all.content.filter((o: { status: string }) => o.status === 'PAID').length,
+    )
+    expect((await call('GET', '/orders?status=PAID&size=1', 1)).data.totalElements).toBe(
+      paid.totalElements,
+    )
+    for (const bad of ['paid', '', 'SHIPPING', 'PAID,CANCELLED'])
+      expect((await call('GET', `/orders?status=${bad}`, 1)).status).toBe(400)
+
+    const adminCancelled = (await call('GET', '/admin/orders?status=CANCELLED&size=100', 3)).data
+    expectContract(adminCancelled, adminOrderPageShape)
+    expect(adminCancelled.content.every((o: { status: string }) => o.status === 'CANCELLED')).toBe(
+      true,
+    )
+    expect((await call('GET', '/admin/orders?status=cancelled', 3)).status).toBe(400)
+    expect((await call('GET', '/admin/orders?page=0&size=1', 3)).data.content).toHaveLength(1)
+
+    const delivered = (await call('GET', '/seller/orders?status=DELIVERED&size=100', 2)).data
+    expectContract(delivered, sellerOrderPageShape)
+    expect(delivered.content.every((o: { status: string }) => o.status === 'DELIVERED')).toBe(true)
+    for (const bad of ['PAID', 'ready', ''])
+      expect((await call('GET', `/seller/orders?status=${bad}`, 2)).status).toBe(400)
+  })
+
+  it('관리자 주문 취소 시각 · 취소일 기준 조회 (BE #1325)', async () => {
+    const all = (await call('GET', '/admin/orders?size=100', 3)).data
+    expectContract(all, adminOrderPageShape)
+    for (const o of all.content as { status: string; cancelledAt: string | null }[])
+      expect(o.cancelledAt === null).toBe(o.status !== 'CANCELLED')
+    const since = (await call('GET', '/admin/orders?cancelledFrom=2000-01-01T00:00:00&size=100', 3))
+      .data
+    expect(since.content.every((o: { status: string }) => o.status === 'CANCELLED')).toBe(true)
+    expect(since.totalElements).toBe(
+      all.content.filter((o: { status: string }) => o.status === 'CANCELLED').length,
+    )
+    expect(
+      (await call('GET', '/admin/orders?status=PAID&cancelledFrom=2000-01-01T00:00:00', 3)).data
+        .totalElements,
+    ).toBe(0)
+    expect(
+      (await call('GET', '/admin/orders?cancelledFrom=2999-01-01T00:00:00', 3)).data.totalElements,
+    ).toBe(0)
+    for (const bad of ['2026-11-13', '', '2026-11-13T00:00:00.000', '2026-11-13T00:00:00+09:00'])
+      expect(
+        (await call('GET', `/admin/orders?cancelledFrom=${encodeURIComponent(bad)}`, 3)).status,
+      ).toBe(400)
+  })
+
+  it('결제 · 예치금 목록은 요청한 page · size로 나눈다 (BE PageResponse)', async () => {
+    for (const [path, as] of [
+      ['/payments', 1],
+      ['/admin/payments', 3],
+      ['/wallets/me/charges', 1],
+      ['/wallets/me/ledgers', 1],
+    ] as const) {
+      const all = (await call('GET', `${path}?size=100`, as)).data
+      expect(all.totalElements, path).toBeGreaterThan(0)
+      const second = (await call('GET', `${path}?page=1&size=1`, as)).data
+      expect(second, path).toMatchObject({
+        page: 1,
+        size: 1,
+        totalElements: all.totalElements,
+        totalPages: all.totalElements,
+        hasNext: all.totalElements > 2,
+      })
+      expect(second.content, path).toEqual(all.content.slice(1, 2))
+    }
   })
 })
 
@@ -1586,6 +1818,28 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     expect((await call('GET', '/recommendations/children/999999/purchases', 1)).status).toBe(404)
   })
 
+  it('자녀 성장 속도: 사이즈 추천의 growthSpeed와 칸 · 값이 같다 (BE #1367)', async () => {
+    const child = await call('POST', '/children', 1, {
+      ...toChildRequest(DEMO_CHILD),
+      requiredConsent: true,
+      optionalConsent: true,
+    })
+    const url = `/recommendations/children/${child.data.id}/growth-speed`
+    const speed = await call('GET', url, 1)
+    expect(speed.status).toBe(200)
+    expectContract(speed.data, growthSpeedShape)
+    // 한 달 이상 떨어진 기록이 없으면 또래 평균 값만 쓴다
+    expect(speed.data).toMatchObject({ childSharePercent: 0, recentCmPerMonth: null })
+    expect(speed.data.cmPerMonth).toBe(speed.data.tableCmPerMonth)
+    const size = await call('GET', `/recommendations/size?productId=1&childId=${child.data.id}`, 1)
+    expect(size.data.growthSpeed).toEqual(speed.data)
+    // 없는 자녀 · 남의 자녀 · 삭제된 자녀는 모두 404
+    expect((await call('GET', url, 2)).status).toBe(404)
+    expect((await call('GET', '/recommendations/children/999999/growth-speed', 1)).status).toBe(404)
+    await call('DELETE', `/children/${child.data.id}`, 1)
+    expect((await call('GET', url, 1)).status).toBe(404)
+  })
+
   it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {
     const item = await call(
       'POST',
@@ -1756,6 +2010,31 @@ it.each([
   expect(viewed.data.detail).toBe(detail)
 })
 
+it.each(['QUICK', 'DETAIL'] as const)(
+  '조회 기록: viewType %s는 204 (BE #1366, QUICK은 담기 팝업을 연 것)',
+  async (viewType) => {
+    const viewed = await call(
+      'POST',
+      '/recommendations/product-views',
+      1,
+      toProductViewRequest('1', null, viewType),
+    )
+    expect(viewed.status).toBe(204)
+  },
+)
+
+it.each(['POPUP', 'quick'])(
+  '조회 기록: 모르는 viewType %s는 400 (대소문자를 가린다, BE #1366)',
+  async (viewType) => {
+    const viewed = await call('POST', '/recommendations/product-views', 1, {
+      productId: '1',
+      viewType,
+    })
+    expect(viewed.status).toBe(400)
+    expect(viewed.data.detail).toBe('요청 값을 확인해 주세요.')
+  },
+)
+
 it('맞춤 목록: 1쪽 응답의 기준 시각 asOf를 2쪽에 넘기면 그대로 돌려주고, 지금보다 늦으면 400 (BE #1151)', async () => {
   const child = await call('POST', '/children', 1, {
     ...toChildRequest(DEMO_CHILD),
@@ -1775,6 +2054,30 @@ it('맞춤 목록: 1쪽 응답의 기준 시각 asOf를 2쪽에 넘기면 그대
   expect(future.status).toBe(400)
   expect(future.data.title).toBe('잘못된 기준 시각입니다')
 })
+
+/** 서버가 닫지 않는 SSE를 열어 두고 이벤트를 하나씩 기다린다 (알림 수 스트림) */
+async function openStream(url: string, as: number) {
+  const controller = new AbortController()
+  const response = await fetch(`${BASE}${url}`, {
+    signal: controller.signal,
+    headers: { accept: 'text/event-stream', authorization: `Bearer ${tokens[as]}` },
+  })
+  expect(response.headers.get('content-type')).toBe('text/event-stream')
+  const queue: SseEvent[] = []
+  let wake = () => {}
+  readSse(response.body!, (item) => {
+    queue.push(item)
+    wake()
+  }).catch(() => {})
+  return {
+    next: async () => {
+      while (queue.length === 0) await new Promise<void>((resolve) => (wake = resolve))
+      const item = queue.shift()!
+      return { event: item.event, data: JSON.parse(item.data) as unknown }
+    },
+    close: () => controller.abort(),
+  }
+}
 
 /** Accept: text/event-stream으로 불러 이벤트 이름 · data를 읽는다 */
 async function stream(url: string, as: number) {
@@ -1804,6 +2107,26 @@ it('함께 사면 · 홈 맛보기 SSE: rule → ai, 다시 물으면 ai만, 규
   const preview = await stream(`/recommendations/products/preview?childId=${child.data.id}`, 1)
   expect(preview.map((item) => item.event)).toEqual(['rule', 'ai'])
   preview.forEach((item) => expectContract(item.data, homePreviewShape))
+})
+
+it('사이즈 추천 SSE: rule(근거 없음) → ai, 다시 물으면 ai만, 규칙 답이면 rule만 (FE #401)', async () => {
+  const child = await call('POST', '/children', 1, {
+    ...toChildRequest(DEMO_CHILD),
+    requiredConsent: true,
+    optionalConsent: true,
+  })
+  const size = (productId: string) =>
+    `/recommendations/size?productId=${productId}&childId=${child.data.id}`
+
+  const first = await stream(size('1'), 1)
+  expect(first.map((item) => item.event)).toEqual(['rule', 'ai'])
+  first.forEach((item) => expectContract(item.data, sizeRecommendationShape))
+  expect(first.map((item) => item.data)).toMatchObject([
+    { source: 'RULE', reasons: [], itemJudgements: [] },
+    { source: 'AI' },
+  ])
+  expect((await stream(size('1'), 1)).map((item) => item.event)).toEqual(['ai'])
+  expect((await stream(size('2'), 1)).map((item) => item.event)).toEqual(['rule'])
 })
 
 it('함께 사면 좋은 상품: AI · RULE 응답 모두 계약 모양이고, 이유는 null일 수 있다 (BE #1164)', async () => {
@@ -1866,6 +2189,8 @@ it('홈 맛보기 · 사이즈 추천: AI · RULE 응답 모두 계약 모양이
       1,
     )
     expectContract(size.data, sizeRecommendationShape)
+    // 착용 미리보기 (BE #1265): 상품 A는 상의, 상품 B는 바지
+    expect(size.data.wearPreview.garment).toBe(productId === '1' ? 'TOP' : 'BOTTOM')
     sizeSources.push(size.data.source)
     if (size.data.source === 'RULE') expect(size.data.reasons).toEqual([])
   }

@@ -19,7 +19,7 @@ export function OrderProgressBar({ steps, current, cancelled }: OrderProgressBar
             <span
               aria-current={index === current ? 'step' : undefined}
               className={cn(
-                'flex size-8 items-center justify-center rounded-full border-2 text-xs font-bold',
+                'rounded-pill flex size-8 items-center justify-center border-2 text-xs font-bold',
                 index < current && 'border-primary bg-primary text-primary-foreground',
                 index === current && 'border-primary text-primary bg-white',
                 index > current && 'border-muted text-muted-foreground bg-white',

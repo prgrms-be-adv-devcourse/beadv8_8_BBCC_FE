@@ -1,16 +1,10 @@
 export { productApi } from './api/product-api'
-/** 목 응답 작성 전용 (app/mocks) */
+/** 단위 테스트 입력용 (tests/unit) */
 export type {
   CategoryInputsDto,
   CategoryTreeDto,
   ProductDetailDto,
   ProductSummaryDto,
-  RegisterProductRequestDto,
-  RegisterProductResultDto,
-  SaleStatusResultDto,
-  ProductUpdateRequestDto,
-  SellerProductDetailDto,
-  SellerProductSummaryDto,
 } from './api/product.dto'
 export {
   PRODUCT_STATUS_LABEL,
@@ -44,6 +38,9 @@ export {
   toCategories,
   toCategoryGroups,
   toCategoryInputs,
+  lineImageUrl,
+  productIdsWithoutImage,
+  productImageUrlOf,
   toProductDetail,
   toProductSearchParams,
   toProductListItem,
@@ -66,6 +63,8 @@ export {
   canStopSale,
   categoryNameOf,
   isFreeSize,
+  hasPriceRange,
+  pickedColorNamesOf,
   isOnSale,
   optionCombos,
   priceGroups,
@@ -83,6 +82,7 @@ export {
   useCategoriesQuery,
   useCategoryGroupsQuery,
   useCategoryInputsQuery,
+  useProductImageUrls,
   useProductQuery,
   useProductsQuery,
   useSellerProductQuery,
@@ -98,8 +98,6 @@ export { ProductFormFields } from './ui/ProductFormFields'
 export { ProductSellerLine } from './ui/ProductSellerLine'
 export { ProductSpecs } from './ui/ProductSpecs'
 export { ProductTile } from './ui/ProductTile'
-export { garmentKindOf, wearFitOf, type WearFit } from './model/wear-preview'
-export { WearPreview } from './ui/WearPreview'
 export {
   productListTitle,
   effectiveSort,
@@ -124,11 +122,12 @@ export {
   pickOptionValue,
   picksOfOption,
 } from './model/option-picker.rules'
-export { ALL_CATEGORIES_ICON } from './config/category-icons'
+export { useOptionPicks } from './model/use-option-picks'
+export { ALL_CATEGORIES_ICON, type CategoryDoodle } from './config/category-icons'
 export { categoryIconOf } from './model/category-icon.rules'
 export { visibleCategoryIdOf } from './model/visible-category.rules'
 export { CategoryIcon } from './ui/CategoryIcon'
-export { HOME_HERO_PHOTO } from './config/sample-photos'
+export { ColorSwatch } from './ui/ColorOptionChip'
 export {
   optionStockStateOf,
   sellerProductStockTagsOf,

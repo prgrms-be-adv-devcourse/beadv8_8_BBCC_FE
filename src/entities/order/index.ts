@@ -30,12 +30,10 @@ export {
   cancelledRefundOf,
   canConfirmItem,
   canUseAsReferenceGarment,
-  countOrdersByTab,
   deliveryOf,
   orderSellerGroups,
   sellerGroupCancelled,
   type OrderSellerGroup,
-  filterOrdersByTab,
   isPaymentDelayed,
   needsCartReview,
   orderProcess,
@@ -46,6 +44,8 @@ export {
   unavailableLabel,
   needsCharge,
   ORDER_TABS,
+  cancelledFromOf,
+  orderStatusOfTab,
   orderTabOf,
   summarizeOrdersOn,
   orderProgress,
@@ -53,7 +53,9 @@ export {
   paymentPollInterval,
   type OrderTab,
 } from './model/order.rules'
+export { recentShopsOf, type RecentShop } from './model/recent-shops.rules'
 export {
+  currentCancelledAtOf,
   currentCancelReasonOf,
   currentOrderStatusOf,
   toOrderHistory,
@@ -73,12 +75,15 @@ export {
 export {
   orderKeys,
   paymentPendingMs,
+  useAdminCancelledSinceCountQuery,
   useAdminOrderHistoryQuery,
   useAdminOrdersQuery,
+  useAdminOrderTabCountsQuery,
   useChildPurchasesQuery,
   useOrderQuery,
   useOrderTimelineQuery,
   useOrdersQuery,
+  useOrderTabCountsQuery,
 } from './model/queries'
 export { OrderDeliveryList } from './ui/OrderDeliveryList'
 export { OrderHistoryList } from './ui/OrderHistoryList'
@@ -89,3 +94,14 @@ export { OrderStatusBadge } from './ui/OrderStatusBadge'
 export { OrderStatusBanner } from './ui/OrderStatusBanner'
 export { OrderStatusTag } from './ui/OrderStatusTag'
 export { OrderTimeline } from './ui/OrderTimeline'
+export type { DeliveryTracking, DeliveryTrackingEvent } from './model/delivery-tracking'
+export { toDeliveryTracking } from './model/delivery-tracking.mapper'
+export {
+  canTrackDelivery,
+  childNameOf,
+  TRACKING_UNAVAILABLE_MESSAGE,
+  trackingErrorOf,
+  trackingStatusLabel,
+} from './model/delivery-tracking.rules'
+export { useDeliveryTrackingQuery } from './model/queries'
+export { DeliveryTrackingTimeline } from './ui/DeliveryTrackingTimeline'

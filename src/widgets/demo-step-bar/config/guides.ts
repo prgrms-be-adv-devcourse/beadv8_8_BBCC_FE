@@ -76,8 +76,7 @@ export const DEMO_GUIDES: { path: string; guide: DemoGuide }[] = [
       step: '②',
       actor: '판매자',
       todo: ['카테고리 항목에 맞춰 입력하고 "등록하고 판매 시작"을 눌러요'],
-      watch:
-        'PUT sale-status → 서버 이벤트 product.changed (추천 · 주문 복사본 갱신). 등록 · 판매 시작은 실제, 내 상품 목록은 목',
+      watch: 'PUT sale-status → 서버 이벤트 product.changed (추천 · 주문 복사본 갱신)',
       next: { label: '③ 사이즈 추천', to: C.products },
     },
   },

@@ -1,7 +1,7 @@
 export { CARRIERS, carrierName, DELIVERY_STATUS_LABEL, type DeliveryStatus } from './delivery'
 export {
   appSettings,
-  resolveMockEnabled,
+  resolveSetting,
   useAppSettings,
   useDemoRoleSwitch,
   type AppSettingValues,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  canRecoverSettlementRun,
   canRetrySettlementPayout,
   toAdminSettlement,
   toSettlementRunResult,
@@ -64,5 +65,12 @@ describe('관리자 정산 (BE AdminSettlementController)', () => {
     expect(canRetrySettlementPayout({ status: 'COMPLETED' })).toBe(true)
     expect(canRetrySettlementPayout({ status: 'PAID' })).toBe(false)
     expect(canRetrySettlementPayout({ status: 'FAILED' })).toBe(false)
+  })
+
+  it('실행 복구는 실행 중(RUNNING)으로 남은 실행만 (BE recover: isRunning)', () => {
+    expect(canRecoverSettlementRun({ status: 'RUNNING' })).toBe(true)
+    expect(canRecoverSettlementRun({ status: 'COMPLETED' })).toBe(false)
+    expect(canRecoverSettlementRun({ status: 'PARTIAL_FAILED' })).toBe(false)
+    expect(canRecoverSettlementRun({ status: 'FAILED' })).toBe(false)
   })
 })

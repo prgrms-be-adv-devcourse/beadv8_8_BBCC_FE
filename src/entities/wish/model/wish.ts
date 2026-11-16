@@ -17,6 +17,8 @@ export type WishRequestLine = {
   saleStatus: string | null
   /** 이 칸에서 결제로 산 수량 합 */
   purchasedQuantity: number
+  /** 상품의 지금 사진. 없으면 null (상품 상세 대표 사진으로 대체) */
+  thumbnailUrl: string | null
 }
 export type WishRequest = {
   requestId: string

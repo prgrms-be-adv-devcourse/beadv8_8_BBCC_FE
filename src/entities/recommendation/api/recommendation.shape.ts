@@ -1,4 +1,5 @@
 import { arr, bool, nullable, num, obj, oneOf, str } from '@/shared/api'
+import { wearPreviewShape } from './wear-preview.shape'
 
 const FIT = oneOf(['ROOMY', 'PROPER', 'TIGHT'])
 const SOURCE = oneOf(['AI', 'RULE'])
@@ -9,6 +10,7 @@ const SIZE_REASON_TYPE = oneOf([
   'MEASUREMENT',
   'RULE_RESULT',
   'GROWTH',
+  'PURCHASE',
 ])
 
 const GARMENT_PART = oneOf(['TOP', 'BOTTOM', 'OUTER', 'DRESS', 'SKIRT'])
@@ -33,6 +35,30 @@ const REFERENCE_FIT = {
   ),
 }
 
+/** 성장 속도 (BE #1266). 자녀 성장 속도 조회(BE #1367)의 응답도 같은 모양이다 */
+export const growthSpeedShape = obj({
+  cmPerMonth: num,
+  recentCmPerMonth: nullable(num),
+  recordCount: num,
+  recordMonths: num,
+  childSharePercent: num,
+  tableCmPerMonth: num,
+  tableSource: str,
+})
+
+/** 성장 속도 · 입을 수 있는 기간 (BE #1266) */
+const GROWTH = {
+  growthSpeed: growthSpeedShape,
+  wearablePeriods: arr(
+    obj({
+      size: str,
+      lengthMonths: nullable(num),
+      widthMonths: nullable(num),
+      months: nullable(num),
+    }),
+  ),
+}
+
 export const sizeRecommendationShape = obj({
   productId: str,
   childId: str,
@@ -44,6 +70,8 @@ export const sizeRecommendationShape = obj({
   source: SOURCE,
   reasons: arr(obj({ type: SIZE_REASON_TYPE, detail: str, sourceId: nullable(str) })),
   ...REFERENCE_FIT,
+  wearPreview: nullable(wearPreviewShape),
+  ...GROWTH,
 })
 
 const RECOMMENDED_CARD = {

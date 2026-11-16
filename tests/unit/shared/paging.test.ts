@@ -24,3 +24,14 @@ describe('pageNumbersOf: 페이지 번호 줄 (지금 페이지를 가운데에 
     expect(pageNumbersOf(page, totalPages)).toEqual(expected)
   })
 })
+
+describe('주소의 ?page= → 페이지 (0부터)', () => {
+  it('0 이상 정수만, 아니면 0', async () => {
+    const { pageFromSearch } = await import('@/shared/api')
+    expect(pageFromSearch('2')).toBe(2)
+    expect(pageFromSearch(null)).toBe(0)
+    expect(pageFromSearch('-1')).toBe(0)
+    expect(pageFromSearch('1.5')).toBe(0)
+    expect(pageFromSearch('abc')).toBe(0)
+  })
+})

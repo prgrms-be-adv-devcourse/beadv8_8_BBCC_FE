@@ -24,10 +24,10 @@ export const sellerApi = {
       }),
   apply: (request: SellerApplicationRequestDto) =>
     apiClient.post<SellerApplicationDto>('/members/me/seller-application', request),
-  listApplications: (status: string | null) =>
+  listApplications: (status: string | null, page = 0) =>
     apiClient
       .get<Page<SellerApplicationSummaryDto>>('/admin/seller-applications', {
-        params: { status: status ?? undefined, page: 0, size: 20 },
+        params: { status: status ?? undefined, page, size: 20 },
       })
       .then(expectShape(sellerApplicationPageShape)),
   approve: (applicationId: string) =>
@@ -40,7 +40,7 @@ export const sellerApi = {
     apiClient
       .post<SellerDto>(`/admin/sellers/${sellerId}/suspend`, request)
       .then(expectShape(sellerShape)),
-  /** 판매자 정보 수정 (기획서 8장 보완). 백엔드에 아직 없어 목 응답이다 */
+  /** 판매자 정보 수정 (기획서 8장 보완) */
   updateMine: (request: { businessName: string }) =>
     apiClient.patch<SellerDto>('/seller/me', request).then(expectShape(sellerShape)),
   getMine: () => apiClient.get<SellerDto>('/seller/me').then(expectShape(sellerShape)),

@@ -27,6 +27,26 @@ export function isApprovableLine(line: {
   return line.cartItemId !== null && line.purchasable && line.unitPrice !== null
 }
 
+/** 승인할 줄: 바로 결제할 수 있는 줄 전부에서 보호자가 뺀 줄(excluded)만 빠진다 (처음부터 모두 고른 상태) */
+export function approvedOptionIds(
+  items: {
+    optionId: string
+    cartItemId: string | null
+    purchasable: boolean
+    unitPrice: number | null
+  }[],
+  excluded: string[],
+): string[] {
+  return items
+    .filter((item) => isApprovableLine(item) && !excluded.includes(item.optionId))
+    .map((item) => item.optionId)
+}
+
+/** 결제할 금액: 단가 × 주문 수량의 합 */
+export function wishOrderTotal(lines: { unitPrice: number | null; quantity: number }[]): number {
+  return lines.reduce((sum, line) => sum + (line.unitPrice ?? 0) * line.quantity, 0)
+}
+
 export function canApproveWish(lines: ApprovalLine[], address: ApprovalAddress | null): boolean {
   return (
     !!address &&

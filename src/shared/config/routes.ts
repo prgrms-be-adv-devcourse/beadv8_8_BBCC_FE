@@ -42,6 +42,8 @@ export const paths = {
     wishes: '/child/wishes',
     /** 나를 위해 산 것 (BE #1000) */
     purchases: '/child/purchases',
+    /** 자녀 본인의 찜 (보호자 「내 찜」과 같은 화면) */
+    favorites: '/child/favorites',
     notifications: '/child/notifications',
   },
   kakaoCallback: '/oauth/kakao/callback',
@@ -66,6 +68,8 @@ export const paths = {
     /** 산 옷(상품 · 사이즈)으로 기준 옷 칸을 채워 연다 (주문 상세에서) */
     childReferenceGarmentFrom: (id: string, productId: string, size: string) =>
       `/my/children/${id}?${new URLSearchParams({ [GARMENT_FROM.product]: productId, [GARMENT_FROM.size]: size })}#${REFERENCE_GARMENTS}`,
+    /** 받은 조르기 (내 자녀 모두, 자녀로 거르기) */
+    wishes: '/my/wishes',
     childWishes: (id: string) => `/my/children/${id}/wishes`,
     childWish: (id: string, requestId: string) => `/my/children/${id}/wishes/${requestId}`,
     profile: '/my/profile',
@@ -113,6 +117,8 @@ export const paths = {
     wallets: '/admin/wallets',
     /** 설정: 시연 데이터 켜기 · 끄기 */
     settings: '/admin/settings',
+    /** 요청 수 제한: Gateway 처리율 제한 켜고 끄기 · 사용자별 · 전체 한도 (BE #1421) */
+    rateLimit: '/admin/rate-limit',
     /** 주문 운영: 멈춘 주문 · 처리 대기 (종류 · 페이지는 검색 값) */
     orderOps: '/admin/order-ops',
     /** 관리자 계정 추가 */
@@ -147,6 +153,7 @@ export const paths = {
     childNew: `${C}/children/new`,
     child: (id: string) => `${C}/children/${id}`,
     childReferenceGarments: (id: string) => `${C}/children/${id}#${REFERENCE_GARMENTS}`,
+    wishes: `${C}/wishes`,
     childWishes: (id: string) => `${C}/children/${id}/wishes`,
     childWish: (id: string, requestId: string) => `${C}/children/${id}/wishes/${requestId}`,
     profile: `${C}/profile`,
@@ -237,6 +244,7 @@ export function memberPathsOf(area: Area) {
     childNew: base.childNew,
     child: base.child,
     childReferenceGarments: base.childReferenceGarments,
+    wishes: base.wishes,
     childWishes: base.childWishes,
     childWish: base.childWish,
     addresses: base.addresses,

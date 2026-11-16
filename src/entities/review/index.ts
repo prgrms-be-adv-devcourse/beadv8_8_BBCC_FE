@@ -24,6 +24,7 @@ export {
   MODERATION_STATUS_LABEL,
   moderationActionsOf,
   moderationStatusOf,
+  retryExhaustedMessage,
 } from './model/admin-review.rules'
 export {
   averageRatingLabel,
@@ -56,7 +57,7 @@ export { ReviewForm } from './ui/ReviewForm'
 export { ReviewStars } from './ui/ReviewStars'
 export { ReviewSummaryCard } from './ui/ReviewSummaryCard'
 
-// 목 응답 · 가짜 백엔드 계약 작성 전용
+// 단위 테스트 입력용 (tests/unit)
 export type {
   ReviewDto as MockReviewDto,
   ReviewListItemDto as MockReviewListItemDto,

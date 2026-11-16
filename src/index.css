@@ -98,7 +98,7 @@
   --highlight-foreground: #29242b;
   --growth: #a9b77d;
   --growth-foreground: #ffffff;
-  /* 메인 색 하나에서 만드는 연한 배경 · 진한 글자 (테마 바꿔 보기로 --primary만 바꿔도 따라온다) */
+  /* 메인 색 하나에서 만드는 연한 배경 · 진한 글자 */
   --primary-soft: color-mix(in oklab, var(--primary) 11%, white);
   --primary-deep: color-mix(in oklab, var(--primary) 78%, black);
   --highlight-soft: color-mix(in oklab, var(--highlight) 28%, white);

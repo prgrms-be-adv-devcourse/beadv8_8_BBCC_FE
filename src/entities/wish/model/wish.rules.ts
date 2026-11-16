@@ -107,3 +107,72 @@ export function canWithdrawWish(
   if (wish.status !== 'REQUESTED') return false
   return !wish.expiresAt || parseKst(wish.expiresAt) > now.getTime()
 }
+
+/** 조르기 합계: 단가 × 보낸 수량의 합 (단가를 모르는 줄은 0) */
+export function wishTotalAmount(wish: {
+  items: { unitPrice: number | null; quantity: number }[]
+}): number {
+  return wish.items.reduce((sum, item) => sum + (item.unitPrice ?? 0) * item.quantity, 0)
+}
+
+/** 조르기에 든 판매자 상호: 겹치지 않게 나온 순서대로, 모르는 상호는 뺀다 */
+export function wishSellersLabel(wish: { items: { sellerName: string | null }[] }): string {
+  const names = wish.items.map((item) => item.sellerName?.trim()).filter((name) => !!name)
+  return [...new Set(names)].join(' · ')
+}
+
+const CHILD_STATUS_LABEL: Record<WishStatus, string> = {
+  REQUESTED: '기다리는 중',
+  PAID: '보호자가 사 줬어요',
+  REJECTED: '거절됨',
+  CANCELLED: '철회함',
+  EXPIRED: '기한 지남',
+}
+
+/** 자녀에게 보이는 상태. 거절이면 이유를 붙인다 */
+export function childWishStatusLabel(wish: {
+  status: WishStatus
+  rejectReason: WishRejectReason | null
+}): string {
+  const label = labelOf(CHILD_STATUS_LABEL, wish.status)
+  return wish.status === 'REJECTED' && wish.rejectReason
+    ? `${label} · ${wishRejectReasonLabel(wish.rejectReason)}`
+    : label
+}
+
+/** 조르기 목록 거르기: 전체 · 기다리는 중(대기) · 끝남(그 밖) */
+export type WishFilter = 'ALL' | 'WAITING' | 'DONE'
+export const WISH_FILTER_LABEL: Record<WishFilter, string> = {
+  ALL: '전체',
+  WAITING: '기다리는 중',
+  DONE: '끝남',
+}
+
+export function filterWishes<T extends { status: WishStatus }>(
+  wishes: T[],
+  filter: WishFilter,
+): T[] {
+  if (filter === 'ALL') return wishes
+  return wishes.filter((wish) => canDecideWish(wish) === (filter === 'WAITING'))
+}
+
+const GUARDIAN_STATUS_LABEL: Record<WishStatus, string> = {
+  REQUESTED: '답을 기다려요',
+  PAID: '사 줬어요',
+  REJECTED: '거절함',
+  CANCELLED: '아이가 철회함',
+  EXPIRED: '기한 지남',
+}
+
+/** 보호자에게 보이는 상태 */
+export function guardianWishStatusLabel(wish: { status: WishStatus }): string {
+  return labelOf(GUARDIAN_STATUS_LABEL, wish.status)
+}
+
+/** 자녀로 거르기. 자녀를 고르지 않았으면(null) 모두 */
+export function wishesOfChild<T extends { childId: string }>(
+  wishes: T[],
+  childId: string | null,
+): T[] {
+  return childId ? wishes.filter((wish) => wish.childId === childId) : wishes
+}

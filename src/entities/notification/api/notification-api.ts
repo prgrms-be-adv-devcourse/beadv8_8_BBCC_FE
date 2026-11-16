@@ -1,4 +1,4 @@
-import { apiClient, expectShape, type Page } from '@/shared/api'
+import { apiClient, expectShape, openEventStream, type Page } from '@/shared/api'
 import type { InboxNotificationDto, UnreadCountDto } from './notification.dto'
 import { inboxNotificationPageShape, unreadCountShape } from './notification.shape'
 
@@ -25,4 +25,17 @@ export const notificationApi = {
     apiClient
       .get<UnreadCountDto>(`${NOTIFICATION_PATH[recipient]}/unread-count`)
       .then(expectShape(unreadCountShape)),
+  /** 안 읽은 수 SSE. 연결하면 지금 수를, 바뀌면 새 수를 unread-count 이벤트로 받는다. 서버가 30분 뒤 닫으면 끝난다 */
+  unreadCountStream: (
+    recipient: NotificationRecipient,
+    signal: AbortSignal,
+    onCount: (dto: UnreadCountDto) => void,
+  ) =>
+    openEventStream<UnreadCountDto>(`${NOTIFICATION_PATH[recipient]}/stream`, {
+      signal,
+      shape: unreadCountShape,
+      onEvent: (item) => {
+        if (item.event === 'unread-count') onCount(item.data)
+      },
+    }),
 }

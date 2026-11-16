@@ -1,9 +1,12 @@
 import { useRef, useState } from 'react'
-import { Link, useLocation, useParams, useSearchParams } from 'react-router'
-import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY } from '@/entities/cart'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
+import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY, useChildCartQuery } from '@/entities/cart'
 import { ChildPicker, useChildrenQuery } from '@/entities/child'
 import {
+  ALL_CATEGORIES_ICON,
+  categoryIconOf,
   detailImagesOf,
+  hasPriceRange,
   isOnSale,
   ProductDescription,
   ProductGallery,
@@ -19,20 +22,22 @@ import {
   ProductSpecs,
   useCategoriesQuery,
   useProductQuery,
-  WearPreview,
 } from '@/entities/product'
 import {
+  AiWaitingNotice,
   GARMENT_PART_SPEC,
   referencePartToRegister,
   sizeRangesOf,
   useCompanionProductsQuery,
   useReferenceGarmentsQuery,
   useSizeRecommendationQuery,
+  WearPreview,
 } from '@/entities/recommendation'
 import { useFavoritedIdsQuery, useFavoriteSummaryQuery } from '@/entities/favorite'
 import { useSessionStore } from '@/entities/session'
 import { AddToCartButton } from '@/features/add-to-cart'
 import { ChildWishAddButton } from '@/features/child-wish-cart'
+import { SendWishNow } from '@/features/send-wish-now'
 import { useRecordProductView } from '@/features/record-product-view'
 import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
@@ -45,8 +50,13 @@ import { CompanionProducts } from './CompanionProducts'
 import { ProductReviews } from './ProductReviews'
 import { SizeAdvice } from './SizeAdvice'
 
+const SIZE_AI_WAITING = 'AI가 사이즈를 더 살펴보고 있어요'
+
 export function ShopProductDetailPage() {
   const isChild = useArea() === 'child'
+  const navigate = useNavigate()
+  // 자녀 「바로 조르기」: 같은 옵션이 장바구니에 있으면 합쳐진다고 알리려고 자녀 장바구니를 읽는다
+  const childCart = useChildCartQuery({ enabled: isChild })
   const { productId = '' } = useParams()
   const [search] = useSearchParams()
   const location = useLocation()
@@ -65,9 +75,14 @@ export function ShopProductDetailPage() {
   const categories = useCategoriesQuery()
   // 보호자 회원만 기록한다 (자녀 화면은 자녀 토큰이라 부르지 않음)
   useRecordProductView(productId, childId, Boolean(user) && !isChild)
-  // 찜 수는 누구나, 내가 찜했는지는 로그인한 보호자만 (자녀 화면은 하트를 그리지 않음)
-  const favoriteSummary = useFavoriteSummaryQuery(isChild ? '' : productId)
-  const favoritedIds = useFavoritedIdsQuery([productId], { enabled: Boolean(user) && !isChild })
+  // 찜 수는 누구나(회원과 자녀를 합친 수), 내가 찜했는지는 로그인한 본인 것만
+  const favoriteSummary = useFavoriteSummaryQuery(productId)
+  // 자녀 화면은 자녀 본인의 찜 (자녀 토큰, BE #1377). 자녀 화면은 로그인한 자녀만 들어온다
+  const favoriteOwner = isChild ? 'child' : 'member'
+  const favoritedIds = useFavoritedIdsQuery([productId], {
+    enabled: isChild || Boolean(user),
+    owner: favoriteOwner,
+  })
   // 로그인하고 돌아오면 주소(?option=&qty=)에 실어 둔 옵션 · 수량으로 시작한다. 고르기 전까지는 null
   const [pickedByUser, setPicks] = useState<OptionPicks | null>(null)
   const [quantityByUser, setQuantity] = useState<number | null>(null)
@@ -99,16 +114,21 @@ export function ShopProductDetailPage() {
   const isSelling = isOnSale(detail)
   // 추천 한 줄은 사이즈 칩 바로 위에 (사이즈 항목이 없는 상품이면 옵션 맨 위)
   const sizeAttributeId = detail.optionAttributes.find((attribute) => attribute.isSize)?.id ?? null
-  const categoryPath = categories.data?.find((c) => c.id === detail.categoryId)?.path ?? null
+  const category = categories.data?.find((c) => c.id === detail.categoryId) ?? null
+  const categoryPath = category?.path ?? null
   const partToRegister =
     pickedChild && garments.data
       ? referencePartToRegister(categoryPath, detail.sizeFree, garments.data)
       : null
   const sizeAdvice = (
     <>
-      {recommendation.isFetching && <StateMessage>추천 계산 중…</StateMessage>}
+      {/* 첫 결과(보통 규칙 결과) 전까지만. 그 뒤 AI 답을 기다리는 동안은 추천을 그린 채 AI 대기를 보인다 */}
+      {recommendation.isLoading && <StateMessage>추천 계산 중…</StateMessage>}
       {recommendation.isError && (
         <StateMessage tone="error">{getErrorMessage(recommendation.error)}</StateMessage>
+      )}
+      {pickedChild && recommendation.data && recommendation.isWaitingForAi && (
+        <AiWaitingNotice message={SIZE_AI_WAITING} />
       )}
       {pickedChild && recommendation.data && (
         <SizeAdvice
@@ -122,13 +142,14 @@ export function ShopProductDetailPage() {
             }
           }
           preview={
-            <WearPreview
-              specs={detail.sizeSpecs}
-              categoryName={detail.categoryName}
-              child={pickedChild}
-              initialSize={recommendation.data.recommendedSize}
-              isCompact
-            />
+            recommendation.data.wearPreview && (
+              <WearPreview
+                preview={recommendation.data.wearPreview}
+                child={pickedChild}
+                initialSize={recommendation.data.recommendedSize}
+                isCompact
+              />
+            )
           }
         />
       )}
@@ -156,7 +177,7 @@ export function ShopProductDetailPage() {
       <section aria-label={detail.name} className="space-y-4">
         <Link
           to={isChild ? paths.child.products : paths.shop.home}
-          className="text-ink-3 hover:text-ink inline-flex items-center gap-1 rounded-md text-[13px] font-semibold transition-colors"
+          className="text-ink inline-flex items-center gap-1 text-xs font-bold underline-offset-[3px] hover:underline"
         >
           <svg
             viewBox="0 0 24 24"
@@ -170,12 +191,19 @@ export function ShopProductDetailPage() {
           </svg>
           상품 목록
         </Link>
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
-          <ProductGallery
-            images={detail.imageUrls}
-            alt={detail.name}
-            className="rounded-card min-w-0 max-lg:aspect-[4/3]"
-          />
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+          {/* 넓은 화면: 사진 높이를 옆 정보 칸에 맞춘다 (정보가 길어도 620px까지만) */}
+          <div className="relative min-w-0 lg:min-h-[26rem]">
+            <div className="lg:absolute lg:inset-0 lg:max-h-[620px]">
+              <ProductGallery
+                images={detail.imageUrls}
+                alt={detail.name}
+                className="border-ink min-w-0 border-[1.5px] max-lg:aspect-[4/3]"
+                doodle={(category && categoryIconOf(category.name)) || ALL_CATEGORIES_ICON}
+                fillsHeight
+              />
+            </div>
+          </div>
 
           {/* min-w-0: 실측표처럼 넓은 표가 열을 넓혀 가격 · 담기 버튼을 화면 밖으로 밀지 않게 (표만 가로로 민다) */}
           <div className="shop-offer min-w-0 space-y-5">
@@ -187,23 +215,23 @@ export function ShopProductDetailPage() {
                 </div>
               )}
               <p className="text-ink-3 pt-1 text-[13px]">{productMeta(detail)}</p>
-              {isChild ? (
-                <h1 className="text-page">{detail.name}</h1>
-              ) : (
-                <div className="flex items-start gap-3">
-                  <h1 className="text-page min-w-0 flex-1">{detail.name}</h1>
-                  <FavoriteButton
-                    productId={detail.id}
-                    isFavorited={favoritedIds.data?.has(detail.id) ?? false}
-                    isLoading={Boolean(user) && favoritedIds.isPending}
-                    count={favoriteSummary.data?.count}
-                    isSelling={isSelling}
-                    loginHref={user ? null : loginPath(returnPath())}
-                  />
-                </div>
-              )}
+              <div className="flex items-start gap-3">
+                <h1 className="text-page min-w-0 flex-1">{detail.name}</h1>
+                <FavoriteButton
+                  productId={detail.id}
+                  owner={favoriteOwner}
+                  isFavorited={favoritedIds.data?.has(detail.id) ?? false}
+                  isLoading={(isChild || Boolean(user)) && favoritedIds.isPending}
+                  count={favoriteSummary.data?.count}
+                  isSelling={isSelling}
+                  loginHref={isChild || user ? null : loginPath(returnPath())}
+                />
+              </div>
               {detail.minPrice !== null && (
-                <p className="figure pt-1 text-2xl font-bold">{formatWon(detail.minPrice)}~</p>
+                <p className="figure border-ink border-b-[1.5px] pt-1 pb-3.5 text-[30px] leading-none font-bold">
+                  {formatWon(detail.minPrice)}
+                  {hasPriceRange(detail.options) && '~'}
+                </p>
               )}
             </div>
 
@@ -211,7 +239,7 @@ export function ShopProductDetailPage() {
             <div ref={optionsRef} className="scroll-mt-24 space-y-3">
               {!isChild && (
                 <div className="space-y-1.5">
-                  <p className="text-sm font-semibold">누가 입나요?</p>
+                  <p className="text-[13px] font-bold">누가 입나요?</p>
                   {!user ? (
                     <Link to={loginPath(returnPath())} className="shop-link text-sm">
                       로그인하고 맞는 사이즈 보기
@@ -237,6 +265,7 @@ export function ShopProductDetailPage() {
                   setPicks(pickOptionValue(detail, picks, attributeId, valueId))
                 }
                 aboveRow={sizeAttributeId ? { [sizeAttributeId]: sizeAdvice } : undefined}
+                colorLook="detail"
               />
               {selected && (
                 <p className="text-ink-2 text-sm">
@@ -251,9 +280,9 @@ export function ShopProductDetailPage() {
             </div>
 
             {/* 휴대폰에서는 수량 · 금액 · 담기를 화면 아래에 고정한다 */}
-            <div className="border-rule bg-paper/95 sticky bottom-0 -mx-4 space-y-3 border-t px-4 pt-3 pb-3 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pt-4 md:pb-0 md:backdrop-blur-none">
+            <div className="border-ink bg-paper/95 sticky bottom-0 -mx-4 space-y-3 border-t-[1.5px] px-4 pt-3 pb-3 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pt-4 md:pb-0 md:backdrop-blur-none">
               <div className="flex items-center gap-3">
-                <span className="text-ink-2 text-sm">수량</span>
+                <span className="text-[13px] font-bold">수량</span>
                 <Input
                   type="number"
                   min={MIN_QUANTITY}
@@ -274,7 +303,23 @@ export function ShopProductDetailPage() {
               </div>
               {!isSelling && <StateMessage tone="error">판매 중인 상품이 아니에요.</StateMessage>}
               {isChild ? (
-                <ChildWishAddButton optionId={optionId} quantity={quantity} disabled={!isSelling} />
+                <div className="space-y-3">
+                  <ChildWishAddButton
+                    optionId={optionId}
+                    quantity={quantity}
+                    disabled={!isSelling}
+                  />
+                  <SendWishNow
+                    optionId={optionId}
+                    quantity={quantity}
+                    existingQuantity={
+                      childCart.data?.lines.find((line) => line.optionId === optionId)?.quantity ??
+                      null
+                    }
+                    disabled={!isSelling || childCart.isPending}
+                    onSent={() => navigate(paths.child.wishes)}
+                  />
+                </div>
               ) : user ? (
                 <AddToCartButton
                   optionId={optionId}
@@ -311,6 +356,7 @@ export function ShopProductDetailPage() {
         childId={recommendedChildId}
         isPending={companions.isPending}
         isError={companions.isError}
+        isWaitingForAi={companions.isWaitingForAi}
         picks={companions.data}
         onRetry={() => void companions.refetch()}
       />

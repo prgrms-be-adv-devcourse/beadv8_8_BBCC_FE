@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  canQuickAddFavorite,
   canToggleFavorite,
   FAVORITE_DISPLAY_STATUS_LABEL,
   favoriteIdChunks,
+  favoriteStampOf,
   toFavoriteItem,
   toFavoriteSummary,
   toFavoritedIds,
@@ -100,5 +102,28 @@ describe('canToggleFavorite: 판매 중이 아닌 상품은 찜할 수 없다 (4
     [{ isFavorited: true, isSelling: true }, true],
   ])('%o → %s', (input, expected) => {
     expect(canToggleFavorite(input)).toBe(expected)
+  })
+})
+
+describe('내 찜 목록의 사진 도장 · 바로 담기', () => {
+  it.each([
+    ['SOLD_OUT', '품절'],
+    ['SALE_ENDED', '판매 종료'],
+    ['ON_SALE', null],
+    [null, null],
+  ] as const)(
+    '표시 상태 %s의 도장은 %s (판매 중 · 상태 모름은 찍지 않는다)',
+    (status, expected) => {
+      expect(favoriteStampOf(status)).toBe(expected)
+    },
+  )
+
+  it.each([
+    ['ON_SALE', true],
+    ['SOLD_OUT', false],
+    ['SALE_ENDED', false],
+    [null, false],
+  ] as const)('표시 상태 %s는 바로 담기 가능 여부가 %s다', (status, expected) => {
+    expect(canQuickAddFavorite(status)).toBe(expected)
   })
 })

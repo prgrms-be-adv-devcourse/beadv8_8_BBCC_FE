@@ -1,11 +1,13 @@
 import { isPaymentDelayed } from '@/entities/order'
-import type { ApiCallLog } from '@/shared/api'
+import { streamLogOf, type ApiCallLog } from '@/shared/api'
 import { paths } from '@/shared/config'
 
 // 기획서 v1.0 7장 단계별 완료 기준을 "어떤 API가 어떤 결과를 돌려주면 통과"로 옮긴 체크리스트
 
 type Body = Record<string, unknown>
-const body = (log: ApiCallLog) => (log.responseBody ?? {}) as Body
+/** 응답 본문. 스트림(SSE) 기록이면 마지막 data */
+const body = (log: ApiCallLog) =>
+  (streamLogOf(log.responseBody)?.data ?? log.responseBody ?? {}) as Body
 const ok2xx = (log: ApiCallLog) => log.status !== null && log.status >= 200 && log.status < 300
 
 export type CallCheck = {

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import {
   canCancelCharge,
@@ -11,6 +12,7 @@ import { getErrorMessage } from '@/shared/api'
 import { walletPathsOf } from '@/shared/config'
 import { cn, useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Pagination } from '@/shared/ui/Pagination'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 const TABS = [
@@ -21,15 +23,18 @@ type Tab = (typeof TABS)[number]['value']
 
 /**
  * 예치금 이용 내역 (예치금 화면과 따로): 탭 둘.
- * 이용 내역은 입출금 원장을 날짜별로, 충전 내역은 충전 요청마다 (충전 취소는 여기서)
+ * 이용 내역은 입출금 원장을 날짜별로, 충전 내역은 충전 요청마다 (충전 취소는 여기서).
+ * 두 탭은 쪽을 따로 넘긴다 (서버 페이지)
  */
 export function ShopWalletHistoryPage() {
   const walletPaths = walletPathsOf(useArea())
   // 탭은 주소(?tab=)에 둔다 → 예치금 화면의 「충전 내역」에서 바로 연다
   const [params, setParams] = useSearchParams()
   const tab: Tab = params.get('tab') === 'charges' ? 'charges' : 'all'
-  const transactions = useWalletTransactionsQuery()
-  const charges = useChargeHistoryQuery()
+  const [transactionPage, setTransactionPage] = useState(0)
+  const [chargePage, setChargePage] = useState(0)
+  const transactions = useWalletTransactionsQuery(transactionPage)
+  const charges = useChargeHistoryQuery(chargePage)
 
   return (
     <div className="shop-look space-y-6">
@@ -83,9 +88,16 @@ export function ShopWalletHistoryPage() {
           {transactions.isError && (
             <StateMessage tone="error">{getErrorMessage(transactions.error)}</StateMessage>
           )}
-          {transactions.data?.length === 0 && <StateMessage>거래가 없어요.</StateMessage>}
-          {transactions.data && transactions.data.length > 0 && (
-            <WalletTransactionList transactions={transactions.data} isGroupedByDay />
+          {transactions.data?.content.length === 0 && <StateMessage>거래가 없어요.</StateMessage>}
+          {transactions.data && transactions.data.content.length > 0 && (
+            <WalletTransactionList transactions={transactions.data.content} isGroupedByDay />
+          )}
+          {transactions.data && (
+            <Pagination
+              page={transactionPage}
+              totalPages={transactions.data.totalPages}
+              onChange={setTransactionPage}
+            />
           )}
         </section>
       ) : (
@@ -94,10 +106,10 @@ export function ShopWalletHistoryPage() {
           {charges.isError && (
             <StateMessage tone="error">{getErrorMessage(charges.error)}</StateMessage>
           )}
-          {charges.data?.length === 0 && <StateMessage>충전한 내역이 없어요.</StateMessage>}
-          {charges.data && charges.data.length > 0 && (
+          {charges.data?.content.length === 0 && <StateMessage>충전한 내역이 없어요.</StateMessage>}
+          {charges.data && charges.data.content.length > 0 && (
             <div className="divide-rule divide-y">
-              {charges.data.map((charge) => (
+              {charges.data.content.map((charge) => (
                 <ChargeRow
                   key={charge.id}
                   charge={charge}
@@ -105,6 +117,13 @@ export function ShopWalletHistoryPage() {
                 />
               ))}
             </div>
+          )}
+          {charges.data && (
+            <Pagination
+              page={chargePage}
+              totalPages={charges.data.totalPages}
+              onChange={setChargePage}
+            />
           )}
         </section>
       )}

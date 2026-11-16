@@ -20,3 +20,25 @@ export function showsAiSizeNotice({
 }: Pick<SizeRecommendation, 'source' | 'reasons'>): boolean {
   return source === 'AI' && reasons.length > 0
 }
+
+/**
+ * 지난 구매 줄 (BE #1299): 같은 기준 옷 칸에서 마지막으로 구매확정한 사이즈. 사이즈 이름마다 을/를이
+ * 달라지지 않게 「사이즈를」로 고정한다. 없거나 비어 있으면 null (줄을 숨긴다)
+ */
+export function lastPurchaseTextOf({
+  lastPurchasedSize,
+}: Pick<SizeRecommendation, 'lastPurchasedSize'>): string | null {
+  const size = lastPurchasedSize?.trim()
+  return size ? `지난번 같은 종류는 ${size} 사이즈를 샀어요` : null
+}
+
+/**
+ * 사이즈 추천 스트림에서 받은 결과(도착 순서) 중 그릴 것: 마지막 AI, 없으면 마지막 규칙 결과.
+ * 받은 것이 없으면 undefined (쿼리가 오류로 바꾼다)
+ */
+export function shownSizeOf(received: SizeRecommendation[]): SizeRecommendation | undefined {
+  return (
+    received.findLast((item) => item.source === 'AI') ??
+    received.findLast((item) => item.source === 'RULE')
+  )
+}

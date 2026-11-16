@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
 import {
   SettlementItemList,
   useSettlementsQuery,
@@ -6,18 +7,33 @@ import {
   useSettlementTargetsQuery,
 } from '@/entities/settlement'
 import { useWalletQuery } from '@/entities/wallet'
-import { getErrorMessage } from '@/shared/api'
+import { getErrorMessage, pageFromSearch } from '@/shared/api'
 import { sellerPathsOf } from '@/shared/config'
 import { formatWon, useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
+import { Pagination } from '@/shared/ui/Pagination'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { SettlementTable } from './SettlementTable'
 
 /** 정산: 예치금 잔액 · 정산 예정 금액 한 줄 → 정산 예정(구매확정분) 표 → 정산서 장부. 정산서는 따로인 화면 */
 export function CenterSettlementsPage() {
-  const targets = useSettlementTargetsQuery()
+  // 두 표의 페이지(0부터)는 주소의 ?page=(정산 예정) · ?settlementPage=(정산서)에 둔다
+  const [params, setParams] = useSearchParams()
+  const targetPage = pageFromSearch(params.get('page'))
+  const settlementPage = pageFromSearch(params.get('settlementPage'))
+  const setPage = (key: 'page' | 'settlementPage', page: number) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (page > 0) next.set(key, String(page))
+        else next.delete(key)
+        return next
+      },
+      { replace: true },
+    )
+  const targets = useSettlementTargetsQuery(targetPage)
   const pendingAmount = useSettlementTargetSummaryQuery()
-  const settlements = useSettlementsQuery()
+  const settlements = useSettlementsQuery(settlementPage)
   const wallet = useWalletQuery()
   const sellerPaths = sellerPathsOf(useArea())
 
@@ -66,6 +82,13 @@ export function CenterSettlementsPage() {
         {targets.data && targets.data.content.length > 0 && (
           <SettlementItemList label="정산 예정" items={targets.data.content} isTarget />
         )}
+        {targets.data && (
+          <Pagination
+            page={targetPage}
+            totalPages={targets.data.totalPages}
+            onChange={(page) => setPage('page', page)}
+          />
+        )}
       </section>
 
       <section aria-label="정산서 목록" className="space-y-3">
@@ -79,6 +102,13 @@ export function CenterSettlementsPage() {
           <SettlementTable
             settlements={settlements.data.content}
             detailTo={sellerPaths.settlement}
+          />
+        )}
+        {settlements.data && (
+          <Pagination
+            page={settlementPage}
+            totalPages={settlements.data.totalPages}
+            onChange={(page) => setPage('settlementPage', page)}
           />
         )}
       </section>

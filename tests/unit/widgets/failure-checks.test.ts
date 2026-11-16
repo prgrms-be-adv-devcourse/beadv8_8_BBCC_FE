@@ -13,7 +13,6 @@ const log = (patch: Partial<ApiCallLog>): ApiCallLog => ({
   status: 200,
   durationMs: 10,
   startedAt: '2026-10-15T10:00:00.000Z',
-  mock: false,
   requestBody: null,
   responseBody: null,
   contractIssues: [],

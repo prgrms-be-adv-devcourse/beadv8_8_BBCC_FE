@@ -20,6 +20,8 @@ export type CartLineDto = {
   lineAmount: number
   /** 다른 곳(조르기 등)이 예약한 칸인지 (BE #998). 예약된 칸은 빼거나 수량을 바꾸면 409 */
   reserved: boolean
+  /** 상품의 지금 사진 (BE #1328). 없으면 null */
+  thumbnailUrl?: string | null
 }
 
 export type CartDto = {

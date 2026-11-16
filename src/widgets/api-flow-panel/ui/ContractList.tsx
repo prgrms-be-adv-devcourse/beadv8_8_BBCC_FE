@@ -17,7 +17,6 @@ export function ContractList({ logs }: ContractListProps) {
         <li key={log.id} className="rounded-md border p-2 text-xs">
           <div className="mb-1 font-mono font-semibold">
             {log.method} {log.path}{' '}
-            {log.mock && <span className="bg-highlight rounded px-1 font-sans">목</span>}
           </div>
           <IssueList log={log} />
         </li>

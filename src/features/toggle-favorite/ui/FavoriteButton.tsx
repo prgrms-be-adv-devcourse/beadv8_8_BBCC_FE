@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { canToggleFavorite } from '@/entities/favorite'
+import { canToggleFavorite, type FavoriteOwnerPrincipal } from '@/entities/favorite'
 import { cn } from '@/shared/lib'
 import { useToggleFavorite } from '../model/use-toggle-favorite'
 
@@ -14,15 +14,17 @@ type FavoriteButtonProps = {
   loginHref?: string | null
   /** 찜 여부를 아직 모르면 true. 누르지 못하게 막는다 (이미 찜한 상품에 찜하기가 나가지 않게) */
   isLoading?: boolean
-  /** 상품 목록 칸 위에 겹쳐 둘 작은 원형 하트 (찜 수 없음) */
+  /** 누구의 찜인지. 자녀 화면은 'child' (자녀 토큰) */
+  owner?: FavoriteOwnerPrincipal
+  /** 상품 목록 칸 위에 겹쳐 둘 작은 각진 하트 칸 (찜 수 없음) */
   isCompact?: boolean
   className?: string
 }
 
 const BOX =
-  'border-rule text-ink-2 inline-flex min-h-12 min-w-12 flex-none flex-col items-center justify-center gap-0.5 rounded-md border bg-transparent px-1.5 py-1 transition-colors'
+  'border-ink text-ink inline-flex min-h-12 min-w-12 flex-none flex-col items-center justify-center gap-0.5 border-[1.5px] bg-transparent px-1.5 py-1 transition-colors'
 const COMPACT_BOX =
-  'bg-paper/90 text-ink-2 inline-flex size-10 items-center justify-center rounded-full shadow-sm backdrop-blur transition-colors'
+  'border-ink bg-paper text-ink inline-flex size-10 items-center justify-center border-[1.5px] transition-colors'
 
 function Heart({ isFilled }: { isFilled: boolean }) {
   return (
@@ -48,10 +50,11 @@ export function FavoriteButton({
   isSelling,
   loginHref,
   isLoading = false,
+  owner = 'member',
   isCompact = false,
   className,
 }: FavoriteButtonProps) {
-  const toggle = useToggleFavorite(productId)
+  const toggle = useToggleFavorite(productId, owner)
   const box = isCompact ? COMPACT_BOX : BOX
   const countLabel =
     count === undefined || isCompact ? null : (
@@ -63,7 +66,7 @@ export function FavoriteButton({
       <Link
         to={loginHref}
         aria-label={`로그인하고 찜하기${count === undefined ? '' : `, 찜 ${count}`}`}
-        className={cn(box, 'hover:text-ink', className)}
+        className={cn(box, 'hover:bg-marker', className)}
       >
         <Heart isFilled={false} />
         {countLabel}
@@ -83,7 +86,7 @@ export function FavoriteButton({
       onClick={() => toggle.mutate(!isFavorited)}
       className={cn(
         box,
-        isShownFavorited ? 'text-primary' : 'hover:text-ink',
+        isShownFavorited ? 'bg-sheet' : 'hover:bg-marker',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}

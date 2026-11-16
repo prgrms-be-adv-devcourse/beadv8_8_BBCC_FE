@@ -25,7 +25,7 @@ export function ShopWalletPage() {
   const location = useLocation()
   // 결제창에서 돌아오지 않은 충전 (예: 간편결제 앱에서 잔액을 충전하다 결제가 끝나지 않음)
   const now = new Date()
-  const awaiting = charges.data?.filter((charge) => isAwaitingPayment(charge, now)) ?? []
+  const awaiting = charges.data?.content.filter((charge) => isAwaitingPayment(charge, now)) ?? []
 
   // 주문서 「충전하고 돌아오기」(?amount=&return=)는 충전 화면으로 그대로 넘긴다
   if (location.search.includes('amount=') || location.search.includes('return=')) {
@@ -42,13 +42,13 @@ export function ShopWalletPage() {
       />
 
       {/* 잔액 카드: 잔액 · 이용 내역 | 충전하기 · 충전 내역 줄 */}
-      <section aria-label="예치금 잔액" className="border-rule rounded-xl border">
+      <section aria-label="예치금 잔액" className="border-ink border-[1.5px]">
         <div className="space-y-4 p-5 md:p-6">
           <div className="space-y-1">
             <p className="flex items-center gap-1.5 text-[13px] font-bold">
               <span
                 aria-hidden
-                className="bg-signal text-signal-ink flex size-5 items-center justify-center rounded-full text-[11px]"
+                className="bg-signal text-signal-ink rounded-pill flex size-5 items-center justify-center text-[11px]"
               >
                 K
               </span>
@@ -59,7 +59,7 @@ export function ShopWalletPage() {
               <StateMessage tone="error">{getErrorMessage(wallet.error)}</StateMessage>
             )}
             {wallet.data && (
-              <p className="figure text-ink text-[30px] font-bold tracking-tight">
+              <p className="font-display text-ink text-[clamp(2rem,4vw,3rem)] leading-none">
                 {formatWon(wallet.data.balance)}
               </p>
             )}
@@ -81,7 +81,7 @@ export function ShopWalletPage() {
         </div>
         <Link
           to={`${walletPaths.history}?tab=charges`}
-          className="border-rule text-ink-2 hover:bg-paper-2 flex items-center justify-between border-t px-5 py-3.5 text-[13px] transition-colors md:px-6"
+          className="border-ink text-ink hover:bg-fit-soft flex items-center justify-between border-t-[1.5px] px-5 py-3.5 text-[13px] font-bold transition-colors md:px-6"
         >
           충전 내역
           <svg
@@ -100,7 +100,7 @@ export function ShopWalletPage() {
       {awaiting.length > 0 && (
         <section
           aria-label="끝나지 않은 충전"
-          className="border-rule space-y-2 rounded-lg border p-4 md:p-5"
+          className="border-ink space-y-2 border-[1.5px] p-4 md:p-5"
         >
           <h2 className="text-[15px] font-bold">결제가 끝나지 않은 충전이 있어요</h2>
           <p className="text-ink-3 text-xs">
@@ -139,9 +139,9 @@ export function ShopWalletPage() {
         {transactions.isError && (
           <StateMessage tone="error">{getErrorMessage(transactions.error)}</StateMessage>
         )}
-        {transactions.data?.length === 0 && <StateMessage>거래가 없어요.</StateMessage>}
-        {transactions.data && transactions.data.length > 0 && (
-          <WalletTransactionList transactions={transactions.data.slice(0, RECENT_COUNT)} />
+        {transactions.data?.content.length === 0 && <StateMessage>거래가 없어요.</StateMessage>}
+        {transactions.data && transactions.data.content.length > 0 && (
+          <WalletTransactionList transactions={transactions.data.content.slice(0, RECENT_COUNT)} />
         )}
       </section>
     </div>

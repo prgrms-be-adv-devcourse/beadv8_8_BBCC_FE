@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import { holdEventStream } from './support/held-event-stream'
 
 // 쇼핑 홈: 위 「자녀에게 맞는 옷」(AI 맛보기 4개 + 이유, 더보기)과 아래 「전체 상품」(페이지 번호)을 나눈다.
 // 맞춤 목록 화면은 탭(전체 + 말단 카테고리)과 「더 보기」로 다음 페이지를 이어 붙인다.
@@ -78,12 +79,38 @@ async function asParentWithChild(page: Page) {
   await expect(page.getByText('보호자 · 회원 1')).toBeVisible()
 }
 
+test('홈 맛보기는 규칙 결과를 먼저 그리고, AI가 고르는 동안 안내를 두다가 AI 답으로 바꾼다', async ({
+  page,
+}) => {
+  const stream = await holdEventStream(page, '/api/v1/recommendations/products/preview')
+  await asParentWithChild(page)
+  const recommended = page.getByRole('region', { name: '맞춤 상품' })
+  const aiWaiting = recommended.getByRole('status', {
+    name: 'AI가 하윤에게 더 잘 맞는 상품을 고르고 있어요',
+  })
+
+  const card = (n: number, reason: string | null) => ({ ...item(n), reason })
+  await stream.send('rule', { source: 'RULE', products: [1, 2, 3, 4].map((n) => card(n, null)) })
+  await expect(recommended.getByText(/^맞춤 상품 \d+$/)).toHaveCount(4)
+  await expect(aiWaiting).toBeVisible()
+
+  await stream.send('ai', {
+    source: 'AI',
+    products: [5, 1, 2, 3].map((n) => card(n, n === 5 ? '맞춤 이유 5: 키에 잘 맞아요.' : null)),
+  })
+  await expect(recommended.getByText('맞춤 이유 5: 키에 잘 맞아요.')).toBeVisible()
+  await expect(aiWaiting).toHaveCount(0)
+  await stream.close()
+})
+
 test('홈 맞춤 영역 4개 → 더보기 → 맞춤 목록 탭 · 더 보기', async ({ page }) => {
   await asParentWithChild(page)
   const recommended = page.getByRole('region', { name: '맞춤 상품' })
   await expect(recommended.getByRole('heading', { name: /하윤에게 맞는 옷/ })).toBeVisible()
   await expect(recommended.getByText(/^맞춤 상품 \d+$/)).toHaveCount(4)
   await expect(recommended.getByText('120 잘 맞아요').first()).toBeVisible()
+  // 맞춤 카드에도 담기 옆에 찜 버튼이 있다
+  await expect(recommended.getByRole('button', { name: '찜하기' })).toHaveCount(4)
   // 이유가 있는 카드만 이유 칸을 그린다 (null이면 기본 문구 없이 숨김)
   await expect(recommended.getByText(/^맞춤 이유 \d: 키에 잘 맞아요\.$/)).toHaveCount(2)
   // AI가 쓴 이유가 보이면 카드 아래에 안내를 단다 (BE가 이유 길이를 검사하지 않음)
@@ -98,6 +125,7 @@ test('홈 맞춤 영역 4개 → 더보기 → 맞춤 목록 탭 · 더 보기',
   // 2쪽은 1쪽 응답의 asOf를 그대로 보낸다 (같은 기준 시각이어야 쪽 사이 순서가 지켜진다)
   const names = page.getByText(/^맞춤 상품 \d+$/)
   await expect(names).toHaveCount(20)
+  await expect(page.getByRole('button', { name: '찜하기' })).toHaveCount(20)
   const secondPage = page.waitForRequest(
     (request) =>
       request.url().includes('/recommendations/products') &&
@@ -149,4 +177,93 @@ test('홈 전체 상품: 페이지 번호로 다음 페이지를 부르고 주�
   // 카테고리를 바꾸면 첫 페이지로 돌아간다
   await page.getByRole('button', { name: '상의', exact: true }).click()
   await expect(page).not.toHaveURL(/[?&]page=/)
+})
+
+test('홈 맞춤 영역: 자녀가 둘이면 태그의 이름을 눌러 다른 자녀로 바꾼다', async ({ page }) => {
+  const SECOND = { ...CHILD, id: 502, name: '서준', heightCm: 104 }
+  await page.route('**/api/v1/recommendations/products/preview?childId=502', (route) =>
+    route.fulfill({ json: { source: 'RULE', products: [item(9)] } }),
+  )
+  await asParentWithChild(page)
+  // 자녀 목록을 둘로 바꿔 다시 받는다
+  await page.route('**/api/v1/children', (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({ json: [CHILD, SECOND] })
+      : route.fallback(),
+  )
+  await page.reload()
+
+  const recommended = page.getByRole('region', { name: '맞춤 상품' })
+  await expect(recommended.getByRole('heading', { name: /하윤에게 맞는 옷/ })).toBeVisible()
+  // 추천 사이즈는 작은 태그에만 적는다
+  await expect(recommended.getByText('추천 사이즈')).toBeVisible()
+
+  await recommended.getByRole('button', { name: '자녀 바꾸기, 지금 하윤' }).click()
+  await expect(page.getByRole('menuitemradio', { name: /하윤/ })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  )
+  await page.getByRole('menuitemradio', { name: /서준/ }).click()
+
+  await expect(page).toHaveURL(/child=502/)
+  await expect(recommended.getByRole('heading', { name: /서준에게 맞는 옷/ })).toBeVisible()
+  await expect(recommended.getByText('맞춤 상품 9')).toBeVisible()
+})
+
+test('맞춤 목록 머리: 최근 주문의 대표 상점을 많이 산 순서로 보여 준다', async ({ page }) => {
+  const order = (n: number, sellerName: string, status = 'PAID') => ({
+    orderId: `order-${n}`,
+    status,
+    totalAmount: 20000,
+    orderedAt: `2026-11-0${n}T10:00:00`,
+    representativeProductName: `상품 ${n}`,
+    itemCount: 1,
+    sellerName,
+    representativeProductId: String(9000 + n),
+    representativeThumbnailUrl: null,
+    cancelledAt: null,
+  })
+  const orders = [
+    order(4, '코코리본'),
+    order(3, '무무즈'),
+    order(2, '취소상점', 'CANCELLED'),
+    order(1, '무무즈'),
+  ]
+  await page.route(
+    (url) => url.pathname.endsWith('/api/v1/orders'),
+    (route) =>
+      route.fulfill({
+        json: {
+          content: orders,
+          page: 0,
+          size: 20,
+          totalElements: orders.length,
+          totalPages: 1,
+          hasNext: false,
+        },
+      }),
+  )
+  await asParentWithChild(page)
+  await page.goto('/recommended/501')
+
+  const shops = page.getByRole('region', { name: '최근에 산 상점' })
+  await expect(shops.getByRole('listitem')).toHaveText([
+    /무무즈.*최근 주문 2건/,
+    /코코리본.*최근 주문 1건/,
+  ])
+  // 세는 기준은 안내 아이콘에 올렸을 때만 보인다
+  const note = shops.getByRole('tooltip')
+  await expect(note).toBeHidden()
+  await shops.getByRole('button', { name: '최근에 산 상점 기준' }).hover()
+  await expect(note).toContainText('최근 주문 20건')
+  if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/rec-tip.png` })
+  await page.mouse.move(0, 0)
+  if (process.env.SHOT_DIR) {
+    await page.setViewportSize({ width: 1440, height: 700 })
+    await page.screenshot({ path: `${process.env.SHOT_DIR}/rec-wide.png` })
+    await page.setViewportSize({ width: 1024, height: 700 })
+    await page.screenshot({ path: `${process.env.SHOT_DIR}/rec-mid.png` })
+    await page.setViewportSize({ width: 375, height: 760 })
+    await page.screenshot({ path: `${process.env.SHOT_DIR}/rec-phone.png` })
+  }
 })

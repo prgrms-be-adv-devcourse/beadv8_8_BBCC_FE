@@ -14,6 +14,7 @@ import {
   paymentDeadline,
   paymentDeadlineLabel,
 } from '@/entities/order'
+import { useChildrenQuery } from '@/entities/child'
 import { reviewActionOf, useMyReviewsQuery, useReviewableItemsQuery } from '@/entities/review'
 import { CancelOrderButton } from '@/features/cancel-order'
 import { ConfirmPurchaseButton } from '@/features/confirm-purchase'
@@ -35,6 +36,9 @@ export function ShopOrderDetailPage() {
   const hasConfirmed = query.data?.items.some((item) => item.status === 'CONFIRMED') ?? false
   const reviewable = useReviewableItemsQuery({ enabled: hasConfirmed })
   const myReviews = useMyReviewsQuery({ enabled: hasConfirmed })
+  // 주문에 입을 아이 이름이 비어 있을 때만 내 자녀 목록에서 이름을 찾는다
+  const hasNamelessChild = query.data?.items.some((item) => item.child && !item.child.name) ?? false
+  const children = useChildrenQuery({ enabled: hasNamelessChild })
 
   if (query.isPending) return <ListSkeleton rows={4} />
   if (query.isError) return <StateMessage tone="error">{getErrorMessage(query.error)}</StateMessage>
@@ -45,6 +49,9 @@ export function ShopOrderDetailPage() {
   const reviewableIds = new Set(reviewable.data?.map((item) => item.orderItemId))
   const reviewedIds = new Set(myReviews.data?.map((review) => review.orderItemId))
   const isReviewStateReady = reviewable.isSuccess && myReviews.isSuccess
+  const childNames = Object.fromEntries(
+    (children.data ?? []).map((child) => [child.id, child.name]),
+  )
   const recheckReviews = () => void Promise.all([reviewable.refetch(), myReviews.refetch()])
   const expired = order.status === 'CANCELLED' && order.cancelReason === 'PAYMENT_EXPIRED'
   // 제목: 지금 단계 (취소면 「주문 취소」, 결제 전이면 「결제 처리 중」)
@@ -58,7 +65,7 @@ export function ShopOrderDetailPage() {
     <div className="shop-look space-y-6">
       <Link
         to={paths.shop.orders}
-        className="text-ink-3 hover:text-ink inline-flex items-center gap-1 rounded-md text-[13px] font-semibold transition-colors"
+        className="text-ink inline-flex items-center gap-1 text-xs font-bold underline-offset-[3px] hover:underline"
       >
         <svg
           viewBox="0 0 24 24"
@@ -73,10 +80,7 @@ export function ShopOrderDetailPage() {
         주문 내역
       </Link>
       {/* 주문 상태: 지금 단계를 제목으로, 아래에 진행 막대 (금액은 오른쪽 결제 정보에) */}
-      <section
-        aria-label="주문 상태"
-        className="border-rule space-y-7 rounded-xl border p-5 md:p-7"
-      >
+      <section aria-label="주문 상태" className="border-ink space-y-7 border-[1.5px] p-5 md:p-7">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-1">
             <p className="text-ink-3 flex flex-wrap gap-x-3 text-[13px]">
@@ -92,7 +96,7 @@ export function ShopOrderDetailPage() {
         {/* 결제 처리 중: 서버 처리 단계 (취소면 아래 처리 과정이 멈춘 곳을 보여 준다) */}
         {order.status === 'PENDING_PAYMENT' && <OrderProcessSteps order={order} />}
         {order.status === 'PENDING_PAYMENT' && (
-          <p className="text-signal font-semibold">
+          <p className="text-ink font-bold">
             예치금으로 결제하는 중이에요… 잠시만 기다려 주세요
             {deadline && (
               <span className="text-ink-2 block text-sm font-normal">
@@ -158,7 +162,9 @@ export function ShopOrderDetailPage() {
             {orderSellerGroups(order).map((group) => (
               <OrderSellerBlock
                 key={group.sellerId}
+                orderId={order.id}
                 group={group}
+                childNames={childNames}
                 isCancelled={order.status === 'CANCELLED'}
                 action={(item) => {
                   const reviewAction = isReviewStateReady
@@ -210,9 +216,9 @@ export function ShopOrderDetailPage() {
           <section
             aria-label="배송지"
             data-clarity-mask="true"
-            className="border-rule space-y-2 rounded-lg border p-5 text-sm"
+            className="border-ink space-y-2 border-[1.5px] p-5 text-sm"
           >
-            <h2 className="text-[15px] font-bold">배송지</h2>
+            <h2 className="text-xs font-bold">배송지</h2>
             <p className="flex flex-wrap gap-x-3">
               <span className="font-semibold">{order.shippingAddress.recipientName}</span>
               <span className="text-ink-2 figure">{order.shippingAddress.phone}</span>

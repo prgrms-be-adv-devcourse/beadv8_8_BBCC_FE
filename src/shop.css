@@ -15,8 +15,9 @@
 /* Hallmark · dismissed F18 · data-slot="button" is the shadcn component marker in the demo bar, not a picture slot */
 @import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 
-/* 쇼핑 영역 색 체계: 바탕은 흰색(상품 사진이 상자처럼 뜨지 않게), 나머지는 브랜드 변수(index.css)에서 만든다
-   → ThemeLab이 --primary를 바꾸면 같이 바뀐다. 차가운 자두와 따뜻한 코랄의 온도 대비 하나로 화면을 끌고 간다.
+/* 아래 :root 값은 판매자 센터 · 관리자가 쓰는 색 체계다 (쇼핑 영역은 [data-area='shop']에서 다시 정한다).
+   바탕은 흰색(상품 사진이 상자처럼 뜨지 않게), 나머지는 브랜드 변수(index.css)에서 만든다
+   차가운 자두와 따뜻한 코랄의 온도 대비 하나로 화면을 끌고 간다.
    - 자두(--signal): 브랜드 · 행동 · 선택 · 아이 키 (로고, 주요 버튼, 장바구니 개수, 눈금자 핀)
    - 코랄(--fit): 「맞다」 한 가지 뜻에만. 추천 사이즈 구간 · 「120 잘 맞아요」 · 추천 칩
      --fit은 막대 같은 면(흰 바탕 3:1), 글자는 --fit-ink(4.5:1 이상), 꼬리표 바탕은 --fit-soft
@@ -38,6 +39,13 @@
   --fit-ink: oklch(50% 0.15 36);
   --fit-soft: color-mix(in oklab, var(--fit) 13%, var(--paper));
   --focus: var(--primary);
+  /* 쇼핑 영역(보호자 · 자녀 화면)의 네 색: 종이 · 먹 · 분홍 색지 · 형광펜. 아래 [data-area='shop']에서만 쓴다 */
+  --shop-paper: #faf8f1;
+  --shop-ink: #1c1b19;
+  --shop-sheet: #f1b5c1;
+  --shop-marker: #f3d84a;
+  /* 크라프트지: 홈 맞춤 구획의 옷 태그에만 쓴다 */
+  --shop-kraft: #cfb48a;
   --dur-micro: 120ms;
   --dur-short: 220ms;
   --ease-arrive: cubic-bezier(0.16, 1, 0.3, 1);
@@ -61,7 +69,12 @@
   --color-signal-ink: var(--signal-ink);
   --font-body:
     'Noto Sans KR', 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Jua', 'Noto Sans KR', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Black Han Sans', 'Noto Sans KR', ui-sans-serif, system-ui, sans-serif;
+  --font-logo: 'Bagel Fat One', 'Black Han Sans', 'Noto Sans KR', ui-sans-serif, sans-serif;
+  --font-hand: 'Gaegu', 'Noto Sans KR', ui-sans-serif, sans-serif;
+  --font-label: 'Archivo Narrow', 'Noto Sans KR', ui-sans-serif, system-ui, sans-serif;
+  --color-sheet: var(--shop-sheet);
+  --color-marker: var(--shop-marker);
 }
 
 @theme {
@@ -69,11 +82,78 @@
   --text-page--line-height: 1.3;
   --text-section: 1.1875rem;
   --text-section--line-height: 1.4;
+  /* 쇼핑 영역 본문 폭: 머리말 · 본문 · 바닥글이 같이 쓴다 */
+  --container-shop: 90rem;
   --radius-card: 0.25rem;
   --radius-input: 0.375rem;
+  /* 알약 · 동그라미 칸: 쇼핑 영역에서만 각지게 다시 정한다 */
+  --radius-pill: 9999px;
 }
 
+/* 쇼핑 영역만 종이 · 먹 · 분홍 색지 · 형광펜 네 색으로 다시 정한다.
+   :root 값은 판매자 센터 · 관리자가 같이 쓰므로 그대로 두고, 여기서 덮어쓴 값이 Tailwind 색 이름(bg-paper · text-ink 등)을 따라 들어간다
+   - 먹(--signal): 행동 · 선택 (버튼, 고른 칸). 올리면 형광펜으로 바뀐다
+   - 형광펜(--fit): 「맞다」 한 가지 뜻과 올렸을 때
+   - 분홍 색지(--signal-soft · --growth-soft): 아이 영역과 연한 바탕
+   - 모서리는 모두 각지게 */
 [data-area='shop'] {
+  --paper: var(--shop-paper);
+  --paper-2: #f1eee3;
+  --paper-3: color-mix(in oklab, var(--shop-ink) 12%, var(--shop-paper));
+  --ink: var(--shop-ink);
+  --ink-2: color-mix(in oklab, var(--shop-ink) 84%, var(--shop-paper));
+  --ink-3: color-mix(in oklab, var(--shop-ink) 68%, var(--shop-paper));
+  --rule: color-mix(in oklab, var(--shop-ink) 25%, var(--shop-paper));
+  --field-edge: var(--shop-ink);
+  --signal: var(--shop-ink);
+  --signal-deep: color-mix(in oklab, var(--shop-ink) 84%, var(--shop-paper));
+  --signal-soft: var(--shop-sheet);
+  --signal-ink: var(--shop-paper);
+  --signal-hover: var(--shop-marker);
+  --signal-hover-ink: var(--shop-ink);
+  --fit: var(--shop-marker);
+  --fit-ink: var(--shop-ink);
+  --fit-soft: var(--shop-marker);
+  --focus: var(--shop-ink);
+  --radius: 0rem;
+  /* --radius-sm ~ 4xl은 :root에서 이미 계산된 값이 내려오므로 여기서 하나씩 다시 정한다 */
+  --radius-sm: 0rem;
+  --radius-md: 0rem;
+  --radius-lg: 0rem;
+  --radius-xl: 0rem;
+  --radius-2xl: 0rem;
+  --radius-3xl: 0rem;
+  --radius-4xl: 0rem;
+  --radius-card: 0rem;
+  --radius-input: 0rem;
+  --radius-pill: 0rem;
+  /* shadcn 변수도 같은 네 색을 가리킨다 */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --primary-soft: var(--shop-sheet);
+  --primary-deep: var(--signal-deep);
+  --secondary: var(--paper-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-2);
+  --muted-foreground: var(--ink-3);
+  --accent: var(--paper-2);
+  --accent-foreground: var(--ink);
+  --border: var(--rule);
+  --input: var(--ink);
+  --ring: var(--ink);
+  --highlight: var(--shop-marker);
+  --highlight-foreground: var(--ink);
+  --highlight-soft: color-mix(in oklab, var(--shop-marker) 45%, var(--shop-paper));
+  --growth: var(--ink);
+  --growth-foreground: var(--paper);
+  --growth-deep: var(--ink);
+  --growth-soft: var(--shop-sheet);
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body);
@@ -112,14 +192,14 @@ body:has([data-area='shop']) {
   overflow-x: clip;
 }
 
-/* 쇼핑 화면은 바닥까지 흰색: 끝까지 내리거나 당겨도 앱 기본 바탕(크림)이 비치지 않게 */
+/* 쇼핑 화면은 바닥까지 종이색: 끝까지 내리거나 당겨도 앱 기본 바탕(크림)이 비치지 않게 */
 html:has([data-area='shop']) {
-  scrollbar-color: var(--ink-3) var(--paper);
-  background: var(--paper);
+  scrollbar-color: color-mix(in oklab, var(--shop-ink) 45%, var(--shop-paper)) var(--shop-paper);
+  background: var(--shop-paper);
 }
 
 body:has([data-area='shop']) {
-  background: var(--paper);
+  background: var(--shop-paper);
 }
 
 [data-area='shop'] ::selection {
@@ -141,30 +221,98 @@ body:has([data-area='shop']) {
   text-wrap: balance;
 }
 
-/* 확정 시안: 로고 · 큰 제목은 Jua (굵기 하나뿐이라 합성 굵기를 막는다) */
-[data-area='shop'] .font-display {
+/* 로고(Bagel Fat One) · 화면 제목 · 구획 제목(Black Han Sans)은 굵기가 하나뿐이라 합성 굵기를 막는다 */
+[data-area='shop'] :is(.font-display, .font-logo, .text-page, .text-section) {
+  font-family: var(--font-display);
   font-weight: 400;
   font-synthesis: none;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
-/* 홈은 브랜드 퍼플 바탕 (확정 시안 6번). 나머지 화면은 흰 바탕 */
-[data-area='shop']:has([data-shop-home]) {
-  --home-paper: #f6f0f8;
-  background: var(--home-paper);
+[data-area='shop'] .font-logo {
+  font-family: var(--font-logo);
 }
 
-[data-area='shop']:has([data-shop-home]) > header {
-  background: var(--home-paper);
-  border-color: transparent;
+/* 화면 제목 · 구획 제목은 쇼핑 영역에서만 크게 (콘솔은 같은 화면을 원래 크기로 쓴다) */
+[data-area='shop'] {
+  --text-page: clamp(1.75rem, 3.6vw, 3rem);
+  --text-page--line-height: 1.1;
+  --text-section: clamp(1.375rem, 2.2vw, 1.875rem);
+  --text-section--line-height: 1.15;
 }
 
 [data-area='shop'] p {
   text-wrap: pretty;
 }
 
+/* 공용 화면 머리(PageHeader): 쇼핑 영역에서는 큰 제목 아래 굵은 먹색 줄 */
+[data-area='shop'] [data-slot='page-header'] {
+  align-items: end;
+  margin-bottom: 1.75rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 3px solid var(--ink);
+}
+
+[data-area='shop'] [data-slot='page-header'] h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-page);
+  font-weight: 400;
+  line-height: var(--text-page--line-height);
+  letter-spacing: 0;
+}
+
+/* 숫자(가격 · 수량 · 치수)는 좁은 글꼴 */
 [data-area='shop'] .figure {
+  font-family: var(--font-label);
   font-variant-numeric: tabular-nums;
+}
+
+/* 공용 버튼: 올리면 형광펜, 테두리 있는 버튼은 먹색 실선 */
+[data-area='shop'] [data-slot='button'][data-variant='default']:hover {
+  border-color: var(--ink);
+  background: var(--shop-marker);
+  color: var(--ink);
+}
+
+[data-area='shop'] [data-slot='button'][data-variant='outline'] {
+  border-color: var(--ink);
+}
+
+/* 사진 넘기기 버튼: 쇼핑 영역에서는 그림자 대신 먹색 테두리 */
+[data-area='shop'] [data-slot='gallery-arrow'] {
+  border: 1.5px solid var(--ink);
+  box-shadow: none;
+}
+
+/* 확인 창: 쇼핑 영역에서는 그림자 대신 먹색 테두리 */
+[data-area='shop'] [data-slot='confirm'] {
+  border: 1.5px solid var(--ink);
+  box-shadow: none;
+}
+
+[data-area='shop'] [data-slot='confirm'] button {
+  border-color: var(--ink);
+}
+
+/* 알림 띠의 표시: 쇼핑 영역은 바탕 · 성장 색이 모두 먹색이라 형광펜으로 구분한다 */
+[data-area='shop'] [data-slot='toast-mark']:not(.bg-destructive) {
+  background: var(--shop-marker);
+  color: var(--ink);
+}
+
+/* 아이가 쓴 조르기 한마디: 쇼핑 영역에서는 손글씨 */
+[data-area='shop'] [data-slot='wish-message'] {
+  color: var(--ink);
+  font-family: var(--font-hand);
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* 공용 이름표: 쇼핑 영역에서는 각진 칸 */
+[data-area='shop'] [data-slot='badge'] {
+  border-radius: 0;
+  font-weight: 700;
 }
 
 /* 흰 카드 대신 같은 바탕 + 실선 하나 (그림자와 테두리를 같이 쓰지 않는다) */
@@ -173,6 +321,11 @@ body:has([data-area='shop']) {
   border-color: var(--rule);
   border-radius: 0.5rem;
   box-shadow: none;
+}
+
+/* 쇼핑 영역의 카드는 각지게 (위 규칙의 둥근 모서리는 판매자 센터 · 관리자용) */
+[data-area='shop'] [data-slot='card'] {
+  border-radius: 0;
 }
 
 .shop-look [data-slot='card-title'] {
@@ -205,7 +358,7 @@ body:has([data-area='shop']) {
     gap: 0.5rem;
     min-height: 48px;
     padding: 0 1.5rem;
-    border: 1px solid var(--signal);
+    border: 1.5px solid var(--signal);
     border-radius: var(--radius-input);
     background: var(--signal);
     color: var(--signal-ink);
@@ -218,8 +371,10 @@ body:has([data-area='shop']) {
       transform var(--dur-micro) var(--ease-arrive);
   }
 
-  .shop-btn:hover {
-    background: var(--signal-deep);
+  /* 올렸을 때 색: 쇼핑 영역은 형광펜(--signal-hover), 판매자 센터 · 관리자는 진한 자두 */
+  .shop-btn:hover:not(:disabled, [aria-disabled='true']) {
+    background: var(--signal-hover, var(--signal-deep));
+    color: var(--signal-hover-ink, var(--signal-ink));
   }
 
   .shop-btn:active {
@@ -263,7 +418,7 @@ body:has([data-area='shop']) {
   }
 }
 
-/* 홈(브랜드 퍼플)에서는 검색 칸을 흰색으로 */
-[data-area='shop']:has([data-shop-home]) form[role='search'] {
-  background: var(--paper);
+/* 문단 끝에 낱말 하나만 남는 줄바꿈을 줄인다 */
+[data-area='shop'] :is(p, dd, li) {
+  text-wrap: pretty;
 }

@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ChildCard,
+  canDeleteGrowthRecord,
   GrowthChart,
   GrowthRecordList,
   summarizeGrowth,
@@ -8,15 +9,21 @@ import {
   useGrowthRecordsQuery,
 } from '@/entities/child'
 import { accountOfChild, useChildAccountsQuery } from '@/entities/child-account'
-import { countPendingWishes, useWishRequestsQuery } from '@/entities/wish'
+import {
+  growthRecordPromptOf,
+  growthSourceLinesOf,
+  growthSpeedTextOf,
+  useGrowthSpeedQuery,
+} from '@/entities/recommendation'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { ManageChildAccount } from '@/features/manage-child-account'
-import { DeleteChildButton, EditChildForm, EditGrowthRecord } from '@/features/edit-child'
+import { DeleteChildButton, EditChildForm, DeleteGrowthRecordButton } from '@/features/edit-child'
 import { getErrorMessage } from '@/shared/api'
 import { memberPathsOf } from '@/shared/config'
 import { useArea } from '@/shared/lib'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { StateMessage } from '@/shared/ui/StateMessage'
+import { ChildWishSection } from './ChildWishSection'
 import { ReferenceGarmentSection } from './ReferenceGarmentSection'
 
 /** 자녀 상세 · 수정 · 삭제 · 기준 옷 · 성장 이력 */
@@ -26,10 +33,10 @@ export function ShopChildDetailPage() {
   const memberPaths = memberPathsOf(useArea())
   const child = useChildQuery(childId)
   const growth = useGrowthRecordsQuery(childId)
+  const speed = useGrowthSpeedQuery(childId)
   const user = useSessionStore((state) => state.user)
   const isBuyer = hasRole(user, 'BUYER')
   const accounts = useChildAccountsQuery(isBuyer)
-  const wishes = useWishRequestsQuery(childId)
 
   if (child.isPending) return <StateMessage>불러오는 중…</StateMessage>
   if (child.isError)
@@ -77,10 +84,7 @@ export function ShopChildDetailPage() {
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
         <div className="space-y-6">
           <ChildCard child={child.data} />
-          <Link className="text-primary underline" to={memberPaths.childWishes(childId)}>
-            받은 조르기
-            {wishes.data && ` (${countPendingWishes(wishes.data)})`}
-          </Link>
+          <ChildWishSection childId={childId} childName={child.data.name} />
           {accounts.data && (
             <ManageChildAccount
               childId={childId}
@@ -101,13 +105,35 @@ export function ShopChildDetailPage() {
               <StateMessage tone="error">{getErrorMessage(growth.error)}</StateMessage>
             )}
             {growth.data && (
-              <GrowthChart records={growth.data} currentHeightCm={child.data.heightCm} />
+              <GrowthChart
+                records={growth.data}
+                currentHeightCm={child.data.heightCm}
+                speed={
+                  speed.data
+                    ? {
+                        cmPerMonth: speed.data.cmPerMonth,
+                        text: growthSpeedTextOf(speed.data),
+                        recordPrompt: growthRecordPromptOf(speed.data),
+                        sourceLines: growthSourceLinesOf(speed.data),
+                      }
+                    : null
+                }
+              />
+            )}
+            {speed.isError && (
+              <StateMessage tone="error">{getErrorMessage(speed.error)}</StateMessage>
             )}
             {growth.data && (
               <GrowthRecordList
                 records={growth.data}
                 summary={summarizeGrowth(growth.data)}
-                action={(record) => <EditGrowthRecord childId={child.data.id} record={record} />}
+                action={(record) => (
+                  <DeleteGrowthRecordButton
+                    childId={child.data.id}
+                    record={record}
+                    deletable={canDeleteGrowthRecord(growth.data)}
+                  />
+                )}
               />
             )}
           </section>

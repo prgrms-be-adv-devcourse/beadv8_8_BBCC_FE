@@ -126,15 +126,28 @@ describe('draftOf', () => {
   })
 })
 
-function problem(status: number, title: string | null, detail: string | null = null) {
+function problem(
+  status: number,
+  title: string | null,
+  detail: string | null = null,
+  code?: string,
+) {
   const config = { headers: new AxiosHeaders() }
-  const data = title === null ? null : { type: 'about:blank', title, status, detail, instance: '/' }
+  const data =
+    title === null ? null : { type: 'about:blank', title, status, detail, instance: '/', code }
   const response = { status, statusText: '', headers: {}, config, data }
   return new AxiosError('error', AxiosError.ERR_BAD_REQUEST, config, null, response)
 }
 
 describe('reviewSaveErrorMessage: 리뷰 쓰기 · 고치기 오류 문구', () => {
-  it('올리지 않은 사진(400 IMAGE_NOT_UPLOADED)은 사진을 다시 올리라고 안내한다', () => {
+  it('올리지 않은 사진(400 code IMAGE_NOT_UPLOADED)은 title이 바뀌어도 사진을 다시 올리라고 안내한다', () => {
+    const error = problem(400, '바뀐 문구', '사진을 다시 올려 주세요.', 'IMAGE_NOT_UPLOADED')
+    expect(reviewSaveErrorMessage(error)).toBe(
+      '사진이 다 올라가지 않았어요. 그 사진을 지우고 다시 올려 주세요.',
+    )
+  })
+
+  it('code가 없는 응답(BE #1326 배포 전)은 title로 올리지 않은 사진을 알아본다', () => {
     const error = problem(
       400,
       '올리지 않은 사진입니다',

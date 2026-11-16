@@ -40,6 +40,7 @@ describe('toReview', () => {
       imageUrls: [],
       isUnderReview: false,
       createdAt: '2026-11-09T10:00:00',
+      isEdited: false,
     })
   })
 
@@ -56,6 +57,7 @@ describe('toReview', () => {
       productName: '테스트-로컬 맨투맨',
       thumbnailUrl: 'https://cdn/x.jpg',
       isUnderReview: true,
+      isEdited: true,
     })
   })
 

@@ -16,6 +16,17 @@ const base: SizeRecommendationDto = {
   reasons: [],
   referenceFit: null,
   itemJudgements: [],
+  wearPreview: null,
+  growthSpeed: {
+    cmPerMonth: 0.55,
+    recentCmPerMonth: null,
+    recordCount: 0,
+    recordMonths: 0,
+    childSharePercent: 0,
+    tableCmPerMonth: 0.55,
+    tableSource: '한국아동패널',
+  },
+  wearablePeriods: [],
 }
 
 const fitItems = [

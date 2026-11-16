@@ -39,16 +39,16 @@ export const walletApi = {
           : undefined,
       )
       .then(expectShape(walletShape)),
-  /** 내 충전 내역 (상태와 상관없이 최신순) */
-  listCharges: () =>
+  /** 내 충전 내역 (상태와 상관없이 최신순, 20건씩). page는 0부터 */
+  listCharges: (page = 0) =>
     apiClient
-      .get<Page<ChargeDetailDto>>(CHARGES, { params: { page: 0, size: 20 } })
+      .get<Page<ChargeDetailDto>>(CHARGES, { params: { page, size: 20 } })
       .then(expectShape(chargePageShape)),
-  /** 예치금 거래 내역 (BE 입출금 원장, 최신순) */
-  listTransactions: () =>
+  /** 예치금 거래 내역 (BE 입출금 원장, 최신순, 50건씩). page는 0부터 */
+  listTransactions: (page = 0) =>
     apiClient
       .get<Page<WalletLedgerDto>>('/wallets/me/ledgers', {
-        params: { page: 0, size: 50 },
+        params: { page, size: 50 },
       })
       .then(expectShape(walletLedgerPageShape)),
   getCharge: (chargeId: string) =>

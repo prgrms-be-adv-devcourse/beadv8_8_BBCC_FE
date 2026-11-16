@@ -38,7 +38,7 @@ const idOf = (value: unknown) =>
 const first = (data: unknown, key: string) => idOf((data as Paged).content?.[0]?.[key])
 const firstOf = (data: unknown, key: string) => idOf((data as Record<string, unknown>[])[0]?.[key])
 
-/** 시연 흐름 순서. 실제 API(목이 아닌 것)만 넣는다 */
+/** 시연 흐름 순서 */
 export const CONNECTION_CHECKS: ConnectionCheck[] = [
   {
     id: 'categories',

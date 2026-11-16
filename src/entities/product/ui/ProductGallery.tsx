@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { cn } from '@/shared/lib'
+import type { CategoryDoodle } from '../config/category-icons'
 import { galleryIndexOf } from '../model/product.rules'
 import { ProductImage } from './ProductImage'
 
@@ -8,16 +9,32 @@ type ProductGalleryProps = {
   images: string[]
   alt: string
   className?: string
+  /** 사진이 한 장도 없을 때 기본 이미지 대신 그릴 낙서 아이콘 (쇼핑 영역) */
+  doodle?: CategoryDoodle
+  /** 넓은 화면에서 정사각형 대신 부모 높이를 채운다 (옆 칸과 높이를 맞출 때) */
+  fillsHeight?: boolean
 }
 
 /** 상품 사진: 큰 사진은 좌우로 밀어 넘기고(scroll-snap), 작은 사진 줄을 누르면 그 사진으로 간다 */
-export function ProductGallery({ images, alt, className }: ProductGalleryProps) {
+export function ProductGallery({
+  images,
+  alt,
+  className,
+  doodle,
+  fillsHeight = false,
+}: ProductGalleryProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [index, setIndex] = useState(0)
 
   if (images.length <= 1) {
     return (
-      <ProductImage src={images[0] ?? null} alt={alt} className={cn('aspect-square', className)} />
+      <ProductImage
+        src={images[0] ?? null}
+        alt={alt}
+        doodle={doodle}
+        showsWhole={fillsHeight}
+        className={cn('aspect-square', fillsHeight && 'lg:aspect-auto lg:h-full', className)}
+      />
     )
   }
 
@@ -33,8 +50,8 @@ export function ProductGallery({ images, alt, className }: ProductGalleryProps) 
   }
 
   return (
-    <div className="min-w-0 space-y-2">
-      <div className="relative">
+    <div className={cn('min-w-0 space-y-2', fillsHeight && 'lg:flex lg:h-full lg:flex-col')}>
+      <div className={cn('relative', fillsHeight && 'lg:min-h-0 lg:flex-1')}>
         <div
           ref={trackRef}
           onScroll={handleScroll}
@@ -42,6 +59,7 @@ export function ProductGallery({ images, alt, className }: ProductGalleryProps) 
           aria-label={`${alt} 사진 ${images.length}장`}
           className={cn(
             'flex snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto',
+            fillsHeight && 'lg:h-full',
             className,
           )}
         >
@@ -50,7 +68,11 @@ export function ProductGallery({ images, alt, className }: ProductGalleryProps) 
               key={src}
               src={src}
               alt={`${alt} 사진 ${i + 1}`}
-              className="aspect-square shrink-0 snap-center"
+              showsWhole={fillsHeight}
+              className={cn(
+                'aspect-square shrink-0 snap-center',
+                fillsHeight && 'lg:aspect-auto lg:h-full',
+              )}
             />
           ))}
         </div>
@@ -98,11 +120,12 @@ function GalleryArrow({ direction, disabled, onClick }: GalleryArrowProps) {
   return (
     <button
       type="button"
+      data-slot="gallery-arrow"
       aria-label={isPrev ? '이전 사진' : '다음 사진'}
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'absolute top-1/2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl shadow disabled:opacity-0 md:flex',
+        'bg-paper/90 rounded-pill absolute top-1/2 hidden size-9 -translate-y-1/2 items-center justify-center text-xl shadow disabled:opacity-0 md:flex',
         isPrev ? 'left-2' : 'right-2',
       )}
     >

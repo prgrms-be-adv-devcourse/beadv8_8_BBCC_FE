@@ -47,3 +47,10 @@ export function moderationActionsOf(status: ModerationStatus): ModerationAction[
   if (status === 'CONFIRMED_HIDDEN') return ['VISIBLE']
   return ['HIDDEN']
 }
+
+/** 다시 검사 결과 안내. resetCount는 다시 검사 대기로 돌린 리뷰 수 (다시 눌러 0이면 할 것이 없다) */
+export function retryExhaustedMessage(resetCount: number): string {
+  return resetCount > 0
+    ? `${resetCount}건을 다시 검사 대기로 돌렸어요. 1분 안에 다시 검사해요.`
+    : '다시 검사할 리뷰가 없어요.'
+}

@@ -47,6 +47,11 @@ test('내 찜: 마이페이지 메뉴에서 열고, 판매 상태 배지를 보�
   if (await unfavorited.isVisible()) await unfavorited.click()
   await expect(favorited).toHaveAttribute('aria-pressed', 'true')
 
+  // 머리말의 찜 바로가기로도 바로 간다
+  await page.getByRole('banner').getByRole('link', { name: '찜', exact: true }).click()
+  await expect(page).toHaveURL(/\/my\/favorites$/)
+  await expect(page.getByRole('heading', { name: '내 찜' })).toBeVisible()
+
   await page.goto('/my')
   await page.getByRole('link', { name: '내 찜', exact: true }).click()
   await expect(page.getByRole('heading', { name: '내 찜' })).toBeVisible()
@@ -115,7 +120,8 @@ test('상품 목록: 한 쪽의 찜 여부를 한 번에 부르고, 칸의 하�
   const unfavorited = tile.getByRole('button', { name: '찜하기', exact: true })
   const favorited = tile.getByRole('button', { name: '찜 취소', exact: true })
   await expect(unfavorited.or(favorited)).toBeEnabled()
-  await page.waitForLoadState('networkidle')
+  // SSE 연결이 열려 있어 networkidle이 오지 않으므로, 찜 여부 조회 요청을 직접 기다린다
+  await expect.poll(() => favoriteLookups.length).toBeGreaterThanOrEqual(1)
   // 상품마다 따로가 아니라 한 쪽의 상품 ID를 모아 한 번에 묻는다
   const tileIds = (
     await list

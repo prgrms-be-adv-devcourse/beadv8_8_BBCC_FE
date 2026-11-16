@@ -9,3 +9,9 @@ export function pageNumbersOf(page: number, totalPages: number, count = 5): numb
   const start = Math.min(Math.max(0, page - Math.floor(count / 2)), totalPages - size)
   return Array.from({ length: size }, (_, i) => start + i)
 }
+
+/** 주소의 ?page= (0부터) → 페이지. 0 이상 정수가 아니면 0 */
+export function pageFromSearch(value: string | null): number {
+  const page = Number(value)
+  return Number.isInteger(page) && page > 0 ? page : 0
+}

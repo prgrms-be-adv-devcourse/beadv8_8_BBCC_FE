@@ -4,6 +4,7 @@ import { suggestChargeAmount } from '@/entities/wallet'
 import { safeReturnPath } from '@/shared/lib'
 
 const line = (id: string, patch: Partial<CartLine> = {}): CartLine => ({
+  thumbnailUrl: null,
   id,
   optionId: `o${id}`,
   productId: 'p1',

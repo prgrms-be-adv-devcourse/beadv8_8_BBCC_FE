@@ -15,7 +15,7 @@ export function NotificationItem({ notification, onOpen }: NotificationItemProps
     <>
       <span
         aria-hidden
-        className={cn('mt-1.5 size-2 shrink-0 rounded-full', !isRead && 'bg-signal')}
+        className={cn('rounded-pill mt-1.5 size-2 shrink-0', !isRead && 'bg-signal')}
       />
       <span className="min-w-0 flex-1 space-y-1">
         <span className={cn('block', isRead ? 'text-ink-2' : 'text-ink font-semibold')}>

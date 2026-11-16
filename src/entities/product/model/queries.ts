@@ -1,10 +1,11 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { productApi } from '../api/product-api'
 import type { ProductDetailDto, ProductListItemDto } from '../api/product.dto'
 import type { Page } from '@/shared/api'
 import type { Category, CategoryGender, ProductSearch } from './product'
 import {
+  productImageUrlOf,
   toCategories,
   toCategoryGroups,
   toCategoryInputs,
@@ -126,4 +127,26 @@ export function useSellerProductQuery(productId: string) {
     queryFn: () => productApi.sellerGet(productId),
     select: toSellerProductDetail,
   })
+}
+
+/**
+ * 상품 여럿의 대표 사진 (상품 ID → 주소, 모르거나 못 읽으면 null). 조르기처럼 응답에 사진이 없는 줄에 쓴다.
+ * 상품 상세와 같은 캐시를 쓴다 (판매가 끝나 상세가 없으면 null)
+ */
+export function useProductImageUrls(productIds: (string | null)[]): Record<string, string | null> {
+  const ids = [...new Set(productIds.filter((id): id is string => !!id))]
+  const results = useQueries({
+    queries: ids.map((id) => ({
+      queryKey: productKeys.detail(id),
+      queryFn: () => productApi.get(id),
+      staleTime: 5 * 60_000,
+      retry: false,
+    })),
+  })
+  return Object.fromEntries(
+    ids.map((id, index) => {
+      const dto = results[index]?.data
+      return [id, dto ? productImageUrlOf(dto) : null]
+    }),
+  )
 }
