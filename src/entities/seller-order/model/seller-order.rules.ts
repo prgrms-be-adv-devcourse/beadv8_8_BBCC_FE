@@ -1,3 +1,4 @@
+import type { DeliveryStatus } from '@/shared/config'
 import type { NextShippingStep, SellerOrder } from './seller-order'
 
 /** 발송 준비 → 발송(송장 등록), 배송 중 → 배송 완료, 배송 완료 · 취소 → 할 일 없음 */
@@ -19,15 +20,6 @@ export function validateTrackingNumber(trackingNumber: string): string | null {
   return null
 }
 
-/** 판매자 센터 첫 화면의 할 일: 발송할 것 · 배송 중 · 배송 완료 */
-export function summarizeSellerOrders(orders: SellerOrder[]) {
-  return {
-    toShip: orders.filter((order) => order.status === 'READY').length,
-    shipping: orders.filter((order) => order.status === 'SHIPPING').length,
-    delivered: orders.filter((order) => order.status === 'DELIVERED').length,
-  }
-}
-
 export type SellerOrderTab = 'READY' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED' | 'ALL'
 
 /** 주문 · 배송 탭 (할 일 먼저) */
@@ -45,23 +37,9 @@ export function sellerOrderTabOf(value: string | null): SellerOrderTab {
   return SELLER_ORDER_TABS.some((tab) => tab.value === value) ? (value as SellerOrderTab) : 'ALL'
 }
 
-export function filterSellerOrdersByTab(orders: SellerOrder[], tab: SellerOrderTab): SellerOrder[] {
-  return tab === 'ALL' ? orders : orders.filter((order) => order.status === tab)
-}
-
-// 상태별 건수는 받은 목록 범위이며, 전체 건수만 페이지 응답의 totalElements로 보완한다.
-export function countSellerOrdersByTab(
-  orders: SellerOrder[],
-  totalElements = orders.length,
-): Record<SellerOrderTab, number> {
-  const summary = summarizeSellerOrders(orders)
-  return {
-    READY: summary.toShip,
-    SHIPPING: summary.shipping,
-    DELIVERED: summary.delivered,
-    CANCELLED: orders.filter((order) => order.status === 'CANCELLED').length,
-    ALL: totalElements,
-  }
+/** 탭 → 목록 API status (BE #1280: 배송 상태 하나). 전체는 null = status를 보내지 않는다 */
+export function sellerOrderStatusOfTab(tab: SellerOrderTab): DeliveryStatus | null {
+  return tab === 'ALL' ? null : tab
 }
 
 /** 일괄 처리: 고른 주문 중 같은 다음 처리(발송 · 배송 완료)인 것만 */

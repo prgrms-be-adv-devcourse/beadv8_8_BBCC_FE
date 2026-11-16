@@ -35,6 +35,3 @@ export {
   paymentRecoveryShape,
   quarantinedOutboxShape,
 } from './api/order-ops.shape'
-
-// 목 응답 작성 전용
-export type { StuckOrderDto as MockStuckOrderDto } from './api/order-ops.dto'

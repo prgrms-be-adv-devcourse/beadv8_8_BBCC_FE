@@ -41,7 +41,7 @@ export function buildReport(logs: ApiCallLog[], changes: StateChange[]): string 
 
   lines.push('## 계약 불일치', '')
   for (const log of contract) {
-    lines.push(`### ${log.method} ${log.path}${log.mock ? ' (목)' : ''}`)
+    lines.push(`### ${log.method} ${log.path}`)
     for (const issue of log.contractIssues) {
       lines.push(`- \`${issue.path}\` ${issue.type}: 기대 ${issue.expected} / 실제 ${issue.actual}`)
     }
@@ -51,7 +51,7 @@ export function buildReport(logs: ApiCallLog[], changes: StateChange[]): string 
   lines.push('## 전체 호출 순서', '')
   for (const log of logs) {
     lines.push(
-      `- ${log.startedAt.slice(11, 19)} ${log.method} ${log.path} ${log.status ?? '실패'}${log.mock ? ' (목)' : ''}${log.action ? ` — ${log.action}` : ''}`,
+      `- ${log.startedAt.slice(11, 19)} ${log.method} ${log.path} ${log.status ?? '실패'}${log.action ? ` — ${log.action}` : ''}`,
     )
   }
   return lines.join('\n')

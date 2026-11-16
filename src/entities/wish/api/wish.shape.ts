@@ -33,6 +33,7 @@ export const wishRequestShape = obj({
       purchasable: bool,
       saleStatus: nullable(str),
       purchased: bool,
+      thumbnailUrl: nullable(str),
     }),
   ),
   purchases: arr(obj({ orderId: str, cartItemId: nullable(str), quantity: num, purchasedAt: str })),

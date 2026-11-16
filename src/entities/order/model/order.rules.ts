@@ -259,26 +259,9 @@ export const ORDER_TABS: { value: OrderTab; label: string }[] = [
   { value: 'CANCELLED', label: '취소' },
 ]
 
-export function filterOrdersByTab<T extends { status: OrderStatus }>(
-  orders: T[],
-  tab: OrderTab,
-): T[] {
-  return tab === 'ALL' ? orders : orders.filter((order) => order.status === tab)
-}
-
-// 전체는 서버 건수를 쓰고, 상태별 건수는 별도 집계가 생기기 전까지 받은 목록 범위다.
-export function countOrdersByTab(
-  orders: { status: OrderStatus }[],
-  totalElements = orders.length,
-): Record<OrderTab, number> {
-  const counts: Record<OrderTab, number> = {
-    ALL: totalElements,
-    PENDING_PAYMENT: 0,
-    PAID: 0,
-    CANCELLED: 0,
-  }
-  for (const order of orders) counts[order.status] += 1
-  return counts
+/** 탭 → 목록 API status (BE #1280: 응답 status와 같은 값 하나). 전체는 null = status를 보내지 않는다 */
+export function orderStatusOfTab(tab: OrderTab): OrderStatus | null {
+  return tab === 'ALL' ? null : tab
 }
 
 export type ProcessStepState = 'done' | 'active' | 'waiting' | 'failed' | 'skipped'
@@ -323,7 +306,12 @@ export function orderTabOf(value: string | null): OrderTab {
   return ORDER_TABS.some((tab) => tab.value === value) ? (value as OrderTab) : 'ALL'
 }
 
-/** 관리자 대시보드: 그날(KST 날짜 글자) 주문 · 결제된 주문 금액 · 취소 */
+/** 관리자 대시보드 오늘 취소의 시작 시각: 한국 날짜(yyyy-MM-dd)의 0시 (BE #1325 cancelledFrom, 그 시각 포함) */
+export function cancelledFromOf(day: string): string {
+  return `${day}T00:00:00`
+}
+
+/** 관리자 대시보드: 그날(KST 날짜 글자) 주문 · 결제된 주문 금액 (취소는 취소일 기준이라 cancelledFromOf로 따로 센다) */
 export function summarizeOrdersOn(
   orders: { status: OrderStatus; orderedAt: string; totalAmount: number }[],
   day: string,
@@ -334,6 +322,5 @@ export function summarizeOrdersOn(
     paidAmount: today
       .filter((order) => order.status === 'PAID')
       .reduce((sum, order) => sum + order.totalAmount, 0),
-    cancelled: today.filter((order) => order.status === 'CANCELLED').length,
   }
 }

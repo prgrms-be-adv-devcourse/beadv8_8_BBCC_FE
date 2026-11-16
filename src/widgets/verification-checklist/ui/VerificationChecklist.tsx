@@ -19,7 +19,7 @@ const toText = (rows: Row[]) =>
   rows
     .map(
       ({ check, result }) =>
-        `- [${result.state === 'pass' ? 'x' : ' '}] ${check.step} ${check.title} — ${STATE_LABEL[result.state]}${result.byMock ? ' (목)' : ''}${result.evidence ? ` · ${result.evidence}` : ''}`,
+        `- [${result.state === 'pass' ? 'x' : ' '}] ${check.step} ${check.title} — ${STATE_LABEL[result.state]}${result.evidence ? ` · ${result.evidence}` : ''}`,
     )
     .join('\n')
 
@@ -96,7 +96,6 @@ function CheckRows({ rows }: CheckRowsProps) {
         <p className="text-muted-foreground text-xs">기대: {check.expected}</p>
         {result.evidence && <p className="font-mono text-xs">{result.evidence}</p>}
       </div>
-      {result.byMock && <Badge variant="highlight">목</Badge>}
       <Badge
         variant={
           result.state === 'pass' ? 'success' : result.state === 'fail' ? 'destructive' : 'muted'

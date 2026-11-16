@@ -20,6 +20,8 @@ export type Review = {
   /** 검토 중(내 리뷰에만 보인다) */
   isUnderReview: boolean
   createdAt: string
+  /** 작성자가 고친 적 있는지 (BE #1308부터 updatedAt은 작성자가 고칠 때만 바뀐다) */
+  isEdited: boolean
 }
 
 /** 핏별 리뷰 수 (핏을 남긴 리뷰만) */

@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { ProductImage, useProductImageUrls } from '@/entities/product'
+import {
+  ProductImage,
+  lineImageUrl,
+  productIdsWithoutImage,
+  useProductImageUrls,
+} from '@/entities/product'
 import {
   childWishStatusLabel,
   filterWishes,
@@ -25,13 +30,11 @@ export function ChildWishesPage() {
   const wishes = useChildWishRequestsQuery()
   const [filter, setFilter] = useState<WishFilter>('ALL')
   const all = wishes.data ?? []
-  const images = useProductImageUrls(
-    all.flatMap((wish) => wish.items.map((item) => item.productId)),
-  )
+  const images = useProductImageUrls(productIdsWithoutImage(all.flatMap((wish) => wish.items)))
   const shown = filterWishes(all, filter)
   return (
     <section className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
-      <h1 className="text-page">내 조르기</h1>
+      <h1 className="text-page border-ink border-b-[3px] pb-3.5">내 조르기</h1>
       {wishes.data && (
         <div role="group" aria-label="조르기 거르기" className="flex flex-wrap gap-2">
           {FILTERS.map((key) => (
@@ -41,8 +44,8 @@ export function ChildWishesPage() {
               aria-pressed={filter === key}
               onClick={() => setFilter(key)}
               className={cn(
-                'inline-flex min-h-10 items-center rounded-full border px-4 text-sm font-semibold',
-                filter === key ? 'border-ink bg-ink text-white' : 'border-rule text-ink-2',
+                'border-ink inline-flex min-h-10 items-center border-[1.5px] px-4 text-sm font-bold',
+                filter === key ? 'bg-ink text-paper' : 'text-ink hover:bg-marker',
               )}
             >
               {WISH_FILTER_LABEL[key]}{' '}
@@ -61,7 +64,7 @@ export function ChildWishesPage() {
           statusLabel={childWishStatusLabel(wish)}
           renderImage={(line) => (
             <ProductImage
-              src={line.productId ? (images[line.productId] ?? null) : null}
+              src={lineImageUrl(line, images)}
               alt={line.productName}
               className="size-full object-cover"
             />

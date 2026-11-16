@@ -8,7 +8,7 @@ type RecommendedPicksLoadingProps = {
 }
 
 /**
- * AI 추천을 기다리는 자리: 카드 칸마다 원형 로딩. 규칙 결과는 먼저 와도 그리지 않으므로 빈 영역처럼 보이지 않게 한다.
+ * 추천 첫 결과(보통 규칙 결과)를 기다리는 자리: 카드 칸마다 원형 로딩. 빈 영역처럼 보이지 않게 한다.
  * 동작 줄이기 설정이면 천천히 돈다
  */
 export function RecommendedPicksLoading({

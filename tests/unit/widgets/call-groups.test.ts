@@ -16,7 +16,6 @@ const log = (patch: Partial<ApiCallLog> = {}): ApiCallLog => ({
   status: 200,
   durationMs: 10,
   startedAt: '',
-  mock: false,
   requestBody: null,
   responseBody: null,
   contractIssues: [],
@@ -70,6 +69,15 @@ describe('summarizeResponse: 응답 핵심 값', () => {
       }),
     ).toEqual(['하이픈 없는 숫자'])
     expect(summarizeResponse(null)).toEqual([])
+  })
+
+  it('스트림 기록은 받은 이벤트 순서와 마지막 data의 핵심 값을 보인다', () => {
+    expect(
+      summarizeResponse({
+        events: ['rule', 'ai'],
+        data: { recommendedSize: '120', source: 'AI', reasons: [] },
+      }),
+    ).toEqual(['rule → ai', 'recommendedSize 120', 'source AI'])
   })
 
   it('AI 추천은 고른 쪽(AI · RULE)을 보인다', () => {

@@ -46,6 +46,7 @@ import {
 } from '@/entities/notification/api/notification.shape'
 import { adminMemberPageShape } from '@/entities/member/api/member.shape'
 import {
+  adminOrderPageShape,
   orderDetailShape,
   orderHistoryShape,
   orderPageShape,
@@ -71,6 +72,7 @@ import {
 import { purchasedGarmentPageShape } from '@/entities/recommendation/api/purchased-garment.shape'
 import {
   companionProductsShape,
+  growthSpeedShape,
   homePreviewShape,
   recommendedProductPageShape,
   sizeRecommendationShape,
@@ -127,6 +129,7 @@ import {
 } from '@/entities/review/api/review.shape'
 import { favoriteListShape, favoriteSummaryShape } from '@/entities/favorite/api/favorite.shape'
 import { adminReviewListShape } from '@/entities/review/api/admin-review.shape'
+import { deliveryTrackingShape } from '@/entities/order/api/delivery-tracking.shape'
 import { reviewVisibilityShape } from '@/features/moderate-review'
 import { retryExhaustedShape } from '@/features/retry-review-moderation'
 import { toUpdateReviewRequest } from '@/features/edit-review'
@@ -412,6 +415,35 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('DELETE', `/children/${extra.data.id}`, 1)).status).toBe(204)
     expect((await call('GET', `/children/${extra.data.id}`, 1)).status).toBe(404)
   })
+  it('성장 기록 삭제는 마지막 기록을 보호하고 현재 프로필을 복원한다', async () => {
+    const form = toChildRequest(DEMO_CHILD)
+    const child = (
+      await call('POST', '/children', 1, {
+        ...form,
+        requiredConsent: true,
+        optionalConsent: true,
+      })
+    ).data
+    await call('PATCH', `/children/${child.id}`, 1, { ...form, heightCm: 118 })
+    const records = (await call('GET', `/children/${child.id}/growth-records`, 1)).data
+    expect(records).toHaveLength(2)
+    const deleted = await call('DELETE', `/children/${child.id}/growth-records/${records[1].id}`, 1)
+    expect(deleted).toEqual({ status: 204, data: null })
+    expect((await call('GET', `/children/${child.id}`, 1)).data).toMatchObject({
+      heightCm: records[0].heightCm,
+      bodyType: records[0].bodyType,
+      growthRecordCount: 1,
+    })
+    const last = await call('DELETE', `/children/${child.id}/growth-records/${records[0].id}`, 1)
+    expect(last.status).toBe(409)
+    expect(last.data).toMatchObject({
+      title: '지울 수 없는 기록입니다',
+      detail: '성장 기록이 하나뿐이면 지울 수 없습니다.',
+    })
+    expect((await call('GET', `/children/${child.id}/growth-records`, 1)).data).toEqual([
+      records[0],
+    ])
+  })
   it('자녀 등록과 수정에서 동의와 나이를 검사한다', async () => {
     const form = toChildRequest(DEMO_CHILD)
     expect((await call('POST', '/children', 1, form)).status).toBe(400)
@@ -588,6 +620,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const sellerOrders = await call('GET', '/seller/orders', 2)
     expectContract(sellerOrders.data, sellerOrderPageShape)
     const sellerOrderId = sellerOrders.data.content[0].sellerOrderId
+    // 발송 전(운송장 없음) 배송 조회는 200 + 빈 이력 (BE #1320)
+    const beforeShip = await call(
+      'GET',
+      `/orders/${orderId}/deliveries/${sellerOrderId}/tracking`,
+      1,
+    )
+    expect(beforeShip.status).toBe(200)
+    expectContract(beforeShip.data, deliveryTrackingShape)
+    expect(beforeShip.data).toEqual({ carrier: null, trackingNumber: null, events: [] })
     const shipped = await call('POST', `/seller/orders/${sellerOrderId}/ship`, 2, {
       carrier: 'CJ',
       trackingNumber: '1234',
@@ -596,6 +637,14 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const delivered = await call('POST', `/seller/orders/${sellerOrderId}/deliver`, 2)
     expectContract(delivered.data, deliveryShape)
     expect(delivered.data.status).toBe('DELIVERED')
+    // 배송 조회 (BE #1320): 구매자만, 최신이 먼저
+    const trackingPath = `/orders/${orderId}/deliveries/${sellerOrderId}/tracking`
+    const tracking = await call('GET', trackingPath, 1)
+    expectContract(tracking.data, deliveryTrackingShape)
+    expect(tracking.data).toMatchObject({ carrier: 'CJ', trackingNumber: '1234' })
+    expect(tracking.data.events[0].status).toBe('DELIVERED')
+    expect((await call('GET', trackingPath, 2)).status).toBe(404)
+    expect((await call('GET', `/orders/${orderId}/deliveries/99999/tracking`, 1)).status).toBe(404)
     expectContract((await call('GET', '/seller/orders', 2)).data, sellerOrderPageShape)
 
     const itemId = order.data.items[0].orderItemId
@@ -748,6 +797,11 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     const found = await call('GET', `/admin/settlement-runs/${run.data.runId}`, 3)
     expectContract(found.data, settlementRunShape)
     expect((await call('GET', '/admin/settlement-runs/99999', 3)).status).toBe(404)
+    // 실행 복구: 끝난 실행은 409, 없는 실행은 404
+    expect((await call('POST', `/admin/settlement-runs/${run.data.runId}/recover`, 3)).status).toBe(
+      409,
+    )
+    expect((await call('POST', '/admin/settlement-runs/99999/recover', 3)).status).toBe(404)
 
     const list = await call('GET', '/admin/settlements?status=PAID', 3)
     expectContract(list.data, adminSettlementPageShape)
@@ -923,13 +977,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('POST', disablePath, 1)).status).toBe(403)
   })
 
-  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티, 같은 칸)', async () => {
+  it('처리 실패 메시지 목록 · 상세 · 재처리 (BE #962 네 모듈 + 커뮤니티 · 알림 · 정산, 같은 칸)', async () => {
     for (const base of [
       'auth-dead-letters',
       'member-dead-letters',
       'seller-dead-letters',
       'child-profile-dead-letters',
       'community/dead-letters',
+      'notification-dead-letters',
+      'settlement-dead-letters',
     ]) {
       for (const status of ['OPEN', 'REPROCESSED']) {
         const list = await call('GET', `/admin/${base}?status=${status}`, 3)
@@ -973,6 +1029,15 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       replayCount: 1,
       lastReplayFailureType: 'java.lang.IllegalStateException',
     })
+
+    for (const module of ['notification', 'settlement']) {
+      const one = await call('POST', '/__fake/dead-letters', null, { module })
+      const base = `/admin/${module}-dead-letters/${one.data.deadLetterId}`
+      expectContract((await call('GET', base, 3)).data, deadLetterShape)
+      expect((await call('POST', `${base}/reprocess`, 3)).data).toMatchObject({
+        status: 'REPROCESSED',
+      })
+    }
 
     // 다른 모듈의 번호로는 찾지 못한다
     expect((await call('GET', `/admin/auth-dead-letters/${ok.data.deadLetterId}`, 3)).status).toBe(
@@ -1053,6 +1118,59 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
       { type: 'CHARGE_CANCEL', amount: -50000, refId: 77 },
       { type: 'CHARGE', amount: 50000, refId: 77 },
     ])
+  })
+
+  it('주문 목록 status 거르기 (BE #1280): 대문자 값 하나, 모르는 값 · 소문자 · 빈 값은 400', async () => {
+    const all = (await call('GET', '/orders?size=100', 1)).data
+    const paid = (await call('GET', '/orders?status=PAID&size=100', 1)).data
+    expectContract(paid, orderPageShape)
+    expect(paid.content.every((o: { status: string }) => o.status === 'PAID')).toBe(true)
+    expect(paid.totalElements).toBe(
+      all.content.filter((o: { status: string }) => o.status === 'PAID').length,
+    )
+    expect((await call('GET', '/orders?status=PAID&size=1', 1)).data.totalElements).toBe(
+      paid.totalElements,
+    )
+    for (const bad of ['paid', '', 'SHIPPING', 'PAID,CANCELLED'])
+      expect((await call('GET', `/orders?status=${bad}`, 1)).status).toBe(400)
+
+    const adminCancelled = (await call('GET', '/admin/orders?status=CANCELLED&size=100', 3)).data
+    expectContract(adminCancelled, adminOrderPageShape)
+    expect(adminCancelled.content.every((o: { status: string }) => o.status === 'CANCELLED')).toBe(
+      true,
+    )
+    expect((await call('GET', '/admin/orders?status=cancelled', 3)).status).toBe(400)
+    expect((await call('GET', '/admin/orders?page=0&size=1', 3)).data.content).toHaveLength(1)
+
+    const delivered = (await call('GET', '/seller/orders?status=DELIVERED&size=100', 2)).data
+    expectContract(delivered, sellerOrderPageShape)
+    expect(delivered.content.every((o: { status: string }) => o.status === 'DELIVERED')).toBe(true)
+    for (const bad of ['PAID', 'ready', ''])
+      expect((await call('GET', `/seller/orders?status=${bad}`, 2)).status).toBe(400)
+  })
+
+  it('관리자 주문 취소 시각 · 취소일 기준 조회 (BE #1325)', async () => {
+    const all = (await call('GET', '/admin/orders?size=100', 3)).data
+    expectContract(all, adminOrderPageShape)
+    for (const o of all.content as { status: string; cancelledAt: string | null }[])
+      expect(o.cancelledAt === null).toBe(o.status !== 'CANCELLED')
+    const since = (await call('GET', '/admin/orders?cancelledFrom=2000-01-01T00:00:00&size=100', 3))
+      .data
+    expect(since.content.every((o: { status: string }) => o.status === 'CANCELLED')).toBe(true)
+    expect(since.totalElements).toBe(
+      all.content.filter((o: { status: string }) => o.status === 'CANCELLED').length,
+    )
+    expect(
+      (await call('GET', '/admin/orders?status=PAID&cancelledFrom=2000-01-01T00:00:00', 3)).data
+        .totalElements,
+    ).toBe(0)
+    expect(
+      (await call('GET', '/admin/orders?cancelledFrom=2999-01-01T00:00:00', 3)).data.totalElements,
+    ).toBe(0)
+    for (const bad of ['2026-11-13', '', '2026-11-13T00:00:00.000', '2026-11-13T00:00:00+09:00'])
+      expect(
+        (await call('GET', `/admin/orders?cancelledFrom=${encodeURIComponent(bad)}`, 3)).status,
+      ).toBe(400)
   })
 
   it('결제 · 예치금 목록은 요청한 page · size로 나눈다 (BE PageResponse)', async () => {
@@ -1637,6 +1755,28 @@ describe('판매자 상품 상세 · 수정 (BE SellerProductDetailResponse · P
     expect((await call('GET', '/recommendations/children/999999/purchases', 1)).status).toBe(404)
   })
 
+  it('자녀 성장 속도: 사이즈 추천의 growthSpeed와 칸 · 값이 같다 (BE #1367)', async () => {
+    const child = await call('POST', '/children', 1, {
+      ...toChildRequest(DEMO_CHILD),
+      requiredConsent: true,
+      optionalConsent: true,
+    })
+    const url = `/recommendations/children/${child.data.id}/growth-speed`
+    const speed = await call('GET', url, 1)
+    expect(speed.status).toBe(200)
+    expectContract(speed.data, growthSpeedShape)
+    // 한 달 이상 떨어진 기록이 없으면 또래 평균 값만 쓴다
+    expect(speed.data).toMatchObject({ childSharePercent: 0, recentCmPerMonth: null })
+    expect(speed.data.cmPerMonth).toBe(speed.data.tableCmPerMonth)
+    const size = await call('GET', `/recommendations/size?productId=1&childId=${child.data.id}`, 1)
+    expect(size.data.growthSpeed).toEqual(speed.data)
+    // 없는 자녀 · 남의 자녀 · 삭제된 자녀는 모두 404
+    expect((await call('GET', url, 2)).status).toBe(404)
+    expect((await call('GET', '/recommendations/children/999999/growth-speed', 1)).status).toBe(404)
+    await call('DELETE', `/children/${child.data.id}`, 1)
+    expect((await call('GET', url, 1)).status).toBe(404)
+  })
+
   it('관리자 상품 기준 데이터: 실측 항목 만들기와 목록 (BE #405)', async () => {
     const item = await call(
       'POST',
@@ -1807,6 +1947,31 @@ it.each([
   expect(viewed.data.detail).toBe(detail)
 })
 
+it.each(['QUICK', 'DETAIL'] as const)(
+  '조회 기록: viewType %s는 204 (BE #1366, QUICK은 담기 팝업을 연 것)',
+  async (viewType) => {
+    const viewed = await call(
+      'POST',
+      '/recommendations/product-views',
+      1,
+      toProductViewRequest('1', null, viewType),
+    )
+    expect(viewed.status).toBe(204)
+  },
+)
+
+it.each(['POPUP', 'quick'])(
+  '조회 기록: 모르는 viewType %s는 400 (대소문자를 가린다, BE #1366)',
+  async (viewType) => {
+    const viewed = await call('POST', '/recommendations/product-views', 1, {
+      productId: '1',
+      viewType,
+    })
+    expect(viewed.status).toBe(400)
+    expect(viewed.data.detail).toBe('요청 값을 확인해 주세요.')
+  },
+)
+
 it('맞춤 목록: 1쪽 응답의 기준 시각 asOf를 2쪽에 넘기면 그대로 돌려주고, 지금보다 늦으면 400 (BE #1151)', async () => {
   const child = await call('POST', '/children', 1, {
     ...toChildRequest(DEMO_CHILD),
@@ -1879,6 +2044,26 @@ it('함께 사면 · 홈 맛보기 SSE: rule → ai, 다시 물으면 ai만, 규
   const preview = await stream(`/recommendations/products/preview?childId=${child.data.id}`, 1)
   expect(preview.map((item) => item.event)).toEqual(['rule', 'ai'])
   preview.forEach((item) => expectContract(item.data, homePreviewShape))
+})
+
+it('사이즈 추천 SSE: rule(근거 없음) → ai, 다시 물으면 ai만, 규칙 답이면 rule만 (FE #401)', async () => {
+  const child = await call('POST', '/children', 1, {
+    ...toChildRequest(DEMO_CHILD),
+    requiredConsent: true,
+    optionalConsent: true,
+  })
+  const size = (productId: string) =>
+    `/recommendations/size?productId=${productId}&childId=${child.data.id}`
+
+  const first = await stream(size('1'), 1)
+  expect(first.map((item) => item.event)).toEqual(['rule', 'ai'])
+  first.forEach((item) => expectContract(item.data, sizeRecommendationShape))
+  expect(first.map((item) => item.data)).toMatchObject([
+    { source: 'RULE', reasons: [], itemJudgements: [] },
+    { source: 'AI' },
+  ])
+  expect((await stream(size('1'), 1)).map((item) => item.event)).toEqual(['ai'])
+  expect((await stream(size('2'), 1)).map((item) => item.event)).toEqual(['rule'])
 })
 
 it('함께 사면 좋은 상품: AI · RULE 응답 모두 계약 모양이고, 이유는 null일 수 있다 (BE #1164)', async () => {

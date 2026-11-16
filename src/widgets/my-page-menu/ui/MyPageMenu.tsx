@@ -74,7 +74,7 @@ export function MyPageMenu({ className }: MyPageMenuProps) {
                   {'count' in link && !!link.count && (
                     <span
                       aria-label={`답을 기다리는 조르기 ${link.count}건`}
-                      className="bg-signal figure ml-2 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold text-white"
+                      className="bg-signal text-signal-ink figure rounded-pill ml-2 inline-flex min-w-5 items-center justify-center px-1.5 text-xs font-bold"
                     >
                       {link.count}
                     </span>

@@ -63,6 +63,7 @@ export function useUnreadNotificationCount(): number | null {
 
 /**
  * 안 읽은 수 SSE를 열어 두고, 받은 수를 캐시에 바로 넣는다 (이벤트에 수가 있어 다시 조회하지 않는다).
+ * 알림함 목록은 이벤트에 없으므로 수가 바뀌면 무효화해, 열려 있으면 다시 조회한다.
  * 끊기면 한 번 다시 조회해 주기 조회로 돌아가고, 지수 백오프로 다시 연결한다.
  * 401은 공통 클라이언트가 재발급 뒤 다시 보낸다. 그래도 4xx(BE 미배포 404 등)면 다시 연결하지 않고 주기 조회만 쓴다 (EventSource 표준과 같다).
  * accessToken이 바뀌면(역할 전환 · 로그아웃) 그 연결을 끊고 새로 연다. null이면 열지 않는다
@@ -80,7 +81,12 @@ export function useUnreadCountStream(recipient: NotificationRecipient, accessTok
         .unreadCountStream(recipient, controller.signal, (dto) => {
           streaming.add(recipient)
           retryMs = RETRY_MIN_MS
+          const previous = queryClient.getQueryData<typeof dto>(queryKey)
           queryClient.setQueryData(queryKey, dto)
+          // 수가 바뀌면(새 알림 · 다른 탭의 읽음) 열려 있는 알림함 목록도 다시 받는다. 연결 직후 같은 수면 다시 받지 않는다
+          if (previous?.count !== dto.count) {
+            void queryClient.invalidateQueries({ queryKey: notificationKeys.list(recipient) })
+          }
         })
         .then(
           () => null,

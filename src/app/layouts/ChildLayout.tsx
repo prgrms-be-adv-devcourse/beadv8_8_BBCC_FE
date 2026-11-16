@@ -4,11 +4,13 @@ import { useChildSessionStore } from '@/entities/session'
 import { useChildLogout } from '@/features/logout'
 import { paths } from '@/shared/config'
 import { Badge } from '@/shared/ui/badge'
+import { KidlyLogo } from '@/shared/ui/KidlyLogo'
 import { Button } from '@/shared/ui/button'
 import { ChildGate } from './ChildGate'
 import { DemoBarWithFlowDrawer } from './DemoBarWithFlowDrawer'
 import { BehaviorRecording } from './BehaviorRecording'
 import { Overlays } from './Overlays'
+import { ScrollToTop } from './ScrollToTop'
 
 export function ChildLayout() {
   const accessToken = useChildSessionStore((state) => state.accessToken)
@@ -19,10 +21,11 @@ export function ChildLayout() {
   return (
     <div className="bg-paper min-h-svh">
       <DemoBarWithFlowDrawer />
+      <ScrollToTop />
       <div data-area="shop" className="shop-look">
-        <header className="border-rule flex items-center gap-4 border-b p-4">
-          <Link to={paths.child.home} className="text-section">
-            Kidly
+        <header className="border-ink flex flex-wrap items-center gap-x-4 gap-y-1 border-b-[1.5px] px-4 py-3 text-[13px] font-semibold [&_a]:underline-offset-4 [&_a:hover]:underline">
+          <Link to={paths.child.home} className="hover:no-underline">
+            <KidlyLogo className="h-8" />
           </Link>
           <Link to={paths.child.home} className="ml-auto">
             내 프로필
@@ -52,8 +55,9 @@ export function ChildLayout() {
             <Outlet />
           </ChildGate>
         </main>
+        {/* 확인 창 · 알림 띠도 쇼핑 영역의 색 · 모서리를 따르게 영역 안에 둔다 */}
+        <Overlays />
       </div>
-      <Overlays />
       <BehaviorRecording />
     </div>
   )

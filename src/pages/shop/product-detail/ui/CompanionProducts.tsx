@@ -1,19 +1,26 @@
+import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { ProductTile } from '@/entities/product'
 import {
+  AiWaitingNotice,
   PickReveal,
   RecommendedPicksLoading,
   RecommendedPicksNotice,
   type RecommendedPicks,
 } from '@/entities/recommendation'
+import { FavoriteButton } from '@/features/toggle-favorite'
 import { paths } from '@/shared/config'
+import { QuickAdd } from '@/widgets/quick-add'
 
 const WAITING = '함께 입기 좋은 상품을 고르고 있어요'
+const AI_WAITING = 'AI가 더 잘 어울리는 상품을 고르고 있어요'
 
 type CompanionProductsProps = {
   /** 고른 자녀. 없으면 그리지 않는다 */
   childId: string | null
   isPending: boolean
   isError: boolean
+  /** 규칙 결과를 그린 채 AI 답을 기다리는 중 (스트림이 열려 있음) */
+  isWaitingForAi: boolean
   /** 그릴 결과(AI, 없으면 규칙). 함께 볼 상품이 없으면 null */
   picks: RecommendedPicks | null | undefined
   onRetry: () => void
@@ -21,17 +28,25 @@ type CompanionProductsProps = {
 
 /**
  * 상품 상세 맨 아래 「함께 사면 좋은 상품」: 카드 4칸 + 카드마다 추천 이유.
- * AI 답을 기다리는 동안 카드 칸마다 원형 로딩을 두고, 답이 오면 그 자리에서 부드럽게 나타난다.
+ * 첫 결과를 기다리는 동안 카드 칸마다 원형 로딩을 두고, 규칙 결과가 오면 바로 그린다.
+ * 그 뒤 AI 답을 기다리는 동안 제목 옆에 「AI가 고르고 있어요」를 두고, AI 답이 오면 그 자리에서 바뀐다.
  * 불러오지 못했거나 함께 볼 상품이 없어도 영역을 남기고 안내한다. 이유가 없는 카드는 이유 칸을 그리지 않는다
  */
 export function CompanionProducts({
   childId,
   isPending,
   isError,
+  isWaitingForAi,
   picks,
   onRetry,
 }: CompanionProductsProps) {
+  // 자녀를 고른 보호자에게만 그리는 영역이라 찜 조회도 그때만 한다
+  const favoritedIds = useFavoritedIdsQuery(picks?.products.map((product) => product.id) ?? [], {
+    enabled: Boolean(childId),
+  })
   if (!childId) return null
+  // 규칙 결과가 빈 목록이어도 AI 답을 기다리는 동안은 로딩을 둔다
+  const isLoading = isPending || (isWaitingForAi && !picks)
 
   return (
     <section aria-labelledby="companion-products" className="space-y-4">
@@ -39,9 +54,10 @@ export function CompanionProducts({
         <h2 id="companion-products" className="text-section">
           함께 사면 좋은 상품
         </h2>
-        {isPending && <span className="text-ink-2 text-[13px]">{WAITING}</span>}
+        {isLoading && <span className="text-ink-2 text-[13px]">{WAITING}</span>}
+        {!isLoading && isWaitingForAi && <AiWaitingNotice message={AI_WAITING} />}
       </div>
-      {isPending ? (
+      {isLoading ? (
         <RecommendedPicksLoading message={WAITING} />
       ) : isError ? (
         <RecommendedPicksNotice onRetry={onRetry}>
@@ -63,6 +79,18 @@ export function CompanionProducts({
                   product.recommendedSize
                     ? { text: `${product.recommendedSize} 잘 맞아요`, fit: true }
                     : { text: '사이즈 무관' }
+                }
+                action={
+                  <>
+                    <FavoriteButton
+                      productId={product.id}
+                      isFavorited={favoritedIds.data?.has(product.id) ?? false}
+                      isLoading={favoritedIds.isPending}
+                      isSelling
+                      isCompact
+                    />
+                    <QuickAdd productId={product.id} productName={product.name} childId={childId} />
+                  </>
                 }
               />
               {product.reason && (

@@ -20,23 +20,23 @@ import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { hasRole, useSessionStore } from '@/entities/session'
 import { QuickHeightForm } from '@/features/edit-child'
 import { useRecordSearchClick } from '@/features/record-search-click'
+import { HomeBanners, homeBannersOf, seasonOf } from '@/widgets/home-banners'
+import { QuickAdd } from '@/widgets/quick-add'
 import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
-import { paths } from '@/shared/config'
+import { loginPath, paths } from '@/shared/config'
 import { cn, useArea } from '@/shared/lib'
-import { MockBadge } from '@/shared/ui/MockBadge'
 import { Pagination } from '@/shared/ui/Pagination'
 import { Button } from '@/shared/ui/button'
 import { CardGridSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { CategoryChips } from './CategoryChips'
-import { HomeHero } from './HomeHero'
 import { ProductFilterBar } from './ProductFilterBar'
 import { ProductSortSelect } from './ProductSortSelect'
 import { RecommendedPreview } from './RecommendedPreview'
 
 /**
- * 쇼핑 첫 화면 (확정 시안 6번 브랜드 퍼플): 계절 · 사이즈 첫 칸 · 카테고리 칩 · 자녀 맞춤 상품(자녀가 있을 때) · 전체 상품 · 키 기록.
+ * 쇼핑 첫 화면 (확정 시안 6번 브랜드 퍼플): 배너 · 자녀 맞춤 상품(자녀가 있을 때) · 카테고리 · 전체 상품 · 키 기록.
  * 자녀 등록 안내는 머리말 띠 하나만 둔다.
  * 검색어는 머리말 검색창이 주소(?q=)에 싣는다. 검색 중에는 전체 상품 검색 결과만 보인다
  */
@@ -79,6 +79,8 @@ export function ShopHomePage() {
   const all = useProductsQuery(search, page, {
     enabled: !(searchesAsBuyer && children.isPending),
   })
+  // 배너에 깔 사진: 거르지 않은 새 상품 첫 쪽 (거르기 · 검색과 상관없이 같은 상품을 쓴다)
+  const bannerProducts = useProductsQuery(undefined, 0, { enabled: !isChild && !keyword })
   // 보이는 쪽의 상품 중 내가 찜한 것: 한 쪽에 한 번 (GET /favorites?productIds=)
   const favoritedIds = useFavoritedIdsQuery(all.data?.content.map((product) => product.id) ?? [], {
     enabled: isBuyer,
@@ -111,14 +113,26 @@ export function ShopHomePage() {
   }
 
   return (
-    // data-shop-home: 홈만 브랜드 퍼플 바탕 (shop.css). 자녀 영역 홈은 그대로
-    <div
-      data-shop-home={isChild ? undefined : ''}
-      className="shop-look flex flex-col gap-8 md:gap-10"
-    >
+    <div className="shop-look flex flex-col gap-8 md:gap-10">
       {!isChild && !keyword && (
-        <HomeHero size={child ? sizeRulerOf(child.heightCm).band.size : null} />
+        <HomeBanners
+          banners={homeBannersOf({
+            season: seasonOf(new Date().getMonth() + 1),
+            loginHref: loginPath(paths.shop.home),
+            isLoggedIn: Boolean(user),
+            child: child && {
+              id: child.id,
+              name: child.name,
+              size: sizeRulerOf(child.heightCm).band.size,
+            },
+            products: bannerProducts.data?.content ?? [],
+          })}
+        />
       )}
+      {showsRecommended && (
+        <RecommendedPreview kids={kids} child={child} onSelectChild={setChildId} />
+      )}
+
       <CategoryChips
         categories={categories.data ?? []}
         selectedId={filters.categoryId}
@@ -133,24 +147,19 @@ export function ShopHomePage() {
         </div>
       )}
 
-      {showsRecommended && (
-        <RecommendedPreview kids={kids} child={child} onSelectChild={setChildId} />
-      )}
-
       <section
         ref={listRef}
         aria-label="전체 상품"
         className="scroll-mt-6 space-y-4 md:scroll-mt-44"
       >
         {/* 목록 머리: 제목 · 개수 · 검색어 왼쪽, 정렬 오른쪽. 카테고리를 고르면 아래에 옵션 거르기 */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-            <h2 className="text-section">
+        <div className="border-ink flex items-end justify-between gap-4 border-b-[3px] pb-3">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <h2 className="font-display text-[clamp(1.75rem,3.4vw,3.125rem)] leading-none">
               {title}
-              <MockBadge endpoints={['GET /products']} />
             </h2>
             {all.data && !isStale && (
-              <span className="text-ink-3 figure text-sm">{all.data.totalElements}</span>
+              <span className="text-ink-2 figure text-lg font-bold">{all.data.totalElements}</span>
             )}
             {keyword && (
               <Link
@@ -189,7 +198,7 @@ export function ShopHomePage() {
         <div
           aria-busy={isStale}
           className={cn(
-            'grid grid-cols-2 gap-x-3 gap-y-8 transition-opacity sm:grid-cols-3 md:gap-x-4 lg:grid-cols-4',
+            'grid grid-cols-2 gap-x-3 gap-y-7 pt-1.5 transition-opacity sm:grid-cols-3 md:gap-x-[18px] md:gap-y-[34px] lg:grid-cols-5',
             isStale && 'pointer-events-none opacity-40',
           )}
         >
@@ -205,15 +214,18 @@ export function ShopHomePage() {
                 isSoldOut={product.soldOut}
                 tag={product.sizeFree ? { text: '사이즈 무관' } : undefined}
                 action={
-                  isBuyer ? (
-                    <FavoriteButton
-                      productId={product.id}
-                      isFavorited={favoritedIds.data?.has(product.id) ?? false}
-                      isLoading={favoritedIds.isPending}
-                      isSelling
-                      isCompact
-                    />
-                  ) : undefined
+                  <>
+                    {isBuyer && (
+                      <FavoriteButton
+                        productId={product.id}
+                        isFavorited={favoritedIds.data?.has(product.id) ?? false}
+                        isLoading={favoritedIds.isPending}
+                        isSelling
+                        isCompact
+                      />
+                    )}
+                    <QuickAdd productId={product.id} productName={product.name} />
+                  </>
                 }
                 onClick={
                   keyword && !isChild
@@ -238,7 +250,7 @@ export function ShopHomePage() {
       </section>
 
       {child && (
-        <section className="bg-paper-2 rounded-card grid gap-5 p-5 md:p-7 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center">
+        <section className="border-ink bg-paper-2 grid gap-5 border-[1.5px] p-5 md:p-7 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-center">
           <div className="space-y-1.5">
             <h2 className="text-section">작아진 옷, 키만 알려주세요</h2>
             <p className="text-ink-2 max-w-[44ch] text-sm">

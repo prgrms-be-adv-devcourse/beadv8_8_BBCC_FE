@@ -51,7 +51,7 @@ function TransactionItem({ tx, timeLabel }: TransactionItemProps) {
         <span
           aria-hidden
           className={cn(
-            'flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] font-bold',
+            'rounded-pill flex size-9 shrink-0 items-center justify-center text-[13px] font-bold',
             tx.deposit ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
           )}
         >

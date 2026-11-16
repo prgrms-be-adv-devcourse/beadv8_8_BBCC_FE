@@ -59,3 +59,37 @@ test('다른 탭에서 읽음 처리하면 배지가 주기 조회 없이 바로
   // 기다린 시간이 주기 조회(60초)보다 짧고 다시 조회하지 않았으니, 스트림 이벤트로 바뀐 것이다
   expect(refetched).toBe(0)
 })
+
+test('다른 탭에서 읽음 처리하면 열려 있는 알림함 목록도 바로 바뀐다 (알림 SSE)', async ({
+  page,
+  context,
+}) => {
+  // 로그인하면 알림함으로 돌아온다. 위 테스트와 같은 판매자 계정의 남은 알림을 쓴다
+  await page.goto('/notifications')
+  await page.getByRole('main').getByRole('button', { name: '판매자', exact: true }).click()
+  // 이동할 곳이 있는 알림은 링크, 없으면 버튼이다
+  const unreadItems = page.getByRole('main').getByText('(안 읽음)')
+  // 시드 알림(환영)이 보이면 목록을 다 받은 것이다
+  await expect(
+    page.getByRole('main').getByRole('button', { name: /Kidly에 오신 걸 환영해요/ }),
+  ).toBeVisible()
+  const before = await unreadItems.count()
+  test.skip(before === 0, '가짜 백엔드를 다시 써서 앞 실행이 이미 모두 읽었다')
+
+  const other = await context.newPage()
+  await other.goto('/notifications')
+  await other.getByRole('main').getByRole('button', { name: '판매자', exact: true }).click()
+  // 이 탭은 새로고침하지 않는다: 스트림 이벤트로 목록을 다시 받아야 바뀐다
+  await Promise.all([
+    page.waitForResponse((response) => /\/notifications\?page=0/.test(response.url())),
+    other
+      .getByRole('main')
+      .getByRole('listitem')
+      .filter({ hasText: '(안 읽음)' })
+      .first()
+      .locator('a, button')
+      .first()
+      .click(),
+  ])
+  await expect(unreadItems).toHaveCount(before - 1)
+})

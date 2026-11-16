@@ -1,4 +1,4 @@
-import { isFailedCall, type ApiCallLog } from '@/shared/api'
+import { isFailedCall, streamLogOf, type ApiCallLog } from '@/shared/api'
 
 export type CallGroup = {
   /** 시연 단계 (①~⑦ · 시작 · 확인). 콘솔 밖 호출은 '기타' */
@@ -63,6 +63,9 @@ const KEY_FIELDS = [
 /** 응답 핵심 값 몇 개 (status · 번호 · 금액 등). 목록이면 건수, 오류면 detail */
 export function summarizeResponse(body: unknown): string[] {
   if (body === null || body === undefined || body === '') return []
+  // 스트림(SSE) 기록: 받은 이벤트 순서 + 마지막 data의 핵심 값
+  const stream = streamLogOf(body)
+  if (stream) return [stream.events.join(' → '), ...summarizeResponse(stream.data)]
   if (Array.isArray(body)) return [`${body.length}건`]
   if (typeof body !== 'object') return [String(body).slice(0, 60)]
   const record = body as Record<string, unknown>

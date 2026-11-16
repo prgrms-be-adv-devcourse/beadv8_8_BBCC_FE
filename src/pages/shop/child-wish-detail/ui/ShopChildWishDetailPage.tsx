@@ -1,6 +1,11 @@
 import { Link, useNavigate, useParams } from 'react-router'
 import { useChildQuery } from '@/entities/child'
-import { ProductImage, useProductImageUrls } from '@/entities/product'
+import {
+  ProductImage,
+  lineImageUrl,
+  productIdsWithoutImage,
+  useProductImageUrls,
+} from '@/entities/product'
 import {
   canDecideWish,
   guardianWishStatusLabel,
@@ -28,7 +33,7 @@ export function ShopChildWishDetailPage() {
   const wish = useWishRequestQuery(requestId)
   const timeline = useWishTimelineQuery(requestId)
   const child = useChildQuery(wish.data?.childId ?? routeChildId)
-  const images = useProductImageUrls(wish.data?.items.map((item) => item.productId) ?? [])
+  const images = useProductImageUrls(productIdsWithoutImage(wish.data?.items ?? []))
   if (wish.isPending) return <StateMessage>불러오는 중…</StateMessage>
   if (wish.isError) return <StateMessage tone="error">{getErrorMessage(wish.error)}</StateMessage>
   const data = wish.data
@@ -37,7 +42,7 @@ export function ShopChildWishDetailPage() {
   const childName = child.data?.name ?? '아이'
   const renderImage = (line: WishRequestLine) => (
     <ProductImage
-      src={line.productId ? (images[line.productId] ?? null) : null}
+      src={lineImageUrl(line, images)}
       alt={line.productName}
       className="size-full object-cover"
     />
@@ -71,7 +76,9 @@ export function ShopChildWishDetailPage() {
         </div>
         <h1 className="text-page">{childName}의 조르기</h1>
         {data.message && (
-          <p className="bg-paper-2 text-ink-2 rounded-md px-3 py-2 text-sm">“{data.message}”</p>
+          <p data-slot="wish-message" className="bg-paper-2 text-ink-2 px-3 py-2 text-sm">
+            “{data.message}”
+          </p>
         )}
       </section>
 
@@ -83,10 +90,7 @@ export function ShopChildWishDetailPage() {
           onApproved={(orderId) => navigate(paths.order(orderId))}
         />
       ) : (
-        <section
-          aria-label="조른 상품"
-          className="border-rule space-y-3 rounded-lg border p-4 md:p-5"
-        >
+        <section aria-label="조른 상품" className="border-ink space-y-3 border-[1.5px] p-4 md:p-5">
           <h2 className="text-section">조른 상품</h2>
           <ul className="divide-rule divide-y">
             {data.items.map((item) => {
@@ -94,7 +98,7 @@ export function ShopChildWishDetailPage() {
               const option = optionLabel(item)
               return (
                 <li key={item.optionId} className="flex items-start gap-3 py-3">
-                  <span className="rounded-card block aspect-square w-16 shrink-0 overflow-hidden">
+                  <span className="border-ink block aspect-square w-16 shrink-0 overflow-hidden border">
                     {renderImage(item)}
                   </span>
                   <div className="min-w-0 flex-1 space-y-0.5 text-sm">

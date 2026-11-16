@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   bulkTargets,
-  countSellerOrdersByTab,
-  filterSellerOrdersByTab,
+  sellerOrderStatusOfTab,
   sellerOrderTabOf,
   type SellerOrder,
 } from '@/entities/seller-order'
@@ -26,23 +25,13 @@ const orders = [
 ]
 
 describe('판매자 주문 탭', () => {
-  it('탭별 건수 · 거르기', () => {
-    expect(countSellerOrdersByTab(orders)).toEqual({
-      READY: 2,
-      SHIPPING: 1,
-      DELIVERED: 1,
-      CANCELLED: 0,
-      ALL: 4,
-    })
-    expect(countSellerOrdersByTab(orders, 107)).toEqual({
-      READY: 2,
-      SHIPPING: 1,
-      DELIVERED: 1,
-      CANCELLED: 0,
-      ALL: 107,
-    })
-    expect(filterSellerOrdersByTab(orders, 'READY').map((o) => o.id)).toEqual(['1', '2'])
-    expect(filterSellerOrdersByTab(orders, 'ALL')).toHaveLength(4)
+  // BE #1280: 판매 주문 status는 배송 상태 하나(READY · SHIPPING · DELIVERED · CANCELLED). 전체는 보내지 않는다
+  it('탭 → 목록 API status (전체는 null)', () => {
+    expect(sellerOrderStatusOfTab('ALL')).toBeNull()
+    expect(sellerOrderStatusOfTab('READY')).toBe('READY')
+    expect(sellerOrderStatusOfTab('SHIPPING')).toBe('SHIPPING')
+    expect(sellerOrderStatusOfTab('DELIVERED')).toBe('DELIVERED')
+    expect(sellerOrderStatusOfTab('CANCELLED')).toBe('CANCELLED')
   })
   it('?tab= 값 (모르면 전체)', () => {
     expect(sellerOrderTabOf('SHIPPING')).toBe('SHIPPING')

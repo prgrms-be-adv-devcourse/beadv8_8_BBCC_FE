@@ -26,7 +26,6 @@ function record(uploadUrl: string, blob: Blob, startedAt: number, status: number
     expectedReason: null,
     durationMs: Math.round(performance.now() - startedAt),
     startedAt: new Date(performance.timeOrigin + startedAt).toISOString(),
-    mock: false,
     requestBody: { contentType: blob.type, contentLength: blob.size },
     responseBody: null,
   })

@@ -1,11 +1,4 @@
 export { paymentApi } from './api/payment-api'
-/** 목 응답 작성 전용 (app/mocks) */
-export type {
-  AdminPaymentDto,
-  AdminPaymentSummaryDto,
-  PaymentDetailDto,
-  PaymentSummaryDto,
-} from './api/payment.dto'
 export {
   PAYMENT_FAILURE_LABEL,
   PAYMENT_STATUS_LABEL,

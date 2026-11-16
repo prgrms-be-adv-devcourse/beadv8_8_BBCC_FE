@@ -87,19 +87,25 @@ test('모르는 모듈의 상세 주소는 다른 모듈 메시지로 읽지 않
   await expect(page.getByRole('button', { name: '재처리' })).toHaveCount(0)
 })
 
-test('커뮤니티 처리 실패 메시지도 같은 화면에서 보고 재처리한다', async ({ page, request }) => {
-  const id = await newDeadLetter(request, false, 'community')
-  await acceptConfirms(page)
-  await signInAdmin(page)
-  await page.goto('/admin/dead-letters')
-  await page.getByRole('tab', { name: '커뮤니티' }).click()
-  await expect(page).toHaveURL(/module=community/)
-  await page.getByRole('link', { name: `메시지 ${id}`, exact: true }).click()
-  await expect(page).toHaveURL(new RegExp(`/admin/dead-letters/community/${id}$`))
-  const state = page.getByRole('region', { name: '처리 상태' })
-  await state.getByRole('button', { name: '재처리' }).click()
-  await expect(state.getByRole('status')).toHaveText('재처리했어요.')
-})
+for (const [module, label] of [
+  ['community', '커뮤니티'],
+  ['notification', '알림'],
+  ['settlement', '정산'],
+]) {
+  test(`${label} 처리 실패 메시지도 같은 화면에서 보고 재처리한다`, async ({ page, request }) => {
+    const id = await newDeadLetter(request, false, module)
+    await acceptConfirms(page)
+    await signInAdmin(page)
+    await page.goto('/admin/dead-letters')
+    await page.getByRole('tab', { name: label, exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`module=${module}`))
+    await page.getByRole('link', { name: `메시지 ${id}`, exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`/admin/dead-letters/${module}/${id}$`))
+    const state = page.getByRole('region', { name: '처리 상태' })
+    await state.getByRole('button', { name: '재처리' }).click()
+    await expect(state.getByRole('status')).toHaveText('재처리했어요.')
+  })
+}
 
 test('주문 처리 실패 메시지: 결제 표시 → 상세 재처리 · 메모 남기고 확인 후 종료', async ({
   page,

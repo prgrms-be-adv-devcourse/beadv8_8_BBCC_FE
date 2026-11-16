@@ -52,9 +52,9 @@ export function DecideWish({ wish, addressesPath, renderImage, onApproved }: Dec
   return (
     <section
       aria-label="조르기 답하기"
-      className="border-rule space-y-4 rounded-lg border p-4 md:p-5"
+      className="border-ink bg-paper border-l-sheet space-y-4 border-[1.5px] border-l-[10px] p-4 md:p-5"
     >
-      <h2 className="text-section">조르기 답하기</h2>
+      <h2 className="text-section border-ink border-b-4 border-double pb-3">조르기 답하기</h2>
       {selection.approvableCount > 0 && (
         <label className="flex min-h-11 items-center gap-2 text-sm font-semibold">
           <input
@@ -74,7 +74,7 @@ export function DecideWish({ wish, addressesPath, renderImage, onApproved }: Dec
           return (
             <li
               key={item.optionId}
-              className="border-rule flex flex-wrap items-start gap-3 rounded-lg border p-3"
+              className="border-ink bg-paper/70 flex flex-wrap items-start gap-3 border p-3"
             >
               <input
                 type="checkbox"
@@ -84,7 +84,7 @@ export function DecideWish({ wish, addressesPath, renderImage, onApproved }: Dec
                 checked={isSelected(item.optionId)}
                 onChange={() => toggle(item.optionId)}
               />
-              <span className="rounded-card block aspect-square w-20 shrink-0 overflow-hidden">
+              <span className="border-ink block aspect-square w-20 shrink-0 overflow-hidden border">
                 {renderImage(item)}
               </span>
               <div className="min-w-0 flex-1 basis-40 space-y-0.5">
@@ -112,7 +112,7 @@ export function DecideWish({ wish, addressesPath, renderImage, onApproved }: Dec
                     value={quantityOf(item)}
                     disabled={!isSelected(item.optionId) || pending}
                     onChange={(event) => setQuantity(item.optionId, Number(event.target.value))}
-                    className="border-field-edge figure h-9 w-16 rounded-md border px-2"
+                    className="border-field-edge bg-paper figure h-9 w-16 rounded-md border px-2"
                   />
                 </label>
               </div>
@@ -134,7 +134,7 @@ export function DecideWish({ wish, addressesPath, renderImage, onApproved }: Dec
           </label>
           <select
             id="wish-address"
-            className="border-field-edge h-11 w-full rounded-md border px-3 text-sm"
+            className="border-field-edge bg-paper h-11 w-full rounded-md border px-3 text-sm"
             value={address?.id ?? ''}
             onChange={(event) => selectAddress(event.target.value)}
           >
@@ -147,7 +147,7 @@ export function DecideWish({ wish, addressesPath, renderImage, onApproved }: Dec
           </select>
         </div>
       )}
-      <div className="border-rule space-y-1 border-t pt-3 text-sm">
+      <div className="border-ink space-y-1 border-t border-dashed pt-3 text-sm">
         <p className="flex justify-between">
           <span>고른 상품 {lines.length}개</span>
           <strong className="figure">{formatWon(total)}</strong>
@@ -175,13 +175,13 @@ export function DecideWish({ wish, addressesPath, renderImage, onApproved }: Dec
             ? `${formatWon(total)} 승인하고 결제`
             : '사 줄 상품을 골라 주세요'}
       </button>
-      <details className="border-rule rounded-lg border p-3">
+      <details className="border-ink border p-3">
         <summary className="cursor-pointer text-sm font-semibold">거절하기</summary>
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <label className="space-y-1 text-sm">
             <span className="block">거절 사유</span>
             <select
-              className="border-field-edge h-10 rounded-md border px-3"
+              className="border-field-edge bg-paper h-10 rounded-md border px-3"
               value={reason}
               onChange={(event) => setReason(event.target.value)}
             >

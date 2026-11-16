@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-/** 목 데이터 사용 · 시연 기능(역할 전환 · 시연 콘솔 · API 흐름) — FE 동작 설정 */
+/** 시연 데이터(쇼핑 목록 예시 사진) · 시연 기능(역할 전환 · 시연 콘솔 · API 흐름) — FE 동작 설정 */
 export type AppSettingValues = { isMockEnabled: boolean; isDemoRoleSwitchEnabled: boolean }
 
 /** 관리자 설정에서 고른 값. 이 브라우저에만 기억한다 */

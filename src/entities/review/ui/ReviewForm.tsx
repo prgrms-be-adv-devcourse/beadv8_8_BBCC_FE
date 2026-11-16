@@ -25,7 +25,7 @@ type ReviewFormProps = {
 
 const choiceClass = (isActive: boolean) =>
   cn(
-    'inline-flex h-10 min-w-11 items-center justify-center rounded-full border px-3.5 text-sm font-semibold transition-colors',
+    'inline-flex h-10 min-w-11 items-center justify-center rounded-pill border px-3.5 text-sm font-semibold transition-colors',
     isActive ? 'border-primary bg-primary text-primary-foreground' : 'border-rule text-ink-2',
   )
 

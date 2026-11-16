@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { useAddressesQuery } from '@/entities/address'
 import { sizeBandOf, useChildrenQuery } from '@/entities/child'
-import { countOrdersByTab, ORDER_TABS, useOrdersQuery } from '@/entities/order'
+import { ORDER_TABS, useOrderTabCountsQuery } from '@/entities/order'
 import { PAYMENT_STATUS_LABEL, usePaymentsQuery } from '@/entities/payment'
 import { hasRole, ROLE_LABEL, useSessionStore } from '@/entities/session'
 import { useWalletQuery } from '@/entities/wallet'
@@ -21,7 +21,7 @@ export function ShopMyPage() {
   const addresses = useAddressesQuery()
   const wallet = useWalletQuery()
   const payments = usePaymentsQuery({ enabled: Boolean(user) })
-  const orders = useOrdersQuery()
+  const counts = useOrderTabCountsQuery()
 
   if (!user) {
     return (
@@ -34,16 +34,15 @@ export function ShopMyPage() {
     )
   }
 
-  const counts = countOrdersByTab(orders.data?.content ?? [], orders.data?.totalElements)
   return (
     <div className="shop-look space-y-10">
       <h1 className="sr-only">마이페이지</h1>
       {/* 나와 자산 */}
-      <section aria-label="내 정보 요약" className="border-rule rounded-xl border">
+      <section aria-label="내 정보 요약" className="border-ink border-[1.5px]">
         <div className="flex flex-wrap items-center gap-4 p-5 md:p-6">
           <span
             aria-hidden
-            className="bg-signal-soft text-signal flex size-14 shrink-0 items-center justify-center rounded-full text-xl font-bold"
+            className="bg-signal-soft text-ink border-ink rounded-pill flex size-14 shrink-0 items-center justify-center border text-xl font-bold"
           >
             {user.nickname.slice(0, 1)}
           </span>
@@ -53,7 +52,7 @@ export function ShopMyPage() {
               {user.roles.map((role) => (
                 <span
                   key={role}
-                  className="bg-paper-2 text-ink-2 inline-flex h-6 items-center rounded-sm px-2 text-xs font-semibold"
+                  className="border-ink text-ink inline-flex h-6 items-center border px-2 text-xs font-bold"
                 >
                   {ROLE_LABEL[role]}
                 </span>
@@ -63,12 +62,12 @@ export function ShopMyPage() {
           </div>
           <Link
             to={paths.shop.profile}
-            className="border-rule text-ink-2 hover:border-field-edge inline-flex h-9 items-center rounded-full border px-3.5 text-[13px] font-semibold transition-colors"
+            className="border-ink text-ink hover:bg-marker inline-flex h-9 items-center border-[1.5px] px-3.5 text-[13px] font-bold transition-colors"
           >
             내 정보 수정
           </Link>
         </div>
-        <div className="border-rule divide-rule grid grid-cols-3 divide-x border-t">
+        <div className="border-ink divide-ink grid grid-cols-3 divide-x-[1.5px] border-t-[1.5px]">
           <AssetCell
             label="예치금"
             value={wallet.data ? formatWon(wallet.data.balance) : '…'}
@@ -99,7 +98,7 @@ export function ShopMyPage() {
             전체 보기
           </Link>
         </div>
-        <div className="bg-paper-2 grid grid-cols-4 rounded-xl py-5">
+        <div className="border-ink grid grid-cols-4 border-[1.5px] py-5">
           {ORDER_TABS.map((tab) => (
             <Link
               key={tab.value}
@@ -109,11 +108,11 @@ export function ShopMyPage() {
               <p
                 className={cn(
                   'figure text-2xl font-bold transition-colors',
-                  orders.data && counts[tab.value] > 0 ? 'text-ink' : 'text-ink-3',
+                  (counts[tab.value] ?? 0) > 0 ? 'text-ink' : 'text-ink-3',
                   'group-hover:text-signal',
                 )}
               >
-                {orders.data ? counts[tab.value] : '…'}
+                {counts[tab.value] ?? '…'}
               </p>
               <p className="text-ink-2 text-xs">{tab.label}</p>
             </Link>
@@ -141,11 +140,11 @@ export function ShopMyPage() {
               <li key={child.id}>
                 <Link
                   to={paths.shop.child(child.id)}
-                  className="border-rule hover:border-ink-3 flex h-full items-center gap-3 rounded-lg border p-3.5 transition-colors"
+                  className="border-ink hover:bg-fit-soft flex h-full items-center gap-3 border-[1.5px] p-3.5 transition-colors"
                 >
                   <span
                     aria-hidden
-                    className="bg-signal-soft text-signal flex size-10 shrink-0 items-center justify-center rounded-full font-bold"
+                    className="bg-signal-soft text-ink border-ink rounded-pill flex size-10 shrink-0 items-center justify-center border font-bold"
                   >
                     {child.name.slice(0, 1)}
                   </span>
@@ -192,7 +191,7 @@ export function ShopMyPage() {
         )}
         {payments.data?.length === 0 && <StateMessage>결제한 주문이 없어요.</StateMessage>}
         {payments.data && payments.data.length > 0 && (
-          <ul className="divide-rule border-rule divide-y border-y">
+          <ul className="divide-rule border-ink divide-y border-y-[1.5px]">
             {payments.data.slice(0, 5).map((payment) => (
               <li key={payment.id}>
                 <Link
@@ -244,7 +243,11 @@ function AssetCell({ label, value, to, action }: AssetCellProps) {
     <Link to={to} className="hover:bg-paper-2 block px-4 py-4 transition-colors md:px-6">
       <span className="text-ink-3 flex items-center justify-between gap-2 text-[13px]">
         {label}
-        {action && <span className="text-signal text-xs font-semibold">{action}</span>}
+        {action && (
+          <span className="text-ink text-xs font-bold underline underline-offset-[3px]">
+            {action}
+          </span>
+        )}
       </span>
       <span className="figure text-ink mt-1 block truncate text-lg font-bold">{value}</span>
     </Link>

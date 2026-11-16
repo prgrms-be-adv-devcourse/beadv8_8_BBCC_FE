@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import {
   bulkTargets,
-  countSellerOrdersByTab,
-  filterSellerOrdersByTab,
   nextShippingStep,
   SELLER_ORDER_TABS,
+  sellerOrderStatusOfTab,
   sellerOrderTabOf,
   useSellerOrdersQuery,
+  useSellerOrderTabCountsQuery,
   type SellerOrderTab,
 } from '@/entities/seller-order'
 import { BulkShippingBar } from '@/features/ship-order'
@@ -27,7 +27,9 @@ export function CenterOrdersPage() {
   const [params, setParams] = useSearchParams()
   const tab = sellerOrderTabOf(params.get('tab'))
   const page = pageFromSearch(params.get('page'))
-  const orders = useSellerOrdersQuery(page)
+  // 탭은 서버가 거른다 (BE #1280). 건수는 탭마다 size 1 요청의 전체 건수
+  const orders = useSellerOrdersQuery(page, sellerOrderStatusOfTab(tab))
+  const counts = useSellerOrderTabCountsQuery()
   const setPage = (next: number) => {
     const search = new URLSearchParams(params)
     if (next > 0) search.set('page', String(next))
@@ -38,9 +40,7 @@ export function CenterOrdersPage() {
   const setTab = (next: SellerOrderTab) =>
     setParams(next === 'ALL' ? {} : { tab: next }, { replace: true })
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const all = orders.data?.content ?? []
-  const counts = countSellerOrdersByTab(all, orders.data?.totalElements)
-  const visible = filterSellerOrdersByTab(all, tab)
+  const visible = orders.data?.content ?? []
   const actionable = visible.filter((order) => nextShippingStep(order) !== null)
   const targets = bulkTargets(visible, selected)
   const chosen = targets.toShip.length + targets.toDeliver.length
@@ -83,7 +83,7 @@ export function CenterOrdersPage() {
                 : 'text-ink-3 hover:text-ink active:text-ink border-transparent',
             )}
           >
-            {item.label} <span className="figure text-sm">{counts[item.value]}</span>
+            {item.label} <span className="figure text-sm">{counts[item.value] ?? '…'}</span>
           </button>
         ))}
       </div>

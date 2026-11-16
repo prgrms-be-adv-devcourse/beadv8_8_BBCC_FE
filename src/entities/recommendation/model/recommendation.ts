@@ -1,3 +1,4 @@
+import type { GrowthSpeed, WearablePeriod } from './growth-speed'
 import type { ItemJudgement, ReferenceFit } from './reference-fit'
 import type { SizeWearPreview } from './wear-preview'
 
@@ -31,13 +32,17 @@ export type SizeRecommendation = {
   itemJudgements: ItemJudgement[]
   /** 착용 미리보기. 사이즈 무관 상품 · 모자 · 양말이면 null → 미리보기를 숨긴다 */
   wearPreview: SizeWearPreview | null
+  // 성장 속도 · 입을 수 있는 기간 (BE #1266)
+  growthSpeed: GrowthSpeed
+  /** 사이즈별 입을 수 있는 기간. 사이즈 무관 · 모자 · 양말이면 빈 목록 */
+  wearablePeriods: WearablePeriod[]
 }
 
 export type SizeReasonType =
-  'HEIGHT' | 'BODY_TYPE' | 'PREFERRED_FIT' | 'MEASUREMENT' | 'RULE_RESULT' | 'GROWTH'
+  'HEIGHT' | 'BODY_TYPE' | 'PREFERRED_FIT' | 'MEASUREMENT' | 'RULE_RESULT' | 'GROWTH' | 'PURCHASE'
 
-/** 사이즈 근거 하나: 종류 라벨 + 문구(그대로 보인다) */
-export type SizeReason = { type: SizeReasonType; detail: string }
+/** 사이즈 근거 하나: 종류 라벨 + 문구(그대로 보인다). 모르는 종류면 type은 null → 라벨 없이 문구만 */
+export type SizeReason = { type: SizeReasonType | null; detail: string }
 
 export const SIZE_REASON_LABEL: Record<SizeReasonType, string> = {
   HEIGHT: '키',
@@ -46,6 +51,7 @@ export const SIZE_REASON_LABEL: Record<SizeReasonType, string> = {
   MEASUREMENT: '실측',
   RULE_RESULT: '키 기준표',
   GROWTH: '성장',
+  PURCHASE: '지난 구매',
 }
 
 export type RecommendedProduct = {

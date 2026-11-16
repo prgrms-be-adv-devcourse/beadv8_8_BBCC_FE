@@ -3,6 +3,8 @@ import { Link } from 'react-router'
 import {
   AiSentenceNotice,
   FIT_LABEL,
+  GrowthOutlook,
+  lastPurchaseTextOf,
   referenceFitSummaryOf,
   showsAiSizeNotice,
   SizeReasonList,
@@ -28,7 +30,7 @@ type SizeAdviceProps = {
 /**
  * 사이즈 칩 바로 위 추천 한 줄: 「추천 사이즈 120 · 여유 있음 · 김들희 115cm 기준」 + 「사이즈 자세히」.
  * 그 아래 AI 근거(있으면) · AI 안내 · 기준 옷 등록 안내. 펼치면 백엔드 안내 · 이 상품 사이즈 눈금 · 착용 미리보기.
- * 추천 한 줄 바로 아래(근거 위)에 기준 핏(기준 옷과의 cm 차이)을 둔다. 입을 수 있는 기간도 이 자리에 온다
+ * 추천 한 줄 바로 아래에 지난 구매 사이즈, 그 아래(근거 위)에 입을 수 있는 기간 · 성장 속도(예상치), 그 아래 기준 핏(기준 옷과의 cm 차이)을 둔다
  */
 export function SizeAdvice({
   child,
@@ -41,27 +43,28 @@ export function SizeAdvice({
   const detailsId = useId()
   const { recommendedSize, fit, notices, reasons } = recommendation
   const fitSummary = referenceFitSummaryOf(recommendation)
+  const lastPurchaseText = lastPurchaseTextOf(recommendation)
 
   return (
-    <div className="bg-paper-2 rounded-md">
+    <div className="border-ink bg-paper border-l-sheet border-[1.5px] border-l-[10px]">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3.5 py-2.5">
         {recommendedSize ? (
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-            <span className="text-ink-2">추천 사이즈</span>
-            <strong className="text-fit-ink figure text-lg leading-none font-bold">
+            <span className="font-bold">추천 사이즈</span>
+            <strong className="font-display bg-[linear-gradient(transparent_55%,var(--fit)_55%)] px-[0.12em] text-[1.7em] leading-none font-normal">
               {recommendedSize}
             </strong>
             {fit && (
               <span
                 className={cn(
-                  'inline-flex h-5 items-center rounded-sm px-1.5 text-[11px] font-semibold',
-                  fit === 'TIGHT' ? 'bg-paper text-destructive' : 'bg-signal-soft text-signal',
+                  'border-ink bg-paper inline-flex h-5 items-center border px-1.5 text-[11px] font-bold',
+                  fit === 'TIGHT' ? 'text-destructive' : 'text-ink',
                 )}
               >
                 {FIT_LABEL[fit]}
               </span>
             )}
-            <span className="text-ink-3 text-[13px]">
+            <span className="text-ink-2 text-[13px]">
               {child.name} <span className="figure">{child.heightCm}cm</span> 기준
             </span>
           </p>
@@ -74,7 +77,7 @@ export function SizeAdvice({
           aria-expanded={isOpen}
           aria-controls={detailsId}
           onClick={() => setIsOpen((open) => !open)}
-          className="text-ink-2 hover:text-ink flex min-h-9 items-center gap-0.5 rounded-md text-[13px] font-semibold transition-colors"
+          className="text-ink flex min-h-9 items-center gap-0.5 text-[13px] font-bold underline-offset-[3px] hover:underline"
         >
           사이즈 자세히
           <svg
@@ -89,6 +92,15 @@ export function SizeAdvice({
           </svg>
         </button>
       </div>
+      {lastPurchaseText && (
+        <p className="text-ink-2 px-3.5 pb-2.5 text-[13px]">{lastPurchaseText}</p>
+      )}
+      {/* 사이즈 무관 · 맞는 사이즈 없음이면 예상치를 보이지 않는다 */}
+      {recommendedSize && (
+        <div className="px-3.5 pb-2.5">
+          <GrowthOutlook recommendation={recommendation} />
+        </div>
+      )}
       {fitSummary && recommendedSize && (
         <div className="px-3.5 pb-2.5">
           <ReferenceFitLine summary={fitSummary} size={recommendedSize} />
@@ -102,14 +114,14 @@ export function SizeAdvice({
           잘 맞는 옷을 등록하면 더 정확해요
           <Link
             to={referenceGarmentLink.to}
-            className="text-signal inline-flex min-h-9 items-center font-semibold hover:underline"
+            className="text-ink inline-flex min-h-9 items-center font-bold underline underline-offset-[3px]"
           >
             {referenceGarmentLink.label}
           </Link>
         </p>
       )}
       {isOpen && (
-        <div id={detailsId} className="border-rule space-y-4 border-t px-3.5 pt-3 pb-4">
+        <div id={detailsId} className="border-ink/30 space-y-4 border-t px-3.5 pt-3 pb-4">
           {recommendedSize && notices[0] && (
             <p className="text-ink-2 text-[13px]">{notices[0].message}</p>
           )}
@@ -129,7 +141,7 @@ type SizeScaleBarProps = {
   recommendedSize: string | null
 }
 
-/** 이 상품의 사이즈별 권장 키 칸 위에 자녀 키(자두 핀). 추천 칸만 코랄 */
+/** 이 상품의 사이즈별 권장 키 칸 위에 자녀 키(핀). 추천 칸만 칠한다 */
 function SizeScaleBar({ sizes, child, recommendedSize }: SizeScaleBarProps) {
   const scale = sizeScaleOf(sizes, child.heightCm)
   return (
@@ -140,7 +152,7 @@ function SizeScaleBar({ sizes, child, recommendedSize }: SizeScaleBarProps) {
     >
       <span
         aria-hidden
-        className="text-signal figure absolute top-0 -translate-x-1/2 text-[11px] font-bold whitespace-nowrap"
+        className="bg-ink text-paper figure absolute top-0 -translate-x-1/2 px-1.5 text-[11px] leading-4 font-bold whitespace-nowrap"
         style={{ left: `${scale.heightPct}%` }}
       >
         {child.heightCm}cm
@@ -150,8 +162,8 @@ function SizeScaleBar({ sizes, child, recommendedSize }: SizeScaleBarProps) {
           key={segment.size}
           aria-hidden
           className={cn(
-            'absolute top-[22px] h-2 rounded-full',
-            segment.size === recommendedSize ? 'bg-fit' : 'bg-paper-3',
+            'border-ink absolute top-[22px] h-2.5 border',
+            segment.size === recommendedSize ? 'bg-fit' : 'bg-paper',
           )}
           style={{
             left: `calc(${segment.startPct}% + 1.5px)`,
@@ -161,7 +173,7 @@ function SizeScaleBar({ sizes, child, recommendedSize }: SizeScaleBarProps) {
       ))}
       <span
         aria-hidden
-        className="bg-signal ring-paper-2 absolute top-[17px] h-[18px] w-[3px] -translate-x-1/2 rounded-full ring-2"
+        className="bg-ink absolute top-4 h-5 w-[2.5px] -translate-x-1/2"
         style={{ left: `${scale.heightPct}%` }}
       />
       {scale.segments.map((segment) => (
@@ -170,7 +182,9 @@ function SizeScaleBar({ sizes, child, recommendedSize }: SizeScaleBarProps) {
           aria-hidden
           className={cn(
             'figure absolute top-[36px] -translate-x-1/2 text-xs',
-            segment.size === recommendedSize ? 'text-fit-ink font-bold' : 'text-ink-3',
+            segment.size === recommendedSize
+              ? 'text-ink font-bold underline decoration-2 underline-offset-[3px]'
+              : 'text-ink-2',
           )}
           style={{ left: `${(segment.startPct + segment.endPct) / 2}%` }}
         >

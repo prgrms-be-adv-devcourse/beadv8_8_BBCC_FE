@@ -1,13 +1,20 @@
 import { Link, useSearchParams } from 'react-router'
 import {
-  countOrdersByTab,
-  filterOrdersByTab,
   ORDER_TABS,
+  orderStatusOfTab,
   orderTabOf,
   OrderStatusBadge,
   useOrdersQuery,
+  useOrderTabCountsQuery,
   type OrderTab,
 } from '@/entities/order'
+import {
+  lineImageUrl,
+  ALL_CATEGORIES_ICON,
+  ProductImage,
+  productIdsWithoutImage,
+  useProductImageUrls,
+} from '@/entities/product'
 import { getErrorMessage, pageFromSearch } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn, formatDateTime, formatWon } from '@/shared/lib'
@@ -21,7 +28,9 @@ export function ShopOrdersPage() {
   const [params, setParams] = useSearchParams()
   const tab = orderTabOf(params.get('tab'))
   const page = pageFromSearch(params.get('page'))
-  const orders = useOrdersQuery(page)
+  // 탭은 서버가 거른다 (BE #1280). 건수는 탭마다 size 1 요청의 전체 건수
+  const orders = useOrdersQuery(page, orderStatusOfTab(tab))
+  const counts = useOrderTabCountsQuery()
   const setTab = (next: OrderTab) =>
     setParams(next === 'ALL' ? {} : { tab: next }, { replace: true })
   const setPage = (next: number) => {
@@ -30,17 +39,17 @@ export function ShopOrdersPage() {
     else search.delete('page')
     setParams(search, { replace: true })
   }
-  const all = orders.data?.content ?? []
-  const counts = countOrdersByTab(all, orders.data?.totalElements)
-  const visible = filterOrdersByTab(all, tab)
+  const visible = orders.data?.content ?? []
+  // 대표 사진: 응답 사진(BE #1328), 없는 옛 주문만 상품 상세 대표 사진으로
+  const images = useProductImageUrls(productIdsWithoutImage(visible))
 
   return (
     <div className="shop-look space-y-6">
-      <h1 className="text-page">주문 내역</h1>
+      <h1 className="text-page border-ink border-b-[3px] pb-3.5">주문 내역</h1>
       <div
         role="tablist"
         aria-label="주문 상태"
-        className="border-rule flex gap-6 overflow-x-auto border-b"
+        className="border-rule flex gap-6 overflow-x-auto overflow-y-hidden border-b"
       >
         {ORDER_TABS.map((item) => (
           <button
@@ -56,14 +65,14 @@ export function ShopOrdersPage() {
                 : 'text-ink-3 hover:text-ink border-transparent',
             )}
           >
-            {item.label} <span className="figure text-sm">{counts[item.value]}</span>
+            {item.label} <span className="figure text-sm">{counts[item.value] ?? '…'}</span>
           </button>
         ))}
       </div>
       {orders.isPending && <ListSkeleton />}
       {orders.isError && <StateMessage tone="error">{getErrorMessage(orders.error)}</StateMessage>}
       {orders.data && visible.length === 0 && (
-        <div className="bg-paper-2 rounded-card space-y-3 py-16 text-center">
+        <div className="bg-paper-2 space-y-3 py-16 text-center">
           <p className="text-ink-2 text-base">
             {tab === 'ALL' ? '주문한 상품이 없어요.' : '이 상태의 주문이 없어요.'}
           </p>
@@ -75,25 +84,33 @@ export function ShopOrdersPage() {
         </div>
       )}
       {visible.length > 0 && (
-        <ul className="divide-rule border-rule divide-y border-b">
+        <ul className="divide-rule border-ink divide-y border-b-[1.5px]">
           {visible.map((order) => (
             <li key={order.id}>
               <Link
                 to={paths.shop.order(order.id)}
                 className="hover:bg-paper-2 -mx-4 grid gap-x-6 gap-y-2 px-4 py-5 transition-colors md:grid-cols-[minmax(0,1fr)_auto_auto_auto] md:items-center"
               >
-                <div className="min-w-0 space-y-1">
-                  <p className="text-ink-3 flex flex-wrap gap-x-3 text-[13px]">
-                    <span>{formatDateTime(order.orderedAt)}</span>
-                    <span>주문번호 {order.id}</span>
-                  </p>
-                  <p className="text-[15px] font-semibold">
-                    {order.title ?? `주문번호 ${order.id}`}
-                  </p>
+                <div className="flex min-w-0 items-center gap-4">
+                  <ProductImage
+                    src={lineImageUrl(order, images)}
+                    alt={order.title ?? `주문번호 ${order.id}`}
+                    doodle={ALL_CATEGORIES_ICON}
+                    className="border-ink aspect-[4/5] w-16 shrink-0 border"
+                  />
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-ink-2 flex flex-wrap gap-x-3 text-[13px]">
+                      <span>{formatDateTime(order.orderedAt)}</span>
+                      <span>주문번호 {order.id}</span>
+                    </p>
+                    <p className="text-[15px] font-bold">{order.title ?? `주문번호 ${order.id}`}</p>
+                  </div>
                 </div>
-                <span className="figure font-bold">{formatWon(order.totalAmount)}</span>
+                <span className="figure text-[17px] font-bold">{formatWon(order.totalAmount)}</span>
                 <OrderStatusBadge status={order.status} />
-                <span className="text-ink-3 text-[13px] font-semibold">상세</span>
+                <span className="text-ink text-[13px] font-bold underline underline-offset-[3px]">
+                  상세
+                </span>
               </Link>
             </li>
           ))}

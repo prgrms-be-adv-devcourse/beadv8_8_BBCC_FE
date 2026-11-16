@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { signInAdmin } from './support/admin'
 
-// 관리자 설정: 시연 데이터(목 응답)를 켜고 끈다. 이 브라우저에 기억해 새로고침 뒤에도 그대로다
+// 관리자 설정: 시연 데이터(쇼핑 목록 예시 사진)를 켜고 끈다. 이 브라우저에 기억해 새로고침 뒤에도 그대로다
 test('관리자 설정: 시연 데이터 끄기 → 새로고침 뒤에도 꺼짐 → 다시 켜기', async ({ page }) => {
   await signInAdmin(page)
   await page

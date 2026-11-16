@@ -1,13 +1,14 @@
+import type { ReactNode } from 'react'
 import {
   SETTLEMENT_RUN_STATUS_LABEL,
   SKIPPED_PHASE_LABEL,
   type SettlementRunResult,
 } from '../model/settlement'
 
-type SettlementRunSummaryProps = { run: SettlementRunResult }
+type SettlementRunSummaryProps = { run: SettlementRunResult; action?: ReactNode }
 
-/** 정산 실행 결과 한 줄 + 건너뛴 판매자와 사유 */
-export function SettlementRunSummary({ run }: SettlementRunSummaryProps) {
+/** 정산 실행 결과 한 줄 + 건너뛴 판매자와 사유. action은 실행 복구 같은 버튼 자리 */
+export function SettlementRunSummary({ run, action }: SettlementRunSummaryProps) {
   return (
     <div role="status" className="bg-paper-2 text-ink space-y-2 rounded-lg px-5 py-4 text-sm">
       <p className="figure">
@@ -24,6 +25,7 @@ export function SettlementRunSummary({ run }: SettlementRunSummaryProps) {
           ))}
         </ul>
       )}
+      {action}
     </div>
   )
 }

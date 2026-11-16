@@ -17,7 +17,6 @@ const log = (patch: Partial<ApiCallLog>): ApiCallLog => ({
   status: 200,
   durationMs: 10,
   startedAt: `2026-10-15T10:00:0${id % 10}.000Z`,
-  mock: false,
   requestBody: null,
   responseBody: null,
   contractIssues: [],
@@ -215,15 +214,16 @@ describe('흐름 확인 판정', () => {
   it('호출이 없으면 대기', () => {
     expect(evaluate(check('order-paid'), []).state).toBe('waiting')
   })
-  it('목으로 통과하면 표시한다', () => {
+  // 사이즈 추천은 SSE라 흐름 기록 본문이 { events, data(마지막 이벤트) }다
+  it.each<[string, unknown]>([
+    ['JSON 응답', { recommendedSize: '120', source: 'RULE' }],
+    ['스트림 기록', { events: ['rule', 'ai'], data: { recommendedSize: '120', source: 'AI' } }],
+  ])('사이즈 추천: %s에 추천 사이즈가 있으면 통과', (_, responseBody) => {
     expect(
-      evaluate(check('product-register'), [
-        log({ method: 'POST', path: '/seller/products', mock: true }),
-      ]),
-    ).toMatchObject({
-      state: 'pass',
-      byMock: true,
-    })
+      evaluate(check('size-recommend'), [
+        log({ path: '/recommendations/size?productId=1&childId=2', responseBody }),
+      ]).state,
+    ).toBe('pass')
   })
   it('판매 시작: PUT sale-status 응답이 ON_SALE이면 통과', () => {
     expect(
@@ -234,7 +234,7 @@ describe('흐름 확인 판정', () => {
           responseBody: { productId: '7', status: 'ON_SALE', version: 1 },
         }),
       ]),
-    ).toMatchObject({ state: 'pass', byMock: false })
+    ).toMatchObject({ state: 'pass' })
   })
   it('보호자 잔액 감소: 같은 회원 잔액이 줄면 통과', () => {
     const result = evaluate(check('buyer-balance'), [

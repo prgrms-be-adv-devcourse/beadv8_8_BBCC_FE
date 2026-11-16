@@ -4,8 +4,6 @@ import type { VerificationCheck } from '../config/checks'
 export type CheckResult = {
   state: 'pass' | 'fail' | 'waiting'
   evidence: string | null
-  /** 통과 근거가 목 응답이면 true (실제 백엔드로 다시 확인 필요) */
-  byMock: boolean
 }
 
 function describe(log: ApiCallLog): string {
@@ -17,8 +15,8 @@ export function evaluate(check: VerificationCheck, logs: ApiCallLog[]): CheckRes
   if (check.logs) {
     const result = check.logs(logs)
     return result
-      ? { state: result.pass ? 'pass' : 'fail', evidence: result.evidence, byMock: false }
-      : { state: 'waiting', evidence: null, byMock: false }
+      ? { state: result.pass ? 'pass' : 'fail', evidence: result.evidence }
+      : { state: 'waiting', evidence: null }
   }
   const call = check.call!
   const matched = logs.filter(
@@ -28,11 +26,11 @@ export function evaluate(check: VerificationCheck, logs: ApiCallLog[]): CheckRes
     (log) => log.status !== null && log.status < 300 && (call.expect ? call.expect(log) : true),
   )
   if (passed) {
-    return { state: 'pass', evidence: describe(passed), byMock: passed.mock }
+    return { state: 'pass', evidence: describe(passed) }
   }
   const last = matched.at(-1)
   if (last) {
-    return { state: 'fail', evidence: describe(last), byMock: last.mock }
+    return { state: 'fail', evidence: describe(last) }
   }
-  return { state: 'waiting', evidence: null, byMock: false }
+  return { state: 'waiting', evidence: null }
 }

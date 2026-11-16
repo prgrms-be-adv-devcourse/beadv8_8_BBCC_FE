@@ -1,9 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
+import { holdEventStream } from './support/held-event-stream'
 
 // 사이즈 추천 근거 (BE #1162): AI가 고르면 추천 한 줄 바로 아래에 근거(종류 라벨 + 문구)를 보이고, 규칙이면 숨긴다.
 // AI는 규칙 후보 밖의 실제 사이즈를 고를 수 있다 (recommendedSize가 candidateSizes에 없음).
 // AI 근거 아래에는 AI 안내를 달고, 이 상품 구분(상품 A = 상의)의 기준 옷이 없으면 등록 안내와 기준 옷 칸 링크를 둔다.
-// 기준 옷이 있으면 추천 한 줄 아래에 추천 사이즈의 기준 핏(기준 옷과 cm 차이 · AI 항목 판단)을 보인다 (BE #1261)
+// 기준 옷이 있으면 추천 한 줄 아래에 추천 사이즈의 기준 핏(기준 옷과 cm 차이 · AI 항목 판단)을 보인다 (BE #1261).
+// 추천 사이즈의 입을 수 있는 기간과 성장 속도를 예상치로 보이고, ⓘ를 누르면 출처와 안내를 연다 (BE #1266)
 
 const CHILD = {
   id: 501,
@@ -32,20 +34,31 @@ const size = (overrides: object) => ({
   referenceFit: null,
   itemJudgements: [],
   wearPreview: null,
+  growthSpeed: {
+    cmPerMonth: 0.55,
+    recentCmPerMonth: null,
+    recordCount: 0,
+    recordMonths: 0,
+    childSharePercent: 0,
+    tableCmPerMonth: 0.55,
+    tableSource: '한국아동패널',
+  },
+  wearablePeriods: [
+    { size: '110', lengthMonths: 0, widthMonths: null, months: 0 },
+    { size: '120', lengthMonths: 9, widthMonths: null, months: 9 },
+  ],
   ...overrides,
 })
 
 const AI_NOTICE = 'AI를 활용한 문장이라 실수가 있을 수 있어요.'
 const GARMENT_HINT = '잘 맞는 옷을 등록하면 더 정확해요'
 
-async function openDetail(page: Page, sizeResponse: object, garments: object[] = []) {
+/** 보호자로 들어와 자녀 501로 상품 1 상세를 연다 (사이즈 추천 응답은 부르는 쪽이 정한다) */
+async function openDetailWith(page: Page, garments: object[] = []) {
   await page.route('**/api/v1/children', (route) =>
     route.request().method() === 'GET' ? route.fulfill({ json: [CHILD] }) : route.fallback(),
   )
   await page.route('**/api/v1/children/501', (route) => route.fulfill({ json: CHILD }))
-  await page.route('**/api/v1/recommendations/size?*', (route) =>
-    route.fulfill({ json: sizeResponse }),
-  )
   await page.route('**/api/v1/recommendations/children/501/reference-garments', (route) =>
     route.fulfill({ json: garments }),
   )
@@ -56,8 +69,43 @@ async function openDetail(page: Page, sizeResponse: object, garments: object[] =
   await page.getByRole('button', { name: '보호자', exact: true }).first().click()
   await expect(page.getByText('보호자 · 회원 1')).toBeVisible()
   await page.goto('/products/1?childId=501')
+}
+
+async function openDetail(page: Page, sizeResponse: object, garments: object[] = []) {
+  await page.route('**/api/v1/recommendations/size?*', (route) =>
+    route.fulfill({ json: sizeResponse }),
+  )
+  await openDetailWith(page, garments)
   await expect(page.getByText('추천 사이즈')).toBeVisible()
 }
+
+// 사이즈 추천 SSE (FE #401): 규칙 추천을 받자마자 그리고, 스트림이 열려 있는 동안 AI 대기를 보이다가 AI 추천으로 바꾼다
+test('규칙 추천을 먼저 그리고, AI가 살펴보는 동안 안내를 두다가 AI 추천과 근거로 바꾼다', async ({
+  page,
+}) => {
+  const stream = await holdEventStream(page, '/api/v1/recommendations/size')
+  await openDetailWith(page)
+  const aiWaiting = page.getByRole('status', { name: 'AI가 사이즈를 더 살펴보고 있어요' })
+
+  await stream.send('rule', size({ recommendedSize: '110' }))
+  await expect(page.locator('strong', { hasText: /^110$/ }).first()).toBeVisible()
+  await expect(aiWaiting).toBeVisible()
+  await expect(page.getByText('추천 계산 중…')).toHaveCount(0)
+
+  await stream.send(
+    'ai',
+    size({
+      recommendedSize: '120',
+      source: 'AI',
+      reasons: [
+        { type: 'HEIGHT', detail: '키가 빨리 자라 한 치수 크게 골랐어요.', sourceId: null },
+      ],
+    }),
+  )
+  await expect(page.getByText('키가 빨리 자라 한 치수 크게 골랐어요.')).toBeVisible()
+  await expect(aiWaiting).toHaveCount(0)
+  await stream.close()
+})
 
 test('AI가 후보 밖 사이즈를 고르면 그 사이즈와 근거를 추천 한 줄 아래에 보인다', async ({
   page,
@@ -137,4 +185,100 @@ test('기준 옷이 있으면 추천 사이즈의 기준 핏을 추천 한 줄 �
     '가슴단면 +1.5cm · 여유 적당',
   ])
   await expect(page.getByText('MYSTERY_CODE')).toHaveCount(0)
+})
+
+test('추천 사이즈의 입을 수 있는 기간과 성장 속도를 예상치로 보이고, ⓘ로 출처와 안내를 연다', async ({
+  page,
+}) => {
+  await openDetail(
+    page,
+    size({
+      growthSpeed: {
+        cmPerMonth: 0.62,
+        recentCmPerMonth: 0.7,
+        recordCount: 3,
+        recordMonths: 3.46,
+        childSharePercent: 40,
+        tableCmPerMonth: 0.55,
+        tableSource: '한국아동패널',
+      },
+    }),
+  )
+
+  await expect(page.getByText('약 9개월 더 입을 수 있을 것으로 예상해요')).toBeVisible()
+  await expect(
+    page.getByText('우리 아이 기록과 또래 평균으로 보면 한 달에 약 0.6cm씩 클 것으로 예상해요'),
+  ).toBeVisible()
+
+  // ⓘ: 누르면 열리고 Esc로 닫힌다 (휴대폰은 눌러서 연다)
+  const tip = page.getByRole('button', { name: '성장 속도 안내' })
+  await expect(tip).toHaveAttribute('aria-expanded', 'false')
+  await tip.click()
+  await expect(tip).toHaveAttribute('aria-expanded', 'true')
+  const note = page.getByRole('note')
+  await expect(note).toContainText('또래 평균은 한국아동패널 자료로 계산했어요')
+  await expect(note).toContainText('우리 아이 성장 기록 3회(3.5개월)를 함께 반영했어요')
+  await expect(note).toContainText('아이마다 크는 속도가 달라 실제와 다를 수 있어요.')
+  await page.keyboard.press('Escape')
+  await expect(note).toHaveCount(0)
+
+  // 마우스를 올려도 열린다
+  await page.getByText('추천 사이즈', { exact: true }).hover()
+  await tip.hover()
+  await expect(page.getByRole('note')).toBeVisible()
+})
+
+test('성장이 0.0cm로 반올림되면 기간 줄을 숨기고 키가 거의 그대로라고 안내한다', async ({
+  page,
+}) => {
+  await openDetail(
+    page,
+    size({
+      growthSpeed: {
+        cmPerMonth: 0.04,
+        recentCmPerMonth: null,
+        recordCount: 4,
+        recordMonths: 5,
+        childSharePercent: 100,
+        tableCmPerMonth: 0.55,
+        tableSource: '한국아동패널',
+      },
+      wearablePeriods: [{ size: '120', lengthMonths: 24, widthMonths: null, months: 24 }],
+    }),
+  )
+
+  await expect(page.getByText('최근 기록으로는 키가 거의 그대로예요')).toBeVisible()
+  await expect(page.getByText(/입을 수 있을 것으로 예상해요/)).toHaveCount(0)
+  await page.getByRole('button', { name: '성장 속도 안내' }).click()
+  await expect(page.getByRole('note')).toContainText(
+    '또래 평균은 한 달에 약 0.6cm예요. 키를 잰 날짜와 값이 맞는지 확인해 보세요.',
+  )
+})
+
+test('지난 구매 사이즈를 한 줄로 보이고, 지난 구매 근거에 이름표를 붙이고, 모르는 근거 종류는 문구만 보인다', async ({
+  page,
+}) => {
+  await openDetail(
+    page,
+    size({
+      lastPurchasedSize: '120',
+      source: 'AI',
+      reasons: [
+        {
+          type: 'PURCHASE',
+          detail: '지난번 산 맨투맨(120)보다 총장이 1cm 길어요.',
+          sourceId: null,
+        },
+        { type: 'WEATHER', detail: '요즘 쌀쌀해서 넉넉하게 골랐어요.', sourceId: null },
+      ],
+    }),
+  )
+
+  await expect(page.getByText('지난번 같은 종류는 120 사이즈를 샀어요')).toBeVisible()
+  const reasons = page.getByRole('list', { name: '추천 근거' })
+  await expect(reasons.getByRole('listitem')).toHaveText([
+    '지난 구매지난번 산 맨투맨(120)보다 총장이 1cm 길어요.',
+    '요즘 쌀쌀해서 넉넉하게 골랐어요.',
+  ])
+  await expect(page.getByText('WEATHER')).toHaveCount(0)
 })

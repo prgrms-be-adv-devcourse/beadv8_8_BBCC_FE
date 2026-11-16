@@ -35,7 +35,7 @@ export function WishSummaryCard({
   const sellers = wishSellersLabel(wish)
   return (
     <article
-      className={cn('space-y-3 rounded-lg border p-4', waiting ? 'border-signal' : 'border-rule')}
+      className={cn('space-y-3 border-[1.5px] p-4', waiting ? 'border-signal' : 'border-rule')}
     >
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
         {leading}
@@ -57,7 +57,7 @@ export function WishSummaryCard({
       {first && (
         <div className="flex items-center gap-3">
           <div className="flex shrink-0">
-            <span className="rounded-card block aspect-square w-14 overflow-hidden">
+            <span className="border-ink block aspect-square w-14 overflow-hidden border">
               {renderImage(first)}
             </span>
             {rest.length > 0 && (
@@ -74,7 +74,9 @@ export function WishSummaryCard({
         </div>
       )}
       {wish.message && (
-        <p className="bg-paper-2 text-ink-2 rounded-md px-3 py-2 text-[13px]">“{wish.message}”</p>
+        <p data-slot="wish-message" className="bg-paper-2 text-ink-2 px-3 py-2 text-[13px]">
+          “{wish.message}”
+        </p>
       )}
       {action}
     </article>

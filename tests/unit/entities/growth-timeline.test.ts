@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { growthTimeline, type GrowthRecord } from '@/entities/child'
+import { canDeleteGrowthRecord, growthTimeline, type GrowthRecord } from '@/entities/child'
 
 const record = (id: string, recordedAt: string, heightCm: number): GrowthRecord => ({
   id,
@@ -32,5 +32,18 @@ describe('성장 이력 줄 (최신이 위, 바로 앞 기록보다 얼마나 �
 
   it('기록이 없으면 빈 줄', () => {
     expect(growthTimeline([])).toEqual([])
+  })
+})
+
+describe('성장 기록 삭제 가능 여부', () => {
+  it('기록이 0개 또는 1개면 삭제할 수 없다', () => {
+    expect(canDeleteGrowthRecord([])).toBe(false)
+    expect(canDeleteGrowthRecord([record('a', '2026-01-01', 100)])).toBe(false)
+  })
+
+  it('기록이 2개면 삭제할 수 있다', () => {
+    expect(
+      canDeleteGrowthRecord([record('a', '2026-01-01', 100), record('b', '2026-02-01', 101)]),
+    ).toBe(true)
   })
 })

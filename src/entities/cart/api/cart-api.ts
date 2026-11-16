@@ -1,6 +1,6 @@
 import { apiClient, expectShape } from '@/shared/api'
-import type { AddCartItemRequestDto, CartDto } from './cart.dto'
-import { cartShape } from './cart.shape'
+import type { AddCartItemRequestDto, CartDto, CartLineDto } from './cart.dto'
+import { cartLineShape, cartShape } from './cart.shape'
 
 export const cartApi = {
   get: () => apiClient.get<CartDto>('/cart').then(expectShape(cartShape)),
@@ -14,6 +14,8 @@ export const cartApi = {
 const asChild = { principal: 'child' } as const
 export const childCartApi = {
   get: () => apiClient.get<CartDto>('/cart', asChild).then(expectShape(cartShape)),
-  addItem: (request: AddCartItemRequestDto) => apiClient.post('/cart/items', request, asChild),
+  /** 201 새 줄 · 200 같은 줄에 합침, 둘 다 그 줄을 돌려준다. 예약된 줄에 합치면 409 */
+  addItem: (request: AddCartItemRequestDto) =>
+    apiClient.post<CartLineDto>('/cart/items', request, asChild).then(expectShape(cartLineShape)),
   removeItem: (cartItemId: string) => apiClient.delete(`/cart/items/${cartItemId}`, asChild),
 }

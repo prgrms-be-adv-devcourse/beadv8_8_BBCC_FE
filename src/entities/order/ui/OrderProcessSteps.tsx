@@ -32,7 +32,7 @@ export function OrderProcessSteps({ order, showEvents = false }: OrderProcessSte
               <span
                 aria-hidden
                 className={cn(
-                  'flex size-8 items-center justify-center rounded-full border-2 text-sm font-bold',
+                  'rounded-pill flex size-8 items-center justify-center border-2 text-sm font-bold',
                   step.state === 'done' && 'border-primary bg-primary text-primary-foreground',
                   step.state === 'active' && 'border-primary animate-spin border-t-transparent',
                   step.state === 'waiting' && 'border-muted-foreground/30',

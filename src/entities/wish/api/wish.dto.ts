@@ -17,6 +17,8 @@ export type WishRequestLineDto = {
   saleStatus: string | null
   /** 결제돼 장바구니에서 빠졌는지 */
   purchased: boolean
+  /** 상품의 지금 사진 (BE #1328). 없으면 null */
+  thumbnailUrl?: string | null
 }
 
 /** BE WishRequestResponse.Purchase. quantity는 그 칸에서 이번에 산 수량 */
