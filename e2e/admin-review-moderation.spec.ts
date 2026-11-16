@@ -64,3 +64,50 @@ test('리뷰 검사: 숨김 리뷰를 보고 다시 공개하면 PATCH visibilit
   await expect(restored.getByRole('button', { name: '숨김 확정' })).toBeVisible()
   await expect(restored.getByRole('button', { name: '다시 공개' })).toHaveCount(0)
 })
+
+test('리뷰 검사: 검사 대기 탭의 「다시 검사」는 상한에 걸린 리뷰를 되돌리고 건수를 알린 뒤 목록을 다시 부른다', async ({
+  page,
+}) => {
+  let listCalls = 0
+  let retryCalls = 0
+  await page.route('**/api/v1/admin/community/reviews?*', (route) => {
+    listCalls += 1
+    const status = new URL(route.request().url()).searchParams.get('status')
+    const items =
+      status === 'PENDING'
+        ? [
+            {
+              ...HIDDEN_REVIEW,
+              status: 'PENDING',
+              reason: null,
+              attempts: 10,
+              attemptsExhausted: retryCalls === 0,
+            },
+          ]
+        : []
+    return route.fulfill({ json: { items, nextCursor: null } })
+  })
+  await page.route('**/api/v1/admin/community/reviews/moderation/retry-exhausted', (route) => {
+    retryCalls += 1
+    return route.fulfill({ json: { resetCount: retryCalls === 1 ? 17 : 0 } })
+  })
+
+  await signInAdmin(page)
+  await page.goto('/admin/community/reviews?status=PENDING')
+  const review = page.getByRole('article', { name: '리뷰 #7' })
+  await expect(review.getByText('자동 검사 10회 실패')).toBeVisible()
+  const callsBefore = listCalls
+
+  await page.getByRole('button', { name: '다시 검사' }).click()
+  await expect(
+    page.getByText('17건을 다시 검사 대기로 돌렸어요. 1분 안에 다시 검사해요.'),
+  ).toBeVisible()
+  await expect(review.getByText('자동 검사 10회 실패')).toHaveCount(0)
+  expect(listCalls).toBeGreaterThan(callsBefore)
+
+  await page.getByRole('button', { name: '다시 검사' }).click()
+  await expect(page.getByText('다시 검사할 리뷰가 없어요.')).toBeVisible()
+  // 다른 탭에는 버튼이 없다
+  await page.getByRole('tab', { name: '숨김 (판단 대기)' }).click()
+  await expect(page.getByRole('button', { name: '다시 검사' })).toHaveCount(0)
+})

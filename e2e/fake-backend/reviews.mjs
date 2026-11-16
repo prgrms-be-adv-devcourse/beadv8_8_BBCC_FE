@@ -16,14 +16,18 @@ let nextReviewId = 1
 // 리뷰 검사 (BE #1002): 저장하면 바로 공개 + 검사 대기(PENDING). BE는 스케줄러가 1분마다 금칙어 → AI로 검사하지만,
 // 가짜 백엔드는 저장 · 수정 때 바로 금칙어만 본다 (걸리면 HIDDEN, 아니면 PENDING 그대로)
 const FORBIDDEN_WORDS = ['바보', '금칙어']
+// 본문에 이 말이 있으면 판단하지 못한 검사가 상한(10번)에 닿은 것으로 둔다 (BE attemptsExhausted, 공개 그대로)
+const UNJUDGEABLE_WORD = '검사불가'
+const MAX_ATTEMPTS = 10
 const MODERATION_STATUSES = ['PENDING', 'PASSED', 'HIDDEN', 'CONFIRMED_HIDDEN', 'RESTORED']
 const HIDDEN_STATUSES = ['HIDDEN', 'CONFIRMED_HIDDEN']
 const isPublic = (review) => !HIDDEN_STATUSES.includes(review.moderation.status)
 function moderate(review, at) {
   const isForbidden = FORBIDDEN_WORDS.some((word) => review.content.includes(word))
+  const attempts = review.content.includes(UNJUDGEABLE_WORD) ? MAX_ATTEMPTS : 0
   review.moderation = isForbidden
     ? { status: 'HIDDEN', reason: 'PROFANITY', moderatedAt: at, attempts: 0 }
-    : { status: 'PENDING', reason: null, moderatedAt: null, attempts: 0 }
+    : { status: 'PENDING', reason: null, moderatedAt: null, attempts }
 }
 
 const seoulNow = (plusMs = 0) =>
@@ -292,7 +296,8 @@ const adminItemOf = (review) => ({
   reason: review.moderation.reason,
   moderatedAt: review.moderation.moderatedAt,
   attempts: review.moderation.attempts,
-  attemptsExhausted: false,
+  attemptsExhausted:
+    review.moderation.status === 'PENDING' && review.moderation.attempts >= MAX_ATTEMPTS,
   content: review.content,
   imageUrls: [...review.imageUrls],
   createdAt: review.createdAt,
@@ -308,6 +313,15 @@ export function adminReviewRoute(m, p, query, body) {
       .sort(newestFirst)
       .map(adminItemOf)
     return { status: 200, body: cursorPage(items, query) }
+  }
+  // BE #1310: 상한에 닿은 검사 대기 리뷰를 다시 검사 대기로 (횟수 0). 다시 불러도 안전, 두 번째는 0
+  if (m === 'POST' && p === '/admin/community/reviews/moderation/retry-exhausted') {
+    const exhausted = reviews.filter(
+      (review) =>
+        review.moderation.status === 'PENDING' && review.moderation.attempts >= MAX_ATTEMPTS,
+    )
+    exhausted.forEach((review) => (review.moderation = { ...review.moderation, attempts: 0 }))
+    return { status: 200, body: { resetCount: exhausted.length } }
   }
   const matched = p.match(/^\/admin\/community\/reviews\/(\d+)\/visibility$/)
   if (!matched || m !== 'PATCH') return null

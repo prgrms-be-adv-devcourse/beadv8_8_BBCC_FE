@@ -7,6 +7,7 @@ import {
   useAdminReviewsQuery,
 } from '@/entities/review'
 import { ModerateReviewButtons } from '@/features/moderate-review'
+import { RetryReviewModerationButton } from '@/features/retry-review-moderation'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { cn, formatDateTime } from '@/shared/lib'
@@ -53,6 +54,16 @@ export function AdminCommunityReviewsPage() {
           </button>
         ))}
       </div>
+
+      {status === 'PENDING' && (
+        <div className="bg-paper-2 flex flex-wrap items-center justify-between gap-3 rounded-lg px-4 py-3">
+          <p className="text-ink-2 text-[13px]">
+            자동 검사가 여러 번 판단하지 못한 리뷰는 공개된 채로 멈춰 있어요. 「다시 검사」를 누르면
+            검사 대기로 돌려 다시 검사해요.
+          </p>
+          <RetryReviewModerationButton />
+        </div>
+      )}
 
       <section aria-label="리뷰 목록" className="space-y-3">
         {reviews.isPending ? (

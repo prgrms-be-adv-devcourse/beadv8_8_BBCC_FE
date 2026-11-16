@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ADMIN_REVIEW_STATUSES,
   isModerationStatus,
+  retryExhaustedMessage,
   MODERATION_REASON_LABEL,
   MODERATION_STATUS_LABEL,
   moderationActionsOf,
@@ -79,5 +80,15 @@ describe('isModerationStatus · 모르는 상태', () => {
     expect(isModerationStatus('PENDING_EXHAUSTED')).toBe(false)
     expect(isModerationStatus(null)).toBe(false)
     expect(toAdminReview({ ...dto, status: 'NEW_STATUS' }).status).toBe('PENDING')
+  })
+})
+
+describe('retryExhaustedMessage: 다시 검사 결과 안내 (BE #1310 resetCount)', () => {
+  it.each([
+    [17, '17건을 다시 검사 대기로 돌렸어요. 1분 안에 다시 검사해요.'],
+    [1, '1건을 다시 검사 대기로 돌렸어요. 1분 안에 다시 검사해요.'],
+    [0, '다시 검사할 리뷰가 없어요.'],
+  ])('%s건 → %s', (count, expected) => {
+    expect(retryExhaustedMessage(count)).toBe(expected)
   })
 })
