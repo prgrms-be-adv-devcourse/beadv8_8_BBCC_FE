@@ -532,6 +532,44 @@ const adminCookie = (value, maxAge = 1209600) =>
   `admin_refresh_token=${value}; Path=/api/v1/auth/admin; Max-Age=${maxAge}; HttpOnly; SameSite=Lax`
 const isAdmin = (u) => String(u.sub).startsWith('admin:')
 /** 관리자 계정 (BE AdminResponse). 1번은 부트스트랩 계정(ADMIN), 로그인은 이 계정만 된다 */
+// BE application.yml 기본값 (RateLimitSettings.Snapshot)
+const rateLimit = {
+  enabled: true,
+  client: { capacity: 200, period: 'PT1M' },
+  total: { capacity: 500, period: 'PT1S' },
+}
+const ISO_SECONDS = /^PT(?=\d)(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)(?:\.(\d{1,9}))?S)?$/
+/** Java Duration.parse → toMillis (밀리초 아래는 버린다). 읽을 수 없으면 null */
+function millisOf(period) {
+  const match = typeof period === 'string' && ISO_SECONDS.exec(period)
+  if (!match) return null
+  const [, h = '0', mi = '0', s = '0', fraction = ''] = match
+  const millis = Number(fraction.slice(0, 3).padEnd(3, '0'))
+  return (Number(h) * 60 + Number(mi)) * 60_000 + Number(s) * 1000 + millis
+}
+/** Java Duration.toString (예: 60000 → PT1M, 1500 → PT1.5S) */
+function periodOf(ms) {
+  const h = Math.floor(ms / 3_600_000)
+  const mi = Math.floor((ms % 3_600_000) / 60_000)
+  const s = (ms % 60_000) / 1000
+  if (!h && !mi && !s) return 'PT0S'
+  return `PT${h ? `${h}H` : ''}${mi ? `${mi}M` : ''}${s ? `${s}S` : ''}`
+}
+/** BE Request.isValid: 한 칸은 있어야 하고, 한도는 capacity 1 이상 · period 1ms 이상. 어기면 null */
+function rateLimitChangeOf(body) {
+  if (!body || typeof body !== 'object') return null
+  const { enabled, client, total } = body
+  if (enabled === undefined && client === undefined && total === undefined) return null
+  if (enabled !== undefined && typeof enabled !== 'boolean') return null
+  const change = enabled === undefined ? {} : { enabled }
+  for (const [name, limit] of Object.entries({ client, total })) {
+    if (limit === undefined) continue
+    const ms = millisOf(limit?.period)
+    if (!Number.isInteger(limit?.capacity) || limit.capacity < 1 || !ms) return null
+    change[name] = { capacity: limit.capacity, period: periodOf(ms) }
+  }
+  return change
+}
 const admins = [{ id: 1, email: ADMIN.email, status: 'ACTIVE', createdAt: '2026-10-01T10:00:00' }]
 function who(req) {
   const t = (req.headers.authorization || '').split(' ')[1]
@@ -3164,6 +3202,15 @@ http
       const admin = { id: admins.length + 1, email, status: 'ACTIVE', createdAt: now() }
       admins.push(admin)
       return send(res, 201, admin, { location: `/api/v1/admin/admins/${admin.id}` })
+    }
+    // Gateway 요청 수 제한 설정 (BE #1421 RateLimitSettingsGatewayFilterFactory). PUT은 보낸 칸만 바꾸고 바뀐 뒤 설정 전체를 준다
+    if (r('GET', /^\/admin\/gateway\/rate-limit$/)) return send(res, 200, rateLimit)
+    if (r('PUT', /^\/admin\/gateway\/rate-limit$/)) {
+      const change = rateLimitChangeOf(body)
+      if (!change)
+        return problem(res, 400, '잘못된 요청입니다', '요청 값을 확인해 주세요.', req.url)
+      Object.assign(rateLimit, change)
+      return send(res, 200, rateLimit)
     }
     if (r('GET', /^\/admin\/members$/)) {
       const filter = url.searchParams.get('filter') || 'ALL'

@@ -136,6 +136,8 @@ import { toUpdateReviewRequest } from '@/features/edit-review'
 import { reviewImageUploadShape, toReviewUploadRequest } from '@/features/upload-review-image'
 import { toWriteReviewRequest } from '@/features/write-review'
 import { adminPageShape, adminShape } from '@/entities/admin-account/api/admin-account.shape'
+import { rateLimitSettingsShape } from '@/entities/rate-limit/api/rate-limit.shape'
+import { toRateLimitRequest } from '@/features/change-rate-limit'
 import { toReview } from '@/entities/review'
 import { arr, readSse, readSseEvents, validate, type SseEvent, type Shape } from '@/shared/api'
 
@@ -955,6 +957,47 @@ describe('가짜 백엔드 응답 = FE 계약', () => {
     expect((await call('POST', '/admin/admins', 3, long)).status).toBe(400)
     const member = { email: 'member@kidly.test', password: 'password-12345' }
     expect((await call('POST', '/admin/admins', 1, member)).status).toBe(403)
+  })
+
+  it('요청 수 제한 설정: 조회 · 보낸 칸만 변경 · 잘못된 값 400 · 회원 403 (BE #1421)', async () => {
+    const before = await call('GET', '/admin/gateway/rate-limit', 3)
+    expect(before.status).toBe(200)
+    expectContract(before.data, rateLimitSettingsShape)
+
+    const request = toRateLimitRequest({
+      target: 'total',
+      limit: { capacity: 800, periodMs: 60_000 },
+    })
+    const changed = await call('PUT', '/admin/gateway/rate-limit', 3, request)
+    expect(changed.status).toBe(200)
+    expectContract(changed.data, rateLimitSettingsShape)
+    expect(changed.data).toEqual({
+      ...before.data,
+      total: { capacity: 800, period: 'PT1M' },
+    })
+    const fraction = toRateLimitRequest({
+      target: 'client',
+      limit: { capacity: 3, periodMs: 1500 },
+    })
+    expect((await call('PUT', '/admin/gateway/rate-limit', 3, fraction)).data.client).toEqual({
+      capacity: 3,
+      period: 'PT1.5S',
+    })
+    expect((await call('GET', '/admin/gateway/rate-limit', 3)).data.total.capacity).toBe(800)
+
+    for (const invalid of [
+      {},
+      { total: { capacity: 0, period: 'PT1S' } },
+      { total: { capacity: 1 } },
+      { total: { capacity: 1, period: 'PT0S' } },
+      { total: { capacity: 1, period: '1s' } },
+    ])
+      expect((await call('PUT', '/admin/gateway/rate-limit', 3, invalid)).status).toBe(400)
+    expect((await call('GET', '/admin/gateway/rate-limit', 1)).status).toBe(403)
+    await call('PUT', '/admin/gateway/rate-limit', 3, {
+      client: before.data.client,
+      total: before.data.total,
+    })
   })
 
   it('관리자 목록 · 비활성화: ID 내림차순 · 상태 거르기, 204 · 자기 자신 409 · 없으면 404 (BE AdminAccountController)', async () => {
