@@ -20,8 +20,13 @@ import { useRecordProductView } from '@/features/record-product-view'
 import { getErrorMessage } from '@/shared/api'
 import { loginPath, paths } from '@/shared/config'
 import { formatWon, useArea } from '@/shared/lib'
-import { isQuickSizeWaiting, quickRecommendedSizeOf } from '../model/quick-size.rules'
+import {
+  isQuickSizeWaiting,
+  QUICK_SIZE_WAIT_LIMIT_MS,
+  quickRecommendedSizeOf,
+} from '../model/quick-size.rules'
 import { quickAddReturnPath } from '../model/return-path'
+import { useWaitedLimit } from '../model/use-waited-limit'
 import { QuickAddActions } from './QuickAddActions'
 import { QuickSizeLine } from './QuickSizeLine'
 
@@ -35,7 +40,7 @@ const PHOTO = 'border-ink aspect-[4/5] border-[1.5px]'
 
 /**
  * 담기 팝업의 옵션 고르기: 사진 · 이름 · 가격 → 누가 입나요 → 추천 한 줄 → 색 · 사이즈 → 소재 · 실측표 → 수량 · 담기.
- * 추천 사이즈는 칩에 표시만 하고 대신 고르지 않는다. 추천 한 줄과 칩의 「추천」은 AI 답이 오거나 스트림이 닫힌 뒤에 함께 나타난다.
+ * 추천 사이즈는 칩에 표시만 하고 대신 고르지 않는다. 추천 한 줄과 칩의 「추천」은 AI 답이 오거나 스트림이 닫힌 뒤(늦으면 5초 뒤)에 함께 나타난다.
  * 팝업을 열면 조회(QUICK)로 기록한다
  */
 export function QuickAddForm({ detail, initialChildId, onClose }: QuickAddFormProps) {
@@ -48,9 +53,20 @@ export function QuickAddForm({ detail, initialChildId, onClose }: QuickAddFormPr
   // 사이즈 추천은 로그인한 보호자가 자녀를 골랐을 때만
   const recommendedChildId = user && !isChild ? childId : null
   const recommendation = useSizeRecommendationQuery(detail.id, recommendedChildId)
-  // 팝업은 규칙 결과를 먼저 그리지 않는다. 상세에서 규칙 결과만 받은 채 열어도 「추천 계산 중」이다
-  const isSizeWaiting = isQuickSizeWaiting(recommendation)
-  const isSizeArrival = useArrivedAfterWait(isSizeWaiting, `${detail.id}:${recommendedChildId}`)
+  // 팝업은 규칙 결과를 먼저 그리지 않는다. 상세에서 규칙 결과만 받은 채 열어도 「추천 계산 중」이다.
+  // AI 답이 상한보다 늦으면 받아 둔 규칙 결과를 그리고, 뒤늦게 AI 답이 오면 그 답으로 바꾼다
+  const sizeSubject = `${detail.id}:${recommendedChildId}`
+  const hasWaitedLimit = useWaitedLimit(
+    recommendation.isWaitingForAi,
+    sizeSubject,
+    QUICK_SIZE_WAIT_LIMIT_MS,
+  )
+  const isSizeWaiting = isQuickSizeWaiting({
+    isLoading: recommendation.isLoading,
+    isWaitingForAi: recommendation.isWaitingForAi,
+    hasWaitedLimit,
+  })
+  const isSizeArrival = useArrivedAfterWait(isSizeWaiting, sizeSubject)
   const recommendedSize = quickRecommendedSizeOf(recommendation.data, isSizeWaiting)
   const options = useOptionPicks(detail)
   const [quantity, setQuantity] = useState(MIN_QUANTITY)

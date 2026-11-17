@@ -158,3 +158,30 @@ test('상품 칸 담기: AI 답 없이 스트림이 닫히면 같은 자리에 �
   await expect(dialog.getByText('추천 사이즈')).toBeVisible()
   await expect(sizes.getByRole('button', { name: /^110/ })).toContainText('추천')
 })
+
+// AI 답이 늦으면 5초 뒤에 받아 둔 규칙 결과를 먼저 그린다. 뒤늦게 온 AI 답은 그 자리에서 바꾼다
+test('상품 칸 담기: AI 답이 5초 넘게 늦으면 규칙 추천을 먼저 보이고, AI 답이 오면 그 답으로 바꾼다', async ({
+  page,
+}) => {
+  await page.clock.install()
+  const stream = await holdEventStream(page, '/api/v1/recommendations/size')
+  const dialog = await openQuickAddWithChild(page)
+  const waiting = dialog.getByRole('status', { name: '추천 계산 중' })
+  const sizes = dialog.getByRole('group', { name: '사이즈', exact: true })
+
+  await stream.send('rule', size({ recommendedSize: '110' }))
+  await page.clock.fastForward(4000)
+  await expect(waiting).toBeVisible()
+  await expect(dialog.getByText('추천 사이즈')).toHaveCount(0)
+
+  await page.clock.fastForward(1500)
+  await expect(waiting).toHaveCount(0)
+  await expect(dialog.getByText('추천 사이즈')).toBeVisible()
+  await expect(sizes.getByRole('button', { name: /^110/ })).toContainText('추천')
+
+  await stream.send('ai', size({ recommendedSize: '120', source: 'AI' }))
+  await expect(sizes.getByRole('button', { name: /^120/ })).toContainText('추천')
+  await expect(sizes.getByRole('button', { name: /^110/ })).not.toContainText('추천')
+  await expect(waiting).toHaveCount(0)
+  await stream.close()
+})

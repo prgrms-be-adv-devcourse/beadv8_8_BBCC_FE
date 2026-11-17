@@ -6,7 +6,7 @@ type QuickSizeLineProps = {
   /** 고른 자녀 */
   child: { name: string; heightCm: number }
   recommendation: SizeRecommendation | undefined
-  /** 첫 결과 전이거나 AI 답을 기다리는 중 */
+  /** 첫 결과 전이거나 AI 답을 기다리는 중 (상한을 넘기면 규칙 결과를 그린다) */
   isWaiting: boolean
   /** 기다린 끝에 온 답: 추천 한 줄이 떠오른다 (처음부터 그려진 답은 움직이지 않는다) */
   isArrival: boolean
