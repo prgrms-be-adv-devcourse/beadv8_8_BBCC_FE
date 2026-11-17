@@ -79,18 +79,25 @@ async function openDetail(page: Page, sizeResponse: object, garments: object[] =
   await expect(page.getByText('추천 사이즈')).toBeVisible()
 }
 
-// 사이즈 추천 SSE (FE #401): 규칙 추천을 받자마자 그리고, 스트림이 열려 있는 동안 AI 대기를 보이다가 AI 추천으로 바꾼다
-test('규칙 추천을 먼저 그리고, AI가 살펴보는 동안 안내를 두다가 AI 추천과 근거로 바꾼다', async ({
+// 사이즈 추천 SSE (FE #401): 규칙 추천을 받자마자 그리고, 스트림이 열려 있는 동안 추천 칸 안 근거 자리에 안내를 두다가 AI 근거로 바꾼다.
+// 근거 자리는 답이 온 뒤의 높이로 잡아 둬서, 답이 와도 아래 사이즈 버튼이 밀리지 않는다
+const AI_WAITING = '아이에게 맞는지 한 번 더 확인하고 있어요'
+
+test('규칙 추천을 먼저 그리고, 근거 자리에 안내를 두다가 AI 추천과 근거로 바꿔도 사이즈 버튼이 밀리지 않는다', async ({
   page,
 }) => {
   const stream = await holdEventStream(page, '/api/v1/recommendations/size')
   await openDetailWith(page)
-  const aiWaiting = page.getByRole('status', { name: 'AI가 사이즈를 더 살펴보고 있어요' })
+  const aiWaiting = page.getByRole('status', { name: AI_WAITING })
+  const sizes = page.getByRole('group', { name: '사이즈', exact: true })
 
   await stream.send('rule', size({ recommendedSize: '110' }))
   await expect(page.locator('strong', { hasText: /^110$/ }).first()).toBeVisible()
   await expect(aiWaiting).toBeVisible()
   await expect(page.getByText('추천 계산 중…')).toHaveCount(0)
+  // 칸 위에 따로 두던 대기 표시는 없다 (칸 안 문구와 겹친다)
+  await expect(page.getByText('AI가 사이즈를 더 살펴보고 있어요')).toHaveCount(0)
+  const waitingY = (await sizes.boundingBox())!.y
 
   await stream.send(
     'ai',
@@ -99,12 +106,34 @@ test('규칙 추천을 먼저 그리고, AI가 살펴보는 동안 안내를 두
       source: 'AI',
       reasons: [
         { type: 'HEIGHT', detail: '키가 빨리 자라 한 치수 크게 골랐어요.', sourceId: null },
+        { type: 'PURCHASE', detail: '지난번 산 옷보다 총장이 1cm 길어요.', sourceId: null },
+        { type: 'WEATHER', detail: '요즘 쌀쌀해서 넉넉하게 골랐어요.', sourceId: null },
       ],
     }),
   )
   await expect(page.getByText('키가 빨리 자라 한 치수 크게 골랐어요.')).toBeVisible()
+  await expect(page.getByText(AI_NOTICE)).toBeVisible()
   await expect(aiWaiting).toHaveCount(0)
+  const arrivedY = (await sizes.boundingBox())!.y
+  expect(Math.abs(arrivedY - waitingY)).toBeLessThanOrEqual(4)
   await stream.close()
+})
+
+test('AI 답 없이 스트림이 닫히면 안내가 사라지고 근거 없이 규칙 추천만 남는다', async ({
+  page,
+}) => {
+  const stream = await holdEventStream(page, '/api/v1/recommendations/size')
+  await openDetailWith(page)
+  const aiWaiting = page.getByRole('status', { name: AI_WAITING })
+
+  await stream.send('rule', size({ recommendedSize: '110' }))
+  await expect(aiWaiting).toBeVisible()
+  await stream.close()
+
+  await expect(aiWaiting).toHaveCount(0)
+  await expect(page.locator('strong', { hasText: /^110$/ }).first()).toBeVisible()
+  await expect(page.getByRole('list', { name: '추천 근거' })).toHaveCount(0)
+  await expect(page.getByText(AI_NOTICE)).toHaveCount(0)
 })
 
 test('AI가 후보 밖 사이즈를 고르면 그 사이즈와 근거를 추천 한 줄 아래에 보인다', async ({

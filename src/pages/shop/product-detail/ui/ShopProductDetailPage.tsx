@@ -24,10 +24,10 @@ import {
   useProductQuery,
 } from '@/entities/product'
 import {
-  AiWaitingNotice,
   GARMENT_PART_SPEC,
   referencePartToRegister,
   sizeRangesOf,
+  useArrivedAfterWait,
   useCompanionProductsQuery,
   useReferenceGarmentsQuery,
   useSizeRecommendationQuery,
@@ -50,8 +50,6 @@ import { CompanionProducts } from './CompanionProducts'
 import { ProductReviews } from './ProductReviews'
 import { SizeAdvice } from './SizeAdvice'
 
-const SIZE_AI_WAITING = 'AI가 사이즈를 더 살펴보고 있어요'
-
 export function ShopProductDetailPage() {
   const isChild = useArea() === 'child'
   const navigate = useNavigate()
@@ -68,6 +66,11 @@ export function ShopProductDetailPage() {
   // 사이즈 추천은 로그인한 보호자가 자녀를 골랐을 때만 (자녀가 붙은 주소로 로그인 전에 들어와도 부르지 않는다)
   const recommendedChildId = user && !isChild ? childId : null
   const recommendation = useSizeRecommendationQuery(productId, recommendedChildId)
+  // 기다린 끝에 온 AI 답만 떠오르게 한다 (저장된 답은 처음부터 그려져 움직이지 않는다)
+  const isSizeArrival = useArrivedAfterWait(
+    recommendation.isWaitingForAi,
+    `${productId}:${recommendedChildId}`,
+  )
   // 함께 사면 좋은 상품은 AI 응답이 3초 가까이 걸려, 영역이 보일 때가 아니라 상세와 함께 바로 부른다
   const companions = useCompanionProductsQuery(productId, recommendedChildId)
   // 기준 옷 등록 안내: 고른 자녀의 기준 옷 · 카테고리 경로(구분을 정함)
@@ -122,19 +125,18 @@ export function ShopProductDetailPage() {
       : null
   const sizeAdvice = (
     <>
-      {/* 첫 결과(보통 규칙 결과) 전까지만. 그 뒤 AI 답을 기다리는 동안은 추천을 그린 채 AI 대기를 보인다 */}
+      {/* 첫 결과(보통 규칙 결과) 전까지만. 그 뒤 AI 답을 기다리는 동안은 추천 칸 안 근거 자리에 안내 문구를 둔다 */}
       {recommendation.isLoading && <StateMessage>추천 계산 중…</StateMessage>}
       {recommendation.isError && (
         <StateMessage tone="error">{getErrorMessage(recommendation.error)}</StateMessage>
-      )}
-      {pickedChild && recommendation.data && recommendation.isWaitingForAi && (
-        <AiWaitingNotice message={SIZE_AI_WAITING} />
       )}
       {pickedChild && recommendation.data && (
         <SizeAdvice
           child={pickedChild}
           recommendation={recommendation.data}
           sizes={sizeRangesOf(detail.sizeSpecs)}
+          isWaitingForAi={recommendation.isWaitingForAi}
+          isArrival={isSizeArrival}
           referenceGarmentLink={
             partToRegister && {
               label: `${GARMENT_PART_SPEC[partToRegister].label} 기준 옷 적기`,

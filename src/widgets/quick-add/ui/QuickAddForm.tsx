@@ -14,12 +14,13 @@ import {
   useOptionPicks,
   type ProductDetail,
 } from '@/entities/product'
-import { useSizeRecommendationQuery } from '@/entities/recommendation'
+import { useArrivedAfterWait, useSizeRecommendationQuery } from '@/entities/recommendation'
 import { useSessionStore } from '@/entities/session'
 import { useRecordProductView } from '@/features/record-product-view'
 import { getErrorMessage } from '@/shared/api'
 import { loginPath, paths } from '@/shared/config'
 import { formatWon, useArea } from '@/shared/lib'
+import { isQuickSizeWaiting, quickRecommendedSizeOf } from '../model/quick-size.rules'
 import { quickAddReturnPath } from '../model/return-path'
 import { QuickAddActions } from './QuickAddActions'
 import { QuickSizeLine } from './QuickSizeLine'
@@ -34,7 +35,8 @@ const PHOTO = 'border-ink aspect-[4/5] border-[1.5px]'
 
 /**
  * 담기 팝업의 옵션 고르기: 사진 · 이름 · 가격 → 누가 입나요 → 추천 한 줄 → 색 · 사이즈 → 소재 · 실측표 → 수량 · 담기.
- * 추천 사이즈는 칩에 표시만 하고 대신 고르지 않는다. 팝업을 열면 조회(QUICK)로 기록한다
+ * 추천 사이즈는 칩에 표시만 하고 대신 고르지 않는다. 추천 한 줄과 칩의 「추천」은 AI 답이 오거나 스트림이 닫힌 뒤에 함께 나타난다.
+ * 팝업을 열면 조회(QUICK)로 기록한다
  */
 export function QuickAddForm({ detail, initialChildId, onClose }: QuickAddFormProps) {
   const isChild = useArea() === 'child'
@@ -46,6 +48,10 @@ export function QuickAddForm({ detail, initialChildId, onClose }: QuickAddFormPr
   // 사이즈 추천은 로그인한 보호자가 자녀를 골랐을 때만
   const recommendedChildId = user && !isChild ? childId : null
   const recommendation = useSizeRecommendationQuery(detail.id, recommendedChildId)
+  // 팝업은 규칙 결과를 먼저 그리지 않는다. 상세에서 규칙 결과만 받은 채 열어도 「추천 계산 중」이다
+  const isSizeWaiting = isQuickSizeWaiting(recommendation)
+  const isSizeArrival = useArrivedAfterWait(isSizeWaiting, `${detail.id}:${recommendedChildId}`)
+  const recommendedSize = quickRecommendedSizeOf(recommendation.data, isSizeWaiting)
   const options = useOptionPicks(detail)
   const [quantity, setQuantity] = useState(MIN_QUANTITY)
   // 팝업을 연 것은 상세 진입보다 낮은 무게의 조회로 기록한다. 보호자 회원만 (자녀 화면은 자녀 토큰이라 부르지 않음)
@@ -66,9 +72,9 @@ export function QuickAddForm({ detail, initialChildId, onClose }: QuickAddFormPr
     <QuickSizeLine
       child={pickedChild}
       recommendation={recommendation.data}
-      isLoading={recommendation.isLoading}
+      isWaiting={isSizeWaiting}
+      isArrival={isSizeArrival}
       errorMessage={recommendation.isError ? getErrorMessage(recommendation.error) : null}
-      isWaitingForAi={recommendation.isWaitingForAi}
     />
   )
 
@@ -127,12 +133,12 @@ export function QuickAddForm({ detail, initialChildId, onClose }: QuickAddFormPr
           )}
           {!sizeAttributeId && sizeLine}
           <OptionChipPicker
-            rows={options.rowsFor(recommendation.data?.recommendedSize)}
+            rows={options.rowsFor(recommendedSize)}
             onPick={options.pick}
             aboveRow={sizeAttributeId && sizeLine ? { [sizeAttributeId]: sizeLine } : undefined}
             colorLook="quick"
           />
-          <ProductSpecs product={detail} recommendedSize={recommendation.data?.recommendedSize} />
+          <ProductSpecs product={detail} recommendedSize={recommendedSize} />
           <Link to={detailHref} className="shop-link inline-block text-sm">
             상품 상세 보기
           </Link>
