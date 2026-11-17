@@ -2,10 +2,12 @@ import { useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import {
   AiSentenceNotice,
+  AiWaitingNotice,
   FIT_LABEL,
   GrowthOutlook,
   lastPurchaseTextOf,
   referenceFitSummaryOf,
+  RISE_STEP_MS,
   showsAiSizeNotice,
   SizeReasonList,
   sizeScaleOf,
@@ -25,11 +27,18 @@ type SizeAdviceProps = {
   preview?: ReactNode
   /** 이 상품 구분의 기준 옷이 없을 때 등록하러 가는 링크 (없으면 안내를 숨긴다) */
   referenceGarmentLink?: { label: string; to: string } | null
+  /** 규칙 결과를 그린 채 AI 답을 기다리는 중: 근거 자리에 안내 문구를 둔다 */
+  isWaitingForAi?: boolean
+  /** 기다린 끝에 온 답: 근거 줄과 AI 안내 줄이 한 줄씩 떠오른다 (처음부터 그려진 답은 움직이지 않는다) */
+  isArrival?: boolean
 }
+
+const AI_WAITING = '아이에게 맞는지 한 번 더 확인하고 있어요'
 
 /**
  * 사이즈 칩 바로 위 추천 한 줄: 「추천 사이즈 120 · 여유 있음 · 김들희 115cm 기준」 + 「사이즈 자세히」.
- * 그 아래 AI 근거(있으면) · AI 안내 · 기준 옷 등록 안내. 펼치면 백엔드 안내 · 이 상품 사이즈 눈금 · 착용 미리보기.
+ * 그 아래 AI 근거(있으면) · AI 안내 · 기준 옷 등록 안내. AI 답을 기다리는 동안에는 근거 자리를 답이 온 뒤의 높이로 잡아 두고 안내 문구를 둔다.
+ * 펼치면 백엔드 안내 · 이 상품 사이즈 눈금 · 착용 미리보기.
  * 추천 한 줄 바로 아래에 지난 구매 사이즈, 그 아래(근거 위)에 입을 수 있는 기간 · 성장 속도(예상치), 그 아래 기준 핏(기준 옷과의 cm 차이)을 둔다
  */
 export function SizeAdvice({
@@ -38,6 +47,8 @@ export function SizeAdvice({
   sizes,
   preview,
   referenceGarmentLink,
+  isWaitingForAi = false,
+  isArrival = false,
 }: SizeAdviceProps) {
   const [isOpen, setIsOpen] = useState(false)
   const detailsId = useId()
@@ -107,8 +118,30 @@ export function SizeAdvice({
         </div>
       )}
       {/* AI가 고른 근거는 추천 한 줄 바로 아래에 늘 보인다 (규칙 추천이면 없음) */}
-      <SizeReasonList reasons={reasons} className="px-3.5 pb-2.5" />
-      {showsAiSizeNotice(recommendation) && <AiSentenceNotice className="px-3.5 pb-2.5" />}
+      {isWaitingForAi ? (
+        // 자리 높이는 근거 세 줄(77px) + AI 안내 줄(26px). 답이 와도 아래 사이즈 버튼이 밀리지 않게 한다.
+        // 추천 사이즈가 없으면(사이즈 무관 · 맞는 사이즈 없음) 근거가 붙을 일이 드물어 자리를 잡지 않는다
+        <div className={cn('flex items-center px-3.5', recommendedSize ? 'h-[103px]' : 'pb-2.5')}>
+          <AiWaitingNotice message={AI_WAITING} isSpacious />
+        </div>
+      ) : (
+        <>
+          <SizeReasonList reasons={reasons} isRising={isArrival} className="px-3.5 pb-2.5" />
+          {showsAiSizeNotice(recommendation) && (
+            <div
+              className={cn(
+                'px-3.5 pb-2.5',
+                isArrival && 'animate-rise-in motion-reduce:animate-none',
+              )}
+              style={
+                isArrival ? { animationDelay: `${reasons.length * RISE_STEP_MS}ms` } : undefined
+              }
+            >
+              <AiSentenceNotice />
+            </div>
+          )}
+        </>
+      )}
       {referenceGarmentLink && (
         <p className="text-ink-2 flex flex-wrap items-center gap-x-2 px-3.5 pb-2.5 text-[13px]">
           잘 맞는 옷을 등록하면 더 정확해요

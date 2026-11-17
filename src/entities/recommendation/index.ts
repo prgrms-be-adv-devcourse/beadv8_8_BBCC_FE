@@ -55,6 +55,7 @@ export { hasAiReasons, isWaitingForAi, shownPicksOf } from './model/recommended-
 export { sizeScaleOf, type SizeScale } from './model/size-scale.rules'
 export { nextRecommendedPageOf } from './model/recommended-page.rules'
 export { FIT_LABEL, SIZE_REASON_LABEL } from './model/recommendation'
+export { RISE_STEP_MS, useArrivedAfterWait } from './model/use-arrived-after-wait'
 export { AiSentenceNotice } from './ui/AiSentenceNotice'
 export { AiWaitingNotice } from './ui/AiWaitingNotice'
 export { FitBadge } from './ui/FitBadge'
