@@ -94,7 +94,7 @@ export function ChatbotWidget({
         onClick={() => setIsOpen((prev) => !prev)}
         className="bg-signal text-signal-ink flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-bold shadow-lg"
       >
-        {isOpen ? '챗봇 닫기' : '챗봇에게 묻기'}
+        {isOpen ? '닫기' : '무엇이든 물어보세요'}
       </button>
     </div>
   )

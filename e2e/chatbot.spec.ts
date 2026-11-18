@@ -58,14 +58,14 @@ test('쇼핑 챗봇: 로그인 안내 → 질문 · 답 · 상품 카드 · 근�
   })
 
   await page.goto('/')
-  await page.getByRole('button', { name: '챗봇에게 묻기' }).click()
+  await page.getByRole('button', { name: '무엇이든 물어보세요' }).click()
   const chat = page.getByRole('region', { name: '챗봇 상담' })
   await expect(chat.getByRole('link', { name: '로그인하기' })).toBeVisible()
 
   await page.goto('/login')
   await page.getByRole('main').getByRole('button', { name: '보호자', exact: true }).click()
   await expect(page).toHaveURL('/')
-  await page.getByRole('button', { name: '챗봇에게 묻기' }).click()
+  await page.getByRole('button', { name: '무엇이든 물어보세요' }).click()
 
   const input = chat.getByRole('textbox', { name: '챗봇에게 물어볼 내용' })
   await chat.getByRole('button', { name: '3만원 이하 여아 원피스 추천해 줘' }).click()
