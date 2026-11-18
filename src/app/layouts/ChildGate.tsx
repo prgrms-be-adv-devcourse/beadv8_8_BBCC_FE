@@ -1,11 +1,12 @@
 import { useEffect, type ReactNode } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { restoreChildSession, useChildSessionStore } from '@/entities/session'
 import { useChildOnboardingQuery } from '@/entities/child-onboarding'
 import { ChildOnboarding } from '@/features/complete-child-onboarding'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
+import { PageHeader } from '@/shared/ui/PageHeader'
 import { ChildLoginForm } from '@/features/auth-child-login'
 
 type ChildGateProps = { children: ReactNode }
@@ -19,11 +20,21 @@ export function ChildGate({ children }: ChildGateProps) {
   if (accessToken) return <OnboardingGate>{children}</OnboardingGate>
   if (status !== 'ready') return <p>로그인 확인 중…</p>
   return (
-    <section className="border-rule max-w-md space-y-4 rounded-lg border p-6">
-      <h1 className="text-section">자녀 로그인</h1>
-      {/* 로그인하면 어느 자녀 화면에서든 쇼핑 홈(/)으로 보낸다 */}
-      <ChildLoginForm onSuccess={() => void navigate(paths.shop.home, { replace: true })} />
-    </section>
+    <div className="space-y-4">
+      <PageHeader
+        title="자녀 로그인"
+        description="보호자가 만들어 준 아이디와 비밀번호로 로그인해요."
+      />
+      <div className="border-ink border-[1.5px] p-4 md:p-6">
+        <div className="max-w-md">
+          {/* 로그인하면 어느 자녀 화면에서든 쇼핑 홈(/)으로 보낸다 */}
+          <ChildLoginForm onSuccess={() => void navigate(paths.shop.home, { replace: true })} />
+        </div>
+      </div>
+      <Link to={paths.login} className="text-primary inline-block underline">
+        보호자 로그인
+      </Link>
+    </div>
   )
 }
 
