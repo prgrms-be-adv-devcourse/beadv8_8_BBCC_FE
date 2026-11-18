@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { acceptConfirms } from './support/confirm'
+import { registerChildWithAccount } from './support/child-wish'
 
 test('자녀 등록은 동의와 나이를 확인한다', async ({ page }) => {
   await page.goto('/login')
@@ -51,6 +52,9 @@ test('보호자가 계정을 관리하고 자녀가 프로필을 본다', async 
   await child.getByLabel('아이디').fill(loginId)
   await child.getByLabel('비밀번호').fill('password1')
   await child.getByRole('button', { name: '로그인', exact: true }).click()
+  // 자녀가 로그인하면 쇼핑 홈(/)으로 간다
+  await expect(child).toHaveURL('/')
+  await child.goto('/child')
   await child.getByRole('button', { name: '확인', exact: true }).click()
   await expect(child.getByRole('heading', { name: '내 프로필' })).toBeVisible()
   await expect(child.getByRole('main')).toContainText(name)
@@ -66,6 +70,8 @@ test('보호자가 계정을 관리하고 자녀가 프로필을 본다', async 
   await child.getByLabel('아이디').fill(loginId)
   await child.getByLabel('비밀번호').fill('password2')
   await child.getByRole('button', { name: '로그인', exact: true }).click()
+  await expect(child).toHaveURL('/')
+  await child.goto('/child')
   await expect(child.getByRole('heading', { name: '내 프로필' })).toBeVisible()
   await expect(child.getByRole('heading', { name: '처음 만나요' })).toHaveCount(0)
   await page.getByRole('button', { name: '계정 삭제' }).click()
@@ -98,8 +104,18 @@ test('안내 확인 전에는 자녀 장바구니로 바로 들어가도 첫 로
   await child.getByLabel('아이디').fill(loginId)
   await child.getByLabel('비밀번호').fill('password1')
   await child.getByRole('button', { name: '로그인', exact: true }).click()
-  await expect(child.getByRole('heading', { name: '처음 만나요' })).toBeVisible()
+  await expect(child).toHaveURL('/')
   await child.goto('/child/cart')
   await expect(child.getByRole('heading', { name: '처음 만나요' })).toBeVisible()
   await expect(child.getByRole('heading', { name: /내 장바구니/ })).toHaveCount(0)
+})
+
+test('자녀 화면 안에서 로그인해도 쇼핑 홈(/)으로 간다', async ({ page, context }) => {
+  const { loginId } = await registerChildWithAccount(page)
+  const child = await context.newPage()
+  await child.goto('/child/cart')
+  await child.getByLabel('아이디').fill(loginId)
+  await child.getByLabel('비밀번호').fill('password1')
+  await child.getByRole('button', { name: '로그인', exact: true }).click()
+  await expect(child).toHaveURL('/')
 })

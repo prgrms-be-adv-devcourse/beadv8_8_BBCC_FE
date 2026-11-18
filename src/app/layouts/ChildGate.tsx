@@ -1,8 +1,10 @@
 import { useEffect, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
 import { restoreChildSession, useChildSessionStore } from '@/entities/session'
 import { useChildOnboardingQuery } from '@/entities/child-onboarding'
 import { ChildOnboarding } from '@/features/complete-child-onboarding'
 import { getErrorMessage } from '@/shared/api'
+import { paths } from '@/shared/config'
 import { Button } from '@/shared/ui/button'
 import { ChildLoginForm } from '@/features/auth-child-login'
 
@@ -10,6 +12,7 @@ type ChildGateProps = { children: ReactNode }
 export function ChildGate({ children }: ChildGateProps) {
   const accessToken = useChildSessionStore((state) => state.accessToken)
   const status = useChildSessionStore((state) => state.status)
+  const navigate = useNavigate()
   useEffect(() => {
     if (useChildSessionStore.getState().status === 'idle') void restoreChildSession()
   }, [])
@@ -18,7 +21,8 @@ export function ChildGate({ children }: ChildGateProps) {
   return (
     <section className="border-rule max-w-md space-y-4 rounded-lg border p-6">
       <h1 className="text-section">자녀 로그인</h1>
-      <ChildLoginForm />
+      {/* 로그인하면 어느 자녀 화면에서든 쇼핑 홈(/)으로 보낸다 */}
+      <ChildLoginForm onSuccess={() => void navigate(paths.shop.home, { replace: true })} />
     </section>
   )
 }

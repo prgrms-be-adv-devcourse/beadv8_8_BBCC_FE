@@ -6,8 +6,13 @@ import { Label } from '@/shared/ui/label'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useChildLogin } from '../model/use-child-login'
 
-export function ChildLoginForm() {
-  const login = useChildLogin()
+type ChildLoginFormProps = {
+  /** 로그인에 성공한 뒤 할 일 (어디로 보낼지는 부르는 쪽이 정한다) */
+  onSuccess?: () => void
+}
+
+export function ChildLoginForm({ onSuccess }: ChildLoginFormProps) {
+  const login = useChildLogin(onSuccess)
   const [loginId, setLoginId] = useState('')
   const [password, setPassword] = useState('')
   const handleSubmit = (event: FormEvent) => {
