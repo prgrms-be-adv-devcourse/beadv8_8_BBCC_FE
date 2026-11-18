@@ -79,5 +79,8 @@ export async function loginChild(page: Page, loginId: string) {
   await page.getByLabel('아이디').fill(loginId)
   await page.getByLabel('비밀번호').fill('password1')
   await page.getByRole('button', { name: '로그인', exact: true }).click()
+  // 로그인하면 쇼핑 홈(/)으로 가므로 자녀 화면으로 돌아와 첫 로그인 안내를 닫는다
+  await expect(page).toHaveURL('/')
+  await page.goto('/child')
   await page.getByRole('button', { name: '확인', exact: true }).click()
 }
