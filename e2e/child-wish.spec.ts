@@ -128,7 +128,7 @@ test('자녀가 상품을 담고 합친 뒤 뺀다', async ({ page, context }) =
   await child.getByRole('link', { name: '내 장바구니 보기' }).click()
   await expect(child.getByRole('main')).toContainText('2개')
   await child.getByRole('button', { name: '빼기' }).click()
-  await expect(child.getByText('담은 상품이 없어요.')).toBeVisible()
+  await expect(child.getByText('담은 상품이 없어요')).toBeVisible()
 })
 
 test('일반 쇼핑 방문에서 자녀 API를 호출하지 않는다', async ({ page }) => {
