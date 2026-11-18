@@ -83,11 +83,11 @@ describe('isModerationStatus · 모르는 상태', () => {
   })
 })
 
-describe('retryExhaustedMessage: 다시 검사 결과 안내 (BE #1310 resetCount)', () => {
+describe('retryExhaustedMessage: 다시 돌리기 결과 안내 (BE #1310 resetCount)', () => {
   it.each([
-    [17, '17건을 다시 검사 대기로 돌렸어요. 1분 안에 다시 검사해요.'],
-    [1, '1건을 다시 검사 대기로 돌렸어요. 1분 안에 다시 검사해요.'],
-    [0, '다시 검사할 리뷰가 없어요.'],
+    [17, '17건을 다시 검사 대기로 돌렸어요.'],
+    [1, '1건을 다시 검사 대기로 돌렸어요.'],
+    [0, '다시 돌릴 리뷰가 없어요.'],
   ])('%s건 → %s', (count, expected) => {
     expect(retryExhaustedMessage(count)).toBe(expected)
   })

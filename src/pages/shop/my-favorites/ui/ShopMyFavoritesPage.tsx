@@ -1,16 +1,19 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router'
 import {
   canQuickAddFavorite,
   FAVORITE_DISPLAY_STATUS_LABEL,
   favoriteStampOf,
+  isDeletedChildAccountError,
   useMyFavoritesQuery,
   type FavoriteDisplayStatus,
 } from '@/entities/favorite'
 import { ALL_CATEGORIES_ICON, ProductImage } from '@/entities/product'
+import { signOutChild } from '@/entities/session'
 import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
 import { paths } from '@/shared/config'
-import { cn, formatDateTime, useArea } from '@/shared/lib'
+import { cn, formatDateTime, toast, useArea } from '@/shared/lib'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { PageHeader } from '@/shared/ui/PageHeader'
@@ -33,6 +36,13 @@ export function ShopMyFavoritesPage() {
   const owner = isChild ? 'child' : 'member'
   const productPath = isChild ? paths.child.product : paths.shop.product
   const favorites = useMyFavoritesQuery(owner)
+  // 지운 자녀 계정(403)은 서버 문구로 안내하고 자녀 로그아웃 → 자녀 첫 화면(로그인)
+  const isDeletedChild = favorites.isError && isDeletedChildAccountError(favorites.error, owner)
+  useEffect(() => {
+    if (!isDeletedChild) return
+    toast(getErrorMessage(favorites.error), { tone: 'error' })
+    void signOutChild()
+  }, [isDeletedChild, favorites.error])
 
   return (
     <div className="shop-look space-y-6">

@@ -38,3 +38,29 @@ test('자녀 화면: 상품 하트로 찜하면 찜 수가 오르고 「내 찜�
   await row.getByRole('button', { name: '찜 취소' }).click()
   await expect(row).toHaveCount(0)
 })
+
+test('지운 자녀 계정(403)으로 찜하면 안내하고 자녀 로그아웃 → 자녀 로그인 화면', async ({
+  page,
+}) => {
+  const { loginId } = await registerChildWithAccount(page)
+  await loginChild(page, loginId)
+  await page.route('**/api/v1/favorites/1', (route) =>
+    route.request().method() === 'PUT'
+      ? route.fulfill({
+          status: 403,
+          contentType: 'application/problem+json',
+          json: {
+            type: 'about:blank',
+            title: '삭제된 자녀 계정입니다',
+            status: 403,
+            detail: '삭제된 자녀 계정입니다.',
+            instance: '/api/v1/favorites/1',
+          },
+        })
+      : route.fallback(),
+  )
+  await page.goto('/child/products/1')
+  await page.getByRole('button', { name: '찜하기', exact: true }).click()
+  await expect(page.getByText('삭제된 자녀 계정입니다.')).toBeVisible()
+  await expect(page.getByRole('heading', { name: '자녀 로그인' })).toBeVisible()
+})
