@@ -190,16 +190,6 @@ export const router = createBrowserRouter(
           ),
         },
         {
-          path: rel('', paths.shop.cart),
-          ...page(() => import('@/pages/shop/cart').then((m) => ({ Component: m.ShopCartPage }))),
-        },
-        {
-          path: rel('', paths.shop.orders),
-          ...page(() =>
-            import('@/pages/shop/orders').then((m) => ({ Component: m.ShopOrdersPage })),
-          ),
-        },
-        {
           path: 'orders/:orderId',
           ...page(() =>
             import('@/pages/shop/order-detail').then((m) => ({ Component: m.ShopOrderDetailPage })),
@@ -214,9 +204,24 @@ export const router = createBrowserRouter(
           ),
         },
         {
-          // 마이페이지 묶음: 왼쪽 메뉴를 같이 쓴다 (자녀 화면은 넓은 배치라 뺀다)
+          // 마이페이지 묶음: 메뉴(넓은 화면은 왼쪽, 휴대폰은 위 한 줄)에 있는 화면은 모두 메뉴를 같이 쓴다
           element: <ShopMyLayout />,
           children: [
+            {
+              path: rel('', paths.shop.cart),
+              ...page(() =>
+                import('@/pages/shop/cart').then((m) => ({ Component: m.ShopCartPage })),
+              ),
+            },
+            {
+              path: rel('', paths.shop.orders),
+              ...page(() =>
+                import('@/pages/shop/orders').then((m) => ({ Component: m.ShopOrdersPage })),
+              ),
+            },
+            { path: rel('', paths.shop.children), ...children },
+            { path: rel('', paths.shop.childNew), ...childNew },
+            { path: rel('', paths.shop.wishes), ...wishes },
             {
               path: rel('', paths.shop.my),
               ...page(() => import('@/pages/shop/my').then((m) => ({ Component: m.ShopMyPage }))),
@@ -241,10 +246,8 @@ export const router = createBrowserRouter(
             },
           ],
         },
-        { path: rel('', paths.shop.children), ...children },
-        { path: rel('', paths.shop.childNew), ...childNew },
+        // 자녀 상세 · 자녀별 조르기는 넓은 배치라 메뉴 밖에 둔다
         { path: 'my/children/:childId', ...childDetail },
-        { path: rel('', paths.shop.wishes), ...wishes },
         { path: rel('', paths.shop.childWishes(':childId')), ...wishes },
         { path: rel('', paths.shop.childWish(':childId', ':requestId')), ...childWishDetail },
         // 리뷰 쓰기 · 충전은 메뉴 없이 한 가지 일만 (마이페이지 묶음 밖)
@@ -285,7 +288,7 @@ export const router = createBrowserRouter(
         { path: 'orders/:sellerOrderId', ...centerOrderDetail },
         { path: rel(paths.center.home, paths.center.settlements), ...centerSettlements },
         { path: 'settlements/:settlementId', ...centerSettlementDetail },
-        { path: '*', element: <NotFoundPage /> },
+        { path: '*', element: <NotFoundPage homeTo={paths.center.home} /> },
       ],
     },
     {
@@ -488,7 +491,7 @@ export const router = createBrowserRouter(
             })),
           ),
         },
-        { path: '*', element: <NotFoundPage /> },
+        { path: '*', element: <NotFoundPage homeTo={paths.admin.home} /> },
       ],
     },
     {
@@ -599,7 +602,7 @@ export const router = createBrowserRouter(
             { path: 'admin/payments/:paymentId', ...adminPaymentDetail },
           ],
         },
-        { path: '*', element: <NotFoundPage /> },
+        { path: '*', element: <NotFoundPage homeTo={paths.console.home} /> },
       ],
     },
   ]),
