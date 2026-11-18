@@ -1,7 +1,6 @@
-import { useEffect, type ChangeEvent } from 'react'
+import { useEffect } from 'react'
 import { Button } from '@/shared/ui/button'
-import { Input } from '@/shared/ui/input'
-import { Label } from '@/shared/ui/label'
+import { FileButton } from '@/shared/ui/FileButton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 import { useUploadProductImage } from '../model/use-upload-product-image'
 
@@ -31,25 +30,18 @@ export function ProductImageUploader({
     onUploadingChange(uploader.isUploading)
   }, [uploader.isUploading, onUploadingChange])
 
-  const handleSelect = (event: ChangeEvent<HTMLInputElement>) => {
-    uploader.addFiles(Array.from(event.target.files ?? []))
-    // 같은 파일을 다시 골라도 change가 일어나게 비운다
-    event.target.value = ''
-  }
-
   return (
     <div className="space-y-3">
-      <Label className="text-ink-2 gap-2">
-        {label} (JPG, PNG, WEBP, {maxCount}장까지)
-        <Input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple={maxCount > 1}
-          disabled={uploader.isUploading}
-          onChange={handleSelect}
-          className="file:bg-paper-2 file:text-ink hover:file:bg-paper-3 h-10 py-1 pl-1 file:mr-3 file:h-full file:cursor-pointer file:rounded-sm file:border-0 file:px-3 file:text-[13px] file:font-semibold file:transition-colors"
-        />
-      </Label>
+      <FileButton
+        title={label}
+        hint={`JPG, PNG, WEBP, ${maxCount}장까지`}
+        accept="image/jpeg,image/png,image/webp"
+        multiple={maxCount > 1}
+        disabled={uploader.isUploading}
+        status={value.length > 0 ? `${value.length}/${maxCount}장 올림` : '고른 사진 없음'}
+        className="text-ink-2"
+        onSelect={uploader.addFiles}
+      />
       {uploader.isUploading && <StateMessage>사진을 줄여서 올리는 중…</StateMessage>}
       {uploader.error && <StateMessage tone="error">{uploader.error}</StateMessage>}
       {value.length > 0 && (
