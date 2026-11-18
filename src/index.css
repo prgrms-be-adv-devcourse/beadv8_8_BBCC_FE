@@ -152,6 +152,18 @@
   }
 }
 
+/* 기다린 끝에 온 줄이 아래에서 떠오른다 (사이즈 추천의 AI 근거 · 담기 팝업의 추천 한 줄). motion-reduce:animate-none과 함께 쓴다 */
+@theme {
+  --animate-rise-in: rise-in 0.35s ease-out both;
+
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+}
+
 /* 맨 위 진행 막대 (TopProgressBar): 왼쪽에서 오른쪽으로 계속 흐른다 */
 @keyframes top-progress {
   from {
