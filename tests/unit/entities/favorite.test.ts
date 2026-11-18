@@ -1,9 +1,11 @@
+import { AxiosError, AxiosHeaders } from 'axios'
 import { describe, expect, it } from 'vitest'
 import {
   canQuickAddFavorite,
   canToggleFavorite,
   FAVORITE_DISPLAY_STATUS_LABEL,
   favoriteIdChunks,
+  isDeletedChildAccountError,
   favoriteStampOf,
   toFavoriteItem,
   toFavoriteSummary,
@@ -125,5 +127,30 @@ describe('내 찜 목록의 사진 도장 · 바로 담기', () => {
     [null, false],
   ] as const)('표시 상태 %s는 바로 담기 가능 여부가 %s다', (status, expected) => {
     expect(canQuickAddFavorite(status)).toBe(expected)
+  })
+})
+
+describe('isDeletedChildAccountError: 지운 자녀 계정의 찜 요청 (BE 403 FAVORITE_CHILD_ACCOUNT_DELETED)', () => {
+  function withStatus(status: number) {
+    const config = { headers: new AxiosHeaders() }
+    return new AxiosError('error', 'ERR', config, null, {
+      status,
+      statusText: '',
+      headers: {},
+      config,
+      data: {
+        type: 'about:blank',
+        title: 't',
+        status,
+        detail: '삭제된 자녀 계정입니다',
+        instance: '/',
+      },
+    })
+  }
+  it('자녀 화면의 403만 true (보호자 403 · 자녀 다른 오류는 false)', () => {
+    expect(isDeletedChildAccountError(withStatus(403), 'child')).toBe(true)
+    expect(isDeletedChildAccountError(withStatus(403), 'member')).toBe(false)
+    expect(isDeletedChildAccountError(withStatus(409), 'child')).toBe(false)
+    expect(isDeletedChildAccountError(new Error('x'), 'child')).toBe(false)
   })
 })

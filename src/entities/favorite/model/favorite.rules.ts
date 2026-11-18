@@ -1,3 +1,5 @@
+import { getErrorStatus } from '@/shared/api'
+import type { FavoriteOwnerPrincipal } from '../api/favorite-api'
 import type { FavoriteDisplayStatus } from './favorite'
 
 /** GET /favorites?productIds= 한 번에 보낼 수 있는 상품 수 (BE INVALID_PRODUCT_IDS: 1~50개) */
@@ -39,4 +41,9 @@ export function canToggleFavorite({
   isSelling: boolean
 }): boolean {
   return isFavorited || isSelling
+}
+
+/** 지운 자녀 계정의 찜 요청인지 (BE 403 FAVORITE_CHILD_ACCOUNT_DELETED). 자녀 화면은 안내 뒤 로그아웃한다 */
+export function isDeletedChildAccountError(error: unknown, owner: FavoriteOwnerPrincipal): boolean {
+  return owner === 'child' && getErrorStatus(error) === 403
 }

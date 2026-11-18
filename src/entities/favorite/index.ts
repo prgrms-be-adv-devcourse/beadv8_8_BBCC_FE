@@ -7,6 +7,7 @@ export {
   FAVORITE_DISPLAY_STATUS_LABEL,
   FAVORITE_IDS_MAX,
   favoriteIdChunks,
+  isDeletedChildAccountError,
   favoriteStampOf,
 } from './model/favorite.rules'
 export {
