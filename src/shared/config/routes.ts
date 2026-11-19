@@ -117,8 +117,6 @@ export const paths = {
     wallets: '/admin/wallets',
     /** 설정: 시연 데이터 켜기 · 끄기 */
     settings: '/admin/settings',
-    /** 요청 수 제한: Gateway 처리율 제한 켜고 끄기 · 사용자별 · 전체 한도 (BE #1421) */
-    rateLimit: '/admin/rate-limit',
     /** 주문 운영: 멈춘 주문 · 처리 대기 (종류 · 페이지는 검색 값) */
     orderOps: '/admin/order-ops',
     /** 관리자 계정 추가 */
