@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { toWishRequest, wishDeadlineLabel, type MockWishRequestDto } from '@/entities/wish'
+import {
+  soonestWishDeadlineLabel,
+  toWishRequest,
+  wishDeadlineLabel,
+  wishDeadlineProgress,
+  type MockWishRequestDto,
+} from '@/entities/wish'
 
 // 서버 시각은 시간대 없는 KST 문자열(yyyy-MM-ddTHH:mm:ss). 브라우저 시간대와 상관없이 KST로 읽는다
 const NOW = new Date('2026-11-12T10:00:00+09:00')
@@ -46,6 +52,58 @@ describe('wishDeadlineLabel: 조르기 남은 기한', () => {
   it('결제 · 거절 · 철회는 표시 없음', () => {
     for (const status of ['PAID', 'REJECTED', 'CANCELLED'] as const)
       expect(wishDeadlineLabel({ status, expiresAt: null, expiredAt: null }, NOW)).toBeNull()
+  })
+})
+
+describe('wishDeadlineProgress: 보낸 때부터 기한까지 지난 비율', () => {
+  const sent = (requestedAt: string, expiresAt: string | null) => ({
+    status: 'REQUESTED' as const,
+    requestedAt,
+    expiresAt,
+  })
+  it('7일 기한에 2일 지나면 7일 중 2/7', () => {
+    const progress = wishDeadlineProgress(sent('2026-11-10T10:00:00', '2026-11-17T10:00:00'), NOW)
+    expect(progress?.totalDays).toBe(7)
+    expect(progress?.elapsedPct).toBeCloseTo((2 / 7) * 100)
+  })
+  it('보낸 직후는 0, 기한이 지났으면 100에서 멈춘다', () => {
+    expect(
+      wishDeadlineProgress(sent('2026-11-12T10:00:00', '2026-11-19T10:00:00'), NOW)?.elapsedPct,
+    ).toBe(0)
+    expect(
+      wishDeadlineProgress(sent('2026-11-01T10:00:00', '2026-11-08T10:00:00'), NOW)?.elapsedPct,
+    ).toBe(100)
+  })
+  it('기한이 없거나 대기가 아니면 null', () => {
+    expect(wishDeadlineProgress(sent('2026-11-10T10:00:00', null), NOW)).toBeNull()
+    expect(
+      wishDeadlineProgress(
+        { status: 'PAID', requestedAt: '2026-11-10T10:00:00', expiresAt: '2026-11-17T10:00:00' },
+        NOW,
+      ),
+    ).toBeNull()
+  })
+})
+
+describe('soonestWishDeadlineLabel: 대기 중인 조르기 가운데 가장 먼저 끝나는 것의 남은 기한', () => {
+  it('기한이 가장 이른 대기 조르기', () => {
+    expect(
+      soonestWishDeadlineLabel(
+        [
+          { status: 'REQUESTED', expiresAt: '2026-11-19T10:00:00', expiredAt: null },
+          { status: 'PAID', expiresAt: '2026-11-13T10:00:00', expiredAt: null },
+          { status: 'REQUESTED', expiresAt: '2026-11-15T10:00:00', expiredAt: null },
+          { status: 'REQUESTED', expiresAt: null, expiredAt: null },
+        ],
+        NOW,
+      ),
+    ).toBe('3일 남음')
+  })
+  it('기한 있는 대기 조르기가 없으면 null', () => {
+    expect(
+      soonestWishDeadlineLabel([{ status: 'REQUESTED', expiresAt: null, expiredAt: null }], NOW),
+    ).toBeNull()
+    expect(soonestWishDeadlineLabel([], NOW)).toBeNull()
   })
 })
 

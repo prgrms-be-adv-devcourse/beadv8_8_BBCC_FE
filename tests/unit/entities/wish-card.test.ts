@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CHILD_WISH_FILTER_LABEL,
+  CHILD_WISH_FILTERS,
+  childWishDateLine,
   childWishStatusLabel,
+  filterChildWishes,
   filterWishes,
   wishSellersLabel,
   wishTotalAmount,
@@ -33,15 +37,12 @@ describe('조르기 카드 표시', () => {
     ).toBe('테스트상점 · 토닥키즈')
   })
 
-  it('자녀에게 보이는 상태: 거절이면 이유도', () => {
-    expect(childWishStatusLabel({ status: 'REQUESTED', rejectReason: null })).toBe('기다리는 중')
-    expect(childWishStatusLabel({ status: 'PAID', rejectReason: null })).toBe('보호자가 사 줬어요')
-    expect(childWishStatusLabel({ status: 'REJECTED', rejectReason: 'NEXT_TIME' })).toBe(
-      '거절됨 · 다음에 사자',
-    )
-    expect(childWishStatusLabel({ status: 'REJECTED', rejectReason: null })).toBe('거절됨')
-    expect(childWishStatusLabel({ status: 'CANCELLED', rejectReason: null })).toBe('철회함')
-    expect(childWishStatusLabel({ status: 'EXPIRED', rejectReason: null })).toBe('기한 지남')
+  it('자녀에게 보이는 상태 도장 (거절 이유는 보호자 답으로 따로 보인다)', () => {
+    expect(childWishStatusLabel({ status: 'REQUESTED' })).toBe('기다리는 중')
+    expect(childWishStatusLabel({ status: 'PAID' })).toBe('사 줬어!')
+    expect(childWishStatusLabel({ status: 'REJECTED' })).toBe('다음에')
+    expect(childWishStatusLabel({ status: 'CANCELLED' })).toBe('거뒀어')
+    expect(childWishStatusLabel({ status: 'EXPIRED' })).toBe('기한 지남')
   })
 
   it('거르기: 기다리는 중 = 대기, 끝남 = 그 밖', () => {
@@ -53,6 +54,50 @@ describe('조르기 카드 표시', () => {
     expect(filterWishes(wishes, 'ALL')).toHaveLength(3)
     expect(filterWishes(wishes, 'WAITING')).toEqual([{ status: 'REQUESTED' }])
     expect(filterWishes(wishes, 'DONE')).toEqual([{ status: 'PAID' }, { status: 'EXPIRED' }])
+  })
+
+  it('자녀 거르기: 전체 또는 상태 하나', () => {
+    const wishes = [
+      { status: 'REQUESTED' as const },
+      { status: 'PAID' as const },
+      { status: 'REJECTED' as const },
+      { status: 'PAID' as const },
+    ]
+    expect(CHILD_WISH_FILTERS).toEqual([
+      'ALL',
+      'REQUESTED',
+      'PAID',
+      'REJECTED',
+      'EXPIRED',
+      'CANCELLED',
+    ])
+    expect(filterChildWishes(wishes, 'ALL')).toHaveLength(4)
+    expect(filterChildWishes(wishes, 'PAID')).toEqual([{ status: 'PAID' }, { status: 'PAID' }])
+    expect(filterChildWishes(wishes, 'EXPIRED')).toEqual([])
+    expect(CHILD_WISH_FILTER_LABEL.PAID).toBe('사 줬어')
+  })
+})
+
+describe('childWishDateLine: 자녀 조르기 카드의 날짜 줄 (월.일)', () => {
+  const at = { requestedAt: '2026-11-12T10:00:00', decidedAt: null, expiredAt: null }
+  it('대기는 보낸 날만', () => {
+    expect(childWishDateLine({ ...at, status: 'REQUESTED' })).toBe('11.12 보냄')
+  })
+  it('처리되면 처리한 날과 결과', () => {
+    const decidedAt = '2026-11-13T09:00:00'
+    expect(childWishDateLine({ ...at, status: 'PAID', decidedAt })).toBe('11.12 보냄 · 11.13 결제')
+    expect(childWishDateLine({ ...at, status: 'REJECTED', decidedAt })).toBe(
+      '11.12 보냄 · 11.13 거절',
+    )
+    expect(childWishDateLine({ ...at, status: 'CANCELLED', decidedAt })).toBe(
+      '11.12 보냄 · 11.13 거둠',
+    )
+    expect(childWishDateLine({ ...at, status: 'EXPIRED', expiredAt: '2026-11-19T10:00:00' })).toBe(
+      '11.12 보냄 · 11.19 끝남',
+    )
+  })
+  it('처리 시각을 모르면 보낸 날만', () => {
+    expect(childWishDateLine({ ...at, status: 'PAID' })).toBe('11.12 보냄')
   })
 })
 

@@ -99,6 +99,30 @@ export function wishDeadlineLabel(
   return `${Math.ceil(left / DAY_MS)}일 남음`
 }
 
+/** 대기 중인 조르기가 보낸 때부터 기한까지 얼마나 지났는지 (기한 막대). 기한이 없거나 대기가 아니면 null */
+export function wishDeadlineProgress(
+  wish: { status: WishStatus; requestedAt: string; expiresAt: string | null },
+  now: Date = new Date(),
+): { totalDays: number; elapsedPct: number } | null {
+  if (wish.status !== 'REQUESTED' || !wish.expiresAt) return null
+  const start = parseKst(wish.requestedAt)
+  const total = parseKst(wish.expiresAt) - start
+  if (total <= 0) return null
+  const ratio = Math.min(Math.max((now.getTime() - start) / total, 0), 1)
+  return { totalDays: Math.round(total / DAY_MS), elapsedPct: ratio * 100 }
+}
+
+/** 대기 중인 조르기 가운데 기한이 가장 이른 것의 남은 기한. 없으면 null */
+export function soonestWishDeadlineLabel(
+  wishes: { status: WishStatus; expiresAt: string | null; expiredAt: string | null }[],
+  now: Date = new Date(),
+): string | null {
+  const soonest = wishes
+    .filter((wish) => wish.status === 'REQUESTED' && wish.expiresAt)
+    .sort((a, b) => parseKst(a.expiresAt ?? '') - parseKst(b.expiresAt ?? ''))[0]
+  return soonest ? wishDeadlineLabel(soonest, now) : null
+}
+
 /** 자녀가 보낸 조르기를 철회할 수 있는지: 대기 중이고 기한 전 (기한이 지나면 만료 처리 전이라도 BE 409, #968 · #1008) */
 export function canWithdrawWish(
   wish: { status: WishStatus; expiresAt: string | null },
@@ -121,23 +145,61 @@ export function wishSellersLabel(wish: { items: { sellerName: string | null }[] 
   return [...new Set(names)].join(' · ')
 }
 
+/** 자녀에게 보이는 상태 도장. 거절 이유는 카드의 보호자 답으로 따로 보여 준다 */
 const CHILD_STATUS_LABEL: Record<WishStatus, string> = {
   REQUESTED: '기다리는 중',
-  PAID: '보호자가 사 줬어요',
-  REJECTED: '거절됨',
-  CANCELLED: '철회함',
+  PAID: '사 줬어!',
+  REJECTED: '다음에',
+  CANCELLED: '거뒀어',
   EXPIRED: '기한 지남',
 }
 
-/** 자녀에게 보이는 상태. 거절이면 이유를 붙인다 */
-export function childWishStatusLabel(wish: {
+export function childWishStatusLabel(wish: { status: WishStatus }): string {
+  return labelOf(CHILD_STATUS_LABEL, wish.status)
+}
+
+const CHILD_DECISION_WORD: Partial<Record<WishStatus, string>> = {
+  PAID: '결제',
+  REJECTED: '거절',
+  CANCELLED: '거둠',
+  EXPIRED: '끝남',
+}
+
+/** 서버 시각에서 월.일만 (예: 11.12) */
+function monthDay(value: string): string {
+  return value.slice(5, 10).replace('-', '.')
+}
+
+/** 자녀 조르기 카드의 날짜 줄: 「11.12 보냄」, 처리되면 「 · 11.13 결제」를 붙인다 */
+export function childWishDateLine(wish: {
   status: WishStatus
-  rejectReason: WishRejectReason | null
+  requestedAt: string
+  decidedAt: string | null
+  expiredAt: string | null
 }): string {
-  const label = labelOf(CHILD_STATUS_LABEL, wish.status)
-  return wish.status === 'REJECTED' && wish.rejectReason
-    ? `${label} · ${wishRejectReasonLabel(wish.rejectReason)}`
-    : label
+  const sent = `${monthDay(wish.requestedAt)} 보냄`
+  const word = CHILD_DECISION_WORD[wish.status]
+  const at = wish.status === 'EXPIRED' ? wish.expiredAt : wish.decidedAt
+  return word && at ? `${sent} · ${monthDay(at)} ${word}` : sent
+}
+
+/** 자녀 조르기 거르기: 전체 또는 상태 하나 */
+export type ChildWishFilter = 'ALL' | WishStatus
+export const CHILD_WISH_FILTER_LABEL: Record<ChildWishFilter, string> = {
+  ALL: '전체',
+  REQUESTED: '기다리는 중',
+  PAID: '사 줬어',
+  REJECTED: '다음에',
+  EXPIRED: '기한 지남',
+  CANCELLED: '거뒀어',
+}
+export const CHILD_WISH_FILTERS = Object.keys(CHILD_WISH_FILTER_LABEL) as ChildWishFilter[]
+
+export function filterChildWishes<T extends { status: WishStatus }>(
+  wishes: T[],
+  filter: ChildWishFilter,
+): T[] {
+  return filter === 'ALL' ? wishes : wishes.filter((wish) => wish.status === filter)
 }
 
 /** 조르기 목록 거르기: 전체 · 기다리는 중(대기) · 끝남(그 밖) */
