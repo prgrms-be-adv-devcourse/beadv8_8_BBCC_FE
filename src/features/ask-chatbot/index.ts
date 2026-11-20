@@ -16,3 +16,4 @@ export {
 } from './model/chat.rules'
 export { useAskChatbot } from './model/use-ask-chatbot'
 export { ChatbotWidget } from './ui/ChatbotWidget'
+export { OpenChatbotButton } from './ui/OpenChatbotButton'
