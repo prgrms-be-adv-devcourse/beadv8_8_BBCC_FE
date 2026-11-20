@@ -18,7 +18,7 @@ test('자녀 화면: 상품 하트로 찜하면 찜 수가 오르고 「내 찜�
   await expect(favorited).toHaveAttribute('aria-pressed', 'true')
   await expect(favorited).toHaveText(String(before + 1))
 
-  await page.getByRole('link', { name: '내 찜', exact: true }).click()
+  await page.getByRole('link', { name: '찜', exact: true }).click()
   await expect(page).toHaveURL('/child/favorites')
   const row = page
     .getByRole('list', { name: '찜한 상품' })
