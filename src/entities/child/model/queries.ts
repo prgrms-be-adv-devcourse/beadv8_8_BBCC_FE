@@ -36,8 +36,9 @@ export function useGrowthRecordsQuery(childId: string) {
   })
 }
 
-export function useOwnChildProfileQuery() {
+export function useOwnChildProfileQuery({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
+    enabled,
     queryKey: childKeys.own,
     queryFn: childApi.own,
     select: toChild,
