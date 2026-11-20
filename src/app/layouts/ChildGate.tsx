@@ -59,8 +59,8 @@ export function ChildGate({ children }: ChildGateProps) {
       <section className="flex flex-[1_1_520px] items-center justify-center px-4 py-10 md:px-14 md:py-12">
         <div className="w-full max-w-[420px] space-y-5">
           <h2 className="font-display text-[32px] md:text-[40px]">자녀 로그인</h2>
-          {/* 로그인하면 어느 자녀 화면에서든 쇼핑 홈(/)으로 보낸다 */}
-          <ChildLoginForm onSuccess={() => void navigate(paths.shop.home, { replace: true })} />
+          {/* 로그인하면 어느 자녀 화면에서든 내 옷장(/child)으로 보낸다. 첫 로그인이면 그 자리에 첫 안내가 나온다 */}
+          <ChildLoginForm onSuccess={() => void navigate(paths.child.home, { replace: true })} />
           <p className="text-sm leading-relaxed">
             아이디나 비밀번호가 생각나지 않으면 보호자에게 물어봐.
           </p>
