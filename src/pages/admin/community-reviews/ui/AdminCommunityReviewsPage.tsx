@@ -58,8 +58,8 @@ export function AdminCommunityReviewsPage() {
       {status === 'PENDING' && (
         <div className="bg-paper-2 flex flex-wrap items-center justify-between gap-3 rounded-lg px-4 py-3">
           <p className="text-ink-2 text-[13px]">
-            자동 검사가 여러 번 판단하지 못한 리뷰는 공개된 채로 멈춰 있어요. 「다시 검사」를 누르면
-            검사 대기로 돌려 다시 검사해요.
+            자동 검사가 여러 번 판단하지 못한 리뷰는 공개된 채로 멈춰 있어요. 「다시 돌리기」를
+            누르면 검사 대기로 돌려 다시 검사해요.
           </p>
           <RetryReviewModerationButton />
         </div>

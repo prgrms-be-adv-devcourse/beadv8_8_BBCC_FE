@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, type FormEvent, type KeyboardEvent } from 'react'
 import { Link } from 'react-router'
 import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui/button'
 import { Textarea } from '@/shared/ui/input'
 import type { ChatMessage } from '../model/chat'
 import { CHAT_MESSAGE_MAX } from '../model/chat.rules'
+import { useChatbotOpenStore } from '../model/chatbot-open'
 import { useAskChatbot } from '../model/use-ask-chatbot'
 import { ChatProductCard } from './ChatProductCard'
 
@@ -22,8 +23,8 @@ type ChatbotWidgetProps = {
   isRestoring: boolean
   loginHref: string
   productHref: (productId: string) => string
-  /** 화면 아래에 고정 바가 있는 화면(상품 상세)에서 버튼을 올린다 */
-  raised?: boolean
+  /** 휴대폰에서 떠 있는 버튼을 숨긴다: 화면 아래 고정 바가 있는 화면(상품 상세)은 화면 안 버튼(OpenChatbotButton)으로 연다 */
+  launcherInPage?: boolean
 }
 
 /** 떠 있는 챗봇 버튼 + 대화 창. 닫아도 대화는 남는다 (로그인한 회원이 바뀌면 화면이 새로 만든다) */
@@ -32,19 +33,23 @@ export function ChatbotWidget({
   isRestoring,
   loginHref,
   productHref,
-  raised,
+  launcherInPage,
 }: ChatbotWidgetProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const isOpen = useChatbotOpenStore((state) => state.isOpen)
+  const setIsOpen = useChatbotOpenStore((state) => state.setOpen)
+  const setMounted = useChatbotOpenStore((state) => state.setMounted)
+  useEffect(() => {
+    setMounted(true)
+    return () => {
+      setMounted(false)
+      setIsOpen(false)
+    }
+  }, [setMounted, setIsOpen])
   // 대화는 창 밖에 둔다: 닫았다 열어도, 답을 기다리는 중에 닫아도 이어진다
   const chat = useAskChatbot()
 
   return (
-    <div
-      className={cn(
-        'fixed bottom-4 left-4 z-40 flex flex-col items-start gap-2',
-        raised && 'max-md:bottom-40',
-      )}
-    >
+    <div className="fixed bottom-4 left-4 z-40 flex flex-col items-start gap-2">
       {isOpen && (
         <section
           aria-label="챗봇 상담"
@@ -91,10 +96,13 @@ export function ChatbotWidget({
       <button
         type="button"
         aria-expanded={isOpen}
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="bg-signal text-signal-ink flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-bold shadow-lg"
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          'bg-signal text-signal-ink flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-bold shadow-lg',
+          launcherInPage && 'max-md:hidden',
+        )}
       >
-        {isOpen ? '챗봇 닫기' : '챗봇에게 묻기'}
+        {isOpen ? '닫기' : '무엇이든 물어보세요'}
       </button>
     </div>
   )

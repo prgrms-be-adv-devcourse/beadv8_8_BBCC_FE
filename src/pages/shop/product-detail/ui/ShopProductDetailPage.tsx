@@ -36,6 +36,7 @@ import {
 import { useFavoritedIdsQuery, useFavoriteSummaryQuery } from '@/entities/favorite'
 import { useSessionStore } from '@/entities/session'
 import { AddToCartButton } from '@/features/add-to-cart'
+import { OpenChatbotButton } from '@/features/ask-chatbot'
 import { ChildWishAddButton } from '@/features/child-wish-cart'
 import { SendWishNow } from '@/features/send-wish-now'
 import { useRecordProductView } from '@/features/record-product-view'
@@ -211,10 +212,14 @@ export function ShopProductDetailPage() {
           <div className="shop-offer min-w-0 space-y-5">
             {/* 셀러 마켓 상세: 상점 줄을 맨 위에 두고, 카테고리 · 이름 · 가격 순서 */}
             <div className="space-y-2">
-              {detail.businessName && (
-                <div className="border-rule border-b pb-3">
+              {detail.businessName ? (
+                <div className="border-rule flex items-center justify-between gap-3 border-b pb-3">
                   <ProductSellerLine businessName={detail.businessName} />
+                  {/* 휴대폰은 떠 있는 챗봇 버튼이 이름 · 가격을 가리지 않게 여기서 연다 */}
+                  <OpenChatbotButton className="md:hidden" />
                 </div>
+              ) : (
+                <OpenChatbotButton className="ml-auto md:hidden" />
               )}
               <p className="text-ink-3 pt-1 text-[13px]">{productMeta(detail)}</p>
               <div className="flex items-start gap-3">

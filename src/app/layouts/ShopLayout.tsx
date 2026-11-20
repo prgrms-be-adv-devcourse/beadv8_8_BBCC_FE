@@ -46,7 +46,9 @@ export function ShopLayout() {
         </main>
         <footer className="border-ink mt-16 border-t-[3px]">
           <div className="text-ink-2 max-w-shop mx-auto flex flex-wrap items-center justify-between gap-x-8 gap-y-3 px-4 pt-6 pb-20 text-[13px] md:px-6">
-            <KidlyLogo className="text-ink h-8" />
+            <Link to={paths.shop.home} aria-label="Kidly 홈" className="text-ink shrink-0">
+              <KidlyLogo className="h-8" />
+            </Link>
             <p className="min-w-0 basis-full max-md:order-last md:flex-1 md:basis-0">
               키즈 패션 마켓 Kidly는 여러 판매자가 직접 상품을 올리고 파는 곳이에요. 팀
               블루블랙치킨고양이{demoRoleSwitch && ', 세미 프로젝트 시연용'}
@@ -63,7 +65,7 @@ export function ShopLayout() {
           isRestoring={sessionStatus === 'restoring'}
           loginHref={loginPath(pathname)}
           productHref={(productId) => paths.shop.product(productId)}
-          raised={isProductDetail}
+          launcherInPage={isProductDetail}
         />
         {/* 확인 창 · 알림 띠도 쇼핑 영역의 색 · 모서리를 따르게 영역 안에 둔다 */}
         <Overlays />
