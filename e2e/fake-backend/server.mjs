@@ -154,6 +154,8 @@ const later = (ms) => new Date(Date.now() + 9 * 3600e3 + ms).toISOString().slice
 // 결제 마감 (BE kidly.order.payment-timeout, 기본 10분)
 const PAYMENT_TIMEOUT_MS = 10 * 60e3
 // 다음 주문 하나를 처리하지 않고 결제 마감에 취소한다 (상품 order.created 리스너가 없는 실제 백엔드 흉내).
+/** 추천을 403으로 막아 둔 자녀 계정 아이디 (/__fake/child-recommendations-forbidden) */
+const forbiddenChildRecommendations = new Set()
 // POST /__fake/payment-stall { timeoutMs } — 가짜 백엔드 전용
 let stallNext = null
 const SORTS = ['NEWEST', 'PRICE_ASC', 'PRICE_DESC', 'RELEVANCE']
@@ -996,6 +998,11 @@ http
     const u = who(req)
     const r = (method, re) => m === method && p.match(re)
     let x
+    // POST /__fake/child-recommendations-forbidden { loginId } — 그 자녀 계정의 추천을 403으로 (가짜 백엔드 전용, 대체 화면 확인용)
+    if (r('POST', /^\/__fake\/child-recommendations-forbidden$/)) {
+      forbiddenChildRecommendations.add(body.loginId)
+      return send(res, 204)
+    }
     if (r('POST', /^\/__fake\/unverify-guardian$/)) {
       delete verifications[body.memberId]
       return send(res, 204)
@@ -1465,8 +1472,26 @@ http
       }
       return problem(res, 404, 'Not Found', `No static resource api/v1${p}.`, req.url)
     }
-    if (isChild) return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
-    const me = Number(u.sub)
+    // BE #1639: 자녀 토큰도 맛보기 · 맞춤 목록 · 사이즈 추천을 읽는다. childId는 무시하고 계정에 연결된 자녀로 정한다
+    // (계정이 없거나 지워졌거나 막아 두었으면 403 CHILD_ACCOUNT_FORBIDDEN)
+    const isChildRecommendation =
+      isChild && m === 'GET' && /^\/recommendations\/(products(\/preview)?|size)$/.test(p)
+    let recommendedChild = null
+    if (isChildRecommendation) {
+      const account = childAccounts.find(
+        (a) => `child:${a.id}` === u.sub && a.version === u.version,
+      )
+      recommendedChild =
+        account && !forbiddenChildRecommendations.has(account.loginId)
+          ? children.find((c) => c.id === account.childProfileId && !c.deleted)
+          : null
+      if (!recommendedChild)
+        return problem(res, 403, '권한이 없습니다', '자녀 계정을 확인할 수 없습니다.', req.url)
+      url.searchParams.set('childId', String(recommendedChild.id))
+    }
+    if (isChild && !isChildRecommendation)
+      return problem(res, 401, '로그인이 필요합니다', '로그인이 필요합니다.', req.url)
+    const me = recommendedChild ? recommendedChild.memberId : Number(u.sub)
     // 회원 알림함 (BE InboxNotificationController)
     const memberInbox = notificationRoute(m, p, url.searchParams, `member:${me}`, 'member')
     if (memberInbox) return reviewResult(res, memberInbox, req.url)

@@ -1,4 +1,9 @@
-export { recommendationApi } from './api/recommendation-api'
+export {
+  guardianTargetOf,
+  recommendationApi,
+  SELF_TARGET,
+  type RecommendationTarget,
+} from './api/recommendation-api'
 /** 단위 테스트 입력용 (tests/unit) */
 export type { SizeRecommendationDto } from './api/recommendation.dto'
 export type { ReferenceGarmentDto, ReferenceGarmentRequestDto } from './api/reference-garment.dto'

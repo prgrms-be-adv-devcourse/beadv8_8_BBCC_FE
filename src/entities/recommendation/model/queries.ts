@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery, type QueryFunctionContext } from '@tanstack/react-query'
 import { nextPageOf, type StreamEvent } from '@/shared/api'
-import { recommendationApi } from '../api/recommendation-api'
+import { recommendationApi, type RecommendationTarget } from '../api/recommendation-api'
 import type {
   CompanionProductsDto,
   HomePreviewDto,
@@ -21,17 +21,25 @@ import {
 import { toPurchasedGarment } from './purchased-garment.mapper'
 import { toReferenceGarment } from './reference-garment.mapper'
 
+/** 자녀를 고르기 전(부르지 않는 쿼리)의 키 자리 */
+const NO_TARGET: RecommendationTarget = { kind: 'guardian', childId: '' }
+
+function targetKeyOf(target: RecommendationTarget): string {
+  return target.kind === 'self' ? 'self' : target.childId
+}
+
 export const recommendationKeys = {
   all: ['recommendation'] as const,
   referenceGarments: (childId: string) =>
     ['recommendation', 'reference-garments', childId] as const,
   purchases: (childId: string) => ['recommendation', 'purchases', childId] as const,
   growthSpeed: (childId: string) => ['recommendation', 'growth-speed', childId] as const,
-  size: (productId: string, childId: string) =>
-    ['recommendation', 'size', productId, childId] as const,
+  size: (productId: string, target: RecommendationTarget) =>
+    ['recommendation', 'size', productId, targetKeyOf(target)] as const,
   products: (childId: string, query: RecommendedProductsQuery) =>
     ['recommendation', 'products', childId, toRecommendedProductsParams(query)] as const,
-  preview: (childId: string) => ['recommendation', 'preview', childId] as const,
+  preview: (target: RecommendationTarget) =>
+    ['recommendation', 'preview', targetKeyOf(target)] as const,
   companions: (productId: string, childId: string) =>
     ['recommendation', 'companions', productId, childId] as const,
   more: (childId: string, categoryId: string | null) =>
@@ -42,14 +50,14 @@ export const recommendationKeys = {
  * 사이즈 추천 (SSE): 규칙 결과를 받자마자 그리고, AI 답이 오면 바꾼다. 스트림이 열려 있고 그리는 결과가 AI가 아니면 isWaitingForAi.
  * 실패해도 JSON으로 다시 부르지 않고, AI를 또 기다리므로 저절로 다시 부르지도 않는다
  */
-export function useSizeRecommendationQuery(productId: string, childId: string | null) {
+export function useSizeRecommendationQuery(productId: string, target: RecommendationTarget | null) {
   const query = useQuery({
-    queryKey: recommendationKeys.size(productId, childId ?? ''),
+    queryKey: recommendationKeys.size(productId, target ?? NO_TARGET),
     queryFn: streamIntoCache<SizeRecommendationDto>((signal, onEvent) =>
-      recommendationApi.streamSize(productId, childId!, signal, onEvent),
+      recommendationApi.streamSize(productId, target!, signal, onEvent),
     ),
     select: (events) => shownSizeOf(events.map((item) => toSizeRecommendation(item.data))),
-    enabled: childId !== null,
+    enabled: target !== null,
     retry: false,
   })
   return { ...query, isWaitingForAi: isWaitingForAi(query.data, query.isFetching) }
@@ -89,14 +97,14 @@ function streamIntoCache<T>(open: OpenStream<T>) {
  * 스트림이 열려 있고 그리는 결과가 AI가 아니면 isWaitingForAi.
  * 다시 부르면 AI를 또 기다리므로 실패해도 다시 부르지 않는다
  */
-export function useHomePreviewQuery(childId: string | null) {
+export function useHomePreviewQuery(target: RecommendationTarget | null) {
   const query = useQuery({
-    queryKey: recommendationKeys.preview(childId ?? ''),
+    queryKey: recommendationKeys.preview(target ?? NO_TARGET),
     queryFn: streamIntoCache<HomePreviewDto>((signal, onEvent) =>
-      recommendationApi.streamPreview(childId!, signal, onEvent),
+      recommendationApi.streamPreview(target!, signal, onEvent),
     ),
     select: (events) => shownPicksOf(events.map((item) => toHomePreview(item.data))),
-    enabled: childId !== null,
+    enabled: target !== null,
     retry: false,
   })
   return { ...query, isWaitingForAi: isWaitingForAi(query.data, query.isFetching) }

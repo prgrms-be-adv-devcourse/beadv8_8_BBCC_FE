@@ -343,6 +343,8 @@ export const router = createBrowserRouter(
           path: rel(paths.child.home, paths.child.cart),
           ...page(() => import('@/pages/child/cart').then((m) => ({ Component: m.ChildCartPage }))),
         },
+        // 없는 자녀 주소도 자녀 머리말 안에서 안내한다 (없으면 쇼핑 영역의 404로 빠진다)
+        { path: '*', element: <NotFoundPage homeTo={paths.child.home} /> },
       ],
     },
     {

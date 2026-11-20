@@ -16,7 +16,7 @@ export function useWithdrawChildWish(requestId: string) {
   const withdraw = useMutation({
     mutationFn: () => runWithAction('조르기 철회', () => withdrawChildWishApi.withdraw(requestId)),
     onSuccess: () => {
-      toast('조르기를 철회했어요 · 상품은 장바구니에 그대로 있어요')
+      toast('조르기를 거뒀어 · 옷은 장바구니에 그대로 있어')
       return refresh()
     },
     onError: () => refresh(),

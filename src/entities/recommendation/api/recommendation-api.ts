@@ -1,4 +1,11 @@
-import { apiClient, expectShape, getEventStream, type Page, type StreamEvent } from '@/shared/api'
+import {
+  apiClient,
+  expectShape,
+  getEventStream,
+  type Page,
+  type Principal,
+  type StreamEvent,
+} from '@/shared/api'
 import type { PurchasedGarmentDto } from './purchased-garment.dto'
 import { purchasedGarmentPageShape } from './purchased-garment.shape'
 import type {
@@ -19,6 +26,29 @@ import {
 import type { ReferenceGarmentDto, ReferenceGarmentRequestDto } from './reference-garment.dto'
 import { referenceGarmentListShape, referenceGarmentShape } from './reference-garment.shape'
 
+/**
+ * 누구의 추천인지: 보호자가 고른 자녀(회원 토큰 + childId) 또는 로그인한 자녀 본인(자녀 토큰, childId 없이).
+ * 자녀 본인이면 서버가 계정에 연결된 자녀로 정한다 (BE #1639)
+ */
+export type RecommendationTarget = { kind: 'guardian'; childId: string } | { kind: 'self' }
+
+/** 보호자가 고른 자녀. 고르지 않았으면(null) 부르지 않는다 */
+export function guardianTargetOf(childId: string | null): RecommendationTarget | null {
+  return childId === null ? null : { kind: 'guardian', childId }
+}
+
+/** 로그인한 자녀 본인 (자녀 화면) */
+export const SELF_TARGET: RecommendationTarget = { kind: 'self' }
+
+function targetRequest(target: RecommendationTarget): {
+  params: Record<string, string>
+  principal?: Principal
+} {
+  return target.kind === 'self'
+    ? { params: {}, principal: 'child' }
+    : { params: { childId: target.childId } }
+}
+
 const referenceGarments = (childId: string) =>
   `/recommendations/children/${childId}/reference-garments`
 
@@ -35,16 +65,19 @@ export const recommendationApi = {
    */
   streamSize: (
     productId: string,
-    childId: string,
+    target: RecommendationTarget,
     signal?: AbortSignal,
     onEvent?: (event: StreamEvent<SizeRecommendationDto>) => void,
-  ) =>
-    getEventStream<SizeRecommendationDto>('/recommendations/size', {
-      params: { productId, childId },
+  ) => {
+    const { params, principal } = targetRequest(target)
+    return getEventStream<SizeRecommendationDto>('/recommendations/size', {
+      params: { productId, ...params },
+      principal,
       signal,
       shape: sizeRecommendationShape,
       onEvent,
-    }),
+    })
+  },
   getProducts: (childId: string, params: RecommendedProductsParamsDto) =>
     apiClient
       .get<RecommendedProductPageDto>('/recommendations/products', {
@@ -56,16 +89,19 @@ export const recommendationApi = {
    * 없는 자녀 · 남의 자녀면 스트림을 열기 전에 404. 이벤트가 올 때마다 onEvent를 부른다
    */
   streamPreview: (
-    childId: string,
+    target: RecommendationTarget,
     signal?: AbortSignal,
     onEvent?: (event: StreamEvent<HomePreviewDto>) => void,
-  ) =>
-    getEventStream<HomePreviewDto>('/recommendations/products/preview', {
-      params: { childId },
+  ) => {
+    const { params, principal } = targetRequest(target)
+    return getEventStream<HomePreviewDto>('/recommendations/products/preview', {
+      params,
+      principal,
       signal,
       shape: homePreviewShape,
       onEvent,
-    }),
+    })
+  },
   /**
    * 함께 사면 좋은 상품 4개까지 (SSE, 맛보기와 같은 순서). 없는 상품 · 자녀 · 남의 자녀면 스트림을 열기 전에 404
    */

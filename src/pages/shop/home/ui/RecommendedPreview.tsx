@@ -9,6 +9,7 @@ import {
   PickReveal,
   RecommendedPicksLoading,
   RecommendedPicksNotice,
+  guardianTargetOf,
   useHomePreviewQuery,
 } from '@/entities/recommendation'
 import { FavoriteButton } from '@/features/toggle-favorite'
@@ -31,7 +32,7 @@ type RecommendedPreviewProps = {
  */
 export function RecommendedPreview({ kids, child, onSelectChild }: RecommendedPreviewProps) {
   // 맛보기 4개는 AI가 맞춤 상위 20개 중에서 고르고 이유를 쓴다(SSE). 나머지는 「더보기」(맞춤 목록 화면)에서 본다
-  const preview = useHomePreviewQuery(child?.id ?? null)
+  const preview = useHomePreviewQuery(guardianTargetOf(child?.id ?? null))
   const favoritedIds = useFavoritedIdsQuery(
     preview.data?.products.map((product) => product.id) ?? [],
   )

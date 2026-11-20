@@ -51,10 +51,10 @@ test('자녀가 나를 위해 산 것에서 조르기로 산 상품을 본다', 
 
   const childPage = await context.newPage()
   await loginChild(childPage, loginId)
-  await childPage.getByRole('link', { name: '나를 위해 산 것' }).click()
+  await childPage.getByRole('link', { name: '사 준 옷', exact: true }).click()
   await expect(childPage).toHaveURL(/\/child\/purchases$/)
   const card = childPage.getByRole('article').first()
   await expect(card).toContainText(line.productName)
   await expect(card).toContainText('결제 완료')
-  await expect(card).toContainText('조르기로 산 것')
+  await expect(card).toContainText('조르기로 받았어')
 })

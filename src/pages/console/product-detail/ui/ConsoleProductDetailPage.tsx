@@ -19,6 +19,7 @@ import {
   useProductQuery,
 } from '@/entities/product'
 import {
+  guardianTargetOf,
   type RecommendedPicks,
   SizeRecommendationSummary,
   sizeRangesOf,
@@ -43,7 +44,7 @@ export function ConsoleProductDetailPage() {
   const product = useProductQuery(productId)
   const children = useChildrenQuery()
   const [childId, setChildId] = useState<string | null>(search.get('childId'))
-  const recommendation = useSizeRecommendationQuery(productId, childId)
+  const recommendation = useSizeRecommendationQuery(productId, guardianTargetOf(childId))
   const companions = useCompanionProductsQuery(productId, childId)
   const user = useSessionStore((state) => state.user)
   useRecordProductView(productId, childId, Boolean(user))

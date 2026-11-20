@@ -50,9 +50,9 @@ describe('나를 위해 산 상품 (BE #1000)', () => {
   ])('상태 %s → %s', (status, label) => {
     expect(childPurchaseStatusLabel(status)).toBe(label)
   })
-  it('출처: 내 조르기의 결제된 주문상품이면 조르기로 산 것, 아니면 보호자가 산 것', () => {
+  it('출처: 내 조르기의 결제된 주문상품이면 조르기로 받은 것, 아니면 보호자가 고른 것', () => {
     const wishes = [{ paidOrderItemIds: ['40', '41'] }, { paidOrderItemIds: [] }]
-    expect(childPurchaseSourceOf('41', wishes)).toBe('조르기로 산 것')
-    expect(childPurchaseSourceOf('99', wishes)).toBe('보호자가 산 것')
+    expect(childPurchaseSourceOf('41', wishes)).toBe('조르기로 받았어')
+    expect(childPurchaseSourceOf('99', wishes)).toBe('보호자가 골라 줬어')
   })
 })

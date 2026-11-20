@@ -41,14 +41,14 @@ export function childPurchaseStatusLabel(status: string): string {
 }
 
 /**
- * 출처: 내 조르기들의 결제된 주문상품(paidOrderItemIds)에 있으면 조르기로 산 것, 없으면 보호자가 산 것.
+ * 출처: 내 조르기들의 결제된 주문상품(paidOrderItemIds)에 있으면 조르기로 받은 것, 없으면 보호자가 고른 것.
  * 조르기 반영이 비동기라 결제 직후에는 잠시 보호자가 산 것으로 보일 수 있다 (BE #1000)
  */
 export function childPurchaseSourceOf(
   orderItemId: string,
   wishes: { paidOrderItemIds: string[] }[],
-): '조르기로 산 것' | '보호자가 산 것' {
+): '조르기로 받았어' | '보호자가 골라 줬어' {
   return wishes.some((wish) => wish.paidOrderItemIds.includes(orderItemId))
-    ? '조르기로 산 것'
-    : '보호자가 산 것'
+    ? '조르기로 받았어'
+    : '보호자가 골라 줬어'
 }

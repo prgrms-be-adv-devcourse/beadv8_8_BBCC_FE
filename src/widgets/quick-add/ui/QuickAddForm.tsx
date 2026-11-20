@@ -14,7 +14,11 @@ import {
   useOptionPicks,
   type ProductDetail,
 } from '@/entities/product'
-import { useArrivedAfterWait, useSizeRecommendationQuery } from '@/entities/recommendation'
+import {
+  guardianTargetOf,
+  useArrivedAfterWait,
+  useSizeRecommendationQuery,
+} from '@/entities/recommendation'
 import { useSessionStore } from '@/entities/session'
 import { useRecordProductView } from '@/features/record-product-view'
 import { getErrorMessage } from '@/shared/api'
@@ -52,7 +56,7 @@ export function QuickAddForm({ detail, initialChildId, onClose }: QuickAddFormPr
   const [childId, setChildId] = useState<string | null>(initialChildId)
   // 사이즈 추천은 로그인한 보호자가 자녀를 골랐을 때만
   const recommendedChildId = user && !isChild ? childId : null
-  const recommendation = useSizeRecommendationQuery(detail.id, recommendedChildId)
+  const recommendation = useSizeRecommendationQuery(detail.id, guardianTargetOf(recommendedChildId))
   // 팝업은 규칙 결과를 먼저 그리지 않는다. 상세에서 규칙 결과만 받은 채 열어도 「추천 계산 중」이다.
   // AI 답이 상한보다 늦으면 받아 둔 규칙 결과를 그리고, 뒤늦게 AI 답이 오면 그 답으로 바꾼다
   const sizeSubject = `${detail.id}:${recommendedChildId}`
