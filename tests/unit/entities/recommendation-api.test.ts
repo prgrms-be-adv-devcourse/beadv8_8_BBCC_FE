@@ -1,6 +1,6 @@
 import type { AxiosRequestConfig } from 'axios'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { recommendationApi } from '@/entities/recommendation'
+import { recommendationApi, SELF_TARGET } from '@/entities/recommendation'
 import { apiClient } from '@/shared/api'
 
 function spyGet(data: unknown) {
@@ -59,5 +59,36 @@ describe('추천 요청 주소 (/recommendations 아래, ID는 쿼리)', () => {
       '/recommendations/products',
       { childId: '501', page: 1, size: 20, asOf: '2026-11-11T10:20:30' },
     ])
+  })
+})
+
+// BE #1639: 자녀 본인 추천은 자녀 토큰으로, childId 없이 (서버가 계정의 자녀로 정한다)
+describe('누구의 추천인지에 따라 토큰 주체 · childId가 다르다', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+  const emptyStream = () => new ReadableStream({ start: (controller) => controller.close() })
+  const principalOf = (spy: ReturnType<typeof spyGet>) =>
+    (spy.mock.calls[0][1] as { principal?: string } | undefined)?.principal
+
+  it('보호자가 고른 자녀: 회원 토큰(주체 지정 없음) + childId', async () => {
+    const spy = spyGet(emptyStream())
+    await recommendationApi.streamSize('7', { kind: 'guardian', childId: '501' })
+    expect(requestOf(spy)).toEqual(['/recommendations/size', { productId: '7', childId: '501' }])
+    expect(principalOf(spy)).toBeUndefined()
+  })
+
+  it('자녀 본인 사이즈 추천: 자녀 토큰 + productId만', async () => {
+    const spy = spyGet(emptyStream())
+    await recommendationApi.streamSize('7', SELF_TARGET)
+    expect(requestOf(spy)).toEqual(['/recommendations/size', { productId: '7' }])
+    expect(principalOf(spy)).toBe('child')
+  })
+
+  it('자녀 본인 홈 맛보기: 자녀 토큰 + 쿼리 없음', async () => {
+    const spy = spyGet(emptyStream())
+    await recommendationApi.streamPreview(SELF_TARGET)
+    expect(requestOf(spy)).toEqual(['/recommendations/products/preview', {}])
+    expect(principalOf(spy)).toBe('child')
   })
 })

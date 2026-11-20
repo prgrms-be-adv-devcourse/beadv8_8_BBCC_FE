@@ -5,6 +5,7 @@ import { ageOf, sizeRulerOf, SizeRulerBar, useOwnChildProfileQuery } from '@/ent
 import { useFavoritedIdsQuery } from '@/entities/favorite'
 import { useChildPurchasesQuery } from '@/entities/order'
 import { ProductTile, useProductsQuery } from '@/entities/product'
+import { SELF_TARGET, useHomePreviewQuery } from '@/entities/recommendation'
 import {
   canDecideWish,
   canSendWishLine,
@@ -19,7 +20,18 @@ import { CardGridSkeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
 
 const CONTAINER = 'max-w-shop mx-auto w-full px-4 md:px-8'
-const NEW_ARRIVALS = 4
+const ROW_SIZE = 4
+
+/** 내 옷장 아래 상품 줄 한 칸: 맞춤이면 「120 잘 맞아요」 꼬리표가 붙는다 */
+type RowProduct = {
+  id: string
+  name: string
+  businessName: string | null
+  minPrice: number | null
+  imageUrl: string | null
+  isSoldOut: boolean
+  tag?: { text: string; fit?: boolean }
+}
 
 type TileProps = {
   to: string
@@ -66,10 +78,28 @@ export function ChildProfilePage() {
   const cart = useChildCartQuery()
   const wishes = useChildWishRequestsQuery()
   const purchases = useChildPurchasesQuery(0)
-  const products = useProductsQuery()
-  const arrivals = products.data?.content.slice(0, NEW_ARRIVALS) ?? []
+  // 맞춤 맛보기(자녀 토큰, BE #1639)를 먼저 부른다. 어떤 오류든(배포 전 · 403 · 404 · 서버 오류) 맞는 옷이 없으면
+  // 안내 없이 공개 상품 목록의 「새로 들어온 옷」으로 바꾼다
+  const fitPicks = useHomePreviewQuery(SELF_TARGET)
+  const fitProducts = fitPicks.data?.products ?? []
+  const showsNewArrivals =
+    fitPicks.isError || (fitPicks.isSuccess && !fitPicks.isFetching && fitProducts.length === 0)
+  const newArrivals = useProductsQuery(undefined, 0, { enabled: showsNewArrivals })
+  const row: RowProduct[] = showsNewArrivals
+    ? (newArrivals.data?.content.slice(0, ROW_SIZE) ?? []).map((product) => ({
+        ...product,
+        isSoldOut: product.soldOut,
+      }))
+    : fitProducts.map((product) => ({
+        ...product,
+        isSoldOut: false,
+        tag: product.recommendedSize
+          ? { text: `${product.recommendedSize} 잘 맞아요`, fit: true }
+          : { text: '사이즈 무관' },
+      }))
+  const isRowPending = showsNewArrivals ? newArrivals.isPending : fitPicks.isPending
   const favorited = useFavoritedIdsQuery(
-    arrivals.map((product) => product.id),
+    row.map((product) => product.id),
     { owner: 'child' },
   )
 
@@ -225,10 +255,10 @@ export function ChildProfilePage() {
           </div>
         </section>
 
-        <section aria-labelledby="new-arrivals" className="flex flex-col gap-4 md:gap-5">
+        <section aria-labelledby="closet-picks" className="flex flex-col gap-4 md:gap-5">
           <div className="border-ink flex flex-wrap items-baseline justify-between gap-4 border-b-2 pb-3">
-            <h2 id="new-arrivals" className="font-display text-[22px] md:text-[32px]">
-              새로 들어온 옷
+            <h2 id="closet-picks" className="font-display text-[22px] md:text-[32px]">
+              {showsNewArrivals ? '새로 들어온 옷' : '내 키에 딱 맞는 옷'}
             </h2>
             <Link
               to={paths.child.products}
@@ -237,13 +267,13 @@ export function ChildProfilePage() {
               더 구경하기 <span aria-hidden>→</span>
             </Link>
           </div>
-          {products.isPending && <CardGridSkeleton count={NEW_ARRIVALS} />}
-          {products.isError && (
-            <StateMessage tone="error">{getErrorMessage(products.error)}</StateMessage>
+          {isRowPending && <CardGridSkeleton count={ROW_SIZE} />}
+          {showsNewArrivals && newArrivals.isError && (
+            <StateMessage tone="error">{getErrorMessage(newArrivals.error)}</StateMessage>
           )}
-          {arrivals.length > 0 && (
+          {row.length > 0 && (
             <div className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-5">
-              {arrivals.map((product) => (
+              {row.map((product) => (
                 <ProductTile
                   key={product.id}
                   to={paths.child.product(product.id)}
@@ -251,7 +281,8 @@ export function ChildProfilePage() {
                   seller={product.businessName}
                   price={product.minPrice}
                   imageUrl={product.imageUrl}
-                  isSoldOut={product.soldOut}
+                  isSoldOut={product.isSoldOut}
+                  tag={product.tag}
                   action={
                     <FavoriteButton
                       productId={product.id}

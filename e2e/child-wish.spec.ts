@@ -146,11 +146,19 @@ test('자녀 영역에서는 보호자 회원 API를 부르지 않는다', async
   const { loginId } = await registerChildWithAccount(page)
   const child = await context.newPage()
   // 자녀 영역이 부르면 안 되는 보호자 회원 API (보호자 로그인 표시용 /members/me는 제외).
-  // 장바구니(/cart)는 BE #998부터 자녀 토큰으로 자기 장바구니를 쓰므로 뺀다
+  // 장바구니(/cart)는 BE #998부터 자녀 토큰으로 자기 장바구니를 쓰므로 뺀다.
+  // 추천은 BE #1639부터 자녀 토큰으로 읽기만 한다: childId 없이 GET, 조회 기록(product-views)은 부르지 않는다
   const memberCalls: string[] = []
   child.on('request', (request) => {
-    const { pathname } = new URL(request.url())
-    if (/^\/api\/v1\/(children|recommendations|members\/me\/.+)(\/|$)/.test(pathname))
+    const { pathname, searchParams } = new URL(request.url())
+    const isChildRecommendation =
+      request.method() === 'GET' &&
+      /^\/api\/v1\/recommendations\/(products(\/preview)?|size)$/.test(pathname) &&
+      !searchParams.has('childId')
+    if (
+      /^\/api\/v1\/(children|recommendations|members\/me\/.+)(\/|$)/.test(pathname) &&
+      !isChildRecommendation
+    )
       memberCalls.push(`${request.method()} ${pathname}`)
   })
   await loginChild(child, loginId)

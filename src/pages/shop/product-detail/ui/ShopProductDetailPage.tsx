@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { clampQuantity, MAX_QUANTITY, MIN_QUANTITY, useChildCartQuery } from '@/entities/cart'
-import { ChildPicker, useChildrenQuery } from '@/entities/child'
+import { ChildPicker, useChildrenQuery, useOwnChildProfileQuery } from '@/entities/child'
 import {
   ALL_CATEGORIES_ICON,
   categoryIconOf,
@@ -30,6 +30,8 @@ import {
   useArrivedAfterWait,
   useCompanionProductsQuery,
   useReferenceGarmentsQuery,
+  guardianTargetOf,
+  SELF_TARGET,
   useSizeRecommendationQuery,
   WearPreview,
 } from '@/entities/recommendation'
@@ -66,11 +68,16 @@ export function ShopProductDetailPage() {
   const [childId, setChildId] = useState<string | null>(search.get('childId'))
   // 사이즈 추천은 로그인한 보호자가 자녀를 골랐을 때만 (자녀가 붙은 주소로 로그인 전에 들어와도 부르지 않는다)
   const recommendedChildId = user && !isChild ? childId : null
-  const recommendation = useSizeRecommendationQuery(productId, recommendedChildId)
+  // 자녀 화면은 자녀 본인의 사이즈 추천 (자녀 토큰, childId 없이 · BE #1639). 실패하면 추천 칸을 그리지 않는다
+  const ownProfile = useOwnChildProfileQuery({ enabled: isChild })
+  const recommendation = useSizeRecommendationQuery(
+    productId,
+    isChild ? SELF_TARGET : guardianTargetOf(recommendedChildId),
+  )
   // 기다린 끝에 온 AI 답만 떠오르게 한다 (저장된 답은 처음부터 그려져 움직이지 않는다)
   const isSizeArrival = useArrivedAfterWait(
     recommendation.isWaitingForAi,
-    `${productId}:${recommendedChildId}`,
+    `${productId}:${isChild ? 'self' : recommendedChildId}`,
   )
   // 함께 사면 좋은 상품은 AI 응답이 3초 가까이 걸려, 영역이 보일 때가 아니라 상세와 함께 바로 부른다
   const companions = useCompanionProductsQuery(productId, recommendedChildId)
@@ -112,6 +119,7 @@ export function ShopProductDetailPage() {
   const picks = pickedByUser ?? picksOfOption(detail, search.get('option'))
   const quantity = quantityByUser ?? clampQuantity(Number(search.get('qty')) || MIN_QUANTITY)
   const pickedChild = children.data?.find((item) => item.id === childId) ?? null
+  const adviceChild = isChild ? (ownProfile.data ?? null) : pickedChild
   const selected = pickedOption(detail, picks)
   const optionId = selected?.id ?? null
   const missingPick = missingPickMessage(detail, picks)
@@ -128,17 +136,18 @@ export function ShopProductDetailPage() {
     <>
       {/* 첫 결과(보통 규칙 결과) 전까지만. 그 뒤 AI 답을 기다리는 동안은 추천 칸 안 근거 자리에 안내 문구를 둔다 */}
       {recommendation.isLoading && <StateMessage>추천 계산 중…</StateMessage>}
-      {recommendation.isError && (
+      {recommendation.isError && !isChild && (
         <StateMessage tone="error">{getErrorMessage(recommendation.error)}</StateMessage>
       )}
-      {pickedChild && recommendation.data && (
+      {adviceChild && recommendation.data && (
         <SizeAdvice
-          child={pickedChild}
+          child={adviceChild}
           recommendation={recommendation.data}
           sizes={sizeRangesOf(detail.sizeSpecs)}
           isWaitingForAi={recommendation.isWaitingForAi}
           isArrival={isSizeArrival}
           referenceGarmentLink={
+            pickedChild &&
             partToRegister && {
               label: `${GARMENT_PART_SPEC[partToRegister].label} 기준 옷 적기`,
               to: paths.shop.childReferenceGarments(pickedChild.id),
@@ -148,7 +157,7 @@ export function ShopProductDetailPage() {
             recommendation.data.wearPreview && (
               <WearPreview
                 preview={recommendation.data.wearPreview}
-                child={pickedChild}
+                child={adviceChild}
                 initialSize={recommendation.data.recommendedSize}
                 isCompact
               />

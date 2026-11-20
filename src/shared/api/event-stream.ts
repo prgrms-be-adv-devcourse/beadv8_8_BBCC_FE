@@ -1,6 +1,6 @@
 import axios, { type AxiosResponse } from 'axios'
 import { useApiFlowLog } from './api-flow-log'
-import { apiClient } from './client'
+import { apiClient, type Principal } from './client'
 import { validate, type Shape } from './contract'
 import { readSse, readSseEvents, type SseEvent } from './sse'
 
@@ -24,6 +24,8 @@ export function streamLogOf(body: unknown): StreamLogBody | null {
 
 type GetEventStreamOptions = {
   params?: Record<string, string>
+  /** 붙일 토큰의 주체. 회원 · 자녀가 같이 쓰는 경로에서 자녀 화면이 'child'로 정한다 */
+  principal?: Principal
   /** 페이지를 떠나면 끊는다 */
   signal?: AbortSignal
   /** 이벤트마다 data를 검사할 계약 모양 */
@@ -64,11 +66,15 @@ async function withReadBody(error: unknown): Promise<never> {
 }
 
 /** 스트림 요청을 연다. 응답 헤더까지 받으면 끝나고, 본문은 호출한 쪽이 읽는다 */
-function requestStream(path: string, params?: Record<string, string>, signal?: AbortSignal) {
+function requestStream(
+  path: string,
+  { params, signal, principal }: Omit<GetEventStreamOptions, 'shape'>,
+) {
   return apiClient
     .get<ReadableStream<Uint8Array>>(path, {
       params,
       signal,
+      principal,
       adapter: streamAdapter,
       responseType: 'stream',
       // 서버가 닫을 때까지 끊지 않는다 (연결 제한은 Gateway가 둔다)
@@ -91,10 +97,10 @@ type CollectEventStreamOptions<T> = GetEventStreamOptions & {
  */
 export async function getEventStream<T>(
   path: string,
-  { params, signal, shape, onEvent }: CollectEventStreamOptions<T>,
+  { params, signal, principal, shape, onEvent }: CollectEventStreamOptions<T>,
 ): Promise<StreamEvent<T>[]> {
   const startedAt = performance.now()
-  const response = await requestStream(path, params, signal)
+  const response = await requestStream(path, { params, signal, principal })
   const logId = response.config.logId
   const events: StreamEvent<T>[] = []
   const record = () => {
@@ -132,7 +138,7 @@ export async function openEventStream<T>(
   path: string,
   { params, signal, shape, onEvent }: OpenEventStreamOptions<T>,
 ): Promise<void> {
-  const response = await requestStream(path, params, signal)
+  const response = await requestStream(path, { params, signal })
   const logId = response.config.logId
   await readSse(response.data, (item) => {
     if (signal.aborted) return
