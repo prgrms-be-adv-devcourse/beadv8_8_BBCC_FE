@@ -45,7 +45,7 @@ import { useRecordProductView } from '@/features/record-product-view'
 import { FavoriteButton } from '@/features/toggle-favorite'
 import { getErrorMessage } from '@/shared/api'
 import { loginPath, paths } from '@/shared/config'
-import { formatWon, useArea } from '@/shared/lib'
+import { cn, formatWon, useArea } from '@/shared/lib'
 import { Input } from '@/shared/ui/input'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { StateMessage } from '@/shared/ui/StateMessage'
@@ -296,7 +296,13 @@ export function ShopProductDetailPage() {
             </div>
 
             {/* 휴대폰에서는 수량 · 금액 · 담기를 화면 아래에 고정한다 */}
-            <div className="border-ink bg-paper/95 sticky bottom-0 -mx-4 space-y-3 border-t-[1.5px] px-4 pt-3 pb-3 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pt-4 md:pb-0 md:backdrop-blur-none">
+            {/* 자녀 화면은 휴대폰 아래 탭(높이 4rem) 위에 붙인다 */}
+            <div
+              className={cn(
+                'border-ink bg-paper/95 sticky bottom-0 -mx-4 space-y-3 border-t-[1.5px] px-4 pt-3 pb-3 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pt-4 md:pb-0 md:backdrop-blur-none',
+                isChild && 'max-md:bottom-16',
+              )}
+            >
               <div className="flex items-center gap-3">
                 <span className="text-[13px] font-bold">수량</span>
                 <Input
